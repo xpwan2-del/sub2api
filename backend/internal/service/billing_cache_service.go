@@ -45,6 +45,9 @@ type subscriptionCacheData struct {
 	DailyUsage   float64
 	WeeklyUsage  float64
 	MonthlyUsage float64
+	DailyLimit   float64
+	WeeklyLimit  float64
+	MonthlyLimit float64
 	Version      int64
 }
 
@@ -442,6 +445,9 @@ func (s *BillingCacheService) convertFromPortsData(data *SubscriptionCacheData) 
 		DailyUsage:   data.DailyUsage,
 		WeeklyUsage:  data.WeeklyUsage,
 		MonthlyUsage: data.MonthlyUsage,
+		DailyLimit:   data.DailyLimit,
+		WeeklyLimit:  data.WeeklyLimit,
+		MonthlyLimit: data.MonthlyLimit,
 		Version:      data.Version,
 	}
 }
@@ -453,6 +459,9 @@ func (s *BillingCacheService) convertToPortsData(data *subscriptionCacheData) *S
 		DailyUsage:   data.DailyUsage,
 		WeeklyUsage:  data.WeeklyUsage,
 		MonthlyUsage: data.MonthlyUsage,
+		DailyLimit:   data.DailyLimit,
+		WeeklyLimit:  data.WeeklyLimit,
+		MonthlyLimit: data.MonthlyLimit,
 		Version:      data.Version,
 	}
 }
@@ -470,6 +479,9 @@ func (s *BillingCacheService) getSubscriptionFromDB(ctx context.Context, userID,
 		DailyUsage:   sub.DailyUsageUSD,
 		WeeklyUsage:  sub.WeeklyUsageUSD,
 		MonthlyUsage: sub.MonthlyUsageUSD,
+		DailyLimit:   sub.DailyLimitUSD,
+		WeeklyLimit:  sub.WeeklyLimitUSD,
+		MonthlyLimit: sub.MonthlyLimitUSD,
 		Version:      sub.UpdatedAt.Unix(),
 	}, nil
 }
@@ -879,16 +891,27 @@ func (s *BillingCacheService) checkSubscriptionEligibility(ctx context.Context, 
 		return ErrSubscriptionInvalid
 	}
 
-	// 检查限额（使用传入的Group限额配置）
-	if group.HasDailyLimit() && subData.DailyUsage >= *group.DailyLimitUSD {
+	// 检查限额 — 优先使用 subscription 自身的限额（bundle snapshot），回退到 group 限额
+	dailyLimit := group.DailyLimitUSD
+	if subData.DailyLimit > 0 {
+		dailyLimit = &subData.DailyLimit
+	}
+	weeklyLimit := group.WeeklyLimitUSD
+	if subData.WeeklyLimit > 0 {
+		weeklyLimit = &subData.WeeklyLimit
+	}
+	monthlyLimit := group.MonthlyLimitUSD
+	if subData.MonthlyLimit > 0 {
+		monthlyLimit = &subData.MonthlyLimit
+	}
+
+	if dailyLimit != nil && *dailyLimit > 0 && subData.DailyUsage >= *dailyLimit {
 		return ErrDailyLimitExceeded
 	}
-
-	if group.HasWeeklyLimit() && subData.WeeklyUsage >= *group.WeeklyLimitUSD {
+	if weeklyLimit != nil && *weeklyLimit > 0 && subData.WeeklyUsage >= *weeklyLimit {
 		return ErrWeeklyLimitExceeded
 	}
-
-	if group.HasMonthlyLimit() && subData.MonthlyUsage >= *group.MonthlyLimitUSD {
+	if monthlyLimit != nil && *monthlyLimit > 0 && subData.MonthlyUsage >= *monthlyLimit {
 		return ErrMonthlyLimitExceeded
 	}
 

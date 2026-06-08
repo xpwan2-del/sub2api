@@ -115,6 +115,11 @@ func RequireGroupAssignment(settingService *service.SettingService, writeError G
 			c.Next()
 			return
 		}
+		// Bundle key: group resolved by middleware, allow through
+		if _, exists := c.Get("bundle_resolved_group_id"); exists {
+			c.Next()
+			return
+		}
 		// 未分组 Key — 检查系统设置
 		if settingService.IsUngroupedKeySchedulingAllowed(c.Request.Context()) {
 			c.Next()

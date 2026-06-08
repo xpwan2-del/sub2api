@@ -465,6 +465,10 @@ func userSubscriptionEntityToService(m *dbent.UserSubscription) *service.UserSub
 	if m.Edges.AssignedByUser != nil {
 		out.AssignedByUser = userEntityToService(m.Edges.AssignedByUser)
 	}
+	out.BundleSubscriptionID = m.BundleSubscriptionID
+	out.DailyLimitUSD = m.DailyLimitUsd
+	out.WeeklyLimitUSD = m.WeeklyLimitUsd
+	out.MonthlyLimitUSD = m.MonthlyLimitUsd
 	return out
 }
 
