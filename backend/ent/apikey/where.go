@@ -90,6 +90,11 @@ func GroupID(v int64) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldGroupID, v))
 }
 
+// BundleSubscriptionID applies equality check predicate on the "bundle_subscription_id" field. It's identical to BundleSubscriptionIDEQ.
+func BundleSubscriptionID(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldBundleSubscriptionID, v))
+}
+
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
 func Status(v string) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldStatus, v))
@@ -468,6 +473,56 @@ func GroupIDIsNil() predicate.APIKey {
 // GroupIDNotNil applies the NotNil predicate on the "group_id" field.
 func GroupIDNotNil() predicate.APIKey {
 	return predicate.APIKey(sql.FieldNotNull(FieldGroupID))
+}
+
+// BundleSubscriptionIDEQ applies the EQ predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDEQ(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldBundleSubscriptionID, v))
+}
+
+// BundleSubscriptionIDNEQ applies the NEQ predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDNEQ(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldBundleSubscriptionID, v))
+}
+
+// BundleSubscriptionIDIn applies the In predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDIn(vs ...int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldBundleSubscriptionID, vs...))
+}
+
+// BundleSubscriptionIDNotIn applies the NotIn predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDNotIn(vs ...int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldBundleSubscriptionID, vs...))
+}
+
+// BundleSubscriptionIDGT applies the GT predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDGT(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldBundleSubscriptionID, v))
+}
+
+// BundleSubscriptionIDGTE applies the GTE predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDGTE(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldBundleSubscriptionID, v))
+}
+
+// BundleSubscriptionIDLT applies the LT predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDLT(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldBundleSubscriptionID, v))
+}
+
+// BundleSubscriptionIDLTE applies the LTE predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDLTE(v int64) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldBundleSubscriptionID, v))
+}
+
+// BundleSubscriptionIDIsNil applies the IsNil predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDIsNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldIsNull(FieldBundleSubscriptionID))
+}
+
+// BundleSubscriptionIDNotNil applies the NotNil predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDNotNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotNull(FieldBundleSubscriptionID))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

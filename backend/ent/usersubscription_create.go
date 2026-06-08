@@ -231,6 +231,62 @@ func (_c *UserSubscriptionCreate) SetNillableNotes(v *string) *UserSubscriptionC
 	return _c
 }
 
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (_c *UserSubscriptionCreate) SetBundleSubscriptionID(v int64) *UserSubscriptionCreate {
+	_c.mutation.SetBundleSubscriptionID(v)
+	return _c
+}
+
+// SetNillableBundleSubscriptionID sets the "bundle_subscription_id" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableBundleSubscriptionID(v *int64) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetBundleSubscriptionID(*v)
+	}
+	return _c
+}
+
+// SetDailyLimitUsd sets the "daily_limit_usd" field.
+func (_c *UserSubscriptionCreate) SetDailyLimitUsd(v float64) *UserSubscriptionCreate {
+	_c.mutation.SetDailyLimitUsd(v)
+	return _c
+}
+
+// SetNillableDailyLimitUsd sets the "daily_limit_usd" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableDailyLimitUsd(v *float64) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetDailyLimitUsd(*v)
+	}
+	return _c
+}
+
+// SetWeeklyLimitUsd sets the "weekly_limit_usd" field.
+func (_c *UserSubscriptionCreate) SetWeeklyLimitUsd(v float64) *UserSubscriptionCreate {
+	_c.mutation.SetWeeklyLimitUsd(v)
+	return _c
+}
+
+// SetNillableWeeklyLimitUsd sets the "weekly_limit_usd" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableWeeklyLimitUsd(v *float64) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetWeeklyLimitUsd(*v)
+	}
+	return _c
+}
+
+// SetMonthlyLimitUsd sets the "monthly_limit_usd" field.
+func (_c *UserSubscriptionCreate) SetMonthlyLimitUsd(v float64) *UserSubscriptionCreate {
+	_c.mutation.SetMonthlyLimitUsd(v)
+	return _c
+}
+
+// SetNillableMonthlyLimitUsd sets the "monthly_limit_usd" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableMonthlyLimitUsd(v *float64) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetMonthlyLimitUsd(*v)
+	}
+	return _c
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_c *UserSubscriptionCreate) SetUser(v *User) *UserSubscriptionCreate {
 	return _c.SetUserID(v.ID)
@@ -349,6 +405,18 @@ func (_c *UserSubscriptionCreate) defaults() error {
 		v := usersubscription.DefaultAssignedAt()
 		_c.mutation.SetAssignedAt(v)
 	}
+	if _, ok := _c.mutation.DailyLimitUsd(); !ok {
+		v := usersubscription.DefaultDailyLimitUsd
+		_c.mutation.SetDailyLimitUsd(v)
+	}
+	if _, ok := _c.mutation.WeeklyLimitUsd(); !ok {
+		v := usersubscription.DefaultWeeklyLimitUsd
+		_c.mutation.SetWeeklyLimitUsd(v)
+	}
+	if _, ok := _c.mutation.MonthlyLimitUsd(); !ok {
+		v := usersubscription.DefaultMonthlyLimitUsd
+		_c.mutation.SetMonthlyLimitUsd(v)
+	}
 	return nil
 }
 
@@ -391,6 +459,15 @@ func (_c *UserSubscriptionCreate) check() error {
 	}
 	if _, ok := _c.mutation.AssignedAt(); !ok {
 		return &ValidationError{Name: "assigned_at", err: errors.New(`ent: missing required field "UserSubscription.assigned_at"`)}
+	}
+	if _, ok := _c.mutation.DailyLimitUsd(); !ok {
+		return &ValidationError{Name: "daily_limit_usd", err: errors.New(`ent: missing required field "UserSubscription.daily_limit_usd"`)}
+	}
+	if _, ok := _c.mutation.WeeklyLimitUsd(); !ok {
+		return &ValidationError{Name: "weekly_limit_usd", err: errors.New(`ent: missing required field "UserSubscription.weekly_limit_usd"`)}
+	}
+	if _, ok := _c.mutation.MonthlyLimitUsd(); !ok {
+		return &ValidationError{Name: "monthly_limit_usd", err: errors.New(`ent: missing required field "UserSubscription.monthly_limit_usd"`)}
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "UserSubscription.user"`)}
@@ -480,6 +557,22 @@ func (_c *UserSubscriptionCreate) createSpec() (*UserSubscription, *sqlgraph.Cre
 	if value, ok := _c.mutation.Notes(); ok {
 		_spec.SetField(usersubscription.FieldNotes, field.TypeString, value)
 		_node.Notes = &value
+	}
+	if value, ok := _c.mutation.BundleSubscriptionID(); ok {
+		_spec.SetField(usersubscription.FieldBundleSubscriptionID, field.TypeInt64, value)
+		_node.BundleSubscriptionID = &value
+	}
+	if value, ok := _c.mutation.DailyLimitUsd(); ok {
+		_spec.SetField(usersubscription.FieldDailyLimitUsd, field.TypeFloat64, value)
+		_node.DailyLimitUsd = value
+	}
+	if value, ok := _c.mutation.WeeklyLimitUsd(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyLimitUsd, field.TypeFloat64, value)
+		_node.WeeklyLimitUsd = value
+	}
+	if value, ok := _c.mutation.MonthlyLimitUsd(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyLimitUsd, field.TypeFloat64, value)
+		_node.MonthlyLimitUsd = value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -846,6 +939,84 @@ func (u *UserSubscriptionUpsert) ClearNotes() *UserSubscriptionUpsert {
 	return u
 }
 
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (u *UserSubscriptionUpsert) SetBundleSubscriptionID(v int64) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldBundleSubscriptionID, v)
+	return u
+}
+
+// UpdateBundleSubscriptionID sets the "bundle_subscription_id" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateBundleSubscriptionID() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldBundleSubscriptionID)
+	return u
+}
+
+// AddBundleSubscriptionID adds v to the "bundle_subscription_id" field.
+func (u *UserSubscriptionUpsert) AddBundleSubscriptionID(v int64) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldBundleSubscriptionID, v)
+	return u
+}
+
+// ClearBundleSubscriptionID clears the value of the "bundle_subscription_id" field.
+func (u *UserSubscriptionUpsert) ClearBundleSubscriptionID() *UserSubscriptionUpsert {
+	u.SetNull(usersubscription.FieldBundleSubscriptionID)
+	return u
+}
+
+// SetDailyLimitUsd sets the "daily_limit_usd" field.
+func (u *UserSubscriptionUpsert) SetDailyLimitUsd(v float64) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldDailyLimitUsd, v)
+	return u
+}
+
+// UpdateDailyLimitUsd sets the "daily_limit_usd" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateDailyLimitUsd() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldDailyLimitUsd)
+	return u
+}
+
+// AddDailyLimitUsd adds v to the "daily_limit_usd" field.
+func (u *UserSubscriptionUpsert) AddDailyLimitUsd(v float64) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldDailyLimitUsd, v)
+	return u
+}
+
+// SetWeeklyLimitUsd sets the "weekly_limit_usd" field.
+func (u *UserSubscriptionUpsert) SetWeeklyLimitUsd(v float64) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldWeeklyLimitUsd, v)
+	return u
+}
+
+// UpdateWeeklyLimitUsd sets the "weekly_limit_usd" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateWeeklyLimitUsd() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldWeeklyLimitUsd)
+	return u
+}
+
+// AddWeeklyLimitUsd adds v to the "weekly_limit_usd" field.
+func (u *UserSubscriptionUpsert) AddWeeklyLimitUsd(v float64) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldWeeklyLimitUsd, v)
+	return u
+}
+
+// SetMonthlyLimitUsd sets the "monthly_limit_usd" field.
+func (u *UserSubscriptionUpsert) SetMonthlyLimitUsd(v float64) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldMonthlyLimitUsd, v)
+	return u
+}
+
+// UpdateMonthlyLimitUsd sets the "monthly_limit_usd" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateMonthlyLimitUsd() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldMonthlyLimitUsd)
+	return u
+}
+
+// AddMonthlyLimitUsd adds v to the "monthly_limit_usd" field.
+func (u *UserSubscriptionUpsert) AddMonthlyLimitUsd(v float64) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldMonthlyLimitUsd, v)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -1175,6 +1346,97 @@ func (u *UserSubscriptionUpsertOne) UpdateNotes() *UserSubscriptionUpsertOne {
 func (u *UserSubscriptionUpsertOne) ClearNotes() *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
 		s.ClearNotes()
+	})
+}
+
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (u *UserSubscriptionUpsertOne) SetBundleSubscriptionID(v int64) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetBundleSubscriptionID(v)
+	})
+}
+
+// AddBundleSubscriptionID adds v to the "bundle_subscription_id" field.
+func (u *UserSubscriptionUpsertOne) AddBundleSubscriptionID(v int64) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddBundleSubscriptionID(v)
+	})
+}
+
+// UpdateBundleSubscriptionID sets the "bundle_subscription_id" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateBundleSubscriptionID() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateBundleSubscriptionID()
+	})
+}
+
+// ClearBundleSubscriptionID clears the value of the "bundle_subscription_id" field.
+func (u *UserSubscriptionUpsertOne) ClearBundleSubscriptionID() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearBundleSubscriptionID()
+	})
+}
+
+// SetDailyLimitUsd sets the "daily_limit_usd" field.
+func (u *UserSubscriptionUpsertOne) SetDailyLimitUsd(v float64) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetDailyLimitUsd(v)
+	})
+}
+
+// AddDailyLimitUsd adds v to the "daily_limit_usd" field.
+func (u *UserSubscriptionUpsertOne) AddDailyLimitUsd(v float64) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddDailyLimitUsd(v)
+	})
+}
+
+// UpdateDailyLimitUsd sets the "daily_limit_usd" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateDailyLimitUsd() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateDailyLimitUsd()
+	})
+}
+
+// SetWeeklyLimitUsd sets the "weekly_limit_usd" field.
+func (u *UserSubscriptionUpsertOne) SetWeeklyLimitUsd(v float64) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetWeeklyLimitUsd(v)
+	})
+}
+
+// AddWeeklyLimitUsd adds v to the "weekly_limit_usd" field.
+func (u *UserSubscriptionUpsertOne) AddWeeklyLimitUsd(v float64) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddWeeklyLimitUsd(v)
+	})
+}
+
+// UpdateWeeklyLimitUsd sets the "weekly_limit_usd" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateWeeklyLimitUsd() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateWeeklyLimitUsd()
+	})
+}
+
+// SetMonthlyLimitUsd sets the "monthly_limit_usd" field.
+func (u *UserSubscriptionUpsertOne) SetMonthlyLimitUsd(v float64) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetMonthlyLimitUsd(v)
+	})
+}
+
+// AddMonthlyLimitUsd adds v to the "monthly_limit_usd" field.
+func (u *UserSubscriptionUpsertOne) AddMonthlyLimitUsd(v float64) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddMonthlyLimitUsd(v)
+	})
+}
+
+// UpdateMonthlyLimitUsd sets the "monthly_limit_usd" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateMonthlyLimitUsd() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateMonthlyLimitUsd()
 	})
 }
 
@@ -1673,6 +1935,97 @@ func (u *UserSubscriptionUpsertBulk) UpdateNotes() *UserSubscriptionUpsertBulk {
 func (u *UserSubscriptionUpsertBulk) ClearNotes() *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
 		s.ClearNotes()
+	})
+}
+
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (u *UserSubscriptionUpsertBulk) SetBundleSubscriptionID(v int64) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetBundleSubscriptionID(v)
+	})
+}
+
+// AddBundleSubscriptionID adds v to the "bundle_subscription_id" field.
+func (u *UserSubscriptionUpsertBulk) AddBundleSubscriptionID(v int64) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddBundleSubscriptionID(v)
+	})
+}
+
+// UpdateBundleSubscriptionID sets the "bundle_subscription_id" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateBundleSubscriptionID() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateBundleSubscriptionID()
+	})
+}
+
+// ClearBundleSubscriptionID clears the value of the "bundle_subscription_id" field.
+func (u *UserSubscriptionUpsertBulk) ClearBundleSubscriptionID() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearBundleSubscriptionID()
+	})
+}
+
+// SetDailyLimitUsd sets the "daily_limit_usd" field.
+func (u *UserSubscriptionUpsertBulk) SetDailyLimitUsd(v float64) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetDailyLimitUsd(v)
+	})
+}
+
+// AddDailyLimitUsd adds v to the "daily_limit_usd" field.
+func (u *UserSubscriptionUpsertBulk) AddDailyLimitUsd(v float64) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddDailyLimitUsd(v)
+	})
+}
+
+// UpdateDailyLimitUsd sets the "daily_limit_usd" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateDailyLimitUsd() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateDailyLimitUsd()
+	})
+}
+
+// SetWeeklyLimitUsd sets the "weekly_limit_usd" field.
+func (u *UserSubscriptionUpsertBulk) SetWeeklyLimitUsd(v float64) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetWeeklyLimitUsd(v)
+	})
+}
+
+// AddWeeklyLimitUsd adds v to the "weekly_limit_usd" field.
+func (u *UserSubscriptionUpsertBulk) AddWeeklyLimitUsd(v float64) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddWeeklyLimitUsd(v)
+	})
+}
+
+// UpdateWeeklyLimitUsd sets the "weekly_limit_usd" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateWeeklyLimitUsd() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateWeeklyLimitUsd()
+	})
+}
+
+// SetMonthlyLimitUsd sets the "monthly_limit_usd" field.
+func (u *UserSubscriptionUpsertBulk) SetMonthlyLimitUsd(v float64) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetMonthlyLimitUsd(v)
+	})
+}
+
+// AddMonthlyLimitUsd adds v to the "monthly_limit_usd" field.
+func (u *UserSubscriptionUpsertBulk) AddMonthlyLimitUsd(v float64) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddMonthlyLimitUsd(v)
+	})
+}
+
+// UpdateMonthlyLimitUsd sets the "monthly_limit_usd" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateMonthlyLimitUsd() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateMonthlyLimitUsd()
 	})
 }
 

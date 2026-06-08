@@ -15,6 +15,10 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/bundleplan"
+	"github.com/Wei-Shaw/sub2api/ent/bundleplangroupquota"
+	"github.com/Wei-Shaw/sub2api/ent/bundlesubscription"
+	"github.com/Wei-Shaw/sub2api/ent/bundlesubscriptionusage"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
@@ -289,6 +293,114 @@ func (f TraverseAuthIdentityChannel) Traverse(ctx context.Context, q ent.Query) 
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *ent.AuthIdentityChannelQuery", q)
+}
+
+// The BundlePlanFunc type is an adapter to allow the use of ordinary function as a Querier.
+type BundlePlanFunc func(context.Context, *ent.BundlePlanQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f BundlePlanFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.BundlePlanQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.BundlePlanQuery", q)
+}
+
+// The TraverseBundlePlan type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseBundlePlan func(context.Context, *ent.BundlePlanQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseBundlePlan) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseBundlePlan) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.BundlePlanQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.BundlePlanQuery", q)
+}
+
+// The BundlePlanGroupQuotaFunc type is an adapter to allow the use of ordinary function as a Querier.
+type BundlePlanGroupQuotaFunc func(context.Context, *ent.BundlePlanGroupQuotaQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f BundlePlanGroupQuotaFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.BundlePlanGroupQuotaQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.BundlePlanGroupQuotaQuery", q)
+}
+
+// The TraverseBundlePlanGroupQuota type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseBundlePlanGroupQuota func(context.Context, *ent.BundlePlanGroupQuotaQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseBundlePlanGroupQuota) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseBundlePlanGroupQuota) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.BundlePlanGroupQuotaQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.BundlePlanGroupQuotaQuery", q)
+}
+
+// The BundleSubscriptionFunc type is an adapter to allow the use of ordinary function as a Querier.
+type BundleSubscriptionFunc func(context.Context, *ent.BundleSubscriptionQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f BundleSubscriptionFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.BundleSubscriptionQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.BundleSubscriptionQuery", q)
+}
+
+// The TraverseBundleSubscription type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseBundleSubscription func(context.Context, *ent.BundleSubscriptionQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseBundleSubscription) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseBundleSubscription) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.BundleSubscriptionQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.BundleSubscriptionQuery", q)
+}
+
+// The BundleSubscriptionUsageFunc type is an adapter to allow the use of ordinary function as a Querier.
+type BundleSubscriptionUsageFunc func(context.Context, *ent.BundleSubscriptionUsageQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f BundleSubscriptionUsageFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.BundleSubscriptionUsageQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.BundleSubscriptionUsageQuery", q)
+}
+
+// The TraverseBundleSubscriptionUsage type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseBundleSubscriptionUsage func(context.Context, *ent.BundleSubscriptionUsageQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseBundleSubscriptionUsage) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseBundleSubscriptionUsage) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.BundleSubscriptionUsageQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.BundleSubscriptionUsageQuery", q)
 }
 
 // The ChannelMonitorFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -1064,6 +1176,14 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.AuthIdentityQuery, predicate.AuthIdentity, authidentity.OrderOption]{typ: ent.TypeAuthIdentity, tq: q}, nil
 	case *ent.AuthIdentityChannelQuery:
 		return &query[*ent.AuthIdentityChannelQuery, predicate.AuthIdentityChannel, authidentitychannel.OrderOption]{typ: ent.TypeAuthIdentityChannel, tq: q}, nil
+	case *ent.BundlePlanQuery:
+		return &query[*ent.BundlePlanQuery, predicate.BundlePlan, bundleplan.OrderOption]{typ: ent.TypeBundlePlan, tq: q}, nil
+	case *ent.BundlePlanGroupQuotaQuery:
+		return &query[*ent.BundlePlanGroupQuotaQuery, predicate.BundlePlanGroupQuota, bundleplangroupquota.OrderOption]{typ: ent.TypeBundlePlanGroupQuota, tq: q}, nil
+	case *ent.BundleSubscriptionQuery:
+		return &query[*ent.BundleSubscriptionQuery, predicate.BundleSubscription, bundlesubscription.OrderOption]{typ: ent.TypeBundleSubscription, tq: q}, nil
+	case *ent.BundleSubscriptionUsageQuery:
+		return &query[*ent.BundleSubscriptionUsageQuery, predicate.BundleSubscriptionUsage, bundlesubscriptionusage.OrderOption]{typ: ent.TypeBundleSubscriptionUsage, tq: q}, nil
 	case *ent.ChannelMonitorQuery:
 		return &query[*ent.ChannelMonitorQuery, predicate.ChannelMonitor, channelmonitor.OrderOption]{typ: ent.TypeChannelMonitor, tq: q}, nil
 	case *ent.ChannelMonitorDailyRollupQuery:

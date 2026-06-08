@@ -28,6 +28,14 @@ type Tx struct {
 	AuthIdentity *AuthIdentityClient
 	// AuthIdentityChannel is the client for interacting with the AuthIdentityChannel builders.
 	AuthIdentityChannel *AuthIdentityChannelClient
+	// BundlePlan is the client for interacting with the BundlePlan builders.
+	BundlePlan *BundlePlanClient
+	// BundlePlanGroupQuota is the client for interacting with the BundlePlanGroupQuota builders.
+	BundlePlanGroupQuota *BundlePlanGroupQuotaClient
+	// BundleSubscription is the client for interacting with the BundleSubscription builders.
+	BundleSubscription *BundleSubscriptionClient
+	// BundleSubscriptionUsage is the client for interacting with the BundleSubscriptionUsage builders.
+	BundleSubscriptionUsage *BundleSubscriptionUsageClient
 	// ChannelMonitor is the client for interacting with the ChannelMonitor builders.
 	ChannelMonitor *ChannelMonitorClient
 	// ChannelMonitorDailyRollup is the client for interacting with the ChannelMonitorDailyRollup builders.
@@ -222,6 +230,10 @@ func (tx *Tx) init() {
 	tx.AnnouncementRead = NewAnnouncementReadClient(tx.config)
 	tx.AuthIdentity = NewAuthIdentityClient(tx.config)
 	tx.AuthIdentityChannel = NewAuthIdentityChannelClient(tx.config)
+	tx.BundlePlan = NewBundlePlanClient(tx.config)
+	tx.BundlePlanGroupQuota = NewBundlePlanGroupQuotaClient(tx.config)
+	tx.BundleSubscription = NewBundleSubscriptionClient(tx.config)
+	tx.BundleSubscriptionUsage = NewBundleSubscriptionUsageClient(tx.config)
 	tx.ChannelMonitor = NewChannelMonitorClient(tx.config)
 	tx.ChannelMonitorDailyRollup = NewChannelMonitorDailyRollupClient(tx.config)
 	tx.ChannelMonitorHistory = NewChannelMonitorHistoryClient(tx.config)

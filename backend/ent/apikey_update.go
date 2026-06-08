@@ -120,6 +120,33 @@ func (_u *APIKeyUpdate) ClearGroupID() *APIKeyUpdate {
 	return _u
 }
 
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (_u *APIKeyUpdate) SetBundleSubscriptionID(v int64) *APIKeyUpdate {
+	_u.mutation.ResetBundleSubscriptionID()
+	_u.mutation.SetBundleSubscriptionID(v)
+	return _u
+}
+
+// SetNillableBundleSubscriptionID sets the "bundle_subscription_id" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableBundleSubscriptionID(v *int64) *APIKeyUpdate {
+	if v != nil {
+		_u.SetBundleSubscriptionID(*v)
+	}
+	return _u
+}
+
+// AddBundleSubscriptionID adds value to the "bundle_subscription_id" field.
+func (_u *APIKeyUpdate) AddBundleSubscriptionID(v int64) *APIKeyUpdate {
+	_u.mutation.AddBundleSubscriptionID(v)
+	return _u
+}
+
+// ClearBundleSubscriptionID clears the value of the "bundle_subscription_id" field.
+func (_u *APIKeyUpdate) ClearBundleSubscriptionID() *APIKeyUpdate {
+	_u.mutation.ClearBundleSubscriptionID()
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *APIKeyUpdate) SetStatus(v string) *APIKeyUpdate {
 	_u.mutation.SetStatus(v)
@@ -593,6 +620,15 @@ func (_u *APIKeyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(apikey.FieldName, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.BundleSubscriptionID(); ok {
+		_spec.SetField(apikey.FieldBundleSubscriptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedBundleSubscriptionID(); ok {
+		_spec.AddField(apikey.FieldBundleSubscriptionID, field.TypeInt64, value)
+	}
+	if _u.mutation.BundleSubscriptionIDCleared() {
+		_spec.ClearField(apikey.FieldBundleSubscriptionID, field.TypeInt64)
+	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(apikey.FieldStatus, field.TypeString, value)
 	}
@@ -904,6 +940,33 @@ func (_u *APIKeyUpdateOne) SetNillableGroupID(v *int64) *APIKeyUpdateOne {
 // ClearGroupID clears the value of the "group_id" field.
 func (_u *APIKeyUpdateOne) ClearGroupID() *APIKeyUpdateOne {
 	_u.mutation.ClearGroupID()
+	return _u
+}
+
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (_u *APIKeyUpdateOne) SetBundleSubscriptionID(v int64) *APIKeyUpdateOne {
+	_u.mutation.ResetBundleSubscriptionID()
+	_u.mutation.SetBundleSubscriptionID(v)
+	return _u
+}
+
+// SetNillableBundleSubscriptionID sets the "bundle_subscription_id" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableBundleSubscriptionID(v *int64) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetBundleSubscriptionID(*v)
+	}
+	return _u
+}
+
+// AddBundleSubscriptionID adds value to the "bundle_subscription_id" field.
+func (_u *APIKeyUpdateOne) AddBundleSubscriptionID(v int64) *APIKeyUpdateOne {
+	_u.mutation.AddBundleSubscriptionID(v)
+	return _u
+}
+
+// ClearBundleSubscriptionID clears the value of the "bundle_subscription_id" field.
+func (_u *APIKeyUpdateOne) ClearBundleSubscriptionID() *APIKeyUpdateOne {
+	_u.mutation.ClearBundleSubscriptionID()
 	return _u
 }
 
@@ -1409,6 +1472,15 @@ func (_u *APIKeyUpdateOne) sqlSave(ctx context.Context) (_node *APIKey, err erro
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(apikey.FieldName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.BundleSubscriptionID(); ok {
+		_spec.SetField(apikey.FieldBundleSubscriptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedBundleSubscriptionID(); ok {
+		_spec.AddField(apikey.FieldBundleSubscriptionID, field.TypeInt64, value)
+	}
+	if _u.mutation.BundleSubscriptionIDCleared() {
+		_spec.ClearField(apikey.FieldBundleSubscriptionID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(apikey.FieldStatus, field.TypeString, value)

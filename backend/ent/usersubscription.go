@@ -53,6 +53,14 @@ type UserSubscription struct {
 	AssignedAt time.Time `json:"assigned_at,omitempty"`
 	// Notes holds the value of the "notes" field.
 	Notes *string `json:"notes,omitempty"`
+	// 关联的套餐实例ID
+	BundleSubscriptionID *int64 `json:"bundle_subscription_id,omitempty"`
+	// 独立日限额（0=fallback到Group配置）
+	DailyLimitUsd float64 `json:"daily_limit_usd,omitempty"`
+	// 独立周限额
+	WeeklyLimitUsd float64 `json:"weekly_limit_usd,omitempty"`
+	// 独立月限额
+	MonthlyLimitUsd float64 `json:"monthly_limit_usd,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserSubscriptionQuery when eager-loading is set.
 	Edges        UserSubscriptionEdges `json:"edges"`
@@ -121,9 +129,9 @@ func (*UserSubscription) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case usersubscription.FieldDailyUsageUsd, usersubscription.FieldWeeklyUsageUsd, usersubscription.FieldMonthlyUsageUsd:
+		case usersubscription.FieldDailyUsageUsd, usersubscription.FieldWeeklyUsageUsd, usersubscription.FieldMonthlyUsageUsd, usersubscription.FieldDailyLimitUsd, usersubscription.FieldWeeklyLimitUsd, usersubscription.FieldMonthlyLimitUsd:
 			values[i] = new(sql.NullFloat64)
-		case usersubscription.FieldID, usersubscription.FieldUserID, usersubscription.FieldGroupID, usersubscription.FieldAssignedBy:
+		case usersubscription.FieldID, usersubscription.FieldUserID, usersubscription.FieldGroupID, usersubscription.FieldAssignedBy, usersubscription.FieldBundleSubscriptionID:
 			values[i] = new(sql.NullInt64)
 		case usersubscription.FieldStatus, usersubscription.FieldNotes:
 			values[i] = new(sql.NullString)
@@ -258,6 +266,31 @@ func (_m *UserSubscription) assignValues(columns []string, values []any) error {
 				_m.Notes = new(string)
 				*_m.Notes = value.String
 			}
+		case usersubscription.FieldBundleSubscriptionID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field bundle_subscription_id", values[i])
+			} else if value.Valid {
+				_m.BundleSubscriptionID = new(int64)
+				*_m.BundleSubscriptionID = value.Int64
+			}
+		case usersubscription.FieldDailyLimitUsd:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field daily_limit_usd", values[i])
+			} else if value.Valid {
+				_m.DailyLimitUsd = value.Float64
+			}
+		case usersubscription.FieldWeeklyLimitUsd:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field weekly_limit_usd", values[i])
+			} else if value.Valid {
+				_m.WeeklyLimitUsd = value.Float64
+			}
+		case usersubscription.FieldMonthlyLimitUsd:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field monthly_limit_usd", values[i])
+			} else if value.Valid {
+				_m.MonthlyLimitUsd = value.Float64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -376,6 +409,20 @@ func (_m *UserSubscription) String() string {
 		builder.WriteString("notes=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	if v := _m.BundleSubscriptionID; v != nil {
+		builder.WriteString("bundle_subscription_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("daily_limit_usd=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DailyLimitUsd))
+	builder.WriteString(", ")
+	builder.WriteString("weekly_limit_usd=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WeeklyLimitUsd))
+	builder.WriteString(", ")
+	builder.WriteString("monthly_limit_usd=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyLimitUsd))
 	builder.WriteByte(')')
 	return builder.String()
 }
