@@ -132,6 +132,7 @@ docs/*
 !docs/PAYMENT_CN.md
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md
 !docs/BUNDLE_SUBSCRIPTION_DESIGN.md
+!docs/BUNDLE_SUBSCRIPTION_PLAN.md
 .serena/
 .codex/
 frontend/coverage/
