@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
 
 // BundleSubscriptionService handles bundle subscription lifecycle.
@@ -185,4 +186,30 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 		})
 	}
 	return progress, nil
+}
+
+// List returns a paginated list of bundle subscriptions with optional filters.
+func (s *BundleSubscriptionService) List(ctx context.Context, params pagination.PaginationParams, userID *int64, status string) ([]BundleSubscription, *pagination.PaginationResult, error) {
+	subs, result, err := s.bundleSubRepo.List(ctx, params, userID, status)
+	if err != nil {
+		return nil, nil, fmt.Errorf("list bundle subscriptions: %w", err)
+	}
+	return subs, result, nil
+}
+
+// ExtendBundle extends a bundle subscription's expiry by the given number of days.
+func (s *BundleSubscriptionService) ExtendBundle(ctx context.Context, bundleSubID int64, days int) error {
+	bundleSub, err := s.bundleSubRepo.GetByID(ctx, bundleSubID)
+	if err != nil {
+		return fmt.Errorf("load bundle subscription: %w", err)
+	}
+	if bundleSub.Status != BundleStatusActive {
+		return ErrBundleExpired
+	}
+
+	newExpiry := bundleSub.ExpiresAt.AddDate(0, 0, days)
+	if err := s.bundleSubRepo.UpdateExpiry(ctx, bundleSubID, newExpiry); err != nil {
+		return fmt.Errorf("extend bundle subscription: %w", err)
+	}
+	return nil
 }

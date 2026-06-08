@@ -16,6 +16,7 @@ func RegisterGatewayRoutes(
 	r *gin.Engine,
 	h *handler.Handlers,
 	apiKeyAuth middleware.APIKeyAuthMiddleware,
+	bundleRouteResolver *middleware.BundleRouteResolverMiddleware,
 	apiKeyService *service.APIKeyService,
 	subscriptionService *service.SubscriptionService,
 	opsService *service.OpsService,
@@ -38,6 +39,7 @@ func RegisterGatewayRoutes(
 	gateway.Use(opsErrorLogger)
 	gateway.Use(endpointNorm)
 	gateway.Use(gin.HandlerFunc(apiKeyAuth))
+	gateway.Use(bundleRouteResolver.BundleResolver())
 	gateway.Use(requireGroupAnthropic)
 	{
 		// /v1/messages: auto-route based on group platform
