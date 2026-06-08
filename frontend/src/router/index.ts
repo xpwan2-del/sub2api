@@ -653,6 +653,32 @@ const routes: RouteRecordRaw[] = [
     }
   },
 
+  // ==================== Bundle Admin Routes ====================
+  {
+    path: '/admin/bundles/plans',
+    name: 'AdminBundlePlans',
+    component: () => import('@/views/admin/bundles/BundlePlansView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Bundle Plans',
+      titleKey: 'nav.bundlePlans',
+      descriptionKey: 'admin.bundlePlans.description'
+    }
+  },
+  {
+    path: '/admin/bundles/subscriptions',
+    name: 'AdminBundleSubscriptions',
+    component: () => import('@/views/admin/bundles/BundleSubscriptionsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Bundle Subscriptions',
+      titleKey: 'nav.bundleSubscriptions',
+      descriptionKey: 'admin.bundleSubscriptions.description'
+    }
+  },
+
   // ==================== 404 Not Found ====================
   {
     path: '/:pathMatch(.*)*',
