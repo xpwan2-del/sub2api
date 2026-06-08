@@ -1,0 +1,161 @@
+package service
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+)
+
+// BundlePlanService handles CRUD operations for bundle plans.
+type BundlePlanService struct {
+	planRepo BundlePlanRepository
+}
+
+// NewBundlePlanService creates a new BundlePlanService.
+func NewBundlePlanService(planRepo BundlePlanRepository) *BundlePlanService {
+	return &BundlePlanService{planRepo: planRepo}
+}
+
+// CreatePlan creates a new bundle plan with its group quotas.
+func (s *BundlePlanService) CreatePlan(ctx context.Context, req *CreateBundlePlanRequest) (*BundlePlan, error) {
+	if req == nil {
+		return nil, ErrBundlePlanNotFound
+	}
+
+	plan := &BundlePlan{
+		Name:             req.Name,
+		Description:      req.Description,
+		Tier:             req.Tier,
+		Price:            req.Price,
+		OriginalPrice:    req.OriginalPrice,
+		Currency:         req.Currency,
+		ValidityDays:     req.ValidityDays,
+		ConcurrencyLimit: req.ConcurrencyLimit,
+		RPMLimit:         req.RPMLimit,
+		Features:         req.Features,
+		ForSale:          req.ForSale,
+		SortOrder:        req.SortOrder,
+		Status:           domain.StatusActive,
+		GroupQuotas:      make([]BundlePlanGroupQuota, 0, len(req.GroupQuotas)),
+	}
+
+	for _, gq := range req.GroupQuotas {
+		plan.GroupQuotas = append(plan.GroupQuotas, BundlePlanGroupQuota{
+			GroupID:         gq.GroupID,
+			QuotaScope:      gq.QuotaScope,
+			ModelPattern:    gq.ModelPattern,
+			DailyLimitUSD:   gq.DailyLimitUSD,
+			WeeklyLimitUSD:  gq.WeeklyLimitUSD,
+			MonthlyLimitUSD: gq.MonthlyLimitUSD,
+		})
+	}
+
+	if err := s.planRepo.Create(ctx, plan); err != nil {
+		return nil, fmt.Errorf("create bundle plan: %w", err)
+	}
+	return plan, nil
+}
+
+// UpdatePlan updates an existing bundle plan by merging non-nil fields from the request.
+func (s *BundlePlanService) UpdatePlan(ctx context.Context, planID int64, req *UpdateBundlePlanRequest) (*BundlePlan, error) {
+	if req == nil {
+		return nil, ErrBundlePlanNotFound
+	}
+
+	existing, err := s.planRepo.GetByID(ctx, planID)
+	if err != nil {
+		return nil, fmt.Errorf("load bundle plan: %w", err)
+	}
+
+	// Merge non-nil scalar fields.
+	if req.Name != nil {
+		existing.Name = *req.Name
+	}
+	if req.Description != nil {
+		existing.Description = *req.Description
+	}
+	if req.Tier != nil {
+		existing.Tier = *req.Tier
+	}
+	if req.Price != nil {
+		existing.Price = *req.Price
+	}
+	if req.OriginalPrice != nil {
+		existing.OriginalPrice = *req.OriginalPrice
+	}
+	if req.Currency != nil {
+		existing.Currency = *req.Currency
+	}
+	if req.ValidityDays != nil {
+		existing.ValidityDays = *req.ValidityDays
+	}
+	if req.ConcurrencyLimit != nil {
+		existing.ConcurrencyLimit = *req.ConcurrencyLimit
+	}
+	if req.RPMLimit != nil {
+		existing.RPMLimit = *req.RPMLimit
+	}
+	if req.Features != nil {
+		existing.Features = *req.Features
+	}
+	if req.ForSale != nil {
+		existing.ForSale = *req.ForSale
+	}
+	if req.SortOrder != nil {
+		existing.SortOrder = *req.SortOrder
+	}
+	if req.Status != nil {
+		existing.Status = *req.Status
+	}
+
+	// Replace group quotas if provided.
+	if req.GroupQuotas != nil {
+		quotas := make([]BundlePlanGroupQuota, 0, len(*req.GroupQuotas))
+		for _, gq := range *req.GroupQuotas {
+			quotas = append(quotas, BundlePlanGroupQuota{
+				PlanID:          planID,
+				GroupID:         gq.GroupID,
+				QuotaScope:      gq.QuotaScope,
+				ModelPattern:    gq.ModelPattern,
+				DailyLimitUSD:   gq.DailyLimitUSD,
+				WeeklyLimitUSD:  gq.WeeklyLimitUSD,
+				MonthlyLimitUSD: gq.MonthlyLimitUSD,
+			})
+		}
+		existing.GroupQuotas = quotas
+	}
+
+	if err := s.planRepo.Update(ctx, existing); err != nil {
+		return nil, fmt.Errorf("update bundle plan: %w", err)
+	}
+	return existing, nil
+}
+
+// GetPlanDetail returns a single bundle plan by ID.
+func (s *BundlePlanService) GetPlanDetail(ctx context.Context, planID int64) (*BundlePlan, error) {
+	plan, err := s.planRepo.GetByID(ctx, planID)
+	if err != nil {
+		return nil, fmt.Errorf("get bundle plan: %w", err)
+	}
+	return plan, nil
+}
+
+// ListPlans returns a paginated list of bundle plans with optional filters.
+func (s *BundlePlanService) ListPlans(ctx context.Context, params pagination.PaginationParams, tier, status string) ([]BundlePlan, *pagination.PaginationResult, error) {
+	plans, result, err := s.planRepo.List(ctx, params, tier, status)
+	if err != nil {
+		return nil, nil, fmt.Errorf("list bundle plans: %w", err)
+	}
+	return plans, result, nil
+}
+
+// ListForSale returns all plans that are currently for sale and active.
+func (s *BundlePlanService) ListForSale(ctx context.Context) ([]BundlePlan, error) {
+	plans, err := s.planRepo.ListForSale(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list for-sale bundle plans: %w", err)
+	}
+	return plans, nil
+}

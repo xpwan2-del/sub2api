@@ -51,6 +51,14 @@ func (r *userSubscriptionRepository) Create(ctx context.Context, sub *service.Us
 	// Keep compatibility with historical behavior: always store notes as a string value.
 	builder.SetNotes(sub.Notes)
 
+	// Bundle-related fields
+	if sub.BundleSubscriptionID != nil {
+		builder.SetBundleSubscriptionID(*sub.BundleSubscriptionID)
+	}
+	builder.SetDailyLimitUsd(sub.DailyLimitUSD)
+	builder.SetWeeklyLimitUsd(sub.WeeklyLimitUSD)
+	builder.SetMonthlyLimitUsd(sub.MonthlyLimitUSD)
+
 	created, err := builder.Save(ctx)
 	if err == nil {
 		applyUserSubscriptionEntityToService(sub, created)
@@ -477,4 +485,8 @@ func applyUserSubscriptionEntityToService(dst *service.UserSubscription, src *db
 	dst.ID = src.ID
 	dst.CreatedAt = src.CreatedAt
 	dst.UpdatedAt = src.UpdatedAt
+	dst.BundleSubscriptionID = src.BundleSubscriptionID
+	dst.DailyLimitUSD = src.DailyLimitUsd
+	dst.WeeklyLimitUSD = src.WeeklyLimitUsd
+	dst.MonthlyLimitUSD = src.MonthlyLimitUsd
 }

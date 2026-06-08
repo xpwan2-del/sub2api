@@ -23,6 +23,12 @@ type UserSubscription struct {
 	AssignedAt time.Time
 	Notes      string
 
+	// Bundle-related fields (bridged from bundle subscription)
+	BundleSubscriptionID *int64
+	DailyLimitUSD        float64
+	WeeklyLimitUSD       float64
+	MonthlyLimitUSD      float64
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 

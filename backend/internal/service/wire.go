@@ -585,6 +585,10 @@ var ProviderSet = wire.NewSet(
 	ProvideChannelMonitorRunner,
 	NewChannelMonitorRequestTemplateService,
 	ProvideUserPlatformQuotaUsageFlusher,
+	NewBundlePlanService,
+	NewBundleSubscriptionService,
+	NewBundleRouteResolver,
+	NewBundleUsageService,
 )
 
 // ProvideUserPlatformQuotaUsageFlusher 创建并启动 UserPlatformQuotaUsageFlusher。
