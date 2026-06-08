@@ -277,6 +277,28 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/bundles',
+    name: 'Bundles',
+    component: () => import('@/views/user/BundlesView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: '套餐订阅',
+      titleKey: 'bundles.title'
+    }
+  },
+  {
+    path: '/bundles/usage',
+    name: 'BundleUsage',
+    component: () => import('@/views/user/BundleUsageView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: '套餐用量',
+      titleKey: 'bundles.usageTitle'
+    }
+  },
+  {
     path: '/purchase',
     name: 'PurchaseSubscription',
     component: () => import('@/views/user/PaymentView.vue'),

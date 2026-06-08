@@ -206,6 +206,19 @@
             </template>
           </template>
         </template>
+        <!-- Bundle Entry Card -->
+        <div v-if="paymentPhase === 'select' && !selectedPlan" class="card cursor-pointer p-4 transition-all hover:shadow-md" @click="router.push('/bundles')">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-100 to-purple-100 dark:from-primary-900/40 dark:to-purple-900/40">
+              <Icon name="cube" size="lg" class="text-primary-600 dark:text-primary-400" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('bundles.bundleEntryTitle') }}</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.bundleEntryDesc') }}</p>
+            </div>
+            <Icon name="chevronRight" size="sm" class="text-gray-400 dark:text-gray-500" />
+          </div>
+        </div>
         <div v-if="(checkout.help_text || checkout.help_image_url) && paymentPhase === 'select' && !selectedPlan" class="card p-4">
           <div class="flex flex-col items-center gap-3">
             <img v-if="checkout.help_image_url" :src="checkout.help_image_url" alt=""
