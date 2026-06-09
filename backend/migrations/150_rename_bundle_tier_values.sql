@@ -1,7 +1,6 @@
 -- 150_rename_bundle_tier_values.sql
--- 重命名套餐层级值：basic → starter，flagship → pro。
--- enterprise 保持不变。
--- 与前端 bundleTiers.ts 和后端 bundle_constants.go 的层级常量对齐。
+-- Rename bundle plan tier values from basic/flagship/enterprise to starter/pro/enterprise.
+-- 'enterprise' remains unchanged.
 
 BEGIN;
 
