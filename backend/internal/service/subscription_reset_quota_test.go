@@ -205,3 +205,4 @@ func TestAdminResetQuota_ReturnsRefreshedSub(t *testing.T) {
 	require.Equal(t, float64(0), result.DailyUsageUSD, "返回的订阅应反映已归零的用量")
 	require.True(t, stub.resetDailyCalled)
 }
+func (s *resetQuotaUserSubRepoStub) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) { return 0, nil }

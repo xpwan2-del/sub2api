@@ -752,3 +752,4 @@ func TestApiKeyAuthWithSubscriptionGoogle_SubscriptionLimitExceededReturns429(t 
 	require.Equal(t, "RESOURCE_EXHAUSTED", resp.Error.Status)
 	require.Contains(t, resp.Error.Message, "daily usage limit exceeded")
 }
+func (f fakeGoogleSubscriptionRepo) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) { return 0, nil }

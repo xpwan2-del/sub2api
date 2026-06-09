@@ -546,3 +546,4 @@ func TestAdminService_AdminUpdateAPIKeyGroupID_Unbind_NoAllowedGroupUpdate(t *te
 	require.False(t, userRepo.addGroupCalled)
 	require.False(t, got.AutoGrantedGroupAccess)
 }
+func (s *userSubRepoStubForGroupUpdate) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) { return 0, nil }

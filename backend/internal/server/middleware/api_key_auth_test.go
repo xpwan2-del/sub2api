@@ -1154,3 +1154,4 @@ func (r *stubUserSubscriptionRepo) IncrementUsage(ctx context.Context, id int64,
 func (r *stubUserSubscriptionRepo) BatchUpdateExpiredStatus(ctx context.Context) (int64, error) {
 	return 0, errors.New("not implemented")
 }
+func (s *stubUserSubscriptionRepo) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) { return 0, nil }

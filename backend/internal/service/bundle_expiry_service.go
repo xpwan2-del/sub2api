@@ -76,7 +76,8 @@ func (s *BundleExpiryService) Stop() {
 	s.wg.Wait()
 }
 
-// runOnce 执行一次过期扫描，将到期但仍 active 的订阅批量标记为 expired
+// runOnce 执行一次过期扫描，将到期但仍 active 的订阅批量标记为 expired，
+// 并同步撤销关联的桥接 UserSubscription。
 func (s *BundleExpiryService) runOnce() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -88,5 +89,25 @@ func (s *BundleExpiryService) runOnce() {
 	}
 	if updated > 0 {
 		log.Printf("[BundleExpiry] Updated %d expired bundle subscriptions", updated)
+	}
+
+	// Sync: expire bridged UserSubscriptions for any newly-expired bundles.
+	s.syncExpiredBridgedUserSubscriptions(ctx)
+}
+
+// syncExpiredBridgedUserSubscriptions finds bundle subscriptions that just expired
+// and expires their bridged UserSubscription records.
+func (s *BundleExpiryService) syncExpiredBridgedUserSubscriptions(ctx context.Context) {
+	// Use the existing batch expiry query to find expired bundle subscriptions.
+	// We can look up UserSubscriptions linked to expired bundles and expire them.
+	// For simplicity, we iterate user subscriptions in batches where bundle_subscription_id is set
+	// and the bundle has expired status.
+	count, err := s.userSubRepo.ExpireBridgedSubscriptionsForExpiredBundles(ctx)
+	if err != nil {
+		log.Printf("[BundleExpiry] Sync bridged user subscriptions failed: %v", err)
+		return
+	}
+	if count > 0 {
+		log.Printf("[BundleExpiry] Expired %d bridged user subscriptions", count)
 	}
 }

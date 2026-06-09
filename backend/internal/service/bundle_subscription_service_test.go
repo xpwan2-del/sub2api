@@ -574,3 +574,4 @@ func TestBundleSubscriptionService_ExtendBundle_SyncsBridgedUserSubs(t *testing.
 	require.Contains(t, userSubRepo.extendedIDs, int64(200))
 	require.Contains(t, userSubRepo.extendedIDs, int64(201))
 }
+func (s *activateUserSubRepoStub) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) { return 0, nil }

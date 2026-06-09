@@ -29,11 +29,13 @@ func toResponsePagination(p *pagination.PaginationResult) *response.PaginationRe
 // SubscriptionHandler handles admin subscription management
 type SubscriptionHandler struct {
 	subscriptionService *service.SubscriptionService
+	bundleSubSvc *service.BundleSubscriptionService
 }
 
 // NewSubscriptionHandler creates a new admin subscription handler
-func NewSubscriptionHandler(subscriptionService *service.SubscriptionService) *SubscriptionHandler {
+func NewSubscriptionHandler(subscriptionService *service.SubscriptionService, bundleSubSvc *service.BundleSubscriptionService) *SubscriptionHandler {
 	return &SubscriptionHandler{
+		bundleSubSvc: bundleSubSvc,
 		subscriptionService: subscriptionService,
 	}
 }
@@ -93,6 +95,9 @@ func (h *SubscriptionHandler) List(c *gin.Context) {
 	for i := range subscriptions {
 		out = append(out, *dto.UserSubscriptionFromServiceAdmin(&subscriptions[i]))
 	}
+	// Enrich bundle subscriptions with plan info.
+	enrichBundleInfoForAdmin(out, h.bundleSubSvc, c.Request.Context())
+
 	response.PaginatedWithResult(c, out, toResponsePagination(pagination))
 }
 
@@ -320,4 +325,34 @@ func getAdminIDFromContext(c *gin.Context) int64 {
 		return 0
 	}
 	return subject.UserID
+}
+
+
+// enrichBundleInfoForAdmin fills BundlePlanTier and BundlePlanName for admin subscription DTOs.
+func enrichBundleInfoForAdmin(subs []dto.AdminUserSubscription, svc *service.BundleSubscriptionService, ctx context.Context) {
+	type planInfo struct {
+		tier string
+		name string
+	}
+	planCache := make(map[int64]planInfo)
+	for i := range subs {
+		sub := &subs[i]
+		if sub.BundleSubscriptionID == nil || *sub.BundleSubscriptionID == 0 {
+			continue
+		}
+		bundleSubID := *sub.BundleSubscriptionID
+		if info, ok := planCache[bundleSubID]; ok {
+			sub.BundlePlanTier = &info.tier
+			sub.BundlePlanName = &info.name
+			continue
+		}
+		bundleSub, err := svc.GetBundleByID(ctx, bundleSubID)
+		if err != nil || bundleSub == nil || bundleSub.Plan == nil {
+			continue
+		}
+		info := planInfo{tier: bundleSub.Plan.Tier, name: bundleSub.Plan.Name}
+		planCache[bundleSubID] = info
+		sub.BundlePlanTier = &info.tier
+		sub.BundlePlanName = &info.name
+	}
 }

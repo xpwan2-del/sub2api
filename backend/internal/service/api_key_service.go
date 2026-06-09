@@ -158,6 +158,9 @@ type CreateAPIKeyRequest struct {
 	IPWhitelist []string `json:"ip_whitelist"` // IP 白名单
 	IPBlacklist []string `json:"ip_blacklist"` // IP 黑名单
 
+
+		// Bundle subscription ID for universal bundle keys (no group_id).
+		BundleSubscriptionID *int64 `json:"bundle_subscription_id"`
 	// Quota fields
 	Quota         float64 `json:"quota"`           // Quota limit in USD (0 = unlimited)
 	ExpiresInDays *int    `json:"expires_in_days"` // Days until expiry (nil = never expires)
@@ -404,6 +407,7 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 		Key:         key,
 		Name:        html.EscapeString(req.Name),
 		GroupID:     req.GroupID,
+			BundleSubscriptionID: req.BundleSubscriptionID,
 		Status:      StatusActive,
 		IPWhitelist: req.IPWhitelist,
 		IPBlacklist: req.IPBlacklist,
