@@ -112,7 +112,7 @@ func (BundlePlan) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").NotEmpty().Comment("套餐名称"),
 		field.String("description").Default("").Comment("套餐描述"),
-		field.String("tier").NotEmpty().Comment("套餐层级: basic/flagship/enterprise"),
+		field.String("tier").NotEmpty().Comment("套餐层级: starter/pro/enterprise"),
 		field.Float("price").Default(0).Comment("售价"),
 		field.Float("original_price").Default(0).Comment("原价（划线价）"),
 		field.String("currency").Default("USD").Comment("货币: USD/CNY"),
@@ -415,8 +415,8 @@ package service
 
 // Bundle Tier
 const (
-	BundleTierBasic      = "basic"
-	BundleTierFlagship   = "flagship"
+	BundleTierStarter    = "starter"
+	BundleTierPro        = "pro"
 	BundleTierEnterprise = "enterprise"
 )
 
@@ -571,7 +571,7 @@ type BundleSubscriptionUsage struct {
 type CreateBundlePlanRequest struct {
 	Name             string                `json:"name" binding:"required"`
 	Description      string                `json:"description"`
-	Tier             string                `json:"tier" binding:"required,oneof=basic flagship enterprise"`
+	Tier             string                `json:"tier" binding:"required,oneof=starter pro enterprise"`
 	Price            float64               `json:"price" binding:"required,gte=0"`
 	OriginalPrice    float64               `json:"original_price" binding:"gte=0"`
 	Currency         string                `json:"currency" binding:"required,oneof=USD CNY"`
