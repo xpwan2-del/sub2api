@@ -137,6 +137,12 @@ func (s *BundleSubscriptionService) RevokeBundle(ctx context.Context, bundleSubI
 	if err := s.bundleSubRepo.UpdateStatus(ctx, bundleSubID, BundleStatusRevoked); err != nil {
 		return fmt.Errorf("revoke bundle subscription: %w", err)
 	}
+
+	// Sync: revoke bridged UserSubscriptions.
+	s.syncBridgedUserSubscriptions(ctx, bundleSub.UserID, bundleSubID, func(sub *UserSubscription) error {
+		return s.userSubRepo.UpdateStatus(ctx, sub.ID, domain.SubscriptionStatusExpired)
+	})
+
 	return nil
 }
 
@@ -150,39 +156,52 @@ func (s *BundleSubscriptionService) GetUserActiveBundle(ctx context.Context, use
 }
 
 // GetBundleUsageProgress returns usage progress for a bundle subscription.
+// Limits are read from the bridged UserSubscriptions (snapshotted at activation time)
+// rather than the latest plan, ensuring consistency with the actual active limits.
 func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, bundleSubID int64) ([]BundleUsageProgress, error) {
 	bundleSub, err := s.bundleSubRepo.GetByIDWithUsages(ctx, bundleSubID)
 	if err != nil {
 		return nil, fmt.Errorf("load bundle subscription: %w", err)
 	}
 
-	plan, err := s.planRepo.GetByID(ctx, bundleSub.PlanID)
+	// Load bridged UserSubscriptions to get snapshotted limits per group.
+	userSubs, err := s.userSubRepo.ListByUserID(ctx, bundleSub.UserID)
 	if err != nil {
-		return nil, fmt.Errorf("load bundle plan: %w", err)
+		return nil, fmt.Errorf("load user subscriptions: %w", err)
 	}
 
-	// Build a lookup for group quotas by groupID.
-	quotaMap := make(map[int64]BundlePlanGroupQuota)
-	for _, gq := range plan.GroupQuotas {
-		quotaMap[gq.GroupID] = gq
+	// Build a lookup for snapshotted limits by groupID from bridged UserSubscriptions.
+	type groupLimit struct {
+		dailyLimit   float64
+		weeklyLimit  float64
+		monthlyLimit float64
+	}
+	limitMap := make(map[int64]groupLimit)
+	for _, sub := range userSubs {
+		if sub.BundleSubscriptionID != nil && *sub.BundleSubscriptionID == bundleSubID {
+			limitMap[sub.GroupID] = groupLimit{
+				dailyLimit:   sub.DailyLimitUSD,
+				weeklyLimit:  sub.WeeklyLimitUSD,
+				monthlyLimit: sub.MonthlyLimitUSD,
+			}
+		}
 	}
 
 	progress := make([]BundleUsageProgress, 0, len(bundleSub.Usages))
 	for _, usage := range bundleSub.Usages {
-		quota, ok := quotaMap[usage.GroupID]
-		if !ok {
-			continue
+		lim, hasLimit := limitMap[usage.GroupID]
+		if !hasLimit {
+			lim = groupLimit{} // zero limits = unlimited
 		}
 		progress = append(progress, BundleUsageProgress{
 			GroupID:         usage.GroupID,
-			QuotaScope:      quota.QuotaScope,
 			ModelPattern:    usage.ModelPattern,
 			DailyUsageUSD:   usage.DailyUsageUSD,
-			DailyLimitUSD:   quota.DailyLimitUSD,
+			DailyLimitUSD:   lim.dailyLimit,
 			WeeklyUsageUSD:  usage.WeeklyUsageUSD,
-			WeeklyLimitUSD:  quota.WeeklyLimitUSD,
+			WeeklyLimitUSD:  lim.weeklyLimit,
 			MonthlyUsageUSD: usage.MonthlyUsageUSD,
-			MonthlyLimitUSD: quota.MonthlyLimitUSD,
+			MonthlyLimitUSD: lim.monthlyLimit,
 		})
 	}
 	return progress, nil
@@ -211,5 +230,27 @@ func (s *BundleSubscriptionService) ExtendBundle(ctx context.Context, bundleSubI
 	if err := s.bundleSubRepo.UpdateExpiry(ctx, bundleSubID, newExpiry); err != nil {
 		return fmt.Errorf("extend bundle subscription: %w", err)
 	}
+
+	// Sync: extend bridged UserSubscriptions' expiry.
+	s.syncBridgedUserSubscriptions(ctx, bundleSub.UserID, bundleSubID, func(sub *UserSubscription) error {
+		extendedExpiry := sub.ExpiresAt.AddDate(0, 0, days)
+		return s.userSubRepo.ExtendExpiry(ctx, sub.ID, extendedExpiry)
+	})
+
 	return nil
+}
+
+// syncBridgedUserSubscriptions finds all bridged UserSubscriptions for a bundle
+// and applies the given mutation function to each one.
+func (s *BundleSubscriptionService) syncBridgedUserSubscriptions(ctx context.Context, userID, bundleSubID int64, mutFn func(*UserSubscription) error) {
+	userSubs, err := s.userSubRepo.ListByUserID(ctx, userID)
+	if err != nil {
+		return
+	}
+	for i := range userSubs {
+		sub := &userSubs[i]
+		if sub.BundleSubscriptionID != nil && *sub.BundleSubscriptionID == bundleSubID {
+			_ = mutFn(sub)
+		}
+	}
 }

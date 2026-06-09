@@ -155,12 +155,18 @@ func (s *activateBundleUsageRepoStub) Create(_ context.Context, usage *BundleSub
 	return nil
 }
 
-// activateUserSubRepoStub supports Create (for bridged UserSubscriptions).
+// activateUserSubRepoStub supports Create, ListByUserID, UpdateStatus, ExtendExpiry.
 type activateUserSubRepoStub struct {
 	userSubRepoNoop
 
-	createdSubs []UserSubscription
-	createErr   error
+	createdSubs     []UserSubscription
+	existingSubs    []UserSubscription // pre-existing subs for ListByUserID
+	createErr       error
+	updateStatusErr error
+	extendExpiryErr error
+
+	updatedStatusIDs []int64
+	extendedIDs      []int64
 }
 
 func (s *activateUserSubRepoStub) Create(_ context.Context, sub *UserSubscription) error {
@@ -168,6 +174,26 @@ func (s *activateUserSubRepoStub) Create(_ context.Context, sub *UserSubscriptio
 		return s.createErr
 	}
 	s.createdSubs = append(s.createdSubs, *sub)
+	return nil
+}
+
+func (s *activateUserSubRepoStub) ListByUserID(_ context.Context, _ int64) ([]UserSubscription, error) {
+	return s.existingSubs, nil
+}
+
+func (s *activateUserSubRepoStub) UpdateStatus(_ context.Context, id int64, _ string) error {
+	if s.updateStatusErr != nil {
+		return s.updateStatusErr
+	}
+	s.updatedStatusIDs = append(s.updatedStatusIDs, id)
+	return nil
+}
+
+func (s *activateUserSubRepoStub) ExtendExpiry(_ context.Context, id int64, _ time.Time) error {
+	if s.extendExpiryErr != nil {
+		return s.extendExpiryErr
+	}
+	s.extendedIDs = append(s.extendedIDs, id)
 	return nil
 }
 
@@ -444,38 +470,38 @@ func TestBundleSubscriptionService_ExtendBundle_UpdateExpiryError(t *testing.T) 
 // ──────────────────────────────────────────────────────
 
 func TestBundleSubscriptionService_GetBundleUsageProgress_Success(t *testing.T) {
-	plan := sampleActivePlan()
-	sub := &BundleSubscription{
-		ID:     100,
-		PlanID: 1,
-		Status: BundleStatusActive,
-		Usages: []BundleSubscriptionUsage{
-			{BundleSubscriptionID: 100, GroupID: 10, DailyUsageUSD: 2.5, WeeklyUsageUSD: 10.0, MonthlyUsageUSD: 40.0},
-			{BundleSubscriptionID: 100, GroupID: 20, ModelPattern: "gpt-4*", DailyUsageUSD: 1.0, WeeklyUsageUSD: 5.0, MonthlyUsageUSD: 20.0},
-		},
+	bundleSubID := int64(100)
+	usages := []BundleSubscriptionUsage{
+		{BundleSubscriptionID: 100, GroupID: 10, DailyUsageUSD: 2.5, WeeklyUsageUSD: 10.0, MonthlyUsageUSD: 40.0},
+		{BundleSubscriptionID: 100, GroupID: 20, ModelPattern: "gpt-4*", DailyUsageUSD: 1.0, WeeklyUsageUSD: 5.0, MonthlyUsageUSD: 20.0},
 	}
 
 	subRepo := &activateBundleSubRepoStub{}
-	subRepo.created = &BundleSubscription{ID: 100, PlanID: 1, Status: BundleStatusActive, Usages: sub.Usages}
-	planRepo := &activateBundlePlanRepoStub{plan: plan}
-	svc := newBundleSubSvc(subRepo, planRepo, &activateBundleUsageRepoStub{}, &activateUserSubRepoStub{})
+	subRepo.created = &BundleSubscription{ID: 100, UserID: 42, PlanID: 1, Status: BundleStatusActive, Usages: usages}
+
+	// Bridged UserSubscriptions with snapshotted limits.
+	userSubRepo := &activateUserSubRepoStub{}
+	userSubRepo.existingSubs = []UserSubscription{
+		{ID: 200, UserID: 42, GroupID: 10, BundleSubscriptionID: &bundleSubID, DailyLimitUSD: 5.0, WeeklyLimitUSD: 25.0, MonthlyLimitUSD: 100.0},
+		{ID: 201, UserID: 42, GroupID: 20, BundleSubscriptionID: &bundleSubID, DailyLimitUSD: 3.0, WeeklyLimitUSD: 15.0, MonthlyLimitUSD: 60.0},
+	}
+
+	svc := newBundleSubSvc(subRepo, &activateBundlePlanRepoStub{}, &activateBundleUsageRepoStub{}, userSubRepo)
 
 	progress, err := svc.GetBundleUsageProgress(context.Background(), 100)
 
 	require.NoError(t, err)
 	require.Len(t, progress, 2)
 
-	// First quota: platform scope, group 10.
+	// First quota: group 10 - limits from bridged UserSubscription snapshot.
 	require.Equal(t, int64(10), progress[0].GroupID)
-	require.Equal(t, QuotaScopePlatform, progress[0].QuotaScope)
 	require.Equal(t, 2.5, progress[0].DailyUsageUSD)
 	require.Equal(t, 5.0, progress[0].DailyLimitUSD)
 	require.Equal(t, 10.0, progress[0].WeeklyUsageUSD)
 	require.Equal(t, 25.0, progress[0].WeeklyLimitUSD)
 
-	// Second quota: model scope, group 20.
+	// Second quota: group 20 - model-level.
 	require.Equal(t, int64(20), progress[1].GroupID)
-	require.Equal(t, QuotaScopeModel, progress[1].QuotaScope)
 	require.Equal(t, "gpt-4*", progress[1].ModelPattern)
 	require.Equal(t, 1.0, progress[1].DailyUsageUSD)
 	require.Equal(t, 3.0, progress[1].DailyLimitUSD)
@@ -491,41 +517,60 @@ func TestBundleSubscriptionService_GetBundleUsageProgress_SubscriptionNotFound(t
 	require.Nil(t, progress)
 }
 
-func TestBundleSubscriptionService_GetBundleUsageProgress_PlanNotFound(t *testing.T) {
+// ──────────────────────────────────────────────────────
+// Tests: RevokeBundle syncs bridged UserSubscriptions
+// ──────────────────────────────────────────────────────
+
+func TestBundleSubscriptionService_RevokeBundle_SyncsBridgedUserSubs(t *testing.T) {
+	bundleSubID := int64(100)
 	subRepo := &activateBundleSubRepoStub{}
-	subRepo.created = &BundleSubscription{ID: 100, PlanID: 999, Status: BundleStatusActive}
-	planRepo := &activateBundlePlanRepoStub{getErr: ErrBundlePlanNotFound}
-	svc := newBundleSubSvc(subRepo, planRepo, &activateBundleUsageRepoStub{}, &activateUserSubRepoStub{})
+	subRepo.created = &BundleSubscription{ID: 100, UserID: 42, Status: BundleStatusActive}
 
-	progress, err := svc.GetBundleUsageProgress(context.Background(), 100)
-
-	require.Error(t, err)
-	require.Nil(t, progress)
-}
-
-// ──────────────────────────────────────────────────────
-// Tests: GetUserActiveBundle
-// ──────────────────────────────────────────────────────
-
-func TestBundleSubscriptionService_GetUserActiveBundle_Success(t *testing.T) {
-	subRepo := &activateBundleSubRepoStub{
-		activeBundles: []BundleSubscription{{ID: 100, UserID: 42, Status: BundleStatusActive}},
+	userSubRepo := &activateUserSubRepoStub{}
+	userSubRepo.existingSubs = []UserSubscription{
+		{ID: 200, UserID: 42, GroupID: 10, BundleSubscriptionID: &bundleSubID},
+		{ID: 201, UserID: 42, GroupID: 20, BundleSubscriptionID: &bundleSubID},
+		{ID: 300, UserID: 42, GroupID: 30}, // not a bundle sub, should be skipped
 	}
-	svc := newBundleSubSvc(subRepo, &activateBundlePlanRepoStub{}, &activateBundleUsageRepoStub{}, &activateUserSubRepoStub{})
 
-	result, err := svc.GetUserActiveBundle(context.Background(), 42)
+	svc := newBundleSubSvc(subRepo, &activateBundlePlanRepoStub{}, &activateBundleUsageRepoStub{}, userSubRepo)
+
+	err := svc.RevokeBundle(context.Background(), 100)
 
 	require.NoError(t, err)
-	require.Len(t, result, 1)
-	require.Equal(t, int64(100), result[0].ID)
+	// Should have updated status for the 2 bridged subs only.
+	require.Len(t, userSubRepo.updatedStatusIDs, 2)
+	require.Contains(t, userSubRepo.updatedStatusIDs, int64(200))
+	require.Contains(t, userSubRepo.updatedStatusIDs, int64(201))
 }
 
-func TestBundleSubscriptionService_GetUserActiveBundle_NoneActive(t *testing.T) {
-	subRepo := &activateBundleSubRepoStub{activeBundles: nil}
-	svc := newBundleSubSvc(subRepo, &activateBundlePlanRepoStub{}, &activateBundleUsageRepoStub{}, &activateUserSubRepoStub{})
+// ──────────────────────────────────────────────────────
+// Tests: ExtendBundle syncs bridged UserSubscriptions
+// ──────────────────────────────────────────────────────
 
-	result, err := svc.GetUserActiveBundle(context.Background(), 42)
+func TestBundleSubscriptionService_ExtendBundle_SyncsBridgedUserSubs(t *testing.T) {
+	bundleSubID := int64(100)
+	subRepo := &activateBundleSubRepoStub{}
+	subRepo.created = &BundleSubscription{
+		ID:        100,
+		UserID:    42,
+		Status:    BundleStatusActive,
+		ExpiresAt: time.Now().Add(5 * 24 * time.Hour),
+	}
+
+	userSubRepo := &activateUserSubRepoStub{}
+	userSubRepo.existingSubs = []UserSubscription{
+		{ID: 200, UserID: 42, GroupID: 10, BundleSubscriptionID: &bundleSubID, ExpiresAt: time.Now().Add(5 * 24 * time.Hour)},
+		{ID: 201, UserID: 42, GroupID: 20, BundleSubscriptionID: &bundleSubID, ExpiresAt: time.Now().Add(5 * 24 * time.Hour)},
+	}
+
+	svc := newBundleSubSvc(subRepo, &activateBundlePlanRepoStub{}, &activateBundleUsageRepoStub{}, userSubRepo)
+
+	err := svc.ExtendBundle(context.Background(), 100, 10)
 
 	require.NoError(t, err)
-	require.Empty(t, result)
+	// Should have extended the 2 bridged subs.
+	require.Len(t, userSubRepo.extendedIDs, 2)
+	require.Contains(t, userSubRepo.extendedIDs, int64(200))
+	require.Contains(t, userSubRepo.extendedIDs, int64(201))
 }

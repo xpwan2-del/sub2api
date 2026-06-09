@@ -22,6 +22,7 @@ func NewBundleRouteResolverMiddleware(resolver *service.BundleRouteResolver) *Bu
 }
 
 // BundleResolver returns a gin middleware that resolves the group for bundle keys.
+// Must be placed after APIKeyAuth middleware and before RequireGroupAssignment.
 func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		apiKey, ok := GetAPIKeyFromContext(c)
@@ -34,16 +35,8 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-
-		// Check if the user has an active bundle subscription ID stored in context.
-		// This is set by the auth middleware when the API key has BundleSubscriptionID set.
-		bundleSubID, exists := c.Get("bundle_subscription_id")
-		if !exists {
-			c.Next()
-			return
-		}
-		subID, ok := bundleSubID.(int64)
-		if !ok || subID <= 0 {
+		// Bundle keys carry BundleSubscriptionID from the database.
+		if apiKey.BundleSubscriptionID == nil || *apiKey.BundleSubscriptionID <= 0 {
 			c.Next()
 			return
 		}
@@ -56,22 +49,29 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 		}
 
 		// Resolve group.
-		groupID, err := m.resolver.ResolveGroup(c.Request.Context(), modelName, subID)
+		resolved, err := m.resolver.ResolveGroup(c.Request.Context(), modelName, *apiKey.BundleSubscriptionID)
 		if err != nil {
-			status := http.StatusBadRequest
-			code := "BUNDLE_MODEL_NOT_INCLUDED"
+			status := http.StatusForbidden
+			errType := "bundle_error"
 			msg := err.Error()
 			if err == service.ErrBundleExpired {
-				status = http.StatusForbidden
-				code = "BUNDLE_EXPIRED"
+				errType = "bundle_expired"
+			} else if err == service.ErrBundleModelNotIncluded {
+				status = http.StatusBadRequest
+				errType = "bundle_model_not_included"
 			}
-			c.JSON(status, gin.H{"error": gin.H{"type": code, "message": msg}})
+			c.JSON(status, gin.H{
+				"error": gin.H{
+					"type":    errType,
+					"message": msg,
+				},
+			})
 			c.Abort()
 			return
 		}
 
-		// Inject resolved group_id into context for downstream use.
-		c.Set("bundle_resolved_group_id", groupID.GroupID)
+		// Inject resolved group_id into context for downstream middleware/handlers.
+		c.Set("bundle_resolved_group_id", resolved.GroupID)
 		c.Next()
 	}
 }

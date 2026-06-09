@@ -589,6 +589,7 @@ var ProviderSet = wire.NewSet(
 	NewBundleSubscriptionService,
 	NewBundleRouteResolver,
 	NewBundleUsageService,
+	ProvideBundleExpiryService,
 )
 
 // ProvideUserPlatformQuotaUsageFlusher 创建并启动 UserPlatformQuotaUsageFlusher。
@@ -644,4 +645,11 @@ func ProvideChannelMonitorRunner(svc *ChannelMonitorService, settingService *Set
 	svc.SetScheduler(r)
 	r.Start()
 	return r
+}
+
+// ProvideBundleExpiryService creates and starts BundleExpiryService.
+func ProvideBundleExpiryService(bundleUsageRepo BundleUsageRepository, bundleSubRepo BundleSubscriptionRepository, userSubRepo UserSubscriptionRepository) *BundleExpiryService {
+	svc := NewBundleExpiryService(bundleUsageRepo, bundleSubRepo, userSubRepo, time.Minute)
+	svc.Start()
+	return svc
 }
