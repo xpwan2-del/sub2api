@@ -4,9 +4,9 @@ import "time"
 
 // BundleTier constants define the tier level of a bundle plan.
 const (
-	BundleTierBasic       = "basic"
-	BundleTierFlagship    = "flagship"
-	BundleTierEnterprise  = "enterprise"
+	BundleTierStarter    = "starter"
+	BundleTierPro        = "pro"
+	BundleTierEnterprise = "enterprise"
 )
 
 // BundleStatus constants define the status of a bundle subscription.

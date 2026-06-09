@@ -213,8 +213,8 @@ func newBundleSubSvc(
 func sampleActivePlan() *BundlePlan {
 	return &BundlePlan{
 		ID:               1,
-		Name:             "Flagship Bundle",
-		Tier:             BundleTierFlagship,
+		Name:             "Pro Bundle",
+		Tier:             BundleTierPro,
 		Price:            29.99,
 		Currency:         "USD",
 		ValidityDays:     30,

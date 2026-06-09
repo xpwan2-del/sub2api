@@ -24,7 +24,7 @@ func (BundlePlan) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").NotEmpty().Comment("套餐名称"),
 		field.String("description").Default("").Comment("套餐描述"),
-		field.String("tier").NotEmpty().Comment("套餐层级: basic/flagship/enterprise"),
+		field.String("tier").NotEmpty().Comment("套餐层级: starter/pro/enterprise"),
 		field.Float("price").Default(0).Comment("售价"),
 		field.Float("original_price").Default(0).Comment("原价（划线价）"),
 		field.String("currency").Default("USD").Comment("货币: USD/CNY"),

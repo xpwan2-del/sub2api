@@ -1,8 +1,10 @@
+import type { BundleTier } from '@/constants/bundleTiers'
+
 export interface BundlePlan {
   id: number
   name: string
   description: string
-  tier: 'basic' | 'flagship' | 'enterprise'
+  tier: BundleTier
   price: number
   original_price: number
   currency: string
@@ -80,7 +82,7 @@ export interface BundleUsageProgress {
 export interface CreateBundlePlanRequest {
   name: string
   description?: string
-  tier: 'basic' | 'flagship' | 'enterprise'
+  tier: BundleTier
   price: number
   original_price?: number
   currency: 'USD' | 'CNY'

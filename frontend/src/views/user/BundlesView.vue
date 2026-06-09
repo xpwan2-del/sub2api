@@ -218,6 +218,7 @@ import type { BundlePlan, BundleSubscription } from '@/types/bundle'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { platformBadgeLightClass, platformLabel } from '@/utils/platformColors'
+import { getTierTheme, getTierI18nKey } from '@/constants/bundleTiers'
 import { formatDateOnly } from '@/utils/format'
 
 const { t } = useI18n()
@@ -239,75 +240,35 @@ const planGridClass = computed(() => {
 })
 
 function tierLabel(tier?: string): string {
-  switch (tier) {
-    case 'basic': return t('bundles.tierBasic')
-    case 'flagship': return t('bundles.tierFlagship')
-    case 'enterprise': return t('bundles.tierEnterprise')
-    default: return tier || ''
-  }
+  return t(getTierI18nKey(tier, 'user'))
 }
 
 function tierBadgeClass(tier?: string): string {
-  switch (tier) {
-    case 'basic': return 'bg-blue-500/10 text-blue-600 border border-blue-500/30 dark:text-blue-400 rounded-md px-2 py-0.5 text-[11px] font-medium'
-    case 'flagship': return 'bg-purple-500/10 text-purple-600 border border-purple-500/30 dark:text-purple-400 rounded-md px-2 py-0.5 text-[11px] font-medium'
-    case 'enterprise': return 'bg-amber-500/10 text-amber-600 border border-amber-500/30 dark:text-amber-400 rounded-md px-2 py-0.5 text-[11px] font-medium'
-    default: return 'bg-gray-500/10 text-gray-600 border border-gray-500/30 dark:text-gray-400 rounded-md px-2 py-0.5 text-[11px] font-medium'
-  }
+  return getTierTheme(tier).badgeClass
 }
 
 function tierBorderClass(tier?: string): string {
-  switch (tier) {
-    case 'basic': return 'border-blue-500/20'
-    case 'flagship': return 'border-purple-500/20'
-    case 'enterprise': return 'border-amber-500/20'
-    default: return 'border-gray-200 dark:border-dark-700'
-  }
+  return getTierTheme(tier).borderClass
 }
 
 function tierAccentClass(tier?: string): string {
-  switch (tier) {
-    case 'basic': return 'bg-gradient-to-r from-blue-400 to-blue-500'
-    case 'flagship': return 'bg-gradient-to-r from-purple-400 to-purple-500'
-    case 'enterprise': return 'bg-gradient-to-r from-amber-400 to-amber-500'
-    default: return 'bg-gradient-to-r from-primary-400 to-primary-500'
-  }
+  return getTierTheme(tier).accentClass
 }
 
 function tierTextClass(tier?: string): string {
-  switch (tier) {
-    case 'basic': return 'text-blue-600 dark:text-blue-400'
-    case 'flagship': return 'text-purple-600 dark:text-purple-400'
-    case 'enterprise': return 'text-amber-600 dark:text-amber-400'
-    default: return 'text-primary-600 dark:text-primary-400'
-  }
+  return getTierTheme(tier).textClass
 }
 
 function tierIconClass(tier?: string): string {
-  switch (tier) {
-    case 'basic': return 'text-blue-500 dark:text-blue-400'
-    case 'flagship': return 'text-purple-500 dark:text-purple-400'
-    case 'enterprise': return 'text-amber-500 dark:text-amber-400'
-    default: return 'text-primary-500 dark:text-primary-400'
-  }
+  return getTierTheme(tier).iconClass
 }
 
 function tierBtnClass(tier?: string): string {
-  switch (tier) {
-    case 'basic': return 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700'
-    case 'flagship': return 'bg-purple-500 text-white hover:bg-purple-600 active:bg-purple-700'
-    case 'enterprise': return 'bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700'
-    default: return 'bg-primary-500 text-white hover:bg-primary-600'
-  }
+  return getTierTheme(tier).btnClass
 }
 
 function tierDiscountClass(tier?: string): string {
-  switch (tier) {
-    case 'basic': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
-    case 'flagship': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
-    case 'enterprise': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-    default: return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
-  }
+  return getTierTheme(tier).discountClass
 }
 
 function platformDotClass(p: string): string {

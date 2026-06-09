@@ -73,7 +73,7 @@ type BundleSubscriptionUsage struct {
 type CreateBundlePlanRequest struct {
 	Name             string                  `json:"name" binding:"required"`
 	Description      string                  `json:"description"`
-	Tier             string                  `json:"tier" binding:"required,oneof=basic flagship enterprise"`
+	Tier             string                  `json:"tier" binding:"required,oneof=starter pro enterprise"`
 	Price            float64                 `json:"price"`
 	OriginalPrice    float64                 `json:"original_price"`
 	Currency         string                  `json:"currency"`

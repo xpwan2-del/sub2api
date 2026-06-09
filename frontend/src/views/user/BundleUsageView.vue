@@ -174,6 +174,7 @@ import type { BundleSubscription, BundleUsageProgress } from '@/types/bundle'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { platformBadgeLightClass, platformBorderClass, platformLabel } from '@/utils/platformColors'
+import { getTierTheme, getTierI18nKey } from '@/constants/bundleTiers'
 import { formatDateOnly } from '@/utils/format'
 
 const { t } = useI18n()
@@ -185,21 +186,11 @@ const bundle = ref<BundleSubscription | null>(null)
 const usages = ref<BundleUsageProgress[]>([])
 
 function tierLabel(tier?: string): string {
-  switch (tier) {
-    case 'basic': return t('bundles.tierBasic')
-    case 'flagship': return t('bundles.tierFlagship')
-    case 'enterprise': return t('bundles.tierEnterprise')
-    default: return tier || ''
-  }
+  return t(getTierI18nKey(tier, 'user'))
 }
 
 function tierBadgeClass(tier?: string): string {
-  switch (tier) {
-    case 'basic': return 'bg-blue-500/10 text-blue-600 border border-blue-500/30 dark:text-blue-400 rounded-md px-2 py-0.5 text-[11px] font-medium'
-    case 'flagship': return 'bg-purple-500/10 text-purple-600 border border-purple-500/30 dark:text-purple-400 rounded-md px-2 py-0.5 text-[11px] font-medium'
-    case 'enterprise': return 'bg-amber-500/10 text-amber-600 border border-amber-500/30 dark:text-amber-400 rounded-md px-2 py-0.5 text-[11px] font-medium'
-    default: return 'bg-gray-500/10 text-gray-600 border border-gray-500/30 dark:text-gray-400 rounded-md px-2 py-0.5 text-[11px] font-medium'
-  }
+  return getTierTheme(tier).badgeClass
 }
 
 function platformDotClass(p: string): string {

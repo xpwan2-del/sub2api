@@ -5,6 +5,7 @@
 
 import { apiClient } from '../client'
 import type { PaginatedResponse } from '@/types'
+import type { BundleTier } from '@/constants/bundleTiers'
 import type {
   BundlePlan,
   BundleSubscription,
@@ -54,7 +55,7 @@ export async function listPlans(
     page?: number
     page_size?: number
     status?: 'active' | 'disabled'
-    tier?: 'basic' | 'flagship' | 'enterprise'
+    tier?: BundleTier
   }
 ): Promise<PaginatedResponse<BundlePlan>> {
   const { data } = await apiClient.get<PaginatedResponse<BundlePlan>>(

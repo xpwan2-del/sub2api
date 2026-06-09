@@ -138,7 +138,7 @@ func samplePlan() *BundlePlan {
 	return &BundlePlan{
 		ID:               1,
 		Name:             "Test Bundle",
-		Tier:             BundleTierBasic,
+		Tier:             BundleTierStarter,
 		Price:            9.99,
 		OriginalPrice:    19.99,
 		Currency:         "USD",
@@ -164,7 +164,7 @@ func TestBundlePlanService_CreatePlan_Success(t *testing.T) {
 
 	req := &CreateBundlePlanRequest{
 		Name:         "Test Bundle",
-		Tier:         BundleTierBasic,
+		Tier:         BundleTierStarter,
 		Price:        9.99,
 		ValidityDays: 30,
 		GroupQuotas: []CreateGroupQuotaRequest{
@@ -178,7 +178,7 @@ func TestBundlePlanService_CreatePlan_Success(t *testing.T) {
 	require.NotNil(t, plan)
 	require.Equal(t, int64(1), plan.ID)
 	require.Equal(t, "Test Bundle", plan.Name)
-	require.Equal(t, BundleTierBasic, plan.Tier)
+	require.Equal(t, BundleTierStarter, plan.Tier)
 	require.Len(t, plan.GroupQuotas, 1)
 	require.Equal(t, int64(10), plan.GroupQuotas[0].GroupID)
 	require.Equal(t, 1.0, plan.GroupQuotas[0].DailyLimitUSD)
@@ -199,7 +199,7 @@ func TestBundlePlanService_CreatePlan_RepoError(t *testing.T) {
 
 	req := &CreateBundlePlanRequest{
 		Name:         "Test",
-		Tier:         BundleTierBasic,
+		Tier:         BundleTierStarter,
 		ValidityDays: 30,
 		GroupQuotas:  []CreateGroupQuotaRequest{{GroupID: 1}},
 	}
@@ -233,7 +233,7 @@ func TestBundlePlanService_UpdatePlan_MergeScalarFields(t *testing.T) {
 	require.Equal(t, "Updated Bundle", stub.updated.Name)
 	require.Equal(t, 14.99, stub.updated.Price)
 	// Unchanged fields should remain.
-	require.Equal(t, BundleTierBasic, stub.updated.Tier)
+	require.Equal(t, BundleTierStarter, stub.updated.Tier)
 	require.Equal(t, 30, stub.updated.ValidityDays)
 }
 

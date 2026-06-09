@@ -22,7 +22,7 @@ type BundlePlan struct {
 	Name string `json:"name,omitempty"`
 	// 套餐描述
 	Description string `json:"description,omitempty"`
-	// 套餐层级: basic/flagship/enterprise
+	// 套餐层级: starter/pro/enterprise
 	Tier string `json:"tier,omitempty"`
 	// 售价
 	Price float64 `json:"price,omitempty"`

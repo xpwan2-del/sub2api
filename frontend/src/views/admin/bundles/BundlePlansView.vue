@@ -210,6 +210,7 @@ import { bundlesAPI } from '@/api/admin/bundles'
 import { groupsAPI } from '@/api/admin/groups'
 import { extractApiErrorMessage } from '@/utils/apiError'
 import type { BundlePlan, CreateGroupQuotaRequest } from '@/types/bundle'
+import { getTierTheme, getTierI18nKey, getTierSelectOptions, type BundleTier } from '@/constants/bundleTiers'
 import type { AdminGroup } from '@/types'
 import type { Column } from '@/components/common/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
@@ -306,11 +307,7 @@ const planColumns = computed((): Column[] => [
   { key: 'actions', label: t('common.actions') },
 ])
 
-const tierOptions = computed(() => [
-  { value: 'basic', label: t('bundles.admin.tierBasic') },
-  { value: 'flagship', label: t('bundles.admin.tierFlagship') },
-  { value: 'enterprise', label: t('bundles.admin.tierEnterprise') },
-])
+const tierOptions = computed(() => getTierSelectOptions(t))
 
 const currencyOptions = computed(() => [
   { value: 'USD', label: 'USD' },
@@ -323,22 +320,11 @@ const quotaScopeOptions = computed(() => [
 ])
 
 function tierBadgeClass(tier: string): string {
-  const base = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium'
-  switch (tier) {
-    case 'basic': return `${base} bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300`
-    case 'flagship': return `${base} bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300`
-    case 'enterprise': return `${base} bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300`
-    default: return `${base} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300`
-  }
+  return getTierTheme(tier).adminBadgeClass
 }
 
 function tierLabel(tier: string): string {
-  switch (tier) {
-    case 'basic': return t('bundles.admin.tierBasic')
-    case 'flagship': return t('bundles.admin.tierFlagship')
-    case 'enterprise': return t('bundles.admin.tierEnterprise')
-    default: return tier
-  }
+  return t(getTierI18nKey(tier, 'admin'))
 }
 
 function statusBadgeClass(status: string): string {
@@ -457,7 +443,7 @@ function buildPayload() {
   return {
     name: planForm.name,
     description: planForm.description || undefined,
-    tier: planForm.tier as 'basic' | 'flagship' | 'enterprise',
+    tier: planForm.tier as BundleTier,
     price: planForm.price,
     original_price: planForm.original_price || undefined,
     currency: (planForm.currency || 'USD') as 'USD' | 'CNY',
