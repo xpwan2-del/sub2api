@@ -279,7 +279,7 @@ backend/
 ├── internal/
 │   ├── handler/
 │   │   ├── bundle_handler.go
-│   │   └── bundle_admin_handler.go
+│   │   └── admin/bundle_handler.go          # 实际: admin 子包
 │   ├── service/
 │   │   ├── bundle_plan_service.go
 │   │   ├── bundle_subscription_service.go

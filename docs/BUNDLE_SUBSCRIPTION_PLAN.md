@@ -42,7 +42,7 @@ backend/internal/repository/
 
 backend/internal/handler/
   bundle_handler.go                    # 用户端 Bundle Handler
-  bundle_admin_handler.go              # 管理端 Bundle Handler
+  admin/bundle_handler.go              # 管理端 Bundle Handler（admin 子包）
 
 backend/internal/server/middleware/
   bundle_resolver.go                   # 单 Key 自动路由中间件
@@ -2057,7 +2057,7 @@ git commit -m "feat(bundle): add bundle usage accumulation in postUsageBilling"
 
 **Files:**
 - Create: `backend/internal/handler/bundle_handler.go`
-- Create: `backend/internal/handler/bundle_admin_handler.go`
+- Create: `backend/internal/handler/admin/bundle_handler.go`
 
 - [ ] **Step 1: Create user-facing handler**
 
@@ -2088,7 +2088,7 @@ git commit -m "feat(bundle): add bundle usage accumulation in postUsageBilling"
 - [ ] **Step 3: Commit**
 
 ```bash
-git add backend/internal/handler/bundle_handler.go backend/internal/handler/bundle_admin_handler.go
+git add backend/internal/handler/bundle_handler.go backend/internal/handler/admin/bundle_handler.go
 git commit -m "feat(bundle): add bundle user and admin handlers"
 ```
 
