@@ -104,7 +104,14 @@ func (s *BundleUsageService) CheckQuotaEligibility(ctx context.Context, bundleSu
 		result.WeeklyRemaining = matchingQuota.WeeklyLimitUSD - usage.WeeklyUsageUSD
 		result.MonthlyRemaining = matchingQuota.MonthlyLimitUSD - usage.MonthlyUsageUSD
 
-		if result.DailyRemaining <= 0 || result.WeeklyRemaining <= 0 || result.MonthlyRemaining <= 0 {
+		// 0 means unlimited — only enforce limits that are explicitly set (>0).
+		if matchingQuota.DailyLimitUSD > 0 && result.DailyRemaining <= 0 {
+			result.Eligible = false
+		}
+		if matchingQuota.WeeklyLimitUSD > 0 && result.WeeklyRemaining <= 0 {
+			result.Eligible = false
+		}
+		if matchingQuota.MonthlyLimitUSD > 0 && result.MonthlyRemaining <= 0 {
 			result.Eligible = false
 		}
 	} else {
