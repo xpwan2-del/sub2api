@@ -365,6 +365,8 @@ func (m *mockBillingCache) SetBundlePlansForSaleCache(context.Context, []byte, t
 func (m *mockBillingCache) InvalidateBundlePlansForSaleCache(context.Context) error {
 	return nil
 }
+// Bundle cache methods (added for BillingCache interface extension)
+
 
 // --- 测试 ---
 
