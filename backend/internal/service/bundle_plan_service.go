@@ -1,3 +1,7 @@
+// bundle_plan_service.go 套餐计划服务实现
+// 提供套餐计划的 CRUD 业务逻辑，包括创建（含渠道组额度）、
+// 更新（支持部分字段合并）、查询（分页+过滤）等操作。
+
 package service
 
 import (
@@ -8,16 +12,19 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
 
+// BundlePlanService 套餐计划服务，封装计划管理的业务逻辑
 // BundlePlanService handles CRUD operations for bundle plans.
 type BundlePlanService struct {
 	planRepo BundlePlanRepository
 }
 
+// NewBundlePlanService 创建套餐计划服务实例
 // NewBundlePlanService creates a new BundlePlanService.
 func NewBundlePlanService(planRepo BundlePlanRepository) *BundlePlanService {
 	return &BundlePlanService{planRepo: planRepo}
 }
 
+// CreatePlan 创建套餐计划，将请求 DTO 转换为领域模型后持久化
 // CreatePlan creates a new bundle plan with its group quotas.
 func (s *BundlePlanService) CreatePlan(ctx context.Context, req *CreateBundlePlanRequest) (*BundlePlan, error) {
 	if req == nil {
@@ -58,6 +65,7 @@ func (s *BundlePlanService) CreatePlan(ctx context.Context, req *CreateBundlePla
 	return plan, nil
 }
 
+// UpdatePlan 更新套餐计划，仅合并请求中非 nil 的字段；如果包含 group_quotas 则整体替换
 // UpdatePlan updates an existing bundle plan by merging non-nil fields from the request.
 func (s *BundlePlanService) UpdatePlan(ctx context.Context, planID int64, req *UpdateBundlePlanRequest) (*BundlePlan, error) {
 	if req == nil {
@@ -133,6 +141,7 @@ func (s *BundlePlanService) UpdatePlan(ctx context.Context, planID int64, req *U
 	return existing, nil
 }
 
+// GetPlanDetail 按 ID 获取套餐计划详情
 // GetPlanDetail returns a single bundle plan by ID.
 func (s *BundlePlanService) GetPlanDetail(ctx context.Context, planID int64) (*BundlePlan, error) {
 	plan, err := s.planRepo.GetByID(ctx, planID)
@@ -142,6 +151,7 @@ func (s *BundlePlanService) GetPlanDetail(ctx context.Context, planID int64) (*B
 	return plan, nil
 }
 
+// ListPlans 分页查询套餐计划，支持按层级（tier）和状态（status）过滤
 // ListPlans returns a paginated list of bundle plans with optional filters.
 func (s *BundlePlanService) ListPlans(ctx context.Context, params pagination.PaginationParams, tier, status string) ([]BundlePlan, *pagination.PaginationResult, error) {
 	plans, result, err := s.planRepo.List(ctx, params, tier, status)
@@ -151,6 +161,7 @@ func (s *BundlePlanService) ListPlans(ctx context.Context, params pagination.Pag
 	return plans, result, nil
 }
 
+// ListForSale 获取所有在售且启用的套餐计划（供用户端浏览）
 // ListForSale returns all plans that are currently for sale and active.
 func (s *BundlePlanService) ListForSale(ctx context.Context) ([]BundlePlan, error) {
 	plans, err := s.planRepo.ListForSale(ctx)

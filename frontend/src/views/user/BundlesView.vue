@@ -221,24 +221,34 @@ import { platformBadgeLightClass, platformLabel } from '@/utils/platformColors'
 import { getTierTheme, getTierI18nKey } from '@/constants/bundleTiers'
 import { formatDateOnly } from '@/utils/format'
 
+// ==================== BundlesView：用户套餐浏览页 ====================
+// 展示用户当前活跃套餐 + 可购买的套餐计划列表
+// 支持按层级主题色区分（starter=蓝/pro=紫/enterprise=金）
+
 const { t } = useI18n()
 const router = useRouter()
 const appStore = useAppStore()
 
+// 页面加载状态
 const loading = ref(true)
+// 在售套餐计划列表
 const plans = ref<BundlePlan[]>([])
+// 当前用户的活跃套餐订阅
 const activeBundle = ref<BundleSubscription | null>(null)
 
+// 按 sort_order 排序后的计划列表
 const sortedPlans = computed(() =>
   [...plans.value].sort((a, b) => a.sort_order - b.sort_order)
 )
 
+// 根据计划数量动态调整网格列数
 const planGridClass = computed(() => {
   const n = plans.value.length
   if (n <= 2) return 'grid grid-cols-1 gap-5 sm:grid-cols-2'
   return 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3'
 })
 
+// 层级主题工具函数（徽章、边框、强调色等）
 function tierLabel(tier?: string): string {
   return t(getTierI18nKey(tier, 'user'))
 }
@@ -271,6 +281,7 @@ function tierDiscountClass(tier?: string): string {
   return getTierTheme(tier).discountClass
 }
 
+// 平台标识点颜色（openai=绿/anthropic=橙/gemini=蓝）
 function platformDotClass(p: string): string {
   switch (p) {
     case 'anthropic': return 'bg-orange-500'
@@ -281,16 +292,19 @@ function platformDotClass(p: string): string {
   }
 }
 
+// 格式化到期日期
 function formatExpiration(expiresAt: string): string {
   return formatDateOnly(expiresAt)
 }
 
+// 计算剩余天数文本
 function remainingDaysText(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now()
   const days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
   return t('bundles.daysRemaining', { days })
 }
 
+// 到期日期颜色（<=3天红色/<=7天橙色）
 const expirationClass = computed(() => {
   if (!activeBundle.value?.expires_at) return 'text-lg font-bold text-gray-900 dark:text-white'
   const diff = new Date(activeBundle.value.expires_at).getTime() - Date.now()
@@ -301,10 +315,12 @@ const expirationClass = computed(() => {
   return 'text-lg font-bold text-gray-900 dark:text-white'
 })
 
+// 处理购买点击（暂未实现）
 function handlePurchase(_plan: BundlePlan) {
   appStore.showInfo(t('bundles.purchaseNotAvailable'))
 }
 
+// 并行加载套餐计划和当前订阅数据
 async function loadData() {
   try {
     loading.value = true
@@ -326,6 +342,7 @@ async function loadData() {
   }
 }
 
+// 页面挂载时加载数据
 onMounted(() => {
   loadData()
 })

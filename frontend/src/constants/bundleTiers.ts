@@ -9,6 +9,19 @@
  * `bundle_constants.go` need to be updated.
  */
 
+/**
+ * 套餐层级（Tier）共享常量和显示配置
+ *
+ * 前端单例数据源，管理后台和用户端共用的层级定义。
+ * 新增层级时只需修改此文件和后端 bundle_constants.go。
+ *
+ * 包含：
+ * - 层级常量（starter/pro/enterprise）
+ * - 各层级的 TailwindCSS 主题样式（徽章、边框、按钮等）
+ * - i18n 键映射和下拉选择器构建函数
+ */
+
+// ── 层级常量（必须与后端 bundle_constants.go 中 BundleTier* 一致）──
 // ── Tier value constants (must match backend BundleTier* in bundle_constants.go) ──
 
 export const BUNDLE_TIER_STARTER = 'starter' as const
@@ -25,6 +38,7 @@ export const BUNDLE_TIERS: readonly BundleTier[] = [
   BUNDLE_TIER_ENTERPRISE,
 ] as const
 
+// ── 国际化键映射（用户端 / 管理后台命名空间分离）──
 // ── i18n key mapping ──
 
 const TIER_I18N_KEYS: Record<BundleTier, { user: string; admin: string }> = {
@@ -33,6 +47,7 @@ const TIER_I18N_KEYS: Record<BundleTier, { user: string; admin: string }> = {
   enterprise: { user: 'bundles.tierEnterprise', admin: 'bundles.admin.tierEnterprise' },
 }
 
+// ── 各层级的 TailwindCSS 显示主题 ──
 // ── Display theme per tier ──
 
 export interface TierTheme {
@@ -90,20 +105,24 @@ const DEFAULT_TIER_THEME: TierTheme = {
   adminBadgeClass: 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
 }
 
+// ── 工具函数 ──
 // ── Helper functions ──
 
+/** 获取层级主题，未知层级返回默认主题 */
 /** Get theme for a tier, with fallback for unknown values */
 export function getTierTheme(tier?: string): TierTheme {
   if (tier && tier in TIER_THEME) return TIER_THEME[tier as BundleTier]
   return DEFAULT_TIER_THEME
 }
 
+/** 获取层级的 i18n 显示标签键 */
 /** Get i18n display label key for a tier */
 export function getTierI18nKey(tier?: string, namespace: 'user' | 'admin' = 'user'): string {
   if (tier && tier in TIER_I18N_KEYS) return TIER_I18N_KEYS[tier as BundleTier][namespace]
   return tier || ''
 }
 
+/** 构建层级下拉选项（管理后台使用） */
 /** Build select dropdown options for tier (admin) */
 export function getTierSelectOptions(t: (key: string) => string): Array<{ value: BundleTier; label: string }> {
   return BUNDLE_TIERS.map(tier => ({

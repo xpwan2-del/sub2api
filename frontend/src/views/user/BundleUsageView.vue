@@ -177,12 +177,19 @@ import { platformBadgeLightClass, platformBorderClass, platformLabel } from '@/u
 import { getTierTheme, getTierI18nKey } from '@/constants/bundleTiers'
 import { formatDateOnly } from '@/utils/format'
 
+// ==================== BundleUsageView：用户套餐用量页 ====================
+// 展示用户当前套餐的各渠道组用量进度（日/周/月），
+// 用进度条可视化用量占比，颜色随用量变化（绿→橙→红）
+
 const { t } = useI18n()
 const router = useRouter()
 const appStore = useAppStore()
 
+// 页面加载状态
 const loading = ref(true)
+// 当前套餐订阅
 const bundle = ref<BundleSubscription | null>(null)
+// 各渠道组的用量进度列表
 const usages = ref<BundleUsageProgress[]>([])
 
 function tierLabel(tier?: string): string {
@@ -203,11 +210,13 @@ function platformDotClass(p: string): string {
   }
 }
 
+// 计算进度条宽度百分比
 function progressWidth(used: number, limit: number): string {
   if (!limit || limit === 0) return '0%'
   return `${Math.min((used / limit) * 100, 100)}%`
 }
 
+// 进度条颜色：<80% 绿色 / 80-100% 橙色 / >=100% 红色
 function progressBarClass(used: number, limit: number): string {
   if (!limit || limit === 0) return 'bg-gray-400'
   const pct = (used / limit) * 100
@@ -226,6 +235,7 @@ function remainingDaysText(expiresAt: string): string {
   return t('bundles.daysRemaining', { days })
 }
 
+// 剩余天数文字颜色
 function remainingDaysClass(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now()
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
@@ -235,6 +245,7 @@ function remainingDaysClass(expiresAt: string): string {
   return ''
 }
 
+// 并行加载套餐订阅和用量数据
 async function loadData() {
   try {
     loading.value = true

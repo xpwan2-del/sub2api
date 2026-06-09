@@ -1,3 +1,8 @@
+// bundle_subscription_service.go 套餐订阅服务实现
+// 处理套餐订阅的完整生命周期：激活、撤销、延期、用量进度查询。
+// 核心设计：激活套餐时会"桥接"创建 UserSubscription，使网关中间件
+// 无需感知 Bundle 层即可正常执行额度检查。
+
 package service
 
 import (
@@ -9,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
 
+// BundleSubscriptionService 套餐订阅服务，管理订阅的完整生命周期
 // BundleSubscriptionService handles bundle subscription lifecycle.
 type BundleSubscriptionService struct {
 	bundleSubRepo   BundleSubscriptionRepository
@@ -17,6 +23,7 @@ type BundleSubscriptionService struct {
 	userSubRepo     UserSubscriptionRepository
 }
 
+// NewBundleSubscriptionService 创建套餐订阅服务实例
 // NewBundleSubscriptionService creates a new BundleSubscriptionService.
 func NewBundleSubscriptionService(
 	bundleSubRepo BundleSubscriptionRepository,
@@ -32,6 +39,7 @@ func NewBundleSubscriptionService(
 	}
 }
 
+// ActivateBundleRequest 激活套餐的输入 DTO
 // ActivateBundleRequest is the input DTO for activating a bundle for a user.
 type ActivateBundleRequest struct {
 	UserID int64
@@ -39,6 +47,7 @@ type ActivateBundleRequest struct {
 	Source string // purchase, redeem, admin_assign
 }
 
+// ActivateBundle 激活套餐：检查冲突 → 加载计划 → 创建订阅 → 桥接 UserSubscription
 // ActivateBundle creates a bundle subscription and bridges per-group UserSubscriptions.
 func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *ActivateBundleRequest) (*BundleSubscription, error) {
 	if req == nil {
@@ -124,6 +133,7 @@ func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *Act
 	return bundleSub, nil
 }
 
+// RevokeBundle 撤销套餐订阅，同时撤销关联的桥接 UserSubscription
 // RevokeBundle revokes an active bundle subscription and its bridged UserSubscriptions.
 func (s *BundleSubscriptionService) RevokeBundle(ctx context.Context, bundleSubID int64) error {
 	bundleSub, err := s.bundleSubRepo.GetByIDWithUsages(ctx, bundleSubID)
@@ -146,6 +156,7 @@ func (s *BundleSubscriptionService) RevokeBundle(ctx context.Context, bundleSubI
 	return nil
 }
 
+// GetUserActiveBundle 获取用户的活跃套餐订阅列表
 // GetUserActiveBundle returns the active bundle subscription for a user.
 func (s *BundleSubscriptionService) GetUserActiveBundle(ctx context.Context, userID int64) ([]BundleSubscription, error) {
 	subs, err := s.bundleSubRepo.GetActiveByUserID(ctx, userID)
@@ -155,6 +166,7 @@ func (s *BundleSubscriptionService) GetUserActiveBundle(ctx context.Context, use
 	return subs, nil
 }
 
+// GetBundleUsageProgress 获取套餐用量进度，限额从桥接的 UserSubscription 快照中读取（保证一致性）
 // GetBundleUsageProgress returns usage progress for a bundle subscription.
 // Limits are read from the bridged UserSubscriptions (snapshotted at activation time)
 // rather than the latest plan, ensuring consistency with the actual active limits.
@@ -207,6 +219,7 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 	return progress, nil
 }
 
+// List 分页查询套餐订阅，支持按用户ID和状态过滤
 // List returns a paginated list of bundle subscriptions with optional filters.
 func (s *BundleSubscriptionService) List(ctx context.Context, params pagination.PaginationParams, userID *int64, status string) ([]BundleSubscription, *pagination.PaginationResult, error) {
 	subs, result, err := s.bundleSubRepo.List(ctx, params, userID, status)
@@ -216,6 +229,7 @@ func (s *BundleSubscriptionService) List(ctx context.Context, params pagination.
 	return subs, result, nil
 }
 
+// ExtendBundle 延长套餐订阅有效期，同时延长关联的桥接 UserSubscription
 // ExtendBundle extends a bundle subscription's expiry by the given number of days.
 func (s *BundleSubscriptionService) ExtendBundle(ctx context.Context, bundleSubID int64, days int) error {
 	bundleSub, err := s.bundleSubRepo.GetByID(ctx, bundleSubID)
@@ -240,6 +254,7 @@ func (s *BundleSubscriptionService) ExtendBundle(ctx context.Context, bundleSubI
 	return nil
 }
 
+// syncBridgedUserSubscriptions 查找并批量操作某套餐关联的所有桥接 UserSubscription
 // syncBridgedUserSubscriptions finds all bridged UserSubscriptions for a bundle
 // and applies the given mutation function to each one.
 func (s *BundleSubscriptionService) syncBridgedUserSubscriptions(ctx context.Context, userID, bundleSubID int64, mutFn func(*UserSubscription) error) {

@@ -1,3 +1,6 @@
+// bundle_usage_port.go 套餐用量数据访问接口
+// 定义 BundleUsageRepository 接口，解耦服务层与具体数据访问实现。
+
 package service
 
 import (
@@ -5,6 +8,7 @@ import (
 	"time"
 )
 
+// BundleUsageRepository 套餐用量数据访问接口，提供用量累加、查询和时间窗口重置操作
 // BundleUsageRepository defines the data-access interface for bundle subscription usage tracking.
 type BundleUsageRepository interface {
 	GetBySubscriptionAndGroup(ctx context.Context, subscriptionID, groupID int64, modelPattern string) (*BundleSubscriptionUsage, error)

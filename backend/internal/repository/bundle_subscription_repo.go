@@ -1,3 +1,7 @@
+// bundle_subscription_repo.go 套餐订阅数据访问实现
+// 基于 Ent ORM 实现 BundleSubscriptionRepository 接口，
+// 提供订阅的创建、按用户查询活跃订阅、含用量详情查询等操作。
+
 package repository
 
 import (
@@ -12,14 +16,17 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
+// bundleSubscriptionRepository 套餐订阅仓库实现
 type bundleSubscriptionRepository struct {
 	client *dbent.Client
 }
 
+// NewBundleSubscriptionRepository 创建套餐订阅仓库
 func NewBundleSubscriptionRepository(client *dbent.Client) service.BundleSubscriptionRepository {
 	return &bundleSubscriptionRepository{client: client}
 }
 
+// Create 创建套餐订阅记录
 func (r *bundleSubscriptionRepository) Create(ctx context.Context, sub *service.BundleSubscription) error {
 	if sub == nil {
 		return service.ErrBundleNotFound
@@ -47,6 +54,7 @@ func (r *bundleSubscriptionRepository) Create(ctx context.Context, sub *service.
 	return nil
 }
 
+// GetByID 按ID获取套餐订阅
 func (r *bundleSubscriptionRepository) GetByID(ctx context.Context, id int64) (*service.BundleSubscription, error) {
 	client := clientFromContext(ctx, r.client)
 
@@ -57,6 +65,7 @@ func (r *bundleSubscriptionRepository) GetByID(ctx context.Context, id int64) (*
 	return bundleSubscriptionToService(m), nil
 }
 
+// GetActiveByUserID 获取用户的所有活跃（active 且未过期）套餐订阅
 func (r *bundleSubscriptionRepository) GetActiveByUserID(ctx context.Context, userID int64) ([]service.BundleSubscription, error) {
 	client := clientFromContext(ctx, r.client)
 
@@ -78,6 +87,7 @@ func (r *bundleSubscriptionRepository) GetActiveByUserID(ctx context.Context, us
 	return results, nil
 }
 
+// GetByIDWithUsages 按ID获取套餐订阅，同时加载关联的用量记录
 func (r *bundleSubscriptionRepository) GetByIDWithUsages(ctx context.Context, id int64) (*service.BundleSubscription, error) {
 	client := clientFromContext(ctx, r.client)
 
@@ -101,6 +111,7 @@ func (r *bundleSubscriptionRepository) GetByIDWithUsages(ctx context.Context, id
 	return result, nil
 }
 
+// List 分页查询套餐订阅，支持按用户ID和状态过滤
 func (r *bundleSubscriptionRepository) List(ctx context.Context, params pagination.PaginationParams, userID *int64, status string) ([]service.BundleSubscription, *pagination.PaginationResult, error) {
 	client := clientFromContext(ctx, r.client)
 
@@ -139,6 +150,7 @@ func (r *bundleSubscriptionRepository) List(ctx context.Context, params paginati
 	return results, paginationResultFromTotal(int64(total), params), nil
 }
 
+// UpdateStatus 更新订阅状态
 func (r *bundleSubscriptionRepository) UpdateStatus(ctx context.Context, id int64, status string) error {
 	client := clientFromContext(ctx, r.client)
 
@@ -148,6 +160,7 @@ func (r *bundleSubscriptionRepository) UpdateStatus(ctx context.Context, id int6
 	return translatePersistenceError(err, service.ErrBundleNotFound, nil)
 }
 
+// UpdateExpiry 更新订阅到期时间
 func (r *bundleSubscriptionRepository) UpdateExpiry(ctx context.Context, id int64, expiresAt time.Time) error {
 	client := clientFromContext(ctx, r.client)
 
@@ -157,6 +170,7 @@ func (r *bundleSubscriptionRepository) UpdateExpiry(ctx context.Context, id int6
 	return translatePersistenceError(err, service.ErrBundleNotFound, nil)
 }
 
+// bundleSubscriptionToService 将 Ent 订阅实体转换为服务层模型
 // bundleSubscriptionToService converts an Ent BundleSubscription entity to a service-layer model.
 func bundleSubscriptionToService(src *dbent.BundleSubscription) *service.BundleSubscription {
 	if src == nil {
@@ -178,6 +192,7 @@ func bundleSubscriptionToService(src *dbent.BundleSubscription) *service.BundleS
 	}
 }
 
+// bundleSubscriptionUsageToService 将 Ent 用量实体转换为服务层模型
 // bundleSubscriptionUsageToService converts an Ent BundleSubscriptionUsage entity to a service-layer model.
 func bundleSubscriptionUsageToService(src *dbent.BundleSubscriptionUsage) service.BundleSubscriptionUsage {
 	return service.BundleSubscriptionUsage{

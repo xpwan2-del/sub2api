@@ -1,3 +1,8 @@
+// bundle_handler.go 管理后台套餐 Handler
+// 提供套餐计划和订阅的管理端 API，包括：
+// - 套餐计划的创建、更新、查询、停用
+// - 套餐订阅的列表查询、撤销、延期
+
 package admin
 
 import (
@@ -10,12 +15,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// BundleAdminHandler 管理后台套餐管理 Handler
 // BundleAdminHandler handles admin bundle plan and subscription management.
 type BundleAdminHandler struct {
 	bundlePlanService         *service.BundlePlanService
 	bundleSubscriptionService *service.BundleSubscriptionService
 }
 
+// NewBundleAdminHandler 创建管理后台套餐 Handler
 // NewBundleAdminHandler creates a new admin bundle handler.
 func NewBundleAdminHandler(
 	bundlePlanService *service.BundlePlanService,
@@ -38,6 +45,7 @@ type ExtendSubscriptionRequest struct {
 	Days int `json:"days" binding:"required,min=1"`
 }
 
+// CreatePlan 创建套餐计划
 // CreatePlan creates a new bundle plan.
 // POST /admin/bundle/plans
 func (h *BundleAdminHandler) CreatePlan(c *gin.Context) {
@@ -55,6 +63,7 @@ func (h *BundleAdminHandler) CreatePlan(c *gin.Context) {
 	response.Success(c, plan)
 }
 
+// UpdatePlan 更新套餐计划
 // UpdatePlan updates an existing bundle plan.
 // PUT /admin/bundle/plans/:id
 func (h *BundleAdminHandler) UpdatePlan(c *gin.Context) {
@@ -78,6 +87,7 @@ func (h *BundleAdminHandler) UpdatePlan(c *gin.Context) {
 	response.Success(c, plan)
 }
 
+// ListPlans 分页查询套餐计划列表
 // ListPlans returns a paginated list of bundle plans.
 // GET /admin/bundle/plans
 func (h *BundleAdminHandler) ListPlans(c *gin.Context) {
@@ -100,6 +110,7 @@ func (h *BundleAdminHandler) ListPlans(c *gin.Context) {
 	response.PaginatedWithResult(c, plans, toResponsePagination(pag))
 }
 
+// GetPlanDetail 获取套餐计划详情
 // GetPlanDetail returns a single bundle plan by ID.
 // GET /admin/bundle/plans/:id
 func (h *BundleAdminHandler) GetPlanDetail(c *gin.Context) {
@@ -117,6 +128,7 @@ func (h *BundleAdminHandler) GetPlanDetail(c *gin.Context) {
 	response.Success(c, plan)
 }
 
+// DisablePlan 停用套餐计划（将状态设为 disabled）
 // DisablePlan disables a bundle plan by setting its status to "disabled".
 // DELETE /admin/bundle/plans/:id
 func (h *BundleAdminHandler) DisablePlan(c *gin.Context) {
@@ -137,6 +149,7 @@ func (h *BundleAdminHandler) DisablePlan(c *gin.Context) {
 	response.Success(c, gin.H{"message": "Plan disabled successfully"})
 }
 
+// ListSubscriptions 分页查询套餐订阅列表
 // ListSubscriptions returns a paginated list of bundle subscriptions.
 // GET /admin/bundle/subscriptions
 func (h *BundleAdminHandler) ListSubscriptions(c *gin.Context) {
@@ -165,6 +178,7 @@ func (h *BundleAdminHandler) ListSubscriptions(c *gin.Context) {
 	response.PaginatedWithResult(c, subs, toResponsePagination(pag))
 }
 
+// RevokeSubscription 撤销套餐订阅
 // RevokeSubscription revokes an active bundle subscription.
 // POST /admin/bundle/subscriptions/:id/revoke
 func (h *BundleAdminHandler) RevokeSubscription(c *gin.Context) {
@@ -181,6 +195,7 @@ func (h *BundleAdminHandler) RevokeSubscription(c *gin.Context) {
 	response.Success(c, gin.H{"message": "Bundle subscription revoked successfully"})
 }
 
+// ExtendSubscription 延长套餐订阅有效期
 // ExtendSubscription extends a bundle subscription by a number of days.
 // POST /admin/bundle/subscriptions/:id/extend
 func (h *BundleAdminHandler) ExtendSubscription(c *gin.Context) {

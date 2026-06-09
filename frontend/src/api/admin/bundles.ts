@@ -3,6 +3,11 @@
  * Handles bundle plan and subscription management for administrators
  */
 
+/**
+ * 管理后台套餐 API
+ * 提供套餐计划的 CRUD、订阅的查询/撤销/延期等管理端接口
+ */
+
 import { apiClient } from '../client'
 import type { PaginatedResponse } from '@/types'
 import type { BundleTier } from '@/constants/bundleTiers'
@@ -13,6 +18,7 @@ import type {
   CreateGroupQuotaRequest
 } from '@/types/bundle'
 
+/** 创建新的套餐计划 */
 /**
  * Create a new bundle plan
  * @param data - Plan creation request
@@ -28,6 +34,7 @@ export async function createPlan(
   return result
 }
 
+/** 更新已有套餐计划（支持部分字段更新） */
 /**
  * Update an existing bundle plan
  * @param id - Plan ID
@@ -45,6 +52,7 @@ export async function updatePlan(
   return result
 }
 
+/** 分页查询套餐计划列表，支持层级和状态过滤 */
 /**
  * List all bundle plans with optional filters
  * @param params - Query parameters
@@ -65,6 +73,7 @@ export async function listPlans(
   return data
 }
 
+/** 获取单个套餐计划详情 */
 /**
  * Get detail of a specific bundle plan
  * @param id - Plan ID
@@ -75,6 +84,7 @@ export async function getPlanDetail(id: number): Promise<BundlePlan> {
   return data
 }
 
+/** 停用（软删除）套餐计划 */
 /**
  * Disable (soft-delete) a bundle plan
  * @param id - Plan ID
@@ -87,6 +97,7 @@ export async function disablePlan(id: number): Promise<{ message: string }> {
   return data
 }
 
+/** 分页查询套餐订阅列表，支持状态和用户ID过滤 */
 /**
  * List all bundle subscriptions with optional filters
  * @param params - Query parameters
@@ -108,6 +119,7 @@ export async function listSubscriptions(
   return data
 }
 
+/** 撤销套餐订阅 */
 /**
  * Revoke a bundle subscription
  * @param id - Subscription ID
@@ -122,6 +134,7 @@ export async function revokeSubscription(
   return data
 }
 
+/** 延长套餐订阅有效期 */
 /**
  * Extend a bundle subscription by given days
  * @param id - Subscription ID

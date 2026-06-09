@@ -280,6 +280,13 @@ import EmptyState from '@/components/common/EmptyState.vue'
 const { t } = useI18n()
 const appStore = useAppStore()
 
+// ==================== BundleSubscriptionsView：管理后台套餐订阅管理页 ====================
+// 提供套餐订阅的管理界面，包括：
+// - 订阅列表表格（支持按用户ID搜索、状态过滤）
+// - 展开行显示各渠道组的日/周/月用量进度条
+// - 延期（延长天数）和撤销操作
+
+// ==================== 状态 ====================
 // ==================== State ====================
 
 const loading = ref(false)
@@ -314,6 +321,7 @@ const revoking = ref(false)
 // Debounce timer
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
+// ==================== 计算属性 ====================
 // ==================== Computed ====================
 
 const columns = computed((): Column[] => [
@@ -338,6 +346,7 @@ const expandedSubscription = computed(() =>
   subscriptions.value.find(s => s.id === expandedRowId.value) ?? null
 )
 
+// ==================== 工具函数 ====================
 // ==================== Helpers ====================
 
 function formatDate(value: string): string {
@@ -401,6 +410,7 @@ function getProgressClass(used: number, limit: number): string {
   return 'bg-green-500'
 }
 
+// ==================== 数据加载 ====================
 // ==================== Data Loading ====================
 
 function debounceSearch() {
@@ -442,6 +452,7 @@ function handlePageSizeChange(pageSize: number) {
   loadSubscriptions()
 }
 
+// ==================== 延期操作 ====================
 // ==================== Extend ====================
 
 function openExtendDialog(sub: BundleSubscription) {
@@ -465,6 +476,7 @@ async function handleExtend() {
   }
 }
 
+// ==================== 撤销操作 ====================
 // ==================== Revoke ====================
 
 function handleRevoke(sub: BundleSubscription) {
@@ -487,6 +499,7 @@ async function confirmRevoke() {
   }
 }
 
+// ==================== 生命周期 ====================
 // ==================== Lifecycle ====================
 
 onMounted(() => {

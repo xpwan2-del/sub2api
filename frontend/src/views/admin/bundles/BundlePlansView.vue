@@ -222,6 +222,13 @@ import Icon from '@/components/icons/Icon.vue'
 const { t } = useI18n()
 const appStore = useAppStore()
 
+// ==================== BundlePlansView：管理后台套餐计划管理页 ====================
+// 提供套餐计划的 CRUD 界面，包括：
+// - 计划列表表格（ID、名称、层级、价格、状态、渠道组数量）
+// - 创建/编辑对话框（含渠道组额度的增删编辑）
+// - 启用/停用操作
+
+// ==================== 渠道组数据 ====================
 // ==================== Groups ====================
 
 const groups = ref<AdminGroup[]>([])
@@ -252,6 +259,7 @@ const availableGroupOptions = computed(() => {
   return subscriptionGroupOptions.value.filter(opt => !usedIds.has(opt.value as number))
 })
 
+// ==================== 套餐计划 ====================
 // ==================== Plans ====================
 
 const plansLoading = ref(false)
@@ -405,6 +413,7 @@ function openPlanEdit(plan: BundlePlan | null) {
   showPlanDialog.value = true
 }
 
+// ==================== 渠道组额度编辑 ====================
 // ==================== Group Quota Editing ====================
 
 function addGroupQuota() {
@@ -436,6 +445,7 @@ function onQuotaScopeChange(quota: CreateGroupQuotaRequest) {
   }
 }
 
+// ==================== 保存操作 ====================
 // ==================== Save ====================
 
 function buildPayload() {
@@ -488,6 +498,7 @@ async function handleSavePlan() {
   }
 }
 
+// ==================== 启用 / 停用 ====================
 // ==================== Enable / Disable ====================
 
 async function handleDisablePlan(plan: BundlePlan) {
@@ -510,6 +521,7 @@ async function handleEnablePlan(plan: BundlePlan) {
   }
 }
 
+// ==================== 生命周期 ====================
 // ==================== Lifecycle ====================
 
 onMounted(() => {

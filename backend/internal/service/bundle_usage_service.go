@@ -1,3 +1,7 @@
+// bundle_usage_service.go 套餐用量服务实现
+// 提供用量累加（AccumulateUsage）和额度资格检查（CheckQuotaEligibility）。
+// 用量按日/周/月三个周期独立跟踪，支持平台级和模型级两种粒度。
+
 package service
 
 import (
@@ -5,6 +9,7 @@ import (
 	"fmt"
 )
 
+// BundleUsageService 套餐用量服务，处理用量累加和额度检查
 // BundleUsageService handles usage accumulation and quota eligibility checks.
 type BundleUsageService struct {
 	usageRepo   BundleUsageRepository
@@ -12,6 +17,7 @@ type BundleUsageService struct {
 	planRepo    BundlePlanRepository
 }
 
+// NewBundleUsageService 创建套餐用量服务实例
 // NewBundleUsageService creates a new BundleUsageService.
 func NewBundleUsageService(
 	usageRepo BundleUsageRepository,
@@ -25,6 +31,7 @@ func NewBundleUsageService(
 	}
 }
 
+// AccumulateUsage 累加套餐订阅在指定渠道组上的用量（USD）
 // AccumulateUsage increments the usage counters for a bundle subscription + group.
 func (s *BundleUsageService) AccumulateUsage(ctx context.Context, bundleSubID, groupID int64, costUSD float64) error {
 	// Find the usage record for this subscription + group.
@@ -42,6 +49,7 @@ func (s *BundleUsageService) AccumulateUsage(ctx context.Context, bundleSubID, g
 	return nil
 }
 
+// QuotaEligibilityResult 额度检查结果，包含是否可用和各周期剩余额度
 // QuotaEligibilityResult holds the result of a quota eligibility check.
 type QuotaEligibilityResult struct {
 	Eligible        bool
@@ -50,6 +58,7 @@ type QuotaEligibilityResult struct {
 	MonthlyRemaining float64
 }
 
+// CheckQuotaEligibility 检查套餐订阅在指定渠道组上是否还有剩余额度
 // CheckQuotaEligibility checks whether the bundle subscription has remaining quota
 // for the given group. Returns eligibility result with remaining amounts.
 func (s *BundleUsageService) CheckQuotaEligibility(ctx context.Context, bundleSubID, groupID int64) (*QuotaEligibilityResult, error) {

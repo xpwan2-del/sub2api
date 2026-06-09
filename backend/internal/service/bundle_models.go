@@ -1,7 +1,12 @@
+// bundle_models.go 套餐捆绑销售模块数据模型
+// 定义服务层的核心模型（BundlePlan、BundleSubscription 等）
+// 以及用于创建/更新操作的请求 DTO（Data Transfer Object）。
+
 package service
 
 import "time"
 
+// BundlePlan 套餐计划服务层模型，包含计划属性和关联的渠道组额度列表
 // BundlePlan is the service-layer model for a bundle plan.
 type BundlePlan struct {
 	ID               int64
@@ -24,6 +29,7 @@ type BundlePlan struct {
 	GroupQuotas []BundlePlanGroupQuota
 }
 
+// BundlePlanGroupQuota 套餐计划中单个渠道组的额度配置
 // BundlePlanGroupQuota is the service-layer model for per-group quota within a plan.
 type BundlePlanGroupQuota struct {
 	ID             int64
@@ -36,6 +42,7 @@ type BundlePlanGroupQuota struct {
 	MonthlyLimitUSD float64
 }
 
+// BundleSubscription 用户套餐订阅实例，包含订阅状态、时间范围和用量数据
 // BundleSubscription is the service-layer model for a user's bundle subscription.
 type BundleSubscription struct {
 	ID               int64
@@ -55,6 +62,7 @@ type BundleSubscription struct {
 	Usages []BundleSubscriptionUsage
 }
 
+// BundleSubscriptionUsage 套餐订阅的用量跟踪记录，按渠道组和时间窗口统计
 // BundleSubscriptionUsage is the service-layer model for usage tracking per subscription + group.
 type BundleSubscriptionUsage struct {
 	ID                   int64
@@ -69,6 +77,7 @@ type BundleSubscriptionUsage struct {
 	MonthlyWindowStart   time.Time
 }
 
+// CreateBundlePlanRequest 创建套餐计划的请求 DTO
 // CreateBundlePlanRequest is the DTO for creating a new bundle plan.
 type CreateBundlePlanRequest struct {
 	Name             string                  `json:"name" binding:"required"`
@@ -86,6 +95,7 @@ type CreateBundlePlanRequest struct {
 	GroupQuotas      []CreateGroupQuotaRequest `json:"group_quotas" binding:"required,min=1"`
 }
 
+// CreateGroupQuotaRequest 创建渠道组额度条目的请求 DTO
 // CreateGroupQuotaRequest is the DTO for creating a group quota entry within a plan.
 type CreateGroupQuotaRequest struct {
 	GroupID         int64   `json:"group_id" binding:"required"`
@@ -96,6 +106,7 @@ type CreateGroupQuotaRequest struct {
 	MonthlyLimitUSD float64 `json:"monthly_limit_usd"`
 }
 
+// UpdateBundlePlanRequest 更新套餐计划的请求 DTO，所有字段为指针类型支持部分更新
 // UpdateBundlePlanRequest is the DTO for updating an existing bundle plan.
 type UpdateBundlePlanRequest struct {
 	Name             *string                  `json:"name"`
@@ -114,6 +125,7 @@ type UpdateBundlePlanRequest struct {
 	GroupQuotas      *[]CreateGroupQuotaRequest `json:"group_quotas"`
 }
 
+// BundleUsageProgress 单个额度作用域的用量进度（已用/上限）
 // BundleUsageProgress represents the current usage against limits for a single quota scope.
 type BundleUsageProgress struct {
 	GroupID         int64   `json:"group_id"`

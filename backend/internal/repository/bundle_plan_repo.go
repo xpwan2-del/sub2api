@@ -1,3 +1,7 @@
+// bundle_plan_repo.go 套餐计划数据访问实现
+// 基于 Ent ORM 实现 BundlePlanRepository 接口，
+// 提供套餐计划的 CRUD 操作，包括渠道组额度的级联创建和删除。
+
 package repository
 
 import (
@@ -11,14 +15,17 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
+// bundlePlanRepository 套餐计划仓库实现
 type bundlePlanRepository struct {
 	client *dbent.Client
 }
 
+// NewBundlePlanRepository 创建套餐计划仓库
 func NewBundlePlanRepository(client *dbent.Client) service.BundlePlanRepository {
 	return &bundlePlanRepository{client: client}
 }
 
+// Create 创建套餐计划，同时批量创建关联的渠道组额度
 func (r *bundlePlanRepository) Create(ctx context.Context, plan *service.BundlePlan) error {
 	if plan == nil {
 		return service.ErrBundlePlanNotFound
@@ -76,6 +83,7 @@ func (r *bundlePlanRepository) Create(ctx context.Context, plan *service.BundleP
 	return nil
 }
 
+// Update 更新套餐计划，采用"删除旧额度 → 重建新额度"策略
 func (r *bundlePlanRepository) Update(ctx context.Context, plan *service.BundlePlan) error {
 	if plan == nil || plan.ID == 0 {
 		return service.ErrBundlePlanNotFound
@@ -139,6 +147,7 @@ func (r *bundlePlanRepository) Update(ctx context.Context, plan *service.BundleP
 	return nil
 }
 
+// GetByID 按ID获取套餐计划，同时加载关联的渠道组额度
 func (r *bundlePlanRepository) GetByID(ctx context.Context, id int64) (*service.BundlePlan, error) {
 	client := clientFromContext(ctx, r.client)
 
@@ -162,6 +171,7 @@ func (r *bundlePlanRepository) GetByID(ctx context.Context, id int64) (*service.
 	return result, nil
 }
 
+// List 分页查询套餐计划，支持按层级和状态过滤
 func (r *bundlePlanRepository) List(ctx context.Context, params pagination.PaginationParams, tier, status string) ([]service.BundlePlan, *pagination.PaginationResult, error) {
 	client := clientFromContext(ctx, r.client)
 
@@ -211,6 +221,7 @@ func (r *bundlePlanRepository) List(ctx context.Context, params pagination.Pagin
 	return results, paginationResultFromTotal(int64(total), params), nil
 }
 
+// ListForSale 获取所有在售且启用的套餐计划，按排序字段升序排列
 func (r *bundlePlanRepository) ListForSale(ctx context.Context) ([]service.BundlePlan, error) {
 	client := clientFromContext(ctx, r.client)
 
@@ -242,6 +253,7 @@ func (r *bundlePlanRepository) ListForSale(ctx context.Context) ([]service.Bundl
 	return results, nil
 }
 
+// Delete 删除套餐计划，先删除关联的渠道组额度再删除计划
 func (r *bundlePlanRepository) Delete(ctx context.Context, id int64) error {
 	client := clientFromContext(ctx, r.client)
 
@@ -257,6 +269,7 @@ func (r *bundlePlanRepository) Delete(ctx context.Context, id int64) error {
 	return translatePersistenceError(err, service.ErrBundlePlanNotFound, nil)
 }
 
+// bundlePlanToService 将 Ent 实体转换为服务层模型
 // bundlePlanToService converts an Ent BundlePlan entity to a service-layer model.
 func bundlePlanToService(src *dbent.BundlePlan) *service.BundlePlan {
 	if src == nil {
@@ -282,6 +295,7 @@ func bundlePlanToService(src *dbent.BundlePlan) *service.BundlePlan {
 	}
 }
 
+// bundlePlanGroupQuotaToService 将 Ent 额度实体转换为服务层模型
 // bundlePlanGroupQuotaToService converts an Ent BundlePlanGroupQuota entity to a service-layer model.
 func bundlePlanGroupQuotaToService(src *dbent.BundlePlanGroupQuota) service.BundlePlanGroupQuota {
 	return service.BundlePlanGroupQuota{

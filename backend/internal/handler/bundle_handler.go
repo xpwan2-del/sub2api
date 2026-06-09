@@ -1,3 +1,10 @@
+// bundle_handler.go 用户端套餐 Handler
+// 提供面向普通用户的套餐浏览和用量查询 API：
+// - 浏览在售套餐计划列表和详情
+// - 查看当前用户的活跃套餐订阅
+// - 查看套餐用量进度
+// - 发起套餐购买（checkout，暂未实现）
+
 package handler
 
 import (
@@ -11,12 +18,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// BundleHandler 用户端套餐 Handler
 // BundleHandler handles user-facing bundle operations.
 type BundleHandler struct {
 	bundlePlanService         *service.BundlePlanService
 	bundleSubscriptionService *service.BundleSubscriptionService
 }
 
+// NewBundleHandler 创建用户端套餐 Handler
 // NewBundleHandler creates a new user-facing bundle handler.
 func NewBundleHandler(
 	bundlePlanService *service.BundlePlanService,
@@ -28,6 +37,7 @@ func NewBundleHandler(
 	}
 }
 
+// ListPlans 获取所有在售套餐计划
 // ListPlans returns all plans currently for sale.
 // GET /bundles/plans
 func (h *BundleHandler) ListPlans(c *gin.Context) {
@@ -39,6 +49,7 @@ func (h *BundleHandler) ListPlans(c *gin.Context) {
 	response.Success(c, plans)
 }
 
+// GetPlanDetail 获取套餐计划详情
 // GetPlanDetail returns a single bundle plan by ID.
 // GET /bundles/plans/:id
 func (h *BundleHandler) GetPlanDetail(c *gin.Context) {
@@ -56,6 +67,7 @@ func (h *BundleHandler) GetPlanDetail(c *gin.Context) {
 	response.Success(c, plan)
 }
 
+// GetMyBundle 获取当前用户的活跃套餐订阅
 // GetMyBundle returns the current user's active bundle subscription.
 // GET /bundles/subscription
 func (h *BundleHandler) GetMyBundle(c *gin.Context) {
@@ -73,6 +85,7 @@ func (h *BundleHandler) GetMyBundle(c *gin.Context) {
 	response.Success(c, bundles)
 }
 
+// GetMyUsage 获取当前用户的套餐用量进度
 // GetMyUsage returns the current user's bundle usage progress.
 // GET /bundles/subscription/usage
 func (h *BundleHandler) GetMyUsage(c *gin.Context) {
@@ -101,6 +114,7 @@ func (h *BundleHandler) GetMyUsage(c *gin.Context) {
 	response.Success(c, progress)
 }
 
+// Checkout 发起套餐购买（暂未实现）
 // Checkout initiates a bundle purchase. Not yet implemented.
 // POST /bundles/checkout
 func (h *BundleHandler) Checkout(c *gin.Context) {

@@ -1,3 +1,8 @@
+// bundle_resolver.go 套餐路由解析中间件
+// 在网关请求处理链中，为携带 bundle_subscription_id 的 API Key
+// 解析出应使用的渠道组（Group），注入到 Gin 上下文中。
+// 必须放在 APIKeyAuth 中间件之后、RequireGroupAssignment 之前。
+
 package middleware
 
 import (
@@ -10,17 +15,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// BundleRouteResolverMiddleware 套餐路由解析中间件
 // BundleRouteResolverMiddleware resolves which group should handle a request
 // for bundle API keys (keys with no group assignment but an active bundle subscription).
 type BundleRouteResolverMiddleware struct {
 	resolver *service.BundleRouteResolver
 }
 
+// NewBundleRouteResolverMiddleware 创建套餐路由解析中间件
 // NewBundleRouteResolverMiddleware creates a new BundleRouteResolverMiddleware.
 func NewBundleRouteResolverMiddleware(resolver *service.BundleRouteResolver) *BundleRouteResolverMiddleware {
 	return &BundleRouteResolverMiddleware{resolver: resolver}
 }
 
+// BundleResolver 返回 Gin 中间件，为套餐 Key 解析目标渠道组
 // BundleResolver returns a gin middleware that resolves the group for bundle keys.
 // Must be placed after APIKeyAuth middleware and before RequireGroupAssignment.
 func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
@@ -76,6 +84,7 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 	}
 }
 
+// extractModelFromRequest 从请求 query 参数或 body 中提取模型名称
 func extractModelFromRequest(c *gin.Context) string {
 	if model := c.Query("model"); model != "" {
 		return model

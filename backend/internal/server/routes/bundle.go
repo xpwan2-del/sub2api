@@ -1,3 +1,6 @@
+// bundle.go 用户端套餐路由注册
+// 注册 /bundles 下的所有用户端路由，均需要认证（requireAuth）。
+
 package routes
 
 import (

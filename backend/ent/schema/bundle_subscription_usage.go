@@ -1,3 +1,7 @@
+// BundleSubscriptionUsage 套餐订阅用量跟踪 Schema
+// 跟踪每个套餐订阅实例在各渠道组上的日/周/月实际用量（USD），
+// 配合时间窗口实现按周期重置的用量统计。
+
 package schema
 
 import (
@@ -10,16 +14,19 @@ import (
 	"time"
 )
 
+// BundleSubscriptionUsage 定义套餐订阅的用量跟踪记录
 type BundleSubscriptionUsage struct {
 	ent.Schema
 }
 
+// Annotations 指定数据库表名
 func (BundleSubscriptionUsage) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "bundle_subscription_usages"},
 	}
 }
 
+// Fields 定义用量字段，包括日/周/月用量和对应的窗口起始时间
 func (BundleSubscriptionUsage) Fields() []ent.Field {
 	return []ent.Field{
 		field.Int64("bundle_subscription_id").Comment("→ BundleSubscription"),
@@ -34,10 +41,12 @@ func (BundleSubscriptionUsage) Fields() []ent.Field {
 	}
 }
 
+// Edges 暂无关联边
 func (BundleSubscriptionUsage) Edges() []ent.Edge {
 	return nil
 }
 
+// Indexes 定义订阅ID+渠道组ID 的联合索引
 func (BundleSubscriptionUsage) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("bundle_subscription_id", "group_id"),

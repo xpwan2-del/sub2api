@@ -1,3 +1,7 @@
+// bundle_expiry_service.go 套餐过期检查后台服务
+// 定期扫描已过期但仍为 active 状态的套餐订阅，批量更新为 expired。
+// 同时处理关联的桥接 UserSubscription 的过期状态同步。
+
 package service
 
 import (
@@ -7,6 +11,7 @@ import (
 	"time"
 )
 
+// BundleExpiryService 套餐过期检查服务，以后台定时任务方式运行
 // BundleExpiryService periodically marks expired bundle subscriptions.
 type BundleExpiryService struct {
 	bundleUsageRepo BundleUsageRepository
@@ -18,6 +23,7 @@ type BundleExpiryService struct {
 	wg              sync.WaitGroup
 }
 
+// NewBundleExpiryService 创建过期检查服务，interval 控制扫描间隔
 // NewBundleExpiryService creates a new BundleExpiryService.
 func NewBundleExpiryService(
 	bundleUsageRepo BundleUsageRepository,
@@ -34,6 +40,7 @@ func NewBundleExpiryService(
 	}
 }
 
+// Start 启动后台过期检查定时器
 // Start launches the background expiry ticker.
 func (s *BundleExpiryService) Start() {
 	if s == nil || s.bundleUsageRepo == nil || s.interval <= 0 {
@@ -57,6 +64,7 @@ func (s *BundleExpiryService) Start() {
 	}()
 }
 
+// Stop 优雅关闭后台定时器
 // Stop gracefully shuts down the expiry ticker.
 func (s *BundleExpiryService) Stop() {
 	if s == nil {
@@ -68,6 +76,7 @@ func (s *BundleExpiryService) Stop() {
 	s.wg.Wait()
 }
 
+// runOnce 执行一次过期扫描，将到期但仍 active 的订阅批量标记为 expired
 func (s *BundleExpiryService) runOnce() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
