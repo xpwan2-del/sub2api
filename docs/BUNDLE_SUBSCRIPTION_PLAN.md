@@ -442,18 +442,14 @@ const (
 
 // Cache key patterns
 const (
-	BundleSubCacheKey     = "bundle_sub:%d"
-	BundleUsageCacheKey   = "bundle_usage:%d:%d"
-	BundleRouteCacheKey   = "bundle_route:%s"
-	BundlePlansCacheKey   = "bundle_plans:for_sale"
-)
+	BundleCacheKeyPlanPrefix    = "bundle:plan:"
+	BundleCacheKeySubPrefix     = "bundle:sub:"
+	BundleCacheKeyUsagePrefix   = "bundle:usage:"
+	BundleCacheKeyUserBundles   = "bundle:user:"
 
-// Cache TTL
-const (
-	BundleSubCacheTTL   = 5 * time.Minute
-	BundleUsageCacheTTL = 5 * time.Minute
-	BundleRouteCacheTTL = 30 * time.Minute
-	BundlePlansCacheTTL = 10 * time.Minute
+	BundlePlanCacheTTL    = 5 * time.Minute
+	BundleSubCacheTTL     = 3 * time.Minute
+	BundleUsageCacheTTL   = 1 * time.Minute
 )
 ```
 
@@ -2080,14 +2076,14 @@ git commit -m "feat(bundle): add bundle usage accumulation in postUsageBilling"
 - [ ] **Step 2: Create admin handler**
 
 遵循 `admin/subscription_handler.go` 的模式。实现以下方法：
-- `CreatePlan` — POST `/admin/bundles/plans`
-- `UpdatePlan` — PUT `/admin/bundles/plans/:id`
-- `ListPlans` — GET `/admin/bundles/plans`
-- `GetPlanDetail` — GET `/admin/bundles/plans/:id`
-- `DisablePlan` — DELETE `/admin/bundles/plans/:id`
-- `ListSubscriptions` — GET `/admin/bundles/subscriptions`
-- `RevokeSubscription` — POST `/admin/bundles/subscriptions/:id/revoke`
-- `ExtendSubscription` — POST `/admin/bundles/subscriptions/:id/extend`
+- `CreatePlan` — POST `/admin/bundle/plans`
+- `UpdatePlan` — PUT `/admin/bundle/plans/:id`
+- `ListPlans` — GET `/admin/bundle/plans`
+- `GetPlanDetail` — GET `/admin/bundle/plans/:id`
+- `DisablePlan` — DELETE `/admin/bundle/plans/:id`
+- `ListSubscriptions` — GET `/admin/bundle/subscriptions`
+- `RevokeSubscription` — POST `/admin/bundle/subscriptions/:id/revoke`
+- `ExtendSubscription` — POST `/admin/bundle/subscriptions/:id/extend`
 
 - [ ] **Step 3: Commit**
 
@@ -2140,8 +2136,8 @@ import (
 	"sub2api/backend/internal/handler"
 )
 
-func RegisterBundleRoutes(r *gin.Engine, h *handler.Handlers, apiKeyAuth, requireAuth gin.HandlerFunc) {
-	bundles := r.Group("/bundles")
+func RegisterBundleRoutes(v1 *gin.RouterGroup, h *handler.Handlers, requireAuth gin.HandlerFunc) {
+	bundles := v1.Group("/bundles")
 	bundles.Use(requireAuth)
 	{
 		bundles.GET("/plans", h.Bundle.ListPlans)
@@ -2158,19 +2154,22 @@ func RegisterBundleRoutes(r *gin.Engine, h *handler.Handlers, apiKeyAuth, requir
 追加注册函数：
 ```go
 func registerBundleRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
-    plans := admin.Group("/bundles/plans")
+    bundles := admin.Group("/bundle")
     {
-        plans.POST("", h.Admin.Bundle.CreatePlan)
-        plans.PUT("/:id", h.Admin.Bundle.UpdatePlan)
-        plans.GET("", h.Admin.Bundle.ListPlans)
-        plans.GET("/:id", h.Admin.Bundle.GetPlanDetail)
-        plans.DELETE("/:id", h.Admin.Bundle.DisablePlan)
-    }
-    subs := admin.Group("/bundles/subscriptions")
-    {
-        subs.GET("", h.Admin.Bundle.ListSubscriptions)
-        subs.POST("/:id/revoke", h.Admin.Bundle.RevokeSubscription)
-        subs.POST("/:id/extend", h.Admin.Bundle.ExtendSubscription)
+        plans := bundles.Group("/plans")
+        {
+            plans.POST("", h.Admin.Bundle.CreatePlan)
+            plans.PUT("/:id", h.Admin.Bundle.UpdatePlan)
+            plans.GET("", h.Admin.Bundle.ListPlans)
+            plans.GET("/:id", h.Admin.Bundle.GetPlanDetail)
+            plans.DELETE("/:id", h.Admin.Bundle.DisablePlan)
+        }
+        subs := bundles.Group("/subscriptions")
+        {
+            subs.GET("", h.Admin.Bundle.ListSubscriptions)
+            subs.POST("/:id/revoke", h.Admin.Bundle.RevokeSubscription)
+            subs.POST("/:id/extend", h.Admin.Bundle.ExtendSubscription)
+        }
     }
 }
 ```

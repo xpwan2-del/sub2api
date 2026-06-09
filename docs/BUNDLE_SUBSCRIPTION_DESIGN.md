@@ -175,14 +175,18 @@ Inserted between auth middleware and `RequireGroupAssignment`:
 ```
 if apiKey.bundle_subscription_id != nil && apiKey.group_id == nil:
     1. Load BundleSubscription (validate active + not expired)
-    2. Extract model name from request body
-    3. Model → Platform mapping:
-       - "gpt-*" / "o1-*" / "o3-*"        → openai
-       - "claude-*"                         → anthropic
-       - "gemini-*"                         → gemini
-       - "deepseek-*"                       → openai (compatible protocol)
-    4. Look up matching group_id from BundlePlanGroupQuota
-    5. Inject resolved group_id into request context
+    2. Extract model name from request body (query param or JSON body)
+    3. Model → Platform mapping (via resolveModelPlatform):
+       - "gpt-*" / "o1-*" / "o3-*" / "chatgpt-*" / "dall-*"  → openai
+       - "claude-*"                                             → anthropic
+       - "gemini-*"                                             → gemini
+       - "deepseek-*"                                           → openai (compatible protocol)
+       - unknown models                                         → openai (default)
+    4. ResolveGroup (BundleRouteResolver):
+       Phase 1: Try model-level glob match (quota_scope == "model")
+       Phase 2: Fallback to platform-level match (quota_scope == "platform")
+    5. Inject ResolvedGroup (groupID + platform + quota) into request context
+       as "bundle_resolved_group_id"
     6. If no match → return 400 bundle_model_not_included
 else:
     Pass through to existing logic (unchanged)
@@ -190,36 +194,37 @@ else:
 
 ### 3.5 Quota Check Integration
 
-**Existing `checkSubscriptionEligibility()` — minimal change (~3 lines):**
+**Existing `checkSubscriptionEligibility()` — limit fallback priority:**
 
 ```
-Limit source priority:
-  subscription.daily_limit_usd > 0 ?
-    → use subscription's own limit (bundle snapshot value)
-    : → use group.daily_limit_usd (existing logic, fallback)
+For each time window (daily/weekly/monthly):
+  dailyLimit := group.DailyLimitUSD
+  if subData.DailyLimit > 0:
+      dailyLimit = &subData.DailyLimit    // preference: subscription's own limit
+  // ... same for weekly/monthly
+
+  Check: subData.DailyUsage >= dailyLimit  → ErrDailyLimitExceeded
 ```
+
+The `SubData` struct (used by the eligibility check) carries `DailyLimit` / `WeeklyLimit` / `MonthlyLimit` fields populated from the `UserSubscription` model. When a subscription is bridged from a bundle, these fields hold the snapshotted quota from `BundlePlanGroupQuota` at activation time. Non-bundle subscriptions leave these at zero, falling back to the Group's own limits.
 
 This single change lets bundle subscriptions and regular subscriptions share the same check function.
 
-**Concurrency and RPM check (new branch):**
+**Concurrency and RPM check:**
 
-```
-if subscription.bundle_subscription_id != nil:
-    → load BundleSubscription's concurrency_limit / rpm_limit
-    → check concurrency count
-    → check RPM
-else:
-    → existing RPM check logic
-```
+Bundle-level concurrency and RPM limits are snapshotted into the `BundleSubscription` record at activation time. The gateway layer checks these values against current usage counts per-request, using the `BundleSubscription` record (or its cached version) rather than the live plan configuration.
 
 ### 3.6 Usage Accumulation (postUsageBilling extension)
 
+In `gateway_service.go`, after subscription cost deduction:
+
 ```
-if subscription.bundle_subscription_id != nil:
-    → additionally accumulate BundleSubscriptionUsage (Redis INCRBY + async flush to DB)
-else:
-    → existing logic (unchanged)
+if bundleUsageService != nil && subscription.BundleSubscriptionID != nil:
+    → bundleUsageService.AccumulateUsage(ctx, bundleSubID, groupID, cost)
+    → IncrementUsage() performs atomic DB ADD on daily/weekly/monthly usage columns
 ```
+
+Usage accumulation uses database-level `ADD` operations (via Ent ORM) for atomicity, rather than Redis INCRBY.
 
 ### 3.7 Bundle Expiry
 
@@ -295,9 +300,11 @@ backend/
 
 | Repo | Core Methods |
 |---|---|
-| `BundlePlanRepo` | `Create`, `Update`, `GetByID`, `List`, `ListForSale` |
-| `BundleSubscriptionRepo` | `Create`, `GetActiveByUserID`, `GetByIDWithUsages`, `UpdateStatus` |
-| `BundleUsageRepo` | `GetBySubscriptionAndGroup`, `UpsertUsage`, `ResetWindow` |
+| `BundlePlanRepo` | `Create(plan)`, `Update(plan)`, `GetByID`, `List`, `ListForSale`, `Delete` |
+| `BundleSubscriptionRepo` | `Create(sub)`, `GetByID`, `GetActiveByUserID`, `GetByIDWithUsages`, `List`, `UpdateStatus`, `UpdateExpiry` |
+| `BundleUsageRepo` | `GetBySubscriptionAndGroup`, `Create`, `IncrementUsage`, `ResetDailyWindow`, `ResetWeeklyWindow`, `ResetMonthlyWindow`, `ListBySubscription`, `BatchUpdateExpiredStatus` |
+
+Note: `Create` methods accept the service model directly (group quotas embedded in `BundlePlan`, usage records embedded in `BundleSubscription`) and populate the `ID` field back on the passed pointer.
 
 ### 5.3 Service Layer
 
@@ -314,14 +321,14 @@ backend/
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/admin/bundles/plans` | Create bundle plan |
-| `PUT` | `/admin/bundles/plans/:id` | Update bundle plan |
-| `GET` | `/admin/bundles/plans` | List bundle plans |
-| `GET` | `/admin/bundles/plans/:id` | Get bundle plan detail |
-| `DELETE` | `/admin/bundles/plans/:id` | Disable bundle plan |
-| `GET` | `/admin/bundles/subscriptions` | List all user bundle subscriptions |
-| `POST` | `/admin/bundles/subscriptions/:id/revoke` | Revoke user bundle |
-| `POST` | `/admin/bundles/subscriptions/:id/extend` | Extend user bundle |
+| `POST` | `/admin/bundle/plans` | Create bundle plan |
+| `PUT` | `/admin/bundle/plans/:id` | Update bundle plan |
+| `GET` | `/admin/bundle/plans` | List bundle plans |
+| `GET` | `/admin/bundle/plans/:id` | Get bundle plan detail |
+| `DELETE` | `/admin/bundle/plans/:id` | Disable bundle plan |
+| `GET` | `/admin/bundle/subscriptions` | List all user bundle subscriptions |
+| `POST` | `/admin/bundle/subscriptions/:id/revoke` | Revoke user bundle |
+| `POST` | `/admin/bundle/subscriptions/:id/extend` | Extend user bundle |
 
 **User APIs:**
 
@@ -337,14 +344,21 @@ backend/
 
 | File | Change | Lines |
 |---|---|---|
-| `ent/schema/user_subscription.go` | Add 4 fields | ~15 |
+| `ent/schema/user_subscription.go` | Add 4 fields + index | ~20 |
 | `ent/schema/api_key.go` | Add 1 field | ~5 |
-| `cmd/server/wire.go` | Add Bundle providers | ~20 |
-| `server/middleware/middleware.go` | `RequireGroupAssignment` add bundle branch | ~5 |
-| `server/routes/gateway.go` | Register bundle_resolver middleware | ~3 |
-| `service/billing_cache_service.go` | Limit source fallback priority | ~10 |
-| `service/gateway_service.go` | `postUsageBilling` add bundle usage branch | ~15 |
-| **Total** | | **~70 lines** |
+| `internal/handler/handler.go` | Add Bundle fields to Handlers/AdminHandlers | ~5 |
+| `internal/handler/wire.go` | Add Bundle handler providers | ~5 |
+| `internal/service/wire.go` | Add Bundle service providers + ProvideBundleExpiryService | ~10 |
+| `internal/service/billing_service.go` | Add 6 BillingCache bundle methods | ~10 |
+| `internal/service/billing_cache_service.go` | Limit source fallback priority | ~10 |
+| `internal/service/gateway_service.go` | `postUsageBilling` add bundle usage branch; inject BundleUsageService | ~20 |
+| `internal/service/user_subscription_port.go` | Add `ExtendExpiry`, `ExpireBridgedSubscriptionsForExpiredBundles` | ~5 |
+| `internal/repository/wire.go` | Add 3 Bundle repository providers | ~5 |
+| `internal/server/middleware/middleware.go` | `RequireGroupAssignment` add bundle branch | ~5 |
+| `internal/server/middleware/wire.go` | Add BundleRouteResolverMiddleware provider | ~3 |
+| `internal/server/routes/gateway.go` | Register bundle_resolver middleware | ~5 |
+| `internal/server/routes/admin.go` | Register admin bundle routes | ~20 |
+| **Total** | | **~130 lines** |
 
 ---
 
@@ -354,8 +368,8 @@ backend/
 
 | Page File | Route | Description |
 |---|---|---|
-| `views/admin/bundles/BundlePlansView.vue` | `/admin/bundles/plans` | Admin plan list + create/edit dialog |
-| `views/admin/bundles/BundleSubscriptionsView.vue` | `/admin/bundles/subscriptions` | Admin user subscription management |
+| `views/admin/bundles/BundlePlansView.vue` | `/admin/bundle/plans` | Admin plan list + create/edit dialog |
+| `views/admin/bundles/BundleSubscriptionsView.vue` | `/admin/bundle/subscriptions` | Admin user subscription management |
 | `views/user/BundlesView.vue` | `/bundles` | User browsable plan cards |
 | `views/user/BundleUsageView.vue` | `/bundles/usage` | User usage display by Group/model |
 
@@ -450,17 +464,24 @@ Add `bundles.*` namespace to `zh.ts` covering:
 
 ### Redis Cache Keys
 
-| Key | Data | TTL | Purpose |
+Cache key prefixes and TTLs are defined in `bundle_constants.go`:
+
+| Prefix | Data | TTL | Purpose |
 |---|---|---|---|
-| `bundle_sub:{user_id}` | BundleSubscription snapshot | 5 min | Fast status check on request |
-| `bundle_usage:{sub_id}:{group_id}` | BundleSubscriptionUsage | 5 min | Quota check without DB hit |
-| `bundle_route:{model_name}` | platform + group_id mapping | 30 min | Model name resolution cache |
-| `bundle_plans:for_sale` | Purchasable plans list | 10 min | User browsing page |
+| `bundle:plan:` | BundlePlan by ID | 5 min | Plan detail cache |
+| `bundle:sub:` | BundleSubscription by user ID | 3 min | Fast status check on request |
+| `bundle:usage:` | BundleSubscriptionUsage by sub+group | 1 min | Quota check without DB hit |
+| `bundle:user:` | User bundles list | — | Per-user bundle lookup |
+
+The `BillingCache` interface (in `billing_service.go`) exposes 6 bundle-specific methods:
+
+- `GetBundleSubscriptionCache` / `SetBundleSubscriptionCache` / `InvalidateBundleSubscriptionCache` — per-user active bundle snapshot
+- `GetBundlePlansForSaleCache` / `SetBundlePlansForSaleCache` / `InvalidateBundlePlansForSaleCache` — purchasable plans list
 
 ### Update Strategy
 
-- **High-frequency writes** (usage accumulation): Redis INCRBY → async batch flush to DB (reuse existing Flusher worker pool pattern)
-- **Low-frequency writes** (activation/revocation): Write DB → delete cache (cache-aside)
+- **High-frequency writes** (usage accumulation): Database `ADD` (atomic increment) via `IncrementUsage` on Ent ORM
+- **Low-frequency writes** (activation/revocation): Write DB → invalidate cache (cache-aside)
 
 ---
 
