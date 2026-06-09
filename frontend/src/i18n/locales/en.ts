@@ -388,6 +388,11 @@ export default {
     channelMonitor: 'Channel Monitor',
     channelStatus: 'Channel Status',
     riskControl: 'Risk Control',
+    bundleManagement: 'Bundle Management',
+    bundlePlans: 'Bundle Plans',
+    bundleSubscriptions: 'Bundle Subscriptions',
+    bundles: 'Bundles',
+    bundleUsage: 'Bundle Usage',
   },
 
   // Auth

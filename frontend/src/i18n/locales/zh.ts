@@ -388,6 +388,11 @@ export default {
     channelMonitor: '渠道监控',
     channelStatus: '渠道状态',
     riskControl: '风控中心',
+    bundleManagement: '套餐管理',
+    bundlePlans: '套餐方案',
+    bundleSubscriptions: '套餐订阅',
+    bundles: '套餐订阅',
+    bundleUsage: '套餐用量',
   },
 
   // Auth
