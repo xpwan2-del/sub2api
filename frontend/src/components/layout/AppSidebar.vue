@@ -835,7 +835,7 @@ function handleMenuItemClick(itemPath: string) {
 }
 
 function isActive(path: string): boolean {
-  return route.path === path || route.path.startsWith(path + '/')
+  return route.path === path
 }
 
 function isGroupActive(item: NavItem): boolean {
