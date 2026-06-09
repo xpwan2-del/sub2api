@@ -17,10 +17,11 @@ import (
 // BundleSubscriptionService 套餐订阅服务，管理订阅的完整生命周期
 // BundleSubscriptionService handles bundle subscription lifecycle.
 type BundleSubscriptionService struct {
-	bundleSubRepo   BundleSubscriptionRepository
-	planRepo        BundlePlanRepository
-	usageRepo       BundleUsageRepository
-	userSubRepo     UserSubscriptionRepository
+	bundleSubRepo BundleSubscriptionRepository
+	planRepo      BundlePlanRepository
+	usageRepo     BundleUsageRepository
+	userSubRepo   UserSubscriptionRepository
+	cache         BillingCache
 }
 
 // NewBundleSubscriptionService 创建套餐订阅服务实例
@@ -30,12 +31,14 @@ func NewBundleSubscriptionService(
 	planRepo BundlePlanRepository,
 	usageRepo BundleUsageRepository,
 	userSubRepo UserSubscriptionRepository,
+	cache BillingCache,
 ) *BundleSubscriptionService {
 	return &BundleSubscriptionService{
 		bundleSubRepo: bundleSubRepo,
 		planRepo:      planRepo,
 		usageRepo:     usageRepo,
 		userSubRepo:   userSubRepo,
+		cache:         cache,
 	}
 }
 
@@ -91,6 +94,11 @@ func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *Act
 	if err := s.bundleSubRepo.Create(ctx, bundleSub); err != nil {
 		return nil, fmt.Errorf("create bundle subscription: %w", err)
 	}
+
+		// Invalidate user bundle cache after activation.
+		if s.cache != nil {
+			_ = s.cache.InvalidateBundleSubscriptionCache(ctx, req.UserID)
+		}
 
 	// 4. For each GroupQuota, create BundleSubscriptionUsage + bridge UserSubscription.
 	for _, gq := range plan.GroupQuotas {
@@ -153,16 +161,63 @@ func (s *BundleSubscriptionService) RevokeBundle(ctx context.Context, bundleSubI
 		return s.userSubRepo.UpdateStatus(ctx, sub.ID, domain.SubscriptionStatusExpired)
 	})
 
+	// Invalidate cache after revocation.
+	if s.cache != nil {
+		_ = s.cache.InvalidateBundleSubscriptionCache(ctx, bundleSub.UserID)
+	}
+
 	return nil
 }
 
 // GetUserActiveBundle 获取用户的活跃套餐订阅列表
 // GetUserActiveBundle returns the active bundle subscription for a user.
 func (s *BundleSubscriptionService) GetUserActiveBundle(ctx context.Context, userID int64) ([]BundleSubscription, error) {
+	// Cache-aside: try Redis first.
+	if s.cache != nil {
+		cached, err := s.cache.GetBundleSubscriptionCache(ctx, userID)
+		if err == nil && cached != nil {
+			return []BundleSubscription{{
+				ID:               cached.ID,
+				UserID:           userID,
+				PlanID:           cached.PlanID,
+				Status:           cached.Status,
+				StartsAt:         time.Now(), // approx, cache does not store starts_at
+				ExpiresAt:        time.Unix(cached.ExpiresAt, 0),
+				ConcurrencyLimit: cached.ConcurrencyLimit,
+				RPMLimit:         cached.RPMLimit,
+				Source:           cached.Source,
+			}}, nil
+		}
+	}
+
 	subs, err := s.bundleSubRepo.GetActiveByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get active bundles: %w", err)
 	}
+
+	// Write back to cache if found.
+	if s.cache != nil && len(subs) > 0 {
+		sub := subs[0]
+		planName := ""
+		tier := ""
+		if sub.Plan != nil {
+			planName = sub.Plan.Name
+			tier = sub.Plan.Tier
+		}
+		cacheData := &BundleSubscriptionCacheData{
+			ID:               sub.ID,
+			PlanID:           sub.PlanID,
+			PlanName:         planName,
+			Tier:             tier,
+			Status:           sub.Status,
+			ExpiresAt:        sub.ExpiresAt.Unix(),
+			ConcurrencyLimit: sub.ConcurrencyLimit,
+			RPMLimit:         sub.RPMLimit,
+			Source:           sub.Source,
+		}
+		_ = s.cache.SetBundleSubscriptionCache(ctx, userID, cacheData, BundleSubCacheTTL)
+	}
+
 	return subs, nil
 }
 
@@ -251,7 +306,29 @@ func (s *BundleSubscriptionService) ExtendBundle(ctx context.Context, bundleSubI
 		return s.userSubRepo.ExtendExpiry(ctx, sub.ID, extendedExpiry)
 	})
 
+		// Invalidate cache after extension.
+		if s.cache != nil {
+			_ = s.cache.InvalidateBundleSubscriptionCache(ctx, bundleSub.UserID)
+		}
+
 	return nil
+}
+
+// GetBundleByID returns a single bundle subscription by ID with plan info loaded.
+// Used for bundle enrichment in subscription handler.
+func (s *BundleSubscriptionService) GetBundleByID(ctx context.Context, bundleSubID int64) (*BundleSubscription, error) {
+	sub, err := s.bundleSubRepo.GetByID(ctx, bundleSubID)
+	if err != nil {
+		return nil, err
+	}
+	// Load plan for tier/name info.
+	if sub.Plan == nil {
+		plan, err := s.planRepo.GetByID(ctx, sub.PlanID)
+		if err == nil {
+			sub.Plan = plan
+		}
+	}
+	return sub, nil
 }
 
 // syncBridgedUserSubscriptions 查找并批量操作某套餐关联的所有桥接 UserSubscription

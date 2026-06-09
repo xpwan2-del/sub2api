@@ -1569,6 +1569,10 @@ export interface UserSubscription {
   expires_at: string | null
   user?: User
   group?: Group
+  // Bundle subscription info (present when subscription originated from a bundle plan)
+  bundle_subscription_id?: number | null
+  bundle_plan_tier?: string | null
+  bundle_plan_name?: string | null
 }
 
 export interface SubscriptionProgress {

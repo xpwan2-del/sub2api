@@ -131,7 +131,7 @@ func (s *bundlePlanGetStub) GetByID(_ context.Context, id int64) (*BundlePlan, e
 // ──────────────────────────────────────────────────────
 
 func newBundlePlanSvc(stub BundlePlanRepository) *BundlePlanService {
-	return NewBundlePlanService(stub)
+	return NewBundlePlanService(stub, nil) // nil cache for unit tests
 }
 
 func samplePlan() *BundlePlan {

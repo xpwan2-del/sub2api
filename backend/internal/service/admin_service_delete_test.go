@@ -501,6 +501,13 @@ func (s *billingCacheStub) ReaddDirtyUserPlatformQuotaKeys(ctx context.Context, 
 
 func (s *billingCacheStub) BatchGetUserPlatformQuotaCache(ctx context.Context, keys []UserPlatformQuotaKey) ([]*UserPlatformQuotaCacheEntry, error) {
 	panic("unexpected BatchGetUserPlatformQuotaCache call")
+
+func (m *billingCacheStub) GetBundleSubscriptionCache(context.Context, int64) (*BundleSubscriptionCacheData, error) { return nil, nil }
+func (m *billingCacheStub) SetBundleSubscriptionCache(context.Context, int64, *BundleSubscriptionCacheData, time.Duration) error { return nil }
+func (m *billingCacheStub) InvalidateBundleSubscriptionCache(context.Context, int64) error { return nil }
+func (m *billingCacheStub) GetBundlePlansForSaleCache(context.Context) ([]byte, error) { return nil, nil }
+func (m *billingCacheStub) SetBundlePlansForSaleCache(context.Context, []byte, time.Duration) error { return nil }
+func (m *billingCacheStub) InvalidateBundlePlansForSaleCache(context.Context) error { return nil }
 }
 
 func waitForInvalidations(t *testing.T, ch <-chan subscriptionInvalidateCall, expected int) []subscriptionInvalidateCall {

@@ -85,7 +85,17 @@ type BillingCache interface {
 	PopDirtyUserPlatformQuotaKeys(ctx context.Context, n int) ([]UserPlatformQuotaKey, error)
 	ReaddDirtyUserPlatformQuotaKeys(ctx context.Context, keys []UserPlatformQuotaKey) error
 	BatchGetUserPlatformQuotaCache(ctx context.Context, keys []UserPlatformQuotaKey) ([]*UserPlatformQuotaCacheEntry, error)
-}
+
+	// Bundle subscription cache (per-user active bundle)
+	GetBundleSubscriptionCache(ctx context.Context, userID int64) (*BundleSubscriptionCacheData, error)
+	SetBundleSubscriptionCache(ctx context.Context, userID int64, data *BundleSubscriptionCacheData, ttl time.Duration) error
+	InvalidateBundleSubscriptionCache(ctx context.Context, userID int64) error
+
+	// Bundle plans for-sale cache
+	GetBundlePlansForSaleCache(ctx context.Context) ([]byte, error)
+	SetBundlePlansForSaleCache(ctx context.Context, data []byte, ttl time.Duration) error
+	InvalidateBundlePlansForSaleCache(ctx context.Context) error
+	}
 
 // ModelPricing 模型价格配置（per-token价格，与LiteLLM格式一致）
 type ModelPricing struct {

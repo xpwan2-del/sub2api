@@ -5,6 +5,7 @@
 package service
 
 import (
+	"encoding/json"
 	"context"
 	"fmt"
 
@@ -16,12 +17,13 @@ import (
 // BundlePlanService handles CRUD operations for bundle plans.
 type BundlePlanService struct {
 	planRepo BundlePlanRepository
+	cache  BillingCache
 }
 
 // NewBundlePlanService 创建套餐计划服务实例
 // NewBundlePlanService creates a new BundlePlanService.
-func NewBundlePlanService(planRepo BundlePlanRepository) *BundlePlanService {
-	return &BundlePlanService{planRepo: planRepo}
+func NewBundlePlanService(planRepo BundlePlanRepository, cache BillingCache) *BundlePlanService {
+	return &BundlePlanService{planRepo: planRepo, cache: cache}
 }
 
 // CreatePlan 创建套餐计划，将请求 DTO 转换为领域模型后持久化
@@ -69,6 +71,11 @@ func (s *BundlePlanService) CreatePlan(ctx context.Context, req *CreateBundlePla
 	if err := s.planRepo.Create(ctx, plan); err != nil {
 		return nil, fmt.Errorf("create bundle plan: %w", err)
 	}
+	// Invalidate plans cache after creation.
+	if s.cache != nil {
+		_ = s.cache.InvalidateBundlePlansForSaleCache(ctx)
+	}
+
 	return plan, nil
 }
 
@@ -145,6 +152,11 @@ func (s *BundlePlanService) UpdatePlan(ctx context.Context, planID int64, req *U
 	if err := s.planRepo.Update(ctx, existing); err != nil {
 		return nil, fmt.Errorf("update bundle plan: %w", err)
 	}
+	// Invalidate plans cache after update.
+	if s.cache != nil {
+		_ = s.cache.InvalidateBundlePlansForSaleCache(ctx)
+	}
+
 	return existing, nil
 }
 
@@ -171,9 +183,28 @@ func (s *BundlePlanService) ListPlans(ctx context.Context, params pagination.Pag
 // ListForSale 获取所有在售且启用的套餐计划（供用户端浏览）
 // ListForSale returns all plans that are currently for sale and active.
 func (s *BundlePlanService) ListForSale(ctx context.Context) ([]BundlePlan, error) {
+	// Cache-aside: try Redis first.
+	if s.cache != nil {
+		cached, err := s.cache.GetBundlePlansForSaleCache(ctx)
+		if err == nil && cached != nil {
+			var plans []BundlePlan
+			if jsonErr := json.Unmarshal(cached, &plans); jsonErr == nil {
+				return plans, nil
+			}
+		}
+	}
+
 	plans, err := s.planRepo.ListForSale(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list for-sale bundle plans: %w", err)
 	}
+
+	// Write back to cache.
+	if s.cache != nil && len(plans) > 0 {
+		if data, jsonErr := json.Marshal(plans); jsonErr == nil {
+			_ = s.cache.SetBundlePlansForSaleCache(ctx, data, BundlePlanCacheTTL)
+		}
+	}
+
 	return plans, nil
 }

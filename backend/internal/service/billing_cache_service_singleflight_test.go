@@ -92,6 +92,13 @@ func (s *billingCacheMissStub) ReaddDirtyUserPlatformQuotaKeys(ctx context.Conte
 }
 
 func (s *billingCacheMissStub) BatchGetUserPlatformQuotaCache(ctx context.Context, keys []UserPlatformQuotaKey) ([]*UserPlatformQuotaCacheEntry, error) {
+
+func (m *billingCacheMissStub) GetBundleSubscriptionCache(context.Context, int64) (*BundleSubscriptionCacheData, error) { return nil, nil }
+func (m *billingCacheMissStub) SetBundleSubscriptionCache(context.Context, int64, *BundleSubscriptionCacheData, time.Duration) error { return nil }
+func (m *billingCacheMissStub) InvalidateBundleSubscriptionCache(context.Context, int64) error { return nil }
+func (m *billingCacheMissStub) GetBundlePlansForSaleCache(context.Context) ([]byte, error) { return nil, nil }
+func (m *billingCacheMissStub) SetBundlePlansForSaleCache(context.Context, []byte, time.Duration) error { return nil }
+func (m *billingCacheMissStub) InvalidateBundlePlansForSaleCache(context.Context) error { return nil }
 	return nil, nil
 }
 

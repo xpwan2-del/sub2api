@@ -207,7 +207,7 @@ func newBundleSubSvc(
 	usageRepo BundleUsageRepository,
 	userSubRepo UserSubscriptionRepository,
 ) *BundleSubscriptionService {
-	return NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo)
+	return NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil) // nil cache for unit tests
 }
 
 func sampleActivePlan() *BundlePlan {

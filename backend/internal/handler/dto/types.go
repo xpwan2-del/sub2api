@@ -586,6 +586,11 @@ type UserSubscription struct {
 
 	User  *User  `json:"user,omitempty"`
 	Group *Group `json:"group,omitempty"`
+
+	// Bundle subscription info (present when subscription originated from a bundle plan).
+	BundleSubscriptionID *int64  `json:"bundle_subscription_id,omitempty"`
+	BundlePlanTier       *string `json:"bundle_plan_tier,omitempty"`
+	BundlePlanName       *string `json:"bundle_plan_name,omitempty"`
 }
 
 // AdminUserSubscription 是管理员接口使用的订阅 DTO（包含分配信息/备注等字段）。

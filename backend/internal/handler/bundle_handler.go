@@ -82,13 +82,7 @@ func (h *BundleHandler) GetMyBundle(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	// 前端期望 BundleSubscription | null，不传空数组
-	// Frontend expects BundleSubscription | null, not an empty array.
-	if len(bundles) == 0 {
-		response.Success(c, nil)
-		return
-	}
-	response.Success(c, bundles[0])
+	response.Success(c, bundles)
 }
 
 // GetMyUsage 获取当前用户的套餐用量进度

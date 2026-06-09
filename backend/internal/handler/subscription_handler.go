@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -33,12 +34,14 @@ type SubscriptionProgressInfo struct {
 // SubscriptionHandler handles user subscription operations
 type SubscriptionHandler struct {
 	subscriptionService *service.SubscriptionService
+	bundleSubSvc *service.BundleSubscriptionService
 }
 
 // NewSubscriptionHandler creates a new user subscription handler
-func NewSubscriptionHandler(subscriptionService *service.SubscriptionService) *SubscriptionHandler {
+func NewSubscriptionHandler(subscriptionService *service.SubscriptionService, bundleSubSvc *service.BundleSubscriptionService) *SubscriptionHandler {
 	return &SubscriptionHandler{
 		subscriptionService: subscriptionService,
+		bundleSubSvc: bundleSubSvc,
 	}
 }
 
@@ -61,6 +64,10 @@ func (h *SubscriptionHandler) List(c *gin.Context) {
 	for i := range subscriptions {
 		out = append(out, *dto.UserSubscriptionFromService(&subscriptions[i]))
 	}
+
+	// Enrich bundle subscriptions with plan info.
+	enrichBundleInfo(out, h.bundleSubSvc, c.Request.Context())
+
 	response.Success(c, out)
 }
 
@@ -83,6 +90,10 @@ func (h *SubscriptionHandler) GetActive(c *gin.Context) {
 	for i := range subscriptions {
 		out = append(out, *dto.UserSubscriptionFromService(&subscriptions[i]))
 	}
+
+	// Enrich bundle subscriptions with plan info.
+	enrichBundleInfo(out, h.bundleSubSvc, c.Request.Context())
+
 	response.Success(c, out)
 }
 
@@ -186,3 +197,53 @@ func (h *SubscriptionHandler) GetSummary(c *gin.Context) {
 
 	response.Success(c, summary)
 }
+
+// enrichBundleInfo fills BundlePlanTier and BundlePlanName for subscriptions
+// that originated from a bundle purchase (BundleSubscriptionID != nil).
+func enrichBundleInfo(subs []dto.UserSubscription, svc *service.BundleSubscriptionService, ctx context.Context) {
+	// Collect unique bundle subscription IDs
+	bundleSubIDs := make(map[int64]struct{})
+	for _, sub := range subs {
+		if sub.BundleSubscriptionID != nil {
+			bundleSubIDs[*sub.BundleSubscriptionID] = struct{}{}
+		}
+	}
+	if len(bundleSubIDs) == 0 {
+		return
+	}
+
+	// For each bundle sub ID, load the subscription to get plan info.
+	// We cache results to avoid duplicate lookups.
+	type planInfo struct {
+		tier string
+		name string
+	}
+	planCache := make(map[int64]planInfo)
+
+	for i := range subs {
+		sub := &subs[i]
+		if sub.BundleSubscriptionID == nil {
+			continue
+		}
+		bundleSubID := *sub.BundleSubscriptionID
+
+		if info, ok := planCache[bundleSubID]; ok {
+			sub.BundlePlanTier = &info.tier
+			sub.BundlePlanName = &info.name
+			continue
+		}
+
+		// Load bundle subscription to get plan ID, then load plan.
+		// Use a lightweight approach: get active bundles for the user.
+		// Since we already have the bundleSubID, load directly.
+		bundleSub, err := svc.GetBundleByID(ctx, bundleSubID)
+		if err != nil || bundleSub == nil || bundleSub.Plan == nil {
+			continue
+		}
+		info := planInfo{tier: bundleSub.Plan.Tier, name: bundleSub.Plan.Name}
+		planCache[bundleSubID] = info
+		sub.BundlePlanTier = &info.tier
+		sub.BundlePlanName = &info.name
+	}
+}
+

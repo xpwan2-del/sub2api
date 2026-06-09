@@ -6826,7 +6826,9 @@ export default {
     resetIn: '{time} 后重置',
     quotaEndsIn: '额度将在 {time} 后结束',
     windowNotActive: '等待首次使用',
-    usageOf: '已用 {used} / {limit}'
+    usageOf: '已用 {used} / {limit}',
+    bundleBadge: '套餐订阅',
+    bundleRenew: '续费套餐'
   },
 
   // Onboarding Tour
