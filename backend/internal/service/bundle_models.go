@@ -9,72 +9,72 @@ import "time"
 // BundlePlan 套餐计划服务层模型，包含计划属性和关联的渠道组额度列表
 // BundlePlan is the service-layer model for a bundle plan.
 type BundlePlan struct {
-	ID               int64
-	Name             string
-	Description      string
-	Tier             string
-	Price            float64
-	OriginalPrice    float64
-	Currency         string
-	ValidityDays     int
-	ConcurrencyLimit int
-	RPMLimit         int
-	Features         []string
-	ForSale          bool
-	SortOrder        int
-	Status           string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	ID               int64              `json:"id"`
+	Name             string             `json:"name"`
+	Description      string             `json:"description"`
+	Tier             string             `json:"tier"`
+	Price            float64            `json:"price"`
+	OriginalPrice    float64            `json:"original_price"`
+	Currency         string             `json:"currency"`
+	ValidityDays     int                `json:"validity_days"`
+	ConcurrencyLimit int                `json:"concurrency_limit"`
+	RPMLimit         int                `json:"rpm_limit"`
+	Features         []string           `json:"features"`
+	ForSale          bool               `json:"for_sale"`
+	SortOrder        int                `json:"sort_order"`
+	Status           string             `json:"status"`
+	CreatedAt        time.Time          `json:"created_at"`
+	UpdatedAt        time.Time          `json:"updated_at"`
 
-	GroupQuotas []BundlePlanGroupQuota
+	GroupQuotas []BundlePlanGroupQuota `json:"group_quotas,omitempty"`
 }
 
 // BundlePlanGroupQuota 套餐计划中单个渠道组的额度配置
 // BundlePlanGroupQuota is the service-layer model for per-group quota within a plan.
 type BundlePlanGroupQuota struct {
-	ID             int64
-	PlanID         int64
-	GroupID        int64
-	QuotaScope     string
-	ModelPattern   string
-	DailyLimitUSD  float64
-	WeeklyLimitUSD float64
-	MonthlyLimitUSD float64
+	ID              int64   `json:"id"`
+	PlanID          int64   `json:"plan_id"`
+	GroupID         int64   `json:"group_id"`
+	QuotaScope      string  `json:"quota_scope"`
+	ModelPattern    string  `json:"model_pattern"`
+	DailyLimitUSD   float64 `json:"daily_limit_usd"`
+	WeeklyLimitUSD  float64 `json:"weekly_limit_usd"`
+	MonthlyLimitUSD float64 `json:"monthly_limit_usd"`
 }
 
 // BundleSubscription 用户套餐订阅实例，包含订阅状态、时间范围和用量数据
 // BundleSubscription is the service-layer model for a user's bundle subscription.
 type BundleSubscription struct {
-	ID               int64
-	UserID           int64
-	PlanID           int64
-	Status           string
-	StartsAt         time.Time
-	ExpiresAt        time.Time
-	ConcurrencyLimit int
-	RPMLimit         int
-	Source           string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	DeletedAt        *time.Time
+	ID               int64              `json:"id"`
+	UserID           int64              `json:"user_id"`
+	PlanID           int64              `json:"plan_id"`
+	Status           string             `json:"status"`
+	StartsAt         time.Time          `json:"starts_at"`
+	ExpiresAt        time.Time          `json:"expires_at"`
+	ConcurrencyLimit int                `json:"concurrency_limit"`
+	RPMLimit         int                `json:"rpm_limit"`
+	Source           string             `json:"source"`
+	CreatedAt        time.Time          `json:"created_at"`
+	UpdatedAt        time.Time          `json:"updated_at"`
+	DeletedAt        *time.Time         `json:"deleted_at,omitempty"`
 
-	Plan   *BundlePlan
-	Usages []BundleSubscriptionUsage
+	Plan   *BundlePlan                `json:"plan,omitempty"`
+	Usages []BundleSubscriptionUsage  `json:"usages,omitempty"`
 }
 
 // BundleSubscriptionUsage 套餐订阅的用量跟踪记录，按渠道组和时间窗口统计
 // BundleSubscriptionUsage is the service-layer model for usage tracking per subscription + group.
 type BundleSubscriptionUsage struct {
-	ID                   int64
-	BundleSubscriptionID int64
-	GroupID              int64
-	ModelPattern         string
-	DailyUsageUSD        float64
-	DailyWindowStart     time.Time
-	WeeklyUsageUSD       float64
-	WeeklyWindowStart    time.Time
-	MonthlyUsageUSD      float64
-	MonthlyWindowStart   time.Time
+	ID                   int64     `json:"id"`
+	BundleSubscriptionID int64     `json:"bundle_subscription_id"`
+	GroupID              int64     `json:"group_id"`
+	ModelPattern         string    `json:"model_pattern"`
+	DailyUsageUSD        float64   `json:"daily_usage_usd"`
+	DailyWindowStart     time.Time `json:"daily_window_start"`
+	WeeklyUsageUSD       float64   `json:"weekly_usage_usd"`
+	WeeklyWindowStart    time.Time `json:"weekly_window_start"`
+	MonthlyUsageUSD      float64   `json:"monthly_usage_usd"`
+	MonthlyWindowStart   time.Time `json:"monthly_window_start"`
 }
 
 // CreateBundlePlanRequest 创建套餐计划的请求 DTO
