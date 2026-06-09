@@ -7215,6 +7215,8 @@ export default {
       featuresPlaceholder: 'One feature per line',
       featuresHint: 'Enter one feature per line, displayed on plan cards',
       forSale: 'For Sale',
+      onSale: 'On Sale',
+      offSale: 'Off Sale',
       status: 'Status',
       statusActive: 'Active',
       statusDisabled: 'Disabled',

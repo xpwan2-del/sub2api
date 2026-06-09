@@ -7394,6 +7394,8 @@ export default {
       featuresPlaceholder: '每行一个功能特性',
       featuresHint: '每行输入一个功能特性，将显示在用户端的套餐卡片中',
       forSale: '在售',
+      onSale: '上架',
+      offSale: '下架',
       status: '状态',
       statusActive: '启用',
       statusDisabled: '停用',
