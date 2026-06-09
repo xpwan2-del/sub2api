@@ -6,7 +6,7 @@
         <button @click="loadPlans" :disabled="plansLoading" class="btn btn-secondary" :title="t('common.refresh')">
           <Icon name="refresh" size="md" :class="plansLoading ? 'animate-spin' : ''" />
         </button>
-        <button @click="openPlanEdit(null)" class="btn btn-primary">{{ t('bundle.admin.createPlan') }}</button>
+        <button @click="openPlanEdit(null)" class="btn btn-primary">{{ t('bundles.admin.createPlan') }}</button>
       </div>
 
       <!-- Plans Table -->
@@ -21,7 +21,7 @@
           </div>
         </template>
         <template #cell-validity_days="{ value }">
-          <span class="text-sm">{{ value }} {{ t('bundle.admin.days') }}</span>
+          <span class="text-sm">{{ value }} {{ t('bundles.admin.days') }}</span>
         </template>
         <template #cell-status="{ value }">
           <span :class="statusBadgeClass(value)">{{ statusLabel(value) }}</span>
@@ -41,7 +41,7 @@
               class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-yellow-50 hover:text-yellow-600 dark:hover:bg-yellow-900/20 dark:hover:text-yellow-400"
             >
               <Icon name="ban" size="sm" />
-              <span class="text-xs">{{ t('bundle.admin.disable') }}</span>
+              <span class="text-xs">{{ t('bundles.admin.disable') }}</span>
             </button>
             <button
               v-else
@@ -49,7 +49,7 @@
               class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400"
             >
               <Icon name="check" size="sm" />
-              <span class="text-xs">{{ t('bundle.admin.enable') }}</span>
+              <span class="text-xs">{{ t('bundles.admin.enable') }}</span>
             </button>
           </div>
         </template>
@@ -57,54 +57,54 @@
     </div>
 
     <!-- Plan Edit Dialog -->
-    <BaseDialog :show="showPlanDialog" :title="editingPlan ? t('bundle.admin.editPlan') : t('bundle.admin.createPlan')" width="extra-wide" @close="showPlanDialog = false">
+    <BaseDialog :show="showPlanDialog" :title="editingPlan ? t('bundles.admin.editPlan') : t('bundles.admin.createPlan')" width="extra-wide" @close="showPlanDialog = false">
       <form id="bundle-plan-form" @submit.prevent="handleSavePlan" class="space-y-4">
         <!-- Basic Info -->
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="input-label">{{ t('bundle.admin.planName') }} <span class="text-red-500">*</span></label>
+            <label class="input-label">{{ t('bundles.admin.planName') }} <span class="text-red-500">*</span></label>
             <input v-model="planForm.name" type="text" class="input" required />
           </div>
           <div>
-            <label class="input-label">{{ t('bundle.admin.tier') }} <span class="text-red-500">*</span></label>
-            <Select v-model="planForm.tier" :options="tierOptions" :placeholder="t('bundle.admin.selectTier')" class="w-full" />
+            <label class="input-label">{{ t('bundles.admin.tier') }} <span class="text-red-500">*</span></label>
+            <Select v-model="planForm.tier" :options="tierOptions" :placeholder="t('bundles.admin.selectTier')" class="w-full" />
           </div>
         </div>
         <div>
-          <label class="input-label">{{ t('bundle.admin.planDescription') }}</label>
+          <label class="input-label">{{ t('bundles.admin.planDescription') }}</label>
           <textarea v-model="planForm.description" rows="2" class="input"></textarea>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="input-label">{{ t('bundle.admin.price') }} <span class="text-red-500">*</span></label>
+            <label class="input-label">{{ t('bundles.admin.price') }} <span class="text-red-500">*</span></label>
             <input v-model.number="planForm.price" type="number" step="0.01" min="0.01" class="input" required />
           </div>
           <div>
-            <label class="input-label">{{ t('bundle.admin.originalPrice') }}</label>
+            <label class="input-label">{{ t('bundles.admin.originalPrice') }}</label>
             <input v-model.number="planForm.original_price" type="number" step="0.01" min="0" class="input" />
           </div>
         </div>
         <div class="grid grid-cols-3 gap-4">
           <div>
-            <label class="input-label">{{ t('bundle.admin.currency') }}</label>
+            <label class="input-label">{{ t('bundles.admin.currency') }}</label>
             <Select v-model="planForm.currency" :options="currencyOptions" class="w-full" />
           </div>
           <div>
-            <label class="input-label">{{ t('bundle.admin.validityDays') }} <span class="text-red-500">*</span></label>
+            <label class="input-label">{{ t('bundles.admin.validityDays') }} <span class="text-red-500">*</span></label>
             <input v-model.number="planForm.validity_days" type="number" min="1" class="input" required />
           </div>
           <div>
-            <label class="input-label">{{ t('bundle.admin.sortOrder') }}</label>
+            <label class="input-label">{{ t('bundles.admin.sortOrder') }}</label>
             <input v-model.number="planForm.sort_order" type="number" min="0" class="input" />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="input-label">{{ t('bundle.admin.concurrencyLimit') }}</label>
+            <label class="input-label">{{ t('bundles.admin.concurrencyLimit') }}</label>
             <input v-model.number="planForm.concurrency_limit" type="number" min="0" class="input" />
           </div>
           <div>
-            <label class="input-label">{{ t('bundle.admin.rpmLimit') }}</label>
+            <label class="input-label">{{ t('bundles.admin.rpmLimit') }}</label>
             <input v-model.number="planForm.rpm_limit" type="number" min="0" class="input" />
           </div>
         </div>
@@ -112,10 +112,10 @@
         <!-- Group Quotas Section -->
         <div>
           <div class="mb-2 flex items-center justify-between">
-            <label class="input-label mb-0">{{ t('bundle.admin.groupQuotas') }}</label>
+            <label class="input-label mb-0">{{ t('bundles.admin.groupQuotas') }}</label>
             <button type="button" @click="addGroupQuota" class="btn btn-secondary btn-sm">
               <Icon name="plus" size="sm" class="mr-1" />
-              {{ t('bundle.admin.addGroup') }}
+              {{ t('bundles.admin.addGroup') }}
             </button>
           </div>
 
@@ -125,7 +125,7 @@
               <Select
                 v-model="selectedNewGroupId"
                 :options="availableGroupOptions"
-                :placeholder="t('bundle.admin.selectGroup')"
+                :placeholder="t('bundles.admin.selectGroup')"
                 class="flex-1"
               />
               <button type="button" @click="confirmAddGroupQuota" :disabled="!selectedNewGroupId" class="btn btn-primary btn-sm">{{ t('common.confirm') }}</button>
@@ -135,25 +135,25 @@
 
           <!-- Group Quota Rows -->
           <div v-if="planForm.group_quotas.length === 0" class="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-400 dark:border-dark-600">
-            {{ t('bundle.admin.noGroupQuotas') }}
+            {{ t('bundles.admin.noGroupQuotas') }}
           </div>
           <div v-for="(quota, idx) in planForm.group_quotas" :key="idx" class="mb-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-dark-600 dark:bg-dark-800">
             <div class="grid grid-cols-12 gap-3">
               <!-- Group Name -->
               <div class="col-span-3">
-                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundle.admin.group') }}</label>
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.group') }}</label>
                 <div class="mt-1 text-sm font-medium text-gray-900 dark:text-white">
                   {{ getGroupName(quota.group_id) }}
                 </div>
               </div>
               <!-- Quota Scope -->
               <div class="col-span-2">
-                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundle.admin.quotaScope') }}</label>
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.quotaScope') }}</label>
                 <Select v-model="quota.quota_scope" :options="quotaScopeOptions" class="mt-1 w-full" @change="onQuotaScopeChange(quota)" />
               </div>
               <!-- Model Pattern (only for model scope) -->
               <div class="col-span-2">
-                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundle.admin.modelPattern') }}</label>
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.modelPattern') }}</label>
                 <input
                   v-model="quota.model_pattern"
                   type="text"
@@ -164,15 +164,15 @@
               </div>
               <!-- Daily / Weekly / Monthly Limits -->
               <div class="col-span-1">
-                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundle.admin.daily') }}</label>
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.daily') }}</label>
                 <input v-model.number="quota.daily_limit_usd" type="number" step="0.01" min="0" class="input mt-1" />
               </div>
               <div class="col-span-1">
-                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundle.admin.weekly') }}</label>
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.weekly') }}</label>
                 <input v-model.number="quota.weekly_limit_usd" type="number" step="0.01" min="0" class="input mt-1" />
               </div>
               <div class="col-span-1">
-                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundle.admin.monthly') }}</label>
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.monthly') }}</label>
                 <input v-model.number="quota.monthly_limit_usd" type="number" step="0.01" min="0" class="input mt-1" />
               </div>
               <!-- Delete -->
@@ -187,9 +187,9 @@
 
         <!-- Features -->
         <div>
-          <label class="input-label">{{ t('bundle.admin.features') }}</label>
-          <textarea v-model="featuresText" rows="3" class="input" :placeholder="t('bundle.admin.featuresPlaceholder')"></textarea>
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('bundle.admin.featuresHint') }}</p>
+          <label class="input-label">{{ t('bundles.admin.features') }}</label>
+          <textarea v-model="featuresText" rows="3" class="input" :placeholder="t('bundles.admin.featuresPlaceholder')"></textarea>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.featuresHint') }}</p>
         </div>
       </form>
       <template #footer>
@@ -297,19 +297,19 @@ const featuresText = ref('')
 
 const planColumns = computed((): Column[] => [
   { key: 'id', label: 'ID' },
-  { key: 'name', label: t('bundle.admin.planName') },
-  { key: 'tier', label: t('bundle.admin.tier') },
-  { key: 'price', label: t('bundle.admin.price') },
-  { key: 'validity_days', label: t('bundle.admin.validityDays') },
-  { key: 'status', label: t('bundle.admin.status') },
-  { key: 'group_quotas', label: t('bundle.admin.groupCount') },
+  { key: 'name', label: t('bundles.admin.planName') },
+  { key: 'tier', label: t('bundles.admin.tier') },
+  { key: 'price', label: t('bundles.admin.price') },
+  { key: 'validity_days', label: t('bundles.admin.validityDays') },
+  { key: 'status', label: t('bundles.admin.status') },
+  { key: 'group_quotas', label: t('bundles.admin.groupCount') },
   { key: 'actions', label: t('common.actions') },
 ])
 
 const tierOptions = computed(() => [
-  { value: 'basic', label: t('bundle.admin.tierBasic') },
-  { value: 'flagship', label: t('bundle.admin.tierFlagship') },
-  { value: 'enterprise', label: t('bundle.admin.tierEnterprise') },
+  { value: 'basic', label: t('bundles.admin.tierBasic') },
+  { value: 'flagship', label: t('bundles.admin.tierFlagship') },
+  { value: 'enterprise', label: t('bundles.admin.tierEnterprise') },
 ])
 
 const currencyOptions = computed(() => [
@@ -318,8 +318,8 @@ const currencyOptions = computed(() => [
 ])
 
 const quotaScopeOptions = computed(() => [
-  { value: 'platform', label: t('bundle.admin.scopePlatform') },
-  { value: 'model', label: t('bundle.admin.scopeModel') },
+  { value: 'platform', label: t('bundles.admin.scopePlatform') },
+  { value: 'model', label: t('bundles.admin.scopeModel') },
 ])
 
 function tierBadgeClass(tier: string): string {
@@ -334,9 +334,9 @@ function tierBadgeClass(tier: string): string {
 
 function tierLabel(tier: string): string {
   switch (tier) {
-    case 'basic': return t('bundle.admin.tierBasic')
-    case 'flagship': return t('bundle.admin.tierFlagship')
-    case 'enterprise': return t('bundle.admin.tierEnterprise')
+    case 'basic': return t('bundles.admin.tierBasic')
+    case 'flagship': return t('bundles.admin.tierFlagship')
+    case 'enterprise': return t('bundles.admin.tierEnterprise')
     default: return tier
   }
 }
@@ -352,8 +352,8 @@ function statusBadgeClass(status: string): string {
 
 function statusLabel(status: string): string {
   switch (status) {
-    case 'active': return t('bundle.admin.statusActive')
-    case 'disabled': return t('bundle.admin.statusDisabled')
+    case 'active': return t('bundles.admin.statusActive')
+    case 'disabled': return t('bundles.admin.statusDisabled')
     default: return status
   }
 }
@@ -472,15 +472,15 @@ function buildPayload() {
 
 async function handleSavePlan() {
   if (!planForm.tier) {
-    appStore.showError(t('bundle.admin.tierRequired'))
+    appStore.showError(t('bundles.admin.tierRequired'))
     return
   }
   if (!planForm.price || planForm.price <= 0) {
-    appStore.showError(t('bundle.admin.priceRequired'))
+    appStore.showError(t('bundles.admin.priceRequired'))
     return
   }
   if (!planForm.validity_days || planForm.validity_days < 1) {
-    appStore.showError(t('bundle.admin.validityDaysRequired'))
+    appStore.showError(t('bundles.admin.validityDaysRequired'))
     return
   }
 

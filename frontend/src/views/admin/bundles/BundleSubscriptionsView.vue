@@ -10,7 +10,7 @@
               <input
                 v-model.number="filters.user_id"
                 type="number"
-                :placeholder="t('bundle.admin.searchUserId')"
+                :placeholder="t('bundles.admin.searchUserId')"
                 class="input"
                 @input="debounceSearch"
               />
@@ -21,7 +21,7 @@
               <Select
                 v-model="filters.status"
                 :options="statusOptions"
-                :placeholder="t('bundle.admin.allStatus')"
+                :placeholder="t('bundles.admin.allStatus')"
                 @change="loadSubscriptions"
               />
             </div>
@@ -96,7 +96,7 @@
                 class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
               >
                 <Icon name="calendar" size="sm" />
-                <span class="text-xs">{{ t('bundle.admin.extend') }}</span>
+                <span class="text-xs">{{ t('bundles.admin.extend') }}</span>
               </button>
               <button
                 v-if="row.status === 'active'"
@@ -104,13 +104,13 @@
                 class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
               >
                 <Icon name="ban" size="sm" />
-                <span class="text-xs">{{ t('bundle.admin.revoke') }}</span>
+                <span class="text-xs">{{ t('bundles.admin.revoke') }}</span>
               </button>
             </div>
           </template>
 
           <template #empty>
-            <EmptyState :title="t('bundle.admin.noSubscriptions')" />
+            <EmptyState :title="t('bundles.admin.noSubscriptions')" />
           </template>
         </DataTable>
 
@@ -121,7 +121,7 @@
         >
           <template v-if="expandedSubscription?.group_usages?.length">
             <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-              {{ t('bundle.admin.groupUsageDetails') }}
+              {{ t('bundles.admin.groupUsageDetails') }}
             </h4>
             <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               <div
@@ -188,7 +188,7 @@
             </div>
           </template>
           <div v-else class="text-sm text-gray-400 dark:text-gray-500">
-            {{ t('bundle.admin.noGroupUsage') }}
+            {{ t('bundles.admin.noGroupUsage') }}
           </div>
         </div>
       </template>
@@ -209,16 +209,16 @@
     <!-- Extend Dialog -->
     <BaseDialog
       :show="showExtendDialog"
-      :title="t('bundle.admin.extendSubscription')"
+      :title="t('bundles.admin.extendSubscription')"
       width="narrow"
       @close="showExtendDialog = false"
     >
       <form id="extend-form" @submit.prevent="handleExtend" class="space-y-4">
         <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ t('bundle.admin.extendHint', { id: extendingSubscription?.id }) }}
+          {{ t('bundles.admin.extendHint', { id: extendingSubscription?.id }) }}
         </p>
         <div>
-          <label class="input-label">{{ t('bundle.admin.extendDays') }} <span class="text-red-500">*</span></label>
+          <label class="input-label">{{ t('bundles.admin.extendDays') }} <span class="text-red-500">*</span></label>
           <input
             v-model.number="extendDays"
             type="number"
@@ -241,18 +241,18 @@
     <!-- Revoke Confirm Dialog -->
     <BaseDialog
       :show="showRevokeDialog"
-      :title="t('bundle.admin.revokeSubscription')"
+      :title="t('bundles.admin.revokeSubscription')"
       width="narrow"
       @close="showRevokeDialog = false"
     >
       <p class="text-sm text-gray-600 dark:text-gray-400">
-        {{ t('bundle.admin.revokeConfirm', { id: revokingSubscription?.id }) }}
+        {{ t('bundles.admin.revokeConfirm', { id: revokingSubscription?.id }) }}
       </p>
       <template #footer>
         <div class="flex justify-end gap-3">
           <button type="button" @click="showRevokeDialog = false" class="btn btn-secondary">{{ t('common.cancel') }}</button>
           <button type="button" @click="confirmRevoke" :disabled="revoking" class="btn btn-danger">
-            {{ revoking ? t('common.saving') : t('bundle.admin.revoke') }}
+            {{ revoking ? t('common.saving') : t('bundles.admin.revoke') }}
           </button>
         </div>
       </template>
@@ -318,20 +318,20 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const columns = computed((): Column[] => [
   { key: 'id', label: 'ID' },
-  { key: 'user_id', label: t('bundle.admin.userId') },
-  { key: 'plan_id', label: t('bundle.admin.planName') },
-  { key: 'status', label: t('bundle.admin.status') },
-  { key: 'starts_at', label: t('bundle.admin.startsAt') },
-  { key: 'expires_at', label: t('bundle.admin.expiresAt') },
-  { key: 'source', label: t('bundle.admin.source') },
+  { key: 'user_id', label: t('bundles.admin.userId') },
+  { key: 'plan_id', label: t('bundles.admin.planName') },
+  { key: 'status', label: t('bundles.admin.status') },
+  { key: 'starts_at', label: t('bundles.admin.startsAt') },
+  { key: 'expires_at', label: t('bundles.admin.expiresAt') },
+  { key: 'source', label: t('bundles.admin.source') },
   { key: 'actions', label: t('common.actions') },
 ])
 
 const statusOptions = computed(() => [
-  { value: '', label: t('bundle.admin.allStatus') },
-  { value: 'active', label: t('bundle.admin.statusActive') },
-  { value: 'expired', label: t('bundle.admin.statusExpired') },
-  { value: 'revoked', label: t('bundle.admin.statusRevoked') },
+  { value: '', label: t('bundles.admin.allStatus') },
+  { value: 'active', label: t('bundles.admin.statusActive') },
+  { value: 'expired', label: t('bundles.admin.statusExpired') },
+  { value: 'revoked', label: t('bundles.admin.statusRevoked') },
 ])
 
 const expandedSubscription = computed(() =>
@@ -357,9 +357,9 @@ function statusBadgeClass(status: string): string {
 
 function statusLabel(status: string): string {
   switch (status) {
-    case 'active': return t('bundle.admin.statusActive')
-    case 'expired': return t('bundle.admin.statusExpired')
-    case 'revoked': return t('bundle.admin.statusRevoked')
+    case 'active': return t('bundles.admin.statusActive')
+    case 'expired': return t('bundles.admin.statusExpired')
+    case 'revoked': return t('bundles.admin.statusRevoked')
     default: return status
   }
 }
@@ -376,9 +376,9 @@ function sourceBadgeClass(source: string): string {
 
 function sourceLabel(source: string): string {
   switch (source) {
-    case 'purchase': return t('bundle.admin.sourcePurchase')
-    case 'redeem': return t('bundle.admin.sourceRedeem')
-    case 'admin_assign': return t('bundle.admin.sourceAdminAssign')
+    case 'purchase': return t('bundles.admin.sourcePurchase')
+    case 'redeem': return t('bundles.admin.sourceRedeem')
+    case 'admin_assign': return t('bundles.admin.sourceAdminAssign')
     default: return source
   }
 }
