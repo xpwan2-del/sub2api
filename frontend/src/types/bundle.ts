@@ -104,6 +104,7 @@ export interface CreateBundlePlanRequest {
   concurrency_limit?: number
   rpm_limit?: number
   features?: string[]
+  for_sale?: boolean
   group_quotas: CreateGroupQuotaRequest[]
 }
 

@@ -31,6 +31,13 @@ func (s *BundlePlanService) CreatePlan(ctx context.Context, req *CreateBundlePla
 		return nil, ErrBundlePlanNotFound
 	}
 
+	// Default for_sale to true when not explicitly provided in the request.
+	// Go's bool zero-value is false, which would hide new plans from the storefront.
+	forSale := true
+	if req.ForSale != nil {
+		forSale = *req.ForSale
+	}
+
 	plan := &BundlePlan{
 		Name:             req.Name,
 		Description:      req.Description,
@@ -42,7 +49,7 @@ func (s *BundlePlanService) CreatePlan(ctx context.Context, req *CreateBundlePla
 		ConcurrencyLimit: req.ConcurrencyLimit,
 		RPMLimit:         req.RPMLimit,
 		Features:         req.Features,
-		ForSale:          req.ForSale,
+		ForSale:          forSale,
 		SortOrder:        req.SortOrder,
 		Status:           domain.StatusActive,
 		GroupQuotas:      make([]BundlePlanGroupQuota, 0, len(req.GroupQuotas)),

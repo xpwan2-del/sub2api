@@ -84,7 +84,7 @@
             <input v-model.number="planForm.original_price" type="number" step="0.01" min="0" class="input" />
           </div>
         </div>
-        <div class="grid grid-cols-3 gap-4">
+        <div class="grid grid-cols-4 gap-4">
           <div>
             <label class="input-label">{{ t('bundles.admin.currency') }}</label>
             <Select v-model="planForm.currency" :options="currencyOptions" class="w-full" />
@@ -96,6 +96,29 @@
           <div>
             <label class="input-label">{{ t('bundles.admin.sortOrder') }}</label>
             <input v-model.number="planForm.sort_order" type="number" min="0" class="input" />
+          </div>
+          <div>
+            <label class="input-label">{{ t('bundles.admin.forSale') }}</label>
+            <div class="mt-2 flex items-center gap-2">
+              <button
+                type="button"
+                @click="planForm.for_sale = !planForm.for_sale"
+                :class="[
+                  'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                  planForm.for_sale ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+                ]"
+              >
+                <span
+                  :class="[
+                    'pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                    planForm.for_sale ? 'translate-x-4' : 'translate-x-0'
+                  ]"
+                />
+              </button>
+              <span class="text-sm" :class="planForm.for_sale ? 'text-green-600 dark:text-green-400' : 'text-gray-400'">
+                {{ planForm.for_sale ? t('bundles.admin.onSale') : t('bundles.admin.offSale') }}
+              </span>
+            </div>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
@@ -283,6 +306,7 @@ interface PlanFormData {
   concurrency_limit: number
   rpm_limit: number
   sort_order: number
+  for_sale: boolean
   features: string[]
   group_quotas: CreateGroupQuotaRequest[]
 }
@@ -298,6 +322,7 @@ const planForm = reactive<PlanFormData>({
   concurrency_limit: 0,
   rpm_limit: 0,
   sort_order: 0,
+  for_sale: true,
   features: [],
   group_quotas: [],
 })
@@ -381,6 +406,7 @@ function openPlanEdit(plan: BundlePlan | null) {
       concurrency_limit: plan.concurrency_limit || 0,
       rpm_limit: plan.rpm_limit || 0,
       sort_order: plan.sort_order || 0,
+      for_sale: plan.for_sale ?? true,
       features: plan.features || [],
       group_quotas: (plan.group_quotas || []).map(q => ({
         group_id: q.group_id,
@@ -404,6 +430,7 @@ function openPlanEdit(plan: BundlePlan | null) {
       concurrency_limit: 0,
       rpm_limit: 0,
       sort_order: 0,
+      for_sale: true,
       features: [],
       group_quotas: [],
     })
@@ -461,6 +488,7 @@ function buildPayload() {
     concurrency_limit: planForm.concurrency_limit || undefined,
     rpm_limit: planForm.rpm_limit || undefined,
     sort_order: planForm.sort_order,
+    for_sale: planForm.for_sale,
     features,
     group_quotas: planForm.group_quotas,
   }

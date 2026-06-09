@@ -90,7 +90,7 @@ type CreateBundlePlanRequest struct {
 	ConcurrencyLimit int                     `json:"concurrency_limit"`
 	RPMLimit         int                     `json:"rpm_limit"`
 	Features         []string                `json:"features"`
-	ForSale          bool                    `json:"for_sale"`
+	ForSale          *bool                   `json:"for_sale"`
 	SortOrder        int                     `json:"sort_order"`
 	GroupQuotas      []CreateGroupQuotaRequest `json:"group_quotas" binding:"required,min=1"`
 }
