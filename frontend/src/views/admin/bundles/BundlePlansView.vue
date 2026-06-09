@@ -1,60 +1,64 @@
 <template>
   <AppLayout>
-    <div class="space-y-4">
+    <TablePageLayout>
       <!-- Actions -->
-      <div class="flex items-center justify-end gap-2">
-        <button @click="loadPlans" :disabled="plansLoading" class="btn btn-secondary" :title="t('common.refresh')">
-          <Icon name="refresh" size="md" :class="plansLoading ? 'animate-spin' : ''" />
-        </button>
-        <button @click="openPlanEdit(null)" class="btn btn-primary">{{ t('bundles.admin.createPlan') }}</button>
-      </div>
+      <template #actions>
+        <div class="flex items-center justify-end gap-2">
+          <button @click="loadPlans" :disabled="plansLoading" class="btn btn-secondary" :title="t('common.refresh')">
+            <Icon name="refresh" size="md" :class="plansLoading ? 'animate-spin' : ''" />
+          </button>
+          <button @click="openPlanEdit(null)" class="btn btn-primary">{{ t('bundles.admin.createPlan') }}</button>
+        </div>
+      </template>
 
       <!-- Plans Table -->
-      <DataTable :columns="planColumns" :data="plans" :loading="plansLoading">
-        <template #cell-tier="{ value }">
-          <span :class="tierBadgeClass(value)">{{ tierLabel(value) }}</span>
-        </template>
-        <template #cell-price="{ value, row }">
-          <div class="text-sm">
-            <span class="font-medium text-gray-900 dark:text-white">{{ row.currency === 'CNY' ? '¥' : '$' }}{{ (value ?? 0).toFixed(2) }}</span>
-            <span v-if="row.original_price" class="ml-1 text-xs text-gray-400 line-through">{{ row.currency === 'CNY' ? '¥' : '$' }}{{ row.original_price.toFixed(2) }}</span>
-          </div>
-        </template>
-        <template #cell-validity_days="{ value }">
-          <span class="text-sm">{{ value }} {{ t('bundles.admin.days') }}</span>
-        </template>
-        <template #cell-status="{ value }">
-          <span :class="statusBadgeClass(value)">{{ statusLabel(value) }}</span>
-        </template>
-        <template #cell-group_quotas="{ value }">
-          <span class="text-sm">{{ value?.length ?? 0 }}</span>
-        </template>
-        <template #cell-actions="{ row }">
-          <div class="flex items-center gap-2">
-            <button @click="openPlanEdit(row)" class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400">
-              <Icon name="edit" size="sm" />
-              <span class="text-xs">{{ t('common.edit') }}</span>
-            </button>
-            <button
-              v-if="row.status === 'active'"
-              @click="handleDisablePlan(row)"
-              class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-yellow-50 hover:text-yellow-600 dark:hover:bg-yellow-900/20 dark:hover:text-yellow-400"
-            >
-              <Icon name="ban" size="sm" />
-              <span class="text-xs">{{ t('bundles.admin.disable') }}</span>
-            </button>
-            <button
-              v-else
-              @click="handleEnablePlan(row)"
-              class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400"
-            >
-              <Icon name="check" size="sm" />
-              <span class="text-xs">{{ t('bundles.admin.enable') }}</span>
-            </button>
-          </div>
-        </template>
-      </DataTable>
-    </div>
+      <template #table>
+        <DataTable :columns="planColumns" :data="plans" :loading="plansLoading">
+          <template #cell-tier="{ value }">
+            <span :class="tierBadgeClass(value)">{{ tierLabel(value) }}</span>
+          </template>
+          <template #cell-price="{ value, row }">
+            <div class="text-sm">
+              <span class="font-medium text-gray-900 dark:text-white">{{ row.currency === 'CNY' ? '¥' : '$' }}{{ (value ?? 0).toFixed(2) }}</span>
+              <span v-if="row.original_price" class="ml-1 text-xs text-gray-400 line-through">{{ row.currency === 'CNY' ? '¥' : '$' }}{{ row.original_price.toFixed(2) }}</span>
+            </div>
+          </template>
+          <template #cell-validity_days="{ value }">
+            <span class="text-sm">{{ value }} {{ t('bundles.admin.days') }}</span>
+          </template>
+          <template #cell-status="{ value }">
+            <span :class="statusBadgeClass(value)">{{ statusLabel(value) }}</span>
+          </template>
+          <template #cell-group_quotas="{ value }">
+            <span class="text-sm">{{ value?.length ?? 0 }}</span>
+          </template>
+          <template #cell-actions="{ row }">
+            <div class="flex items-center gap-2">
+              <button @click="openPlanEdit(row)" class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400">
+                <Icon name="edit" size="sm" />
+                <span class="text-xs">{{ t('common.edit') }}</span>
+              </button>
+              <button
+                v-if="row.status === 'active'"
+                @click="handleDisablePlan(row)"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-yellow-50 hover:text-yellow-600 dark:hover:bg-yellow-900/20 dark:hover:text-yellow-400"
+              >
+                <Icon name="ban" size="sm" />
+                <span class="text-xs">{{ t('bundles.admin.disable') }}</span>
+              </button>
+              <button
+                v-else
+                @click="handleEnablePlan(row)"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400"
+              >
+                <Icon name="check" size="sm" />
+                <span class="text-xs">{{ t('bundles.admin.enable') }}</span>
+              </button>
+            </div>
+          </template>
+        </DataTable>
+      </template>
+    </TablePageLayout>
 
     <!-- Plan Edit Dialog -->
     <BaseDialog :show="showPlanDialog" :title="editingPlan ? t('bundles.admin.editPlan') : t('bundles.admin.createPlan')" width="extra-wide" @close="showPlanDialog = false">
@@ -237,6 +241,7 @@ import { getTierTheme, getTierI18nKey, getTierSelectOptions, type BundleTier } f
 import type { AdminGroup } from '@/types'
 import type { Column } from '@/components/common/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Select from '@/components/common/Select.vue'
