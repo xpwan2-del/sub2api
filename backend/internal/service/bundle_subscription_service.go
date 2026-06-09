@@ -58,12 +58,22 @@ func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *Act
 	}
 
 	// 1. Check user has no active bundle subscription.
+	// Admin assignments bypass the conflict check: revoke existing active bundles first.
 	activeBundles, err := s.bundleSubRepo.GetActiveByUserID(ctx, req.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("check active bundles: %w", err)
 	}
 	if len(activeBundles) > 0 {
-		return nil, ErrBundleConflict
+		if req.Source == BundleSourceAdminAssign {
+			// Revoke all existing active bundles before activating the new one.
+			for _, existing := range activeBundles {
+				if err := s.RevokeBundle(ctx, existing.ID); err != nil {
+					return nil, fmt.Errorf("revoke existing bundle %d for admin assign: %w", existing.ID, err)
+				}
+			}
+		} else {
+			return nil, ErrBundleConflict
+		}
 	}
 
 	// 2. Load plan and validate.
@@ -71,7 +81,11 @@ func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *Act
 	if err != nil {
 		return nil, fmt.Errorf("load bundle plan: %w", err)
 	}
-	if !plan.ForSale || plan.Status != domain.StatusActive {
+	// Admin assignments can use any active plan, even if not publicly for sale.
+	if req.Source != BundleSourceAdminAssign && (!plan.ForSale || plan.Status != domain.StatusActive) {
+		return nil, ErrBundlePlanDisabled
+	}
+	if plan.Status != domain.StatusActive {
 		return nil, ErrBundlePlanDisabled
 	}
 

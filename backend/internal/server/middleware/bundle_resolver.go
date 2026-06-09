@@ -2,12 +2,14 @@
 // 在网关请求处理链中，为携带 bundle_subscription_id 的 API Key
 // 解析出应使用的渠道组（Group），注入到 Gin 上下文中。
 // 必须放在 APIKeyAuth 中间件之后、RequireGroupAssignment 之前。
+// 同时执行套餐级的 RPM 和并发数限制检查。
 
 package middleware
 
 import (
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -18,14 +20,25 @@ import (
 // BundleRouteResolverMiddleware 套餐路由解析中间件
 // BundleRouteResolverMiddleware resolves which group should handle a request
 // for bundle API keys (keys with no group assignment but an active bundle subscription).
+// It also enforces bundle-level RPM and concurrency limits.
 type BundleRouteResolverMiddleware struct {
-	resolver *service.BundleRouteResolver
+	resolver          *service.BundleRouteResolver
+	rpmCache          service.BundleRPMCache
+	concurrencyCache  service.BundleConcurrencyCache
 }
 
 // NewBundleRouteResolverMiddleware 创建套餐路由解析中间件
 // NewBundleRouteResolverMiddleware creates a new BundleRouteResolverMiddleware.
-func NewBundleRouteResolverMiddleware(resolver *service.BundleRouteResolver) *BundleRouteResolverMiddleware {
-	return &BundleRouteResolverMiddleware{resolver: resolver}
+func NewBundleRouteResolverMiddleware(
+	resolver *service.BundleRouteResolver,
+	rpmCache service.BundleRPMCache,
+	concurrencyCache service.BundleConcurrencyCache,
+) *BundleRouteResolverMiddleware {
+	return &BundleRouteResolverMiddleware{
+		resolver:         resolver,
+		rpmCache:         rpmCache,
+		concurrencyCache: concurrencyCache,
+	}
 }
 
 // BundleResolver 返回 Gin 中间件，为套餐 Key 解析目标渠道组
@@ -76,6 +89,66 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 			})
 			c.Abort()
 			return
+		}
+
+		// --- Bundle-level concurrency check ---
+		// Fail-closed: concurrency limits protect backend resources from overload.
+		// If Redis is unavailable, reject the request rather than risk unbounded
+		// concurrency on upstream AI provider accounts.
+		if resolved.ConcurrencyLimit > 0 {
+			count, incErr := m.concurrencyCache.Increment(c.Request.Context(), resolved.BundleSubID)
+			if incErr != nil {
+				slog.Error("bundle concurrency check failed, rejecting request",
+					"bundle_sub_id", resolved.BundleSubID, "error", incErr)
+				c.JSON(http.StatusServiceUnavailable, gin.H{
+					"error": gin.H{
+						"type":    "bundle_concurrency_unavailable",
+						"message": "并发限制检查暂不可用，请稍后重试",
+					},
+				})
+				c.Abort()
+				return
+			}
+			if count > int64(resolved.ConcurrencyLimit) {
+				// Exceeded: decrement and reject.
+				_, _ = m.concurrencyCache.Decrement(c.Request.Context(), resolved.BundleSubID)
+				c.JSON(http.StatusTooManyRequests, gin.H{
+					"error": gin.H{
+						"type":    "bundle_concurrency_exceeded",
+						"message": "当前并发请求数已达套餐上限",
+					},
+				})
+				c.Abort()
+				return
+			}
+			// Ensure decrement on request completion.
+			defer func() {
+				_, decErr := m.concurrencyCache.Decrement(c.Request.Context(), resolved.BundleSubID)
+				if decErr != nil {
+					slog.Error("bundle concurrency decrement failed", "bundle_sub_id", resolved.BundleSubID, "error", decErr)
+				}
+			}()
+		}
+
+		// --- Bundle-level RPM check ---
+		// Fail-open by design: consistent with the existing RPM pattern in the codebase
+		// ("失败开放：GetRPM 错误时允许调度"). RPM is a soft limit for rate smoothing,
+		// not a resource-protection boundary. Availability is preferred over strictness.
+		if resolved.RPMLimit > 0 {
+			rpmCount, rpmErr := m.rpmCache.IncrementBundleRPM(c.Request.Context(), resolved.BundleSubID)
+			if rpmErr != nil {
+				slog.Warn("bundle rpm check failed, allowing request (fail-open)",
+					"bundle_sub_id", resolved.BundleSubID, "error", rpmErr)
+			} else if rpmCount > resolved.RPMLimit {
+				c.JSON(http.StatusTooManyRequests, gin.H{
+					"error": gin.H{
+						"type":    "bundle_rpm_exceeded",
+						"message": "请求频率已达套餐上限",
+					},
+				})
+				c.Abort()
+				return
+			}
 		}
 
 		// Inject resolved group_id into context for downstream middleware/handlers.

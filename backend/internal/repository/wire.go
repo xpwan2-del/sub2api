@@ -98,6 +98,8 @@ var ProviderSet = wire.NewSet(
 	NewBundlePlanRepository,
 	NewBundleSubscriptionRepository,
 	NewBundleUsageRepository,
+	NewBundleRPMCache,
+	NewBundleConcurrencyCache,
 
 	// Cache implementations
 	NewGatewayCache,

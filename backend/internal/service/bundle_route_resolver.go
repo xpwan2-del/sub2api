@@ -35,12 +35,15 @@ func NewBundleRouteResolver(
 	}
 }
 
-// ResolvedGroup 路由解析结果，包含目标渠道组ID、平台和额度信息
+// ResolvedGroup 路由解析结果，包含目标渠道组ID、平台、额度信息和套餐级限制
 // ResolvedGroup holds the result of a bundle route resolution.
 type ResolvedGroup struct {
-	GroupID  int64
-	Platform string
-	Quota    BundlePlanGroupQuota
+	GroupID          int64
+	Platform         string
+	Quota            BundlePlanGroupQuota
+	BundleSubID      int64 // 套餐订阅 ID，供中间件层进行 RPM/并发检查
+	ConcurrencyLimit int   // 快照：套餐并发上限（0=不限）
+	RPMLimit         int   // 快照：套餐 RPM 上限（0=不限）
 }
 
 // ResolveGroup 解析模型请求应使用的渠道组：先尝试模型级 glob 匹配，再回退到平台级匹配
@@ -70,11 +73,7 @@ func (r *BundleRouteResolver) ResolveGroup(ctx context.Context, modelName string
 			continue
 		}
 		if matchGlob(gq.ModelPattern, modelName) {
-			return &ResolvedGroup{
-				GroupID:  gq.GroupID,
-				Platform: platform,
-				Quota:    gq,
-			}, nil
+			return makeResolvedGroup(gq, platform, bundleSubID, bundleSub), nil
 		}
 	}
 
@@ -89,28 +88,36 @@ func (r *BundleRouteResolver) ResolveGroup(ctx context.Context, modelName string
 			continue
 		}
 		if group.Platform == platform {
-			return &ResolvedGroup{
-				GroupID:  gq.GroupID,
-				Platform: platform,
-				Quota:    gq,
-			}, nil
+			return makeResolvedGroup(gq, platform, bundleSubID, bundleSub), nil
 		}
 	}
 
 	return nil, ErrBundleModelNotIncluded
 }
 
+// makeResolvedGroup builds a ResolvedGroup from quota and bundle subscription snapshot limits.
+func makeResolvedGroup(gq BundlePlanGroupQuota, platform string, bundleSubID int64, sub *BundleSubscription) *ResolvedGroup {
+	return &ResolvedGroup{
+		GroupID:          gq.GroupID,
+		Platform:         platform,
+		Quota:            gq,
+		BundleSubID:      bundleSubID,
+		ConcurrencyLimit: sub.ConcurrencyLimit,
+		RPMLimit:         sub.RPMLimit,
+	}
+}
+
 // resolveModelPlatform 根据模型名称前缀推断所属平台（openai/anthropic/gemini 等）
 // resolveModelPlatform maps a model name prefix to a platform constant.
 func resolveModelPlatform(modelName string) string {
 	prefixes := map[string]string{
-		"gpt-":     domain.PlatformOpenAI,
-		"o1-":      domain.PlatformOpenAI,
-		"o3-":      domain.PlatformOpenAI,
-		"chatgpt-": domain.PlatformOpenAI,
-		"dall-":    domain.PlatformOpenAI,
-		"claude-":  domain.PlatformAnthropic,
-		"gemini-":  domain.PlatformGemini,
+		"gpt-":      domain.PlatformOpenAI,
+		"o1-":       domain.PlatformOpenAI,
+		"o3-":       domain.PlatformOpenAI,
+		"chatgpt-":  domain.PlatformOpenAI,
+		"dall-":     domain.PlatformOpenAI,
+		"claude-":   domain.PlatformAnthropic,
+		"gemini-":   domain.PlatformGemini,
 		"deepseek-": domain.PlatformOpenAI, // compatible protocol
 	}
 
