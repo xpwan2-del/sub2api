@@ -3,20 +3,13 @@
     <!-- Mini Indicator -->
     <button
       @click="toggleTooltip"
-      class="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-1.5 transition-colors"
-      :class="[
-        tierTheme.accentClass.replace('bg-gradient-to-r from-', 'bg-').replace(/ to-.*/, '') + '/10 hover:' + tierTheme.accentClass.replace('bg-gradient-to-r from-', 'bg-').replace(/ to-.*/, '') + '/20',
-        'dark:bg-' + tierAccentColor + '-900/20 dark:hover:bg-' + tierAccentColor + '-900/30'
-      ]"
+      class="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-1.5 transition-colors bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/20 dark:hover:bg-primary-900/30"
       :title="t('subscriptionProgress.viewDetails')"
     >
-      <!-- Tier-colored icon -->
-      <Icon :name="tierIcon" size="sm" :class="tierTheme.iconClass" />
-      <div class="flex items-center gap-1.5">
-        <span class="text-xs font-medium" :class="tierTheme.textClass">
-          {{ bundleStore.activePlan?.name || t('subscriptionProgress.bundleActive') }}
-        </span>
-      </div>
+      <Icon name="sparkles" size="sm" class="text-primary-600 dark:text-primary-400" />
+      <span class="text-xs font-medium text-primary-700 dark:text-primary-300">
+        {{ t('subscriptionProgress.currentSubscription') }}
+      </span>
     </button>
 
     <!-- Hover/Click Tooltip -->
@@ -100,7 +93,7 @@
             @click="closeTooltip"
             class="block w-full py-1 text-center text-xs text-primary-600 hover:underline dark:text-primary-400"
           >
-            {{ t('subscriptionProgress.viewAll') }}
+            {{ t('subscriptionProgress.viewCurrent') }}
           </router-link>
         </div>
       </div>
@@ -122,27 +115,10 @@ const bundleStore = useBundleStore()
 const containerRef = ref<HTMLElement | null>(null)
 const tooltipOpen = ref(false)
 
-// Tier display helpers
+// Tier display helpers (used by dropdown tooltip)
 const tier = computed(() => bundleStore.activePlan?.tier)
 const tierTheme = computed(() => getTierTheme(tier.value))
 const tierLabel = computed(() => tier.value ? t(getTierI18nKey(tier.value, 'user')) : '')
-const tierIcon = computed(() => {
-  switch (tier.value) {
-    case 'starter': return 'cube'
-    case 'pro': return 'sparkles'
-    case 'enterprise': return 'fire'
-    default: return 'cube'
-  }
-})
-// Extract base color name from accent class for dynamic bg
-const tierAccentColor = computed(() => {
-  switch (tier.value) {
-    case 'starter': return 'blue'
-    case 'pro': return 'purple'
-    case 'enterprise': return 'amber'
-    default: return 'primary'
-  }
-})
 
 // Use store data
 const hasActiveBundle = computed(() => bundleStore.hasActiveBundle)
