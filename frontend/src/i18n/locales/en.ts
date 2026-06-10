@@ -7161,6 +7161,7 @@ export default {
     weekly: 'Weekly',
     monthly: 'Monthly',
     concurrencyShort: 'Conc.',
+    includesGroupCount: 'Includes {count} model groups',
     purchaseNow: 'Purchase Now',
     purchaseNotAvailable: 'Purchase feature is not available yet',
     tierStarter: 'Starter',

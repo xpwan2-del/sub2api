@@ -7342,6 +7342,7 @@ export default {
     weekly: '周用量',
     monthly: '月用量',
     concurrencyShort: '并发',
+    includesGroupCount: '包含 {count} 个模型分组',
     purchaseNow: '立即购买',
     purchaseNotAvailable: '购买功能暂未开放',
     tierStarter: '入门版',

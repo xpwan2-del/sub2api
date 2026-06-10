@@ -138,37 +138,44 @@
                   </div>
                 </div>
 
-                <!-- Group Quotas -->
-                <div v-if="plan.group_quotas?.length" class="mb-3 rounded-lg bg-gray-50 px-3 py-2 dark:bg-dark-700/50">
-                  <p class="mb-1.5 text-[11px] font-medium text-gray-400 dark:text-dark-500">{{ t('bundles.includedGroups') }}</p>
-                  <div class="grid grid-cols-2 gap-2">
-                    <div v-for="gq in plan.group_quotas" :key="gq.id">
-                      <!-- Group name row -->
-                      <div class="flex items-center gap-1.5">
-                        <span :class="['h-1.5 w-1.5 rounded-full', platformDotClass(gq.group_platform || '')]" />
-                        <span class="text-[11px] font-medium text-gray-700 dark:text-gray-300">{{ gq.group_name || `Group #${gq.group_id}` }}</span>
-                        <span :class="['rounded px-1 py-0.5 text-[10px] font-medium', platformBadgeLightClass(gq.group_platform || '')]">
-                          {{ platformLabel(gq.group_platform || '') }}
-                        </span>
-                      </div>
-                      <!-- Quota details -->
-                      <div v-if="gq.daily_limit_usd || gq.weekly_limit_usd || gq.monthly_limit_usd"
-                        class="mt-0.5 flex gap-3 pl-3 text-[10px]">
-                        <span v-if="gq.daily_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.daily') }} </span><span class="font-medium text-gray-600 dark:text-gray-300">${{ gq.daily_limit_usd }}</span></span>
-                        <span v-if="gq.weekly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.weekly') }} </span><span class="font-medium text-gray-600 dark:text-gray-300">${{ gq.weekly_limit_usd }}</span></span>
-                        <span v-if="gq.monthly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.monthly') }} </span><span class="font-medium text-gray-600 dark:text-gray-300">${{ gq.monthly_limit_usd }}</span></span>
-                      </div>
+                <!-- Features (hero section) -->
+                <div v-if="plan.features?.length" class="mb-3 rounded-lg bg-gray-50 px-3 py-2.5 dark:bg-dark-700/50">
+                  <div class="space-y-1.5">
+                    <div v-for="feature in plan.features" :key="feature" class="flex items-start gap-2">
+                      <svg :class="['mt-0.5 h-4 w-4 flex-shrink-0', tierIconClass(plan.tier)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ feature }}</span>
                     </div>
                   </div>
                 </div>
 
-                <!-- Features -->
-                <div v-if="plan.features?.length" class="mb-3 space-y-1">
-                  <div v-for="feature in plan.features" :key="feature" class="flex items-start gap-1.5">
-                    <svg :class="['mt-0.5 h-3.5 w-3.5 flex-shrink-0', tierIconClass(plan.tier)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                    <span class="text-xs text-gray-600 dark:text-gray-300">{{ feature }}</span>
+                <!-- Group Quotas (summary + compact chips) -->
+                <div v-if="plan.group_quotas?.length" class="mb-3">
+                  <p class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+                    {{ t('bundles.includesGroupCount', { count: plan.group_quotas.length }) }}
+                  </p>
+                  <div class="flex flex-wrap gap-1.5">
+                    <div
+                      v-for="gq in plan.group_quotas"
+                      :key="gq.id"
+                      class="group/Chip relative flex items-center gap-1.5 rounded-lg border border-gray-100 bg-white px-2.5 py-1.5 dark:border-dark-600 dark:bg-dark-800"
+                    >
+                      <span :class="['h-1.5 w-1.5 rounded-full', platformDotClass(gq.group_platform || '')]" />
+                      <span class="text-[11px] font-medium text-gray-700 dark:text-gray-300">{{ gq.group_name || `Group #${gq.group_id}` }}</span>
+                      <span :class="['rounded px-1 py-0.5 text-[10px] font-medium', platformBadgeLightClass(gq.group_platform || '')]">
+                        {{ platformLabel(gq.group_platform || '') }}
+                      </span>
+                      <!-- Hover tooltip with quota details -->
+                      <div v-if="gq.daily_limit_usd || gq.weekly_limit_usd || gq.monthly_limit_usd"
+                        class="pointer-events-none absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-gray-200 bg-white px-3 py-2 opacity-0 shadow-lg transition-opacity group-hover/Chip:opacity-100 dark:border-dark-600 dark:bg-dark-800">
+                        <div class="flex gap-3 whitespace-nowrap text-[11px]">
+                          <span v-if="gq.daily_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.daily') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.daily_limit_usd }}</span></span>
+                          <span v-if="gq.weekly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.weekly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.weekly_limit_usd }}</span></span>
+                          <span v-if="gq.monthly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.monthly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.monthly_limit_usd }}</span></span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
