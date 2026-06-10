@@ -7081,6 +7081,7 @@ export default {
     result: {
       success: '支付成功',
       subscriptionSuccess: '订阅成功',
+      bundleSuccess: '套餐购买成功',
       processing: '支付处理中',
       processingHint: '支付结果仍在确认中，页面会自动刷新。',
       failed: '支付失败',
@@ -7324,6 +7325,7 @@ export default {
     title: '模型套餐',
     usageTitle: '套餐用量',
     // 用户视图顶层 key
+    groupFallback: '分组 #{id}',
     currentBundle: '当前套餐',
     active: '活跃',
     expiresAt: '到期时间',
@@ -7347,6 +7349,7 @@ export default {
     tierEnterprise: '企业版',
     daysRemaining: '剩余 {days} 天',
     failedToLoad: '加载失败，请刷新重试',
+    planNotAvailable: '该套餐已下架或不可购买',
     browsePlans: '浏览套餐',
     usageByGroup: '各 Group 用量',
     noUsageData: '暂无用量数据',

@@ -6899,6 +6899,7 @@ export default {
     result: {
       success: 'Payment Successful',
       subscriptionSuccess: 'Subscription Successful',
+      bundleSuccess: 'Bundle Purchased Successfully',
       processing: 'Payment Processing',
       processingHint: 'Payment confirmation is still pending. This page will refresh automatically.',
       failed: 'Payment Failed',
@@ -7143,6 +7144,7 @@ export default {
     title: 'Model Bundles',
     usageTitle: 'Bundle Usage',
     // User-facing top-level keys
+    groupFallback: 'Group #{id}',
     currentBundle: 'Current Bundle',
     active: 'Active',
     expiresAt: 'Expires At',
@@ -7166,6 +7168,7 @@ export default {
     tierEnterprise: 'Enterprise',
     daysRemaining: '{days} days remaining',
     failedToLoad: 'Failed to load, please refresh',
+    planNotAvailable: 'This plan is no longer available for purchase',
     browsePlans: 'Browse Plans',
     usageByGroup: 'Usage by Group',
     noUsageData: 'No usage data',
