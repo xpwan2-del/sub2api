@@ -218,6 +218,6 @@ export interface DashboardStats {
   total_count: number
   avg_amount: number
   daily_series: { date: string; amount: number; count: number }[]
-  payment_methods: { type: string; amount: number; count: number }[]
-  top_users: { user_id: number; email: string; amount: number }[]
+  payment_methods: { type: string; amount: number; balance_amount: number; count: number }[]
+  top_users: { user_id: number; email: string; amount: number; balance_amount: number }[]
 }

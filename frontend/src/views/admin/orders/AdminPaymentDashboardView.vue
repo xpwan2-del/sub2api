@@ -41,8 +41,9 @@
                   <span :class="['inline-block h-3 w-3 rounded-full', methodColor(method.type)]"></span>
                   <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('payment.methods.' + method.type, method.type) }}</span>
                 </div>
-                <div class="text-right">
+                <div class="text-right" :title="`${t('payment.admin.paidAmount')}: ¥${method.amount.toFixed(2)}${method.balance_amount > 0 ? ' / ' + t('payment.admin.balanceAmount') + ': ¥' + method.balance_amount.toFixed(2) : ''}`">
                   <span class="text-sm font-medium text-gray-900 dark:text-white">&yen;{{ method.amount.toFixed(2) }}</span>
+                  <span v-if="method.balance_amount > 0" class="text-xs text-gray-500 dark:text-gray-400">/&yen;{{ method.balance_amount.toFixed(2) }}</span>
                   <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">({{ method.count }})</span>
                 </div>
               </div>
@@ -57,7 +58,7 @@
                   <span :class="['flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold', rankClass(idx)]">{{ idx + 1 }}</span>
                   <span class="text-sm text-gray-700 dark:text-gray-300">{{ user.email }}</span>
                 </div>
-                <span class="text-sm font-medium text-gray-900 dark:text-white">&yen;{{ user.amount.toFixed(2) }}</span>
+                <span class="text-sm font-medium text-gray-900 dark:text-white" :title="`${t('payment.admin.paidAmount')}: ¥${user.amount.toFixed(2)}${user.balance_amount > 0 ? ' / ' + t('payment.admin.balanceAmount') + ': ¥' + user.balance_amount.toFixed(2) : ''}`">&yen;{{ user.amount.toFixed(2) }}<span v-if="user.balance_amount > 0" class="text-xs text-gray-500 dark:text-gray-400">/&yen;{{ user.balance_amount.toFixed(2) }}</span></span>
               </div>
             </div>
           </div>

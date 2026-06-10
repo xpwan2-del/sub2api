@@ -164,15 +164,17 @@ type DailyStats struct {
 }
 
 type PaymentMethodStat struct {
-	Type   string  `json:"type"`
-	Amount float64 `json:"amount"`
-	Count  int     `json:"count"`
+	Type          string  `json:"type"`
+	Amount        float64 `json:"amount"`
+	BalanceAmount float64 `json:"balance_amount"`
+	Count         int     `json:"count"`
 }
 
 type TopUserStat struct {
-	UserID int64   `json:"user_id"`
-	Email  string  `json:"email"`
-	Amount float64 `json:"amount"`
+	UserID        int64   `json:"user_id"`
+	Email         string  `json:"email"`
+	Amount        float64 `json:"amount"`
+	BalanceAmount float64 `json:"balance_amount"`
 }
 
 // --- Service ---
