@@ -29,8 +29,8 @@
         </template>
         <!-- Tab content (select phase) -->
         <template v-else>
-          <!-- Top-up Tab -->
-          <template v-if="activeTab === 'recharge'">
+          <!-- Top-up Tab (hidden in bundle mode) -->
+          <template v-if="activeTab === 'recharge' && !isBundleMode">
             <!-- Recharge Account Card -->
             <div class="card p-5">
               <p class="text-xs font-medium text-gray-400 dark:text-gray-500">{{ t('payment.rechargeAccount') }}</p>
