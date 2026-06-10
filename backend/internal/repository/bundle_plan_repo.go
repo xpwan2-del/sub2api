@@ -10,6 +10,7 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/bundleplan"
 	"github.com/Wei-Shaw/sub2api/ent/bundleplangroupquota"
+	groupent "github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -140,6 +141,7 @@ func (r *bundlePlanRepository) Update(ctx context.Context, plan *service.BundleP
 		for i, cq := range createdQuotas {
 			plan.GroupQuotas[i] = bundlePlanGroupQuotaToService(cq)
 		}
+		enrichGroupQuotas(ctx, client, plan.GroupQuotas)
 	} else {
 		plan.GroupQuotas = nil
 	}
@@ -168,6 +170,7 @@ func (r *bundlePlanRepository) GetByID(ctx context.Context, id int64) (*service.
 	for i, q := range quotas {
 		result.GroupQuotas[i] = bundlePlanGroupQuotaToService(q)
 	}
+	enrichGroupQuotas(ctx, client, result.GroupQuotas)
 	return result, nil
 }
 
@@ -216,6 +219,7 @@ func (r *bundlePlanRepository) List(ctx context.Context, params pagination.Pagin
 		for j, q := range quotas {
 			results[i].GroupQuotas[j] = bundlePlanGroupQuotaToService(q)
 		}
+		enrichGroupQuotas(ctx, client, results[i].GroupQuotas)
 	}
 
 	return results, paginationResultFromTotal(int64(total), params), nil
@@ -249,6 +253,7 @@ func (r *bundlePlanRepository) ListForSale(ctx context.Context) ([]service.Bundl
 		for j, q := range quotas {
 			results[i].GroupQuotas[j] = bundlePlanGroupQuotaToService(q)
 		}
+		enrichGroupQuotas(ctx, client, results[i].GroupQuotas)
 	}
 	return results, nil
 }
@@ -307,5 +312,44 @@ func bundlePlanGroupQuotaToService(src *dbent.BundlePlanGroupQuota) service.Bund
 		DailyLimitUSD:   src.DailyLimitUsd,
 		WeeklyLimitUSD:  src.WeeklyLimitUsd,
 		MonthlyLimitUSD: src.MonthlyLimitUsd,
+	}
+}
+
+// enrichGroupQuotas 批量填充 GroupQuotas 的 GroupName / GroupPlatform 字段。
+// 通过一次 IN 查询获取所有相关 group，避免 N+1 问题。
+func enrichGroupQuotas(ctx context.Context, client *dbent.Client, quotas []service.BundlePlanGroupQuota) {
+	if len(quotas) == 0 {
+		return
+	}
+
+	// 收集所有不重复的 group_id
+	seen := make(map[int64]struct{}, len(quotas))
+	ids := make([]int64, 0, len(quotas))
+	for _, q := range quotas {
+		if _, ok := seen[q.GroupID]; !ok {
+			seen[q.GroupID] = struct{}{}
+			ids = append(ids, q.GroupID)
+		}
+	}
+
+	groups, err := client.Group.Query().
+		Where(groupent.IDIn(ids...)).
+		All(ctx)
+	if err != nil {
+		return // 查询失败时不阻塞，group_name 留空走前端 fallback
+	}
+
+	// 构建 id → group 映射
+	groupMap := make(map[int64]*dbent.Group, len(groups))
+	for _, g := range groups {
+		groupMap[g.ID] = g
+	}
+
+	// 回填
+	for i := range quotas {
+		if g, ok := groupMap[quotas[i].GroupID]; ok {
+			quotas[i].GroupName = g.Name
+			quotas[i].GroupPlatform = g.Platform
+		}
 	}
 }

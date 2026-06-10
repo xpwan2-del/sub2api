@@ -32,11 +32,8 @@ export interface BundlePlanGroupQuota {
   id: number
   plan_id: number
   group_id: number
-  group?: {
-    id: number
-    name: string
-    platform: string
-  }
+  group_name?: string
+  group_platform?: string
   quota_scope: 'platform' | 'model'
   model_pattern: string
   daily_limit_usd: number

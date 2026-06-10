@@ -244,7 +244,7 @@
                 <div class="flex flex-wrap gap-1.5">
                   <span v-for="gq in bundlePlan.group_quotas" :key="gq.id"
                     class="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-dark-700 dark:text-gray-300">
-                    {{ gq.group?.name || t('bundles.groupFallback', { id: gq.group_id }) }}
+                    {{ gq.group_name || t('bundles.groupFallback', { id: gq.group_id }) }}
                   </span>
                 </div>
               </div>

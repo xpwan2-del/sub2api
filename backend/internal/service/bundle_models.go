@@ -35,6 +35,8 @@ type BundlePlanGroupQuota struct {
 	ID              int64   `json:"id"`
 	PlanID          int64   `json:"plan_id"`
 	GroupID         int64   `json:"group_id"`
+	GroupName       string  `json:"group_name,omitempty"`
+	GroupPlatform   string  `json:"group_platform,omitempty"`
 	QuotaScope      string  `json:"quota_scope"`
 	ModelPattern    string  `json:"model_pattern"`
 	DailyLimitUSD   float64 `json:"daily_limit_usd"`

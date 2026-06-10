@@ -63,10 +63,10 @@
                 :key="gq.id"
                 class="flex items-center gap-1.5 rounded-lg border border-gray-100 bg-white px-2.5 py-1.5 dark:border-dark-700 dark:bg-dark-800"
               >
-                <div :class="['h-1.5 w-1.5 rounded-full', platformDotClass(gq.group?.platform || '')]" />
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ gq.group?.name || `Group #${gq.group_id}` }}</span>
-                <span :class="['rounded px-1.5 py-0.5 text-[10px] font-medium', platformBadgeLightClass(gq.group?.platform || '')]">
-                  {{ platformLabel(gq.group?.platform || '') }}
+                <div :class="['h-1.5 w-1.5 rounded-full', platformDotClass(gq.group_platform || '')]" />
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ gq.group_name || `Group #${gq.group_id}` }}</span>
+                <span :class="['rounded px-1.5 py-0.5 text-[10px] font-medium', platformBadgeLightClass(gq.group_platform || '')]">
+                  {{ platformLabel(gq.group_platform || '') }}
                 </span>
               </div>
             </div>
@@ -147,8 +147,8 @@
                       :key="gq.id"
                       class="flex items-center gap-1 rounded bg-gray-200/80 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-dark-600 dark:text-gray-300"
                     >
-                      <span :class="['h-1 w-1 rounded-full', platformDotClass(gq.group?.platform || '')]" />
-                      {{ gq.group?.name || `Group #${gq.group_id}` }}
+                      <span :class="['h-1 w-1 rounded-full', platformDotClass(gq.group_platform || '')]" />
+                      {{ gq.group_name || `Group #${gq.group_id}` }}
                     </div>
                   </div>
                   <!-- Quota details (first group as example) -->

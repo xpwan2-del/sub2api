@@ -1470,18 +1470,17 @@ const loadActiveBundle = async () => {
 const bundleGroupOptions = computed(() => {
   if (!activeBundle.value?.plan?.group_quotas) return []
   return activeBundle.value.plan.group_quotas
-    .filter(gq => gq.group)
+    .filter(gq => gq.group_name)
     .map(gq => {
-      const group = gq.group!
       const matchedGroup = groups.value.find(g => g.id === gq.group_id)
       return {
         value: gq.group_id,
-        label: group.name,
+        label: gq.group_name!,
         description: matchedGroup?.description || null,
         rate: matchedGroup?.rate_multiplier || 1,
         userRate: matchedGroup ? (userGroupRates.value[matchedGroup.id] ?? null) : null,
         subscriptionType: matchedGroup?.subscription_type || ('standard' as SubscriptionType),
-        platform: (group.platform || 'openai') as GroupPlatform
+        platform: (gq.group_platform || 'openai') as GroupPlatform
       }
     })
 })
