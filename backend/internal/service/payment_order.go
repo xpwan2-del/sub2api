@@ -182,6 +182,7 @@ func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req C
 		SetPaymentTradeNo("").
 		SetOrderType(req.OrderType).
 		SetStatus(OrderStatusPaid).
+		SetExpiresAt(time.Now().Add(24 * time.Hour)). // already paid, set far-future expiry
 		SetClientIP(req.ClientIP).
 		SetSrcHost(req.SrcHost).
 		SetPlanID(req.PlanID)
