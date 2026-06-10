@@ -366,8 +366,8 @@ async function loadData() {
     }
     if (bundleData.status === 'fulfilled') {
       // 后端无订阅时返回空数组 []，JS 中 [] 为 truthy，需转为 null
-      const bundle = bundleData.value
-      activeBundle.value = (Array.isArray(bundle) ? bundle[0] ?? null : bundle) ?? null
+      const bundles = bundleData.value
+      activeBundle.value = bundles[0] ?? null
     }
   } catch (error) {
     console.error('Failed to load bundle data:', error)

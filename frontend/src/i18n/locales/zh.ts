@@ -6757,7 +6757,16 @@ export default {
     expiresTomorrow: '明天到期',
     viewAll: '查看全部订阅',
     noSubscriptions: '暂无有效订阅',
-    unlimited: '无限制'
+    unlimited: '无限制',
+    bundleActive: '有效套餐',
+    expires: '到期时间',
+    concurrency: '并发数',
+    rpm: 'RPM 限制',
+    source: '来源',
+    sourcePurchase: '购买',
+    sourceRedeem: '兑换',
+    sourceAdmin: '管理员分配',
+    moreFeatures: '项更多特性'
   },
 
   // Version Badge

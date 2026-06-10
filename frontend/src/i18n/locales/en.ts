@@ -6602,7 +6602,16 @@ export default {
     expiresTomorrow: 'Expires tomorrow',
     viewAll: 'View all subscriptions',
     noSubscriptions: 'No active subscriptions',
-    unlimited: 'Unlimited'
+    unlimited: 'Unlimited',
+    bundleActive: 'Active Bundle',
+    expires: 'Expires',
+    concurrency: 'Concurrency',
+    rpm: 'RPM Limit',
+    source: 'Source',
+    sourcePurchase: 'Purchase',
+    sourceRedeem: 'Redeem',
+    sourceAdmin: 'Admin Assigned',
+    moreFeatures: 'more features'
   },
 
   // Version Badge

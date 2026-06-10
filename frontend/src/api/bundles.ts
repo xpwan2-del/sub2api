@@ -31,13 +31,14 @@ export async function getPlanDetail(id: number): Promise<BundlePlan> {
   return data
 }
 
-/** 获取当前用户的活跃套餐订阅 */
+/** 获取当前用户的活跃套餐订阅（后端返回数组） */
 /**
- * Get current user's active bundle subscription
+ * Get current user's active bundle subscriptions
+ * Backend returns an array (may be empty when no active subscription)
  */
-export async function getMyBundle(): Promise<BundleSubscription | null> {
-  const { data } = await apiClient.get<BundleSubscription | null>('/bundles/subscription')
-  return data
+export async function getMyBundle(): Promise<BundleSubscription[]> {
+  const { data } = await apiClient.get<BundleSubscription[]>('/bundles/subscription')
+  return data ?? []
 }
 
 /** 获取当前用户的套餐用量进度 */

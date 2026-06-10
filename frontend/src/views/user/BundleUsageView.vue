@@ -301,9 +301,9 @@ async function loadData() {
       plans.value = plansData.value
     }
     if (bundleData.status === 'fulfilled') {
-      // 防御性处理：后端可能返回空数组 []，JS 中 [] 为 truthy，需转为 null
-      const raw = bundleData.value
-      bundle.value = Array.isArray(raw) ? (raw.length > 0 ? raw[0] : null) : raw
+      // 后端返回 BundleSubscription[]，取第一个或 null
+      const bundles = bundleData.value
+      bundle.value = bundles[0] ?? null
     }
     if (usageData.status === 'fulfilled') {
       usages.value = usageData.value

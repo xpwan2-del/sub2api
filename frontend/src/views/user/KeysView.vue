@@ -1451,8 +1451,9 @@ const loadPublicSettings = async () => {
 
 const loadActiveBundle = async () => {
   try {
-    const bundle = await bundlesAPI.getMyBundle()
-    if (bundle && bundle.status === 'active') {
+    const bundles = await bundlesAPI.getMyBundle()
+    const bundle = bundles.find(b => b.status === 'active') ?? null
+    if (bundle) {
       activeBundle.value = bundle
       hasActiveBundle.value = true
     } else {
