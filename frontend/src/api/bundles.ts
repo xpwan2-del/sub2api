@@ -56,11 +56,12 @@ export async function getMyUsage(): Promise<BundleUsageProgress[]> {
  * @param paymentType - Payment method type (e.g. 'alipay', 'wxpay', 'stripe')
  * @param returnUrl - Optional return URL after payment
  */
-export async function checkout(planId: number, paymentType: string, returnUrl?: string): Promise<CreateOrderResult> {
+export async function checkout(planId: number, paymentType: string, returnUrl?: string, useBalance?: boolean): Promise<CreateOrderResult> {
   const { data } = await apiClient.post<CreateOrderResult>('/bundles/checkout', {
     plan_id: planId,
     payment_type: paymentType,
     return_url: returnUrl,
+    use_balance: useBalance ?? false,
   })
   return data
 }

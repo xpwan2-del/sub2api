@@ -84,6 +84,7 @@ type CreateOrderRequest struct {
 	OrderType       string
 	PlanID          int64
 	Locale          string
+	UseBalance      bool // 使用账户余额抵扣（用于套餐购买）
 }
 
 type CreateOrderResponse struct {
@@ -107,7 +108,9 @@ type CreateOrderResponse struct {
 	JSAPIPayload *payment.WechatJSAPIPayload     `json:"jsapi_payload,omitempty"`
 	ExpiresAt    time.Time                       `json:"expires_at"`
 	PaymentMode  string                          `json:"payment_mode,omitempty"`
-	ResumeToken  string                          `json:"resume_token,omitempty"`
+	ResumeToken        string                          `json:"resume_token,omitempty"`
+	DirectSuccess       bool    `json:"direct_success,omitempty"` // 纯余额支付立即成功
+	BalanceDeductAmount float64 `json:"balance_deduct_amount,omitempty"` // 余额抵扣金额
 }
 
 type OrderListParams struct {

@@ -122,8 +122,9 @@ func (h *BundleHandler) GetMyUsage(c *gin.Context) {
 // CheckoutRequest is the request body for bundle checkout.
 type CheckoutRequest struct {
 	PlanID      int64  `json:"plan_id" binding:"required"`
-	PaymentType string `json:"payment_type" binding:"required"`
+	PaymentType string `json:"payment_type"` // 纯余额支付时可为空
 	ReturnURL   string `json:"return_url"`
+	UseBalance  bool   `json:"use_balance"` // 是否使用账户余额抵扣
 }
 
 // Checkout 发起套餐购买，创建支付订单
@@ -178,6 +179,7 @@ func (h *BundleHandler) Checkout(c *gin.Context) {
 		OrderType:   "bundle",
 		PlanID:      req.PlanID,
 		Locale:      c.GetHeader("Accept-Language"),
+		UseBalance:  req.UseBalance,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)

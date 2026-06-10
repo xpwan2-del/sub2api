@@ -407,6 +407,14 @@ func (s *PaymentService) markRefundOk(ctx context.Context, p *RefundPlan) (*Refu
 		return nil, fmt.Errorf("mark refund: %w", err)
 	}
 	s.writeAuditLog(ctx, p.OrderID, "REFUND_SUCCESS", "admin", map[string]any{"refundAmount": p.RefundAmount, "reason": p.Reason, "balanceDeducted": p.BalanceToDeduct, "force": p.Force})
+	// Refund the balance portion that was used for payment (balance_deduct_amount)
+	if p.Order.BalanceDeductAmount > 0 {
+		if err := s.userRepo.UpdateBalance(ctx, p.Order.UserID, p.Order.BalanceDeductAmount); err != nil {
+			slog.Error("[CRITICAL] failed to refund balance_deduct_amount on refund", "orderID", p.OrderID, "amount", p.Order.BalanceDeductAmount, "error", err)
+		} else {
+			slog.Info("refunded balance_deduct_amount on order refund", "orderID", p.OrderID, "userID", p.Order.UserID, "amount", p.Order.BalanceDeductAmount)
+		}
+	}
 	return &RefundResult{Success: true, BalanceDeducted: p.BalanceToDeduct, SubDaysDeducted: p.SubDaysToDeduct}, nil
 }
 

@@ -67,6 +67,25 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 			return nil, err
 		}
 	}
+	// --- Balance deduction for bundle orders ---
+	balanceDeduct := 0.0
+	if req.UseBalance && req.OrderType == payment.OrderTypeBundle && user.Balance > 0 {
+		planPrice := orderAmount // for bundle orders, orderAmount == plan.Price
+		balanceDeduct = math.Min(user.Balance, planPrice)
+		if balanceDeduct >= planPrice {
+			// Pure balance payment: deduct balance, create order as PAID, fulfill immediately
+			return s.createPureBalanceBundleOrder(ctx, req, user, cfg, orderAmount, feeRate)
+		}
+		// Mixed payment: deduct balance, reduce gateway amount
+		if err := s.userRepo.DeductBalance(ctx, user.ID, balanceDeduct); err != nil {
+			return nil, fmt.Errorf("deduct balance: %w", err)
+		}
+		slog.Info("balance deducted for mixed bundle payment", "orderID", 0, "userID", user.ID, "deductAmount", balanceDeduct, "planPrice", planPrice)
+		limitAmount = planPrice - balanceDeduct
+		orderAmount = planPrice // keep full price as order amount
+	}
+	_ = balanceDeduct // used below in createOrderInTx
+
 	payAmountStr, payAmount, err := calculateCreateOrderPayAmount(limitAmount, feeRate, methodCurrency)
 	if err != nil {
 		return nil, err
@@ -98,7 +117,7 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	if oauthResp != nil {
 		return oauthResp, nil
 	}
-	order, err := s.createOrderInTx(ctx, req, user, plan, cfg, orderAmount, limitAmount, feeRate, payAmount, sel)
+	order, err := s.createOrderInTx(ctx, req, user, plan, cfg, orderAmount, limitAmount, feeRate, payAmount, balanceDeduct, sel)
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +148,81 @@ func (s *PaymentService) validateOrderInput(ctx context.Context, req CreateOrder
 	return nil, nil
 }
 
+// createPureBalanceBundleOrder handles pure balance payment for bundle orders.
+// Deducts balance, creates order as PAID, and fulfills immediately.
+func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req CreateOrderRequest, user *User, cfg *PaymentConfig, orderAmount, feeRate float64) (*CreateOrderResponse, error) {
+	if req.PlanID == 0 {
+		return nil, infraerrors.BadRequest("INVALID_INPUT", "bundle order requires a plan")
+	}
+	// Deduct balance in a transaction
+	if err := s.userRepo.DeductBalance(ctx, user.ID, orderAmount); err != nil {
+		return nil, fmt.Errorf("deduct balance for bundle: %w", err)
+	}
+	slog.Info("pure balance payment for bundle", "userID", user.ID, "planID", req.PlanID, "amount", orderAmount)
+
+	// Create order as PAID directly
+	outTradeNo, err := s.allocateOutTradeNoDirect(ctx)
+	if err != nil {
+		// Rollback balance deduction
+		_ = s.userRepo.UpdateBalance(ctx, user.ID, orderAmount)
+		return nil, fmt.Errorf("allocate trade no: %w", err)
+	}
+	b := s.entClient.PaymentOrder.Create().
+		SetUserID(req.UserID).
+		SetUserEmail(user.Email).
+		SetUserName(user.Username).
+		SetNillableUserNotes(psNilIfEmpty(user.Notes)).
+		SetAmount(orderAmount).
+		SetPayAmount(0).
+		SetFeeRate(0).
+		SetBalanceDeductAmount(orderAmount).
+		SetRechargeCode("").
+		SetOutTradeNo(outTradeNo).
+		SetPaymentType("balance").
+		SetPaymentTradeNo("").
+		SetOrderType(req.OrderType).
+		SetStatus(OrderStatusPaid).
+		SetClientIP(req.ClientIP).
+		SetSrcHost(req.SrcHost).
+		SetPlanID(req.PlanID)
+	if req.SrcURL != "" {
+		b.SetSrcURL(req.SrcURL)
+	}
+	order, err := b.Save(ctx)
+	if err != nil {
+		// Rollback balance deduction
+		_ = s.userRepo.UpdateBalance(ctx, user.ID, orderAmount)
+		return nil, fmt.Errorf("create pure balance order: %w", err)
+	}
+	code := fmt.Sprintf("PAY-%d-%d", order.ID, time.Now().UnixNano()%100000)
+	order, err = s.entClient.PaymentOrder.UpdateOneID(order.ID).SetRechargeCode(code).Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("set recharge code: %w", err)
+	}
+	s.writeAuditLog(ctx, order.ID, "ORDER_PAID", "balance", map[string]any{"paymentType": "balance", "balanceDeductAmount": orderAmount})
+
+	// Fulfill the bundle immediately
+	if err := s.ExecuteBundleFulfillment(ctx, order.ID); err != nil {
+		slog.Error("bundle fulfillment failed after pure balance payment", "orderID", order.ID, "error", err)
+		return nil, fmt.Errorf("activate bundle: %w", err)
+	}
+	// Re-read order to get updated status
+	order, _ = s.entClient.PaymentOrder.Get(ctx, order.ID)
+
+	return &CreateOrderResponse{
+		OrderID:             order.ID,
+		Amount:              order.Amount,
+		PayAmount:           0,
+		FeeRate:             0,
+		Status:              order.Status,
+		PaymentType:         "balance",
+		OutTradeNo:          order.OutTradeNo,
+		DirectSuccess:       true,
+		BalanceDeductAmount: orderAmount,
+		ExpiresAt:           order.ExpiresAt,
+	}, nil
+}
+
 func (s *PaymentService) validateSubOrder(ctx context.Context, req CreateOrderRequest) (*dbent.SubscriptionPlan, error) {
 	if req.PlanID == 0 {
 		return nil, infraerrors.BadRequest("INVALID_INPUT", "subscription order requires a plan")
@@ -147,7 +241,7 @@ func (s *PaymentService) validateSubOrder(ctx context.Context, req CreateOrderRe
 	return plan, nil
 }
 
-func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderRequest, user *User, plan *dbent.SubscriptionPlan, cfg *PaymentConfig, orderAmount, limitAmount, feeRate, payAmount float64, sel *payment.InstanceSelection) (*dbent.PaymentOrder, error) {
+func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderRequest, user *User, plan *dbent.SubscriptionPlan, cfg *PaymentConfig, orderAmount, limitAmount, feeRate, payAmount, balanceDeduct float64, sel *payment.InstanceSelection) (*dbent.PaymentOrder, error) {
 	tx, err := s.entClient.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("begin transaction: %w", err)
@@ -183,6 +277,7 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		SetAmount(orderAmount).
 		SetPayAmount(payAmount).
 		SetFeeRate(feeRate).
+		SetBalanceDeductAmount(balanceDeduct).
 		SetRechargeCode("").
 		SetOutTradeNo(outTradeNo).
 		SetPaymentType(req.PaymentType).
@@ -227,6 +322,22 @@ func (s *PaymentService) allocateOutTradeNo(ctx context.Context, tx *dbent.Tx) (
 	for attempt := 0; attempt < maxAttempts; attempt++ {
 		candidate := generateOutTradeNo()
 		exists, err := tx.PaymentOrder.Query().Where(paymentorder.OutTradeNo(candidate)).Exist(ctx)
+		if err != nil {
+			return "", fmt.Errorf("check out_trade_no uniqueness: %w", err)
+		}
+		if !exists {
+			return candidate, nil
+		}
+	}
+	return "", fmt.Errorf("generate unique out_trade_no: exhausted %d attempts", maxAttempts)
+}
+
+// allocateOutTradeNoDirect allocates a unique out_trade_no without a transaction.
+func (s *PaymentService) allocateOutTradeNoDirect(ctx context.Context) (string, error) {
+	const maxAttempts = 5
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		candidate := generateOutTradeNo()
+		exists, err := s.entClient.PaymentOrder.Query().Where(paymentorder.OutTradeNo(candidate)).Exist(ctx)
 		if err != nil {
 			return "", fmt.Errorf("check out_trade_no uniqueness: %w", err)
 		}

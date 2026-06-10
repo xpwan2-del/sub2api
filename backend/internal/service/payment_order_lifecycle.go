@@ -137,6 +137,14 @@ func (s *PaymentService) cancelCore(ctx context.Context, o *dbent.PaymentOrder, 
 			auditAction = "ORDER_EXPIRED"
 		}
 		s.writeAuditLog(ctx, o.ID, auditAction, op, map[string]any{"detail": ad})
+		// Refund balance deduction if any
+		if o.BalanceDeductAmount > 0 {
+			if err := s.userRepo.UpdateBalance(ctx, o.UserID, o.BalanceDeductAmount); err != nil {
+				slog.Error("[CRITICAL] failed to refund balance on order cancel/expire", "orderID", o.ID, "userID", o.UserID, "amount", o.BalanceDeductAmount, "error", err)
+			} else {
+				slog.Info("refunded balance on order cancel/expire", "orderID", o.ID, "userID", o.UserID, "amount", o.BalanceDeductAmount)
+			}
+		}
 	}
 	return checkPaidResultCancelled, nil
 }

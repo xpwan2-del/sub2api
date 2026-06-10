@@ -203,6 +203,8 @@ export interface CreateOrderResult {
   out_trade_no?: string
   payment_mode?: string
   resume_token?: string
+  direct_success?: boolean // 纯余额支付立即成功
+  balance_deduct_amount?: number // 余额抵扣金额
   oauth?: WechatOAuthInfo
   jsapi?: WechatJSAPIPayload
   jsapi_payload?: WechatJSAPIPayload
