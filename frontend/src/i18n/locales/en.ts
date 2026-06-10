@@ -6897,6 +6897,10 @@ export default {
       orderType: 'Order Type',
       actions: 'Actions',
       requestRefund: 'Request Refund',
+      viewDetail: 'View Details',
+      amountInfo: 'Amount Breakdown',
+      timeline: 'Order Timeline',
+      refundRequestedAt: 'Refund Requested At',
     },
     result: {
       success: 'Payment Successful',
@@ -7164,6 +7168,7 @@ export default {
     noActiveBundle: 'No Active Bundle',
     noActiveBundleDesc: 'You don\'t have an active bundle subscription. Browse available plans below.',
     availablePlans: 'Available Plans',
+    currentPlan: 'Subscribed',
     noPlans: 'No plans available',
     days: 'days',
     daily: 'Daily',

@@ -57,6 +57,7 @@ export interface TierTheme {
   textClass: string
   iconClass: string
   btnClass: string
+  disabledBtnClass: string
   discountClass: string
   adminBadgeClass: string
 }
@@ -69,6 +70,7 @@ const TIER_THEME: Record<BundleTier, TierTheme> = {
     textClass: 'text-blue-600 dark:text-blue-400',
     iconClass: 'text-blue-500 dark:text-blue-400',
     btnClass: 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700',
+    disabledBtnClass: 'bg-blue-100 text-blue-400 dark:bg-blue-900/30 dark:text-blue-500 cursor-not-allowed',
     discountClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
     adminBadgeClass: 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   },
@@ -79,6 +81,7 @@ const TIER_THEME: Record<BundleTier, TierTheme> = {
     textClass: 'text-purple-600 dark:text-purple-400',
     iconClass: 'text-purple-500 dark:text-purple-400',
     btnClass: 'bg-purple-500 text-white hover:bg-purple-600 active:bg-purple-700',
+    disabledBtnClass: 'bg-purple-100 text-purple-400 dark:bg-purple-900/30 dark:text-purple-500 cursor-not-allowed',
     discountClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
     adminBadgeClass: 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
   },
@@ -89,6 +92,7 @@ const TIER_THEME: Record<BundleTier, TierTheme> = {
     textClass: 'text-amber-600 dark:text-amber-400',
     iconClass: 'text-amber-500 dark:text-amber-400',
     btnClass: 'bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700',
+    disabledBtnClass: 'bg-amber-100 text-amber-400 dark:bg-amber-900/30 dark:text-amber-500 cursor-not-allowed',
     discountClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
     adminBadgeClass: 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
   },
@@ -101,6 +105,7 @@ const DEFAULT_TIER_THEME: TierTheme = {
   textClass: 'text-primary-600 dark:text-primary-400',
   iconClass: 'text-primary-500 dark:text-primary-400',
   btnClass: 'bg-primary-500 text-white hover:bg-primary-600',
+  disabledBtnClass: 'bg-primary-100 text-primary-400 dark:bg-primary-900/30 dark:text-primary-500 cursor-not-allowed',
   discountClass: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
   adminBadgeClass: 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
 }

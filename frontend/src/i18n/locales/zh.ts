@@ -7079,6 +7079,10 @@ export default {
       orderType: '订单类型',
       actions: '操作',
       requestRefund: '申请退款',
+      viewDetail: '查看详情',
+      amountInfo: '金额明细',
+      timeline: '订单进度',
+      refundRequestedAt: '申请退款时间',
     },
     result: {
       success: '支付成功',
@@ -7345,6 +7349,7 @@ export default {
     noActiveBundle: '暂无活跃套餐',
     noActiveBundleDesc: '您尚未订阅任何套餐，请在下方浏览可购套餐',
     availablePlans: '可购套餐',
+    currentPlan: '已订阅',
     noPlans: '暂无可购套餐',
     days: '天',
     daily: '日用量',

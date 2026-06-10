@@ -16,17 +16,17 @@
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
                 <h2 class="truncate text-lg font-bold text-gray-900 dark:text-white">
-                  {{ activeBundle.plan?.name || t('bundles.currentBundle') }}
+                  {{ activePlan?.name || t('bundles.currentBundle') }}
                 </h2>
-                <span :class="tierBadgeClass(activeBundle.plan?.tier)">
-                  {{ tierLabel(activeBundle.plan?.tier) }}
+                <span :class="tierBadgeClass(activePlan?.tier)">
+                  {{ tierLabel(activePlan?.tier) }}
                 </span>
                 <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                   {{ t('bundles.active') }}
                 </span>
               </div>
-              <p v-if="activeBundle.plan?.description" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                {{ activeBundle.plan.description }}
+              <p v-if="activePlan?.description" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ activePlan.description }}
               </p>
             </div>
           </div>
@@ -55,19 +55,28 @@
           </div>
 
           <!-- Included Groups -->
-          <div v-if="activeBundle.plan?.group_quotas?.length" class="border-t border-primary-100 p-4 dark:border-dark-700">
+          <div v-if="activePlan?.group_quotas?.length" class="border-t border-primary-100 p-4 dark:border-dark-700">
             <p class="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('bundles.includedGroups') }}</p>
             <div class="flex flex-wrap gap-2">
               <div
-                v-for="gq in activeBundle.plan.group_quotas"
+                v-for="gq in activePlan.group_quotas"
                 :key="gq.id"
-                class="flex items-center gap-1.5 rounded-lg border border-gray-100 bg-white px-2.5 py-1.5 dark:border-dark-700 dark:bg-dark-800"
+                class="group/Chip relative flex items-center gap-1.5 rounded-lg border border-gray-100 bg-white px-2.5 py-1.5 dark:border-dark-700 dark:bg-dark-800"
               >
                 <div :class="['h-1.5 w-1.5 rounded-full', platformDotClass(gq.group_platform || '')]" />
                 <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ gq.group_name || `Group #${gq.group_id}` }}</span>
                 <span :class="['rounded px-1.5 py-0.5 text-[10px] font-medium', platformBadgeLightClass(gq.group_platform || '')]">
                   {{ platformLabel(gq.group_platform || '') }}
                 </span>
+                <!-- Hover tooltip with quota details -->
+                <div v-if="gq.daily_limit_usd || gq.weekly_limit_usd || gq.monthly_limit_usd"
+                  class="pointer-events-none absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-gray-200 bg-white px-3 py-2 opacity-0 shadow-lg transition-opacity group-hover/Chip:opacity-100 dark:border-dark-600 dark:bg-dark-800">
+                  <div class="flex gap-3 whitespace-nowrap text-[11px]">
+                    <span v-if="gq.daily_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.daily') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.daily_limit_usd }}</span></span>
+                    <span v-if="gq.weekly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.weekly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.weekly_limit_usd }}</span></span>
+                    <span v-if="gq.monthly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.monthly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.monthly_limit_usd }}</span></span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -195,10 +204,18 @@
 
                 <!-- Purchase Button -->
                 <button
+                  v-if="!isCurrentPlan(plan)"
                   :class="['w-full rounded-xl py-2.5 text-sm font-semibold transition-all active:scale-[0.98]', tierBtnClass(plan.tier)]"
                   @click="handlePurchase(plan)"
                 >
                   {{ t('bundles.purchaseNow') }}
+                </button>
+                <button
+                  v-else
+                  :class="['w-full rounded-xl py-2.5 text-sm font-semibold', tierDisabledBtnClass(plan.tier)]"
+                  disabled
+                >
+                  {{ t('bundles.currentPlan') }}
                 </button>
               </div>
             </div>
@@ -236,6 +253,12 @@ const loading = ref(true)
 const plans = ref<BundlePlan[]>([])
 // 当前用户的活跃套餐订阅
 const activeBundle = ref<BundleSubscription | null>(null)
+
+// 从已加载的 plans 列表中匹配当前订阅的套餐（后端未返回 plan 详情）
+const activePlan = computed<BundlePlan | null>(() => {
+  if (!activeBundle.value) return null
+  return plans.value.find(p => p.id === activeBundle.value!.plan_id) ?? null
+})
 
 // 按 sort_order 排序后的计划列表
 const sortedPlans = computed(() =>
@@ -278,6 +301,10 @@ function tierBtnClass(tier?: string): string {
   return getTierTheme(tier).btnClass
 }
 
+function tierDisabledBtnClass(tier?: string): string {
+  return getTierTheme(tier).disabledBtnClass
+}
+
 function tierDiscountClass(tier?: string): string {
   return getTierTheme(tier).discountClass
 }
@@ -315,6 +342,11 @@ const expirationClass = computed(() => {
   if (days <= 7) return 'text-lg font-bold text-orange-600 dark:text-orange-400'
   return 'text-lg font-bold text-gray-900 dark:text-white'
 })
+
+// 判断套餐是否为当前已订阅的套餐
+function isCurrentPlan(plan: BundlePlan): boolean {
+  return activeBundle.value?.plan_id === plan.id
+}
 
 // 处理购买点击 — 跳转到支付页完成购买
 function handlePurchase(plan: BundlePlan) {
