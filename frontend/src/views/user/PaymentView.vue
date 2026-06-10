@@ -240,33 +240,24 @@
               </div>
               <!-- Group quotas summary -->
               <div v-if="bundlePlan.group_quotas?.length" class="mt-3 rounded-lg bg-gray-50 px-3 py-2 dark:bg-dark-700/50">
-                <p class="mb-1 text-[11px] font-medium text-gray-400 dark:text-dark-500">{{ t('bundles.includedGroups') }}</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <div
-                    v-for="gq in bundlePlan.group_quotas"
-                    :key="gq.id"
-                    class="flex items-center gap-1 rounded bg-gray-200/80 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-dark-600 dark:text-gray-300"
-                  >
-                    <span :class="['h-1 w-1 rounded-full', platformDotClass(gq.group_platform || '')]" />
-                    {{ gq.group_name || t('bundles.groupFallback', { id: gq.group_id }) }}
-                    <span :class="['rounded px-1 py-0.5 text-[10px] font-medium', platformBadgeLightClass(gq.group_platform || '')]">
-                      {{ platformLabel(gq.group_platform || '') }}
-                    </span>
-                  </div>
-                </div>
-                <!-- Quota details per group -->
-                <div v-for="gq in bundlePlan.group_quotas" :key="'detail-' + gq.id" class="mt-1.5 grid grid-cols-3 gap-x-3 text-[10px]">
-                  <div v-if="gq.daily_limit_usd" class="flex justify-between">
-                    <span class="text-gray-400 dark:text-dark-500">{{ t('bundles.daily') }}</span>
-                    <span class="font-medium text-gray-600 dark:text-gray-300">${{ gq.daily_limit_usd }}</span>
-                  </div>
-                  <div v-if="gq.weekly_limit_usd" class="flex justify-between">
-                    <span class="text-gray-400 dark:text-dark-500">{{ t('bundles.weekly') }}</span>
-                    <span class="font-medium text-gray-600 dark:text-gray-300">${{ gq.weekly_limit_usd }}</span>
-                  </div>
-                  <div v-if="gq.monthly_limit_usd" class="flex justify-between">
-                    <span class="text-gray-400 dark:text-dark-500">{{ t('bundles.monthly') }}</span>
-                    <span class="font-medium text-gray-600 dark:text-gray-300">${{ gq.monthly_limit_usd }}</span>
+                <p class="mb-1.5 text-[11px] font-medium text-gray-400 dark:text-dark-500">{{ t('bundles.includedGroups') }}</p>
+                <div class="grid grid-cols-3 gap-2">
+                  <div v-for="gq in bundlePlan.group_quotas" :key="gq.id">
+                    <!-- Group name row -->
+                    <div class="flex items-center gap-1.5">
+                      <span :class="['h-1.5 w-1.5 rounded-full', platformDotClass(gq.group_platform || '')]" />
+                      <span class="text-[11px] font-medium text-gray-700 dark:text-gray-300">{{ gq.group_name || t('bundles.groupFallback', { id: gq.group_id }) }}</span>
+                      <span :class="['rounded px-1 py-0.5 text-[10px] font-medium', platformBadgeLightClass(gq.group_platform || '')]">
+                        {{ platformLabel(gq.group_platform || '') }}
+                      </span>
+                    </div>
+                    <!-- Quota details -->
+                    <div v-if="gq.daily_limit_usd || gq.weekly_limit_usd || gq.monthly_limit_usd"
+                      class="mt-0.5 flex gap-3 pl-3 text-[10px]">
+                      <span v-if="gq.daily_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.daily') }} </span><span class="font-medium text-gray-600 dark:text-gray-300">${{ gq.daily_limit_usd }}</span></span>
+                      <span v-if="gq.weekly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.weekly') }} </span><span class="font-medium text-gray-600 dark:text-gray-300">${{ gq.weekly_limit_usd }}</span></span>
+                      <span v-if="gq.monthly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.monthly') }} </span><span class="font-medium text-gray-600 dark:text-gray-300">${{ gq.monthly_limit_usd }}</span></span>
+                    </div>
                   </div>
                 </div>
               </div>
