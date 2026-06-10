@@ -315,9 +315,9 @@ const expirationClass = computed(() => {
   return 'text-lg font-bold text-gray-900 dark:text-white'
 })
 
-// 处理购买点击（暂未实现）
-function handlePurchase(_plan: BundlePlan) {
-  appStore.showInfo(t('bundles.purchaseNotAvailable'))
+// 处理购买点击 — 跳转到支付页完成购买
+function handlePurchase(plan: BundlePlan) {
+  router.push({ path: '/purchase', query: { bundle_plan_id: String(plan.id) } })
 }
 
 // 并行加载套餐计划和当前订阅数据

@@ -10,6 +10,7 @@
 
 import { apiClient } from './client'
 import type { BundlePlan, BundleSubscription, BundleUsageProgress } from '@/types/bundle'
+import type { CreateOrderResult } from '@/types/payment'
 
 /** 获取所有在售套餐计划 */
 /**
@@ -52,10 +53,14 @@ export async function getMyUsage(): Promise<BundleUsageProgress[]> {
 /**
  * Initiate checkout for a bundle plan
  * @param planId - Plan ID to purchase
+ * @param paymentType - Payment method type (e.g. 'alipay', 'wxpay', 'stripe')
+ * @param returnUrl - Optional return URL after payment
  */
-export async function checkout(planId: number): Promise<{ checkout_url: string; order_id: string }> {
-  const { data } = await apiClient.post<{ checkout_url: string; order_id: string }>('/bundles/checkout', {
-    plan_id: planId
+export async function checkout(planId: number, paymentType: string, returnUrl?: string): Promise<CreateOrderResult> {
+  const { data } = await apiClient.post<CreateOrderResult>('/bundles/checkout', {
+    plan_id: planId,
+    payment_type: paymentType,
+    return_url: returnUrl,
   })
   return data
 }

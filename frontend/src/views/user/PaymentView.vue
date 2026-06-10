@@ -5,8 +5,8 @@
         <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
       </div>
       <template v-else>
-        <!-- Tab Switcher (hide during payment and subscription confirm) -->
-        <div v-if="tabs.length > 1 && paymentPhase === 'select' && !selectedPlan" class="flex space-x-1 rounded-xl bg-gray-100 p-1 dark:bg-dark-800">
+        <!-- Tab Switcher (hide during payment, subscription confirm, and bundle mode) -->
+        <div v-if="tabs.length > 1 && paymentPhase === 'select' && !selectedPlan && !isBundleMode" class="flex space-x-1 rounded-xl bg-gray-100 p-1 dark:bg-dark-800">
           <button v-for="tab in tabs" :key="tab.key"
             class="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all"
             :class="activeTab === tab.key ? 'bg-white text-gray-900 shadow dark:bg-dark-700 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
@@ -205,9 +205,88 @@
               </div>
             </template>
           </template>
+          <!-- Bundle Purchase (inline, replaces tabs when bundle_plan_id is set) -->
+          <template v-if="isBundleMode && bundlePlan">
+            <div class="card p-5">
+              <!-- Header: tier badge + plan name -->
+              <div class="mb-3 flex flex-wrap items-center gap-2">
+                <span :class="['rounded-md px-2 py-0.5 text-xs font-medium', getTierTheme(bundlePlan.tier).badgeClass]">
+                  {{ t(getTierI18nKey(bundlePlan.tier, 'user')) }}
+                </span>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ bundlePlan.name }}</h3>
+              </div>
+              <!-- Price -->
+              <div class="flex items-baseline gap-2">
+                <span v-if="bundlePlan.original_price > bundlePlan.price" class="text-sm text-gray-400 line-through dark:text-gray-500">
+                  ${{ bundlePlan.original_price }}
+                </span>
+                <span :class="['text-3xl font-bold', getTierTheme(bundlePlan.tier).textClass]">${{ bundlePlan.price }}</span>
+                <span class="text-sm text-gray-500 dark:text-gray-400">/ {{ bundlePlan.validity_days }}{{ t('bundles.days') }}</span>
+              </div>
+              <!-- Description -->
+              <p v-if="bundlePlan.description" class="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+                {{ bundlePlan.description }}
+              </p>
+              <!-- Concurrency / RPM -->
+              <div class="mt-3 grid grid-cols-2 gap-3">
+                <div v-if="bundlePlan.concurrency_limit">
+                  <span class="text-xs text-gray-400 dark:text-gray-500">{{ t('bundles.concurrency') }}</span>
+                  <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ bundlePlan.concurrency_limit }}</div>
+                </div>
+                <div v-if="bundlePlan.rpm_limit">
+                  <span class="text-xs text-gray-400 dark:text-gray-500">{{ t('bundles.rpm') }}</span>
+                  <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ bundlePlan.rpm_limit }} RPM</div>
+                </div>
+              </div>
+              <!-- Group quotas summary -->
+              <div v-if="bundlePlan.group_quotas?.length" class="mt-3">
+                <p class="mb-1 text-xs text-gray-400 dark:text-gray-500">{{ t('bundles.includedGroups') }}</p>
+                <div class="flex flex-wrap gap-1.5">
+                  <span v-for="gq in bundlePlan.group_quotas" :key="gq.id"
+                    class="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-dark-700 dark:text-gray-300">
+                    {{ gq.group?.name || t('bundles.groupFallback', { id: gq.group_id }) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <!-- Payment method selector -->
+            <div v-if="enabledMethods.length >= 1" class="card p-6">
+              <PaymentMethodSelector
+                :methods="subMethodOptions"
+                :selected="selectedMethod"
+                @select="selectedMethod = $event"
+              />
+            </div>
+            <!-- Fee breakdown -->
+            <div v-if="feeRate > 0 && bundlePlan.price > 0" class="card p-6">
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-500 dark:text-gray-400">{{ t('payment.amountLabel') }}</span>
+                  <span class="text-gray-900 dark:text-white">${{ bundlePlan.price }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500 dark:text-gray-400">{{ t('payment.fee') }} ({{ feeRate }}%)</span>
+                  <span class="text-gray-900 dark:text-white">${{ bundleFeeAmount }}</span>
+                </div>
+                <div class="flex justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
+                  <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('payment.actualPay') }}</span>
+                  <span class="text-lg font-bold text-primary-600 dark:text-primary-400">${{ bundleTotalAmount }}</span>
+                </div>
+              </div>
+            </div>
+            <!-- Submit + Cancel buttons -->
+            <button :class="['btn w-full py-3 text-base font-medium', paymentButtonClass]" :disabled="!canSubmitBundle || submitting" @click="confirmBundlePurchase">
+              <span v-if="submitting" class="flex items-center justify-center gap-2">
+                <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                {{ t('common.processing') }}
+              </span>
+              <span v-else>{{ t('payment.createOrder') }} ${{ feeRate > 0 ? bundleTotalAmount : bundlePlan.price }}</span>
+            </button>
+            <button class="btn btn-secondary w-full" @click="cancelBundlePurchase">{{ t('common.cancel') }}</button>
+          </template>
         </template>
-        <!-- Bundle Entry Card -->
-        <div v-if="paymentPhase === 'select' && !selectedPlan" class="card cursor-pointer p-4 transition-all hover:shadow-md" @click="router.push('/bundles')">
+        <!-- Bundle Entry Card (hidden when already in bundle mode) -->
+        <div v-if="paymentPhase === 'select' && !selectedPlan && !isBundleMode" class="card cursor-pointer p-4 transition-all hover:shadow-md" @click="router.push('/bundles')">
           <div class="flex items-center gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-100 to-purple-100 dark:from-primary-900/40 dark:to-purple-900/40">
               <Icon name="cube" size="lg" class="text-primary-600 dark:text-primary-400" />
@@ -219,7 +298,7 @@
             <Icon name="chevronRight" size="sm" class="text-gray-400 dark:text-gray-500" />
           </div>
         </div>
-        <div v-if="(checkout.help_text || checkout.help_image_url) && paymentPhase === 'select' && !selectedPlan" class="card p-4">
+        <div v-if="(checkout.help_text || checkout.help_image_url) && paymentPhase === 'select' && !selectedPlan && !isBundleMode" class="card p-4">
           <div class="flex flex-col items-center gap-3">
             <img v-if="checkout.help_image_url" :src="checkout.help_image_url" alt=""
               class="h-40 max-w-full cursor-pointer rounded-lg object-contain transition-opacity hover:opacity-80"
@@ -266,6 +345,9 @@ import { usePaymentStore } from '@/stores/payment'
 import { useSubscriptionStore } from '@/stores/subscriptions'
 import { useAppStore } from '@/stores'
 import { paymentAPI } from '@/api/payment'
+import { getPlanDetail, checkout as bundleCheckout } from '@/api/bundles'
+import type { BundlePlan } from '@/types/bundle'
+import { getTierTheme, getTierI18nKey } from '@/constants/bundleTiers'
 import { extractApiErrorMessage, extractI18nErrorMessage } from '@/utils/apiError'
 import { isMobileDevice } from '@/utils/device'
 import type { SubscriptionPlan, CheckoutInfoResponse, CreateOrderResult, OrderType } from '@/types/payment'
@@ -318,6 +400,7 @@ const activeTab = ref<'recharge' | 'subscription'>('recharge')
 const amount = ref<number | null>(null)
 const selectedMethod = ref('')
 const selectedPlan = ref<SubscriptionPlan | null>(null)
+const bundlePlan = ref<BundlePlan | null>(null)
 const previewImage = ref('')
 
 const paymentPhase = ref<'select' | 'paying'>('select')
@@ -471,6 +554,7 @@ function onPaymentDone() {
   const wasSubscription = paymentState.value.orderType === 'subscription'
   resetPayment()
   selectedPlan.value = null
+  bundlePlan.value = null
   if (wasSubscription) {
     subscriptionStore.fetchActiveSubscriptions(true).catch(() => {})
   }
@@ -503,6 +587,7 @@ const tabs = computed(() => {
 
 const visibleMethods = computed(() => getVisibleMethods(checkout.value.methods))
 const enabledMethods = computed(() => Object.keys(visibleMethods.value))
+const isBundleMode = computed(() => bundlePlan.value !== null)
 const validAmount = computed(() => amount.value ?? 0)
 const balanceRechargeMultiplier = computed(() => {
   const multiplier = checkout.value.balance_recharge_multiplier
@@ -632,6 +717,26 @@ const canSubmitSubscription = computed(() =>
     && selectedLimit.value?.available !== false
 )
 
+// ── Bundle purchase mode ──
+const bundleFeeAmount = computed(() => {
+  const price = bundlePlan.value?.price ?? 0
+  return feeRate.value > 0 && price > 0
+    ? Math.ceil(((price * feeRate.value) / 100) * 100) / 100
+    : 0
+})
+
+const bundleTotalAmount = computed(() => {
+  const price = bundlePlan.value?.price ?? 0
+  if (feeRate.value <= 0 || price <= 0) return price
+  return Math.round((price + bundleFeeAmount.value) * 100) / 100
+})
+
+const canSubmitBundle = computed(() =>
+  bundlePlan.value !== null
+    && amountFitsMethod(bundlePlan.value.price, selectedMethod.value)
+    && selectedLimit.value?.available !== false
+)
+
 // Auto-switch to first available method when current selection can't handle the amount
 watch(() => [validAmount.value, selectedMethod.value] as const, ([amt, method]) => {
   if (amt <= 0 || amountFitsMethod(amt, method)) return
@@ -697,6 +802,18 @@ async function confirmSubscribe() {
   await createOrder(selectedPlan.value.price, 'subscription', selectedPlan.value.id)
 }
 
+async function confirmBundlePurchase() {
+  if (!bundlePlan.value || submitting.value) return
+  await createOrder(bundlePlan.value.price, 'bundle', bundlePlan.value.id)
+}
+
+function cancelBundlePurchase() {
+  bundlePlan.value = null
+  if (route.query.bundle_plan_id) {
+    router.replace({ path: route.path, query: {} })
+  }
+}
+
 async function createOrder(orderAmount: number, orderType: OrderType, planId?: number, options: CreateOrderOptions = {}) {
   submitting.value = true
   errorMessage.value = ''
@@ -720,7 +837,14 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
       payload.wechat_resume_token = options.wechatResumeToken
     }
 
-    const result = await paymentStore.createOrder(payload) as CreateOrderResult & { resume_token?: string }
+    // Bundle orders use a dedicated checkout endpoint; regular orders go through payment store
+    let result: CreateOrderResult & { resume_token?: string }
+    if (orderType === 'bundle' && planId) {
+      const bundleResult = await bundleCheckout(planId, requestType, payload.return_url)
+      result = { ...bundleResult, resume_token: (bundleResult as CreateOrderResult & { resume_token?: string }).resume_token }
+    } else {
+      result = await paymentStore.createOrder(payload) as CreateOrderResult & { resume_token?: string }
+    }
     const openWindow = (url: string) => {
       const win = window.open(url, 'paymentPopup', getPaymentPopupFeatures())
       if (!win || win.closed) {
@@ -1006,6 +1130,11 @@ async function resumeWechatPaymentFromQuery() {
   if (resume.orderType === 'subscription' && resume.planId) {
     selectedPlan.value = checkout.value.plans.find(plan => plan.id === resume.planId) ?? null
   }
+  if (resume.orderType === 'bundle' && resume.planId) {
+    try {
+      bundlePlan.value = await getPlanDetail(resume.planId)
+    } catch { /* ignore, createOrder will fail with a clear error */ }
+  }
 
   await router.replace({ path: route.path, query: stripWechatResumeQuery(route.query) })
 
@@ -1079,6 +1208,25 @@ onMounted(async () => {
         } else if (groupPlans.length > 1) {
           renewGroupId.value = groupId
           showRenewalModal.value = true
+        }
+      }
+    }
+    // Handle bundle purchase navigation: ?bundle_plan_id=123
+    if (route.query.bundle_plan_id) {
+      const planId = Number(route.query.bundle_plan_id)
+      if (Number.isFinite(planId) && planId > 0) {
+        try {
+          const plan = await getPlanDetail(planId)
+          if (plan && plan.for_sale && plan.status === 'active') {
+            bundlePlan.value = plan
+            // Auto-select first valid payment method for the plan price
+            const available = enabledMethods.value.find(m => amountFitsMethod(plan.price, m))
+            if (available) selectedMethod.value = available
+          } else {
+            appStore.showError(t('bundles.planNotAvailable'))
+          }
+        } catch {
+          appStore.showError(t('bundles.failedToLoad'))
         }
       }
     }
