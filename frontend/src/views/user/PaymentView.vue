@@ -239,13 +239,44 @@
                 </div>
               </div>
               <!-- Group quotas summary -->
-              <div v-if="bundlePlan.group_quotas?.length" class="mt-3">
-                <p class="mb-1 text-xs text-gray-400 dark:text-gray-500">{{ t('bundles.includedGroups') }}</p>
+              <div v-if="bundlePlan.group_quotas?.length" class="mt-3 rounded-lg bg-gray-50 px-3 py-2 dark:bg-dark-700/50">
+                <p class="mb-1 text-[11px] font-medium text-gray-400 dark:text-dark-500">{{ t('bundles.includedGroups') }}</p>
                 <div class="flex flex-wrap gap-1.5">
-                  <span v-for="gq in bundlePlan.group_quotas" :key="gq.id"
-                    class="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-dark-700 dark:text-gray-300">
+                  <div
+                    v-for="gq in bundlePlan.group_quotas"
+                    :key="gq.id"
+                    class="flex items-center gap-1 rounded bg-gray-200/80 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-dark-600 dark:text-gray-300"
+                  >
+                    <span :class="['h-1 w-1 rounded-full', platformDotClass(gq.group_platform || '')]" />
                     {{ gq.group_name || t('bundles.groupFallback', { id: gq.group_id }) }}
-                  </span>
+                    <span :class="['rounded px-1 py-0.5 text-[10px] font-medium', platformBadgeLightClass(gq.group_platform || '')]">
+                      {{ platformLabel(gq.group_platform || '') }}
+                    </span>
+                  </div>
+                </div>
+                <!-- Quota details per group -->
+                <div v-for="gq in bundlePlan.group_quotas" :key="'detail-' + gq.id" class="mt-1.5 grid grid-cols-3 gap-x-3 text-[10px]">
+                  <div v-if="gq.daily_limit_usd" class="flex justify-between">
+                    <span class="text-gray-400 dark:text-dark-500">{{ t('bundles.daily') }}</span>
+                    <span class="font-medium text-gray-600 dark:text-gray-300">${{ gq.daily_limit_usd }}</span>
+                  </div>
+                  <div v-if="gq.weekly_limit_usd" class="flex justify-between">
+                    <span class="text-gray-400 dark:text-dark-500">{{ t('bundles.weekly') }}</span>
+                    <span class="font-medium text-gray-600 dark:text-gray-300">${{ gq.weekly_limit_usd }}</span>
+                  </div>
+                  <div v-if="gq.monthly_limit_usd" class="flex justify-between">
+                    <span class="text-gray-400 dark:text-dark-500">{{ t('bundles.monthly') }}</span>
+                    <span class="font-medium text-gray-600 dark:text-gray-300">${{ gq.monthly_limit_usd }}</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Features -->
+              <div v-if="bundlePlan.features?.length" class="mt-3 space-y-1">
+                <div v-for="feature in bundlePlan.features" :key="feature" class="flex items-start gap-1.5">
+                  <svg :class="['mt-0.5 h-3.5 w-3.5 shrink-0', getTierTheme(bundlePlan.tier).iconClass]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                  <span class="text-xs text-gray-600 dark:text-gray-300">{{ feature }}</span>
                 </div>
               </div>
             </div>
@@ -390,6 +421,17 @@ const activeSubscriptions = computed(() => subscriptionStore.activeSubscriptions
 function getDaysRemaining(expiresAt: string): number {
   const diff = new Date(expiresAt).getTime() - Date.now()
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+}
+
+// 平台标识点颜色（openai=绿/anthropic=橙/gemini=蓝）
+function platformDotClass(p: string): string {
+  switch (p) {
+    case 'anthropic': return 'bg-orange-500'
+    case 'openai': return 'bg-emerald-500'
+    case 'antigravity': return 'bg-purple-500'
+    case 'gemini': return 'bg-blue-500'
+    default: return 'bg-gray-400'
+  }
 }
 
 const loading = ref(true)
