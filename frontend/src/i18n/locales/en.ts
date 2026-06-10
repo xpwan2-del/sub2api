@@ -7189,6 +7189,7 @@ export default {
     usageByGroup: 'Usage by Group',
     noUsageData: 'No usage data',
     unlimited: 'Unlimited',
+    viewUsageRecords: 'Usage Records',
     backToBundles: 'Back to Bundles',
     bundleEntryTitle: 'Model Bundles',
     bundleEntryDesc: 'Subscribe to a bundle for more model quotas and features',

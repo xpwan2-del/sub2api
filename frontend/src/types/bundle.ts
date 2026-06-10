@@ -81,12 +81,12 @@ export interface BundleUsageProgress {
   group_name: string
   platform: string
   model_pattern: string
-  daily_used: number
-  daily_limit: number
-  weekly_used: number
-  weekly_limit: number
-  monthly_used: number
-  monthly_limit: number
+  daily_usage_usd: number
+  daily_limit_usd: number
+  weekly_usage_usd: number
+  weekly_limit_usd: number
+  monthly_usage_usd: number
+  monthly_limit_usd: number
 }
 
 /** 创建套餐计划请求 DTO */

@@ -85,7 +85,17 @@
 
           <!-- Usage Cards by Group -->
           <div>
-            <h3 class="mb-4 text-base font-bold text-gray-900 dark:text-white">{{ t('bundles.usageByGroup') }}</h3>
+            <div class="mb-4 flex items-center justify-between">
+              <h3 class="text-base font-bold text-gray-900 dark:text-white">{{ t('bundles.usageByGroup') }}</h3>
+              <button
+                class="inline-flex items-center gap-1 text-sm font-medium text-primary-600 transition-colors hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                @click="router.push('/usage')"
+              >
+                <Icon name="document" size="sm" />
+                {{ t('bundles.viewUsageRecords') }}
+                <Icon name="chevronRight" size="sm" />
+              </button>
+            </div>
 
             <div v-if="usages.length === 0" class="card py-12 text-center">
               <Icon name="chart" size="xl" class="mx-auto mb-3 text-gray-300 dark:text-dark-600" />
@@ -101,8 +111,10 @@
               >
                 <!-- Group Header -->
                 <div class="flex items-center gap-2 border-b border-gray-100 p-3 dark:border-dark-700">
-                  <div :class="['h-1.5 w-1.5 rounded-full', platformDotClass(usage.platform)]" />
-                  <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ usage.group_name }}</span>
+                  <div :class="['h-2 w-2 rounded-full', platformDotClass(usage.platform)]" />
+                  <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                    {{ usage.group_name || t('bundles.groupFallback', { id: usage.group_id }) }}
+                  </span>
                   <span :class="['rounded-md border px-2 py-0.5 text-[11px] font-medium', platformBadgeLightClass(usage.platform)]">
                     {{ platformLabel(usage.platform) }}
                   </span>
@@ -114,53 +126,53 @@
                 <!-- Progress Bars -->
                 <div class="space-y-3 p-3">
                   <!-- Daily Usage -->
-                  <div v-if="usage.daily_limit > 0" class="space-y-1.5">
+                  <div v-if="usage.daily_limit_usd > 0" class="space-y-1.5">
                     <div class="flex items-center justify-between text-xs">
                       <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.daily') }}</span>
-                      <span class="text-gray-500 dark:text-gray-400">${{ usage.daily_used.toFixed(2) }} / ${{ usage.daily_limit.toFixed(2) }}</span>
+                      <span class="text-gray-500 dark:text-gray-400">${{ usage.daily_usage_usd.toFixed(2) }} / ${{ usage.daily_limit_usd.toFixed(2) }}</span>
                     </div>
                     <div class="relative h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
                       <div
                         class="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
-                        :class="progressBarClass(usage.daily_used, usage.daily_limit)"
-                        :style="{ width: progressWidth(usage.daily_used, usage.daily_limit) }"
+                        :class="progressBarClass(usage.daily_usage_usd, usage.daily_limit_usd)"
+                        :style="{ width: progressWidth(usage.daily_usage_usd, usage.daily_limit_usd) }"
                       ></div>
                     </div>
                   </div>
 
                   <!-- Weekly Usage -->
-                  <div v-if="usage.weekly_limit > 0" class="space-y-1.5">
+                  <div v-if="usage.weekly_limit_usd > 0" class="space-y-1.5">
                     <div class="flex items-center justify-between text-xs">
                       <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.weekly') }}</span>
-                      <span class="text-gray-500 dark:text-gray-400">${{ usage.weekly_used.toFixed(2) }} / ${{ usage.weekly_limit.toFixed(2) }}</span>
+                      <span class="text-gray-500 dark:text-gray-400">${{ usage.weekly_usage_usd.toFixed(2) }} / ${{ usage.weekly_limit_usd.toFixed(2) }}</span>
                     </div>
                     <div class="relative h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
                       <div
                         class="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
-                        :class="progressBarClass(usage.weekly_used, usage.weekly_limit)"
-                        :style="{ width: progressWidth(usage.weekly_used, usage.weekly_limit) }"
+                        :class="progressBarClass(usage.weekly_usage_usd, usage.weekly_limit_usd)"
+                        :style="{ width: progressWidth(usage.weekly_usage_usd, usage.weekly_limit_usd) }"
                       ></div>
                     </div>
                   </div>
 
                   <!-- Monthly Usage -->
-                  <div v-if="usage.monthly_limit > 0" class="space-y-1.5">
+                  <div v-if="usage.monthly_limit_usd > 0" class="space-y-1.5">
                     <div class="flex items-center justify-between text-xs">
                       <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.monthly') }}</span>
-                      <span class="text-gray-500 dark:text-gray-400">${{ usage.monthly_used.toFixed(2) }} / ${{ usage.monthly_limit.toFixed(2) }}</span>
+                      <span class="text-gray-500 dark:text-gray-400">${{ usage.monthly_usage_usd.toFixed(2) }} / ${{ usage.monthly_limit_usd.toFixed(2) }}</span>
                     </div>
                     <div class="relative h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
                       <div
                         class="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
-                        :class="progressBarClass(usage.monthly_used, usage.monthly_limit)"
-                        :style="{ width: progressWidth(usage.monthly_used, usage.monthly_limit) }"
+                        :class="progressBarClass(usage.monthly_usage_usd, usage.monthly_limit_usd)"
+                        :style="{ width: progressWidth(usage.monthly_usage_usd, usage.monthly_limit_usd) }"
                       ></div>
                     </div>
                   </div>
 
                   <!-- No limits -->
                   <div
-                    v-if="usage.daily_limit === 0 && usage.weekly_limit === 0 && usage.monthly_limit === 0"
+                    v-if="usage.daily_limit_usd === 0 && usage.weekly_limit_usd === 0 && usage.monthly_limit_usd === 0"
                     class="flex items-center justify-center rounded-lg bg-emerald-50 py-3 dark:bg-emerald-900/20"
                   >
                     <span class="text-sm text-emerald-600 dark:text-emerald-400">∞ {{ t('bundles.unlimited') }}</span>

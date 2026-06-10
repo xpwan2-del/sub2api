@@ -7370,6 +7370,7 @@ export default {
     usageByGroup: '各 Group 用量',
     noUsageData: '暂无用量数据',
     unlimited: '不限额度',
+    viewUsageRecords: '使用记录',
     backToBundles: '返回套餐',
     bundleEntryTitle: '模型套餐',
     bundleEntryDesc: '订阅套餐获取更多模型配额与特权',

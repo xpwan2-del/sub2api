@@ -131,6 +131,8 @@ type UpdateBundlePlanRequest struct {
 // BundleUsageProgress represents the current usage against limits for a single quota scope.
 type BundleUsageProgress struct {
 	GroupID         int64   `json:"group_id"`
+	GroupName       string  `json:"group_name"`
+	Platform        string  `json:"platform"`
 	QuotaScope      string  `json:"quota_scope"`
 	ModelPattern    string  `json:"model_pattern"`
 	DailyUsageUSD   float64 `json:"daily_usage_usd"`

@@ -251,38 +251,49 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 		return nil, fmt.Errorf("load user subscriptions: %w", err)
 	}
 
-	// Build a lookup for snapshotted limits by groupID from bridged UserSubscriptions.
-	type groupLimit struct {
+	// Build a lookup for snapshotted limits + group info by groupID from bridged UserSubscriptions.
+	type groupMeta struct {
 		dailyLimit   float64
 		weeklyLimit  float64
 		monthlyLimit float64
+		groupName    string
+		platform     string
 	}
-	limitMap := make(map[int64]groupLimit)
+	metaMap := make(map[int64]groupMeta)
 	for _, sub := range userSubs {
 		if sub.BundleSubscriptionID != nil && *sub.BundleSubscriptionID == bundleSubID {
-			limitMap[sub.GroupID] = groupLimit{
+			name, platform := "", ""
+			if sub.Group != nil {
+				name = sub.Group.Name
+				platform = sub.Group.Platform
+			}
+			metaMap[sub.GroupID] = groupMeta{
 				dailyLimit:   sub.DailyLimitUSD,
 				weeklyLimit:  sub.WeeklyLimitUSD,
 				monthlyLimit: sub.MonthlyLimitUSD,
+				groupName:    name,
+				platform:     platform,
 			}
 		}
 	}
 
 	progress := make([]BundleUsageProgress, 0, len(bundleSub.Usages))
 	for _, usage := range bundleSub.Usages {
-		lim, hasLimit := limitMap[usage.GroupID]
-		if !hasLimit {
-			lim = groupLimit{} // zero limits = unlimited
+		meta, hasMeta := metaMap[usage.GroupID]
+		if !hasMeta {
+			meta = groupMeta{} // zero limits = unlimited
 		}
 		progress = append(progress, BundleUsageProgress{
 			GroupID:         usage.GroupID,
+			GroupName:       meta.groupName,
+			Platform:        meta.platform,
 			ModelPattern:    usage.ModelPattern,
 			DailyUsageUSD:   usage.DailyUsageUSD,
-			DailyLimitUSD:   lim.dailyLimit,
+			DailyLimitUSD:   meta.dailyLimit,
 			WeeklyUsageUSD:  usage.WeeklyUsageUSD,
-			WeeklyLimitUSD:  lim.weeklyLimit,
+			WeeklyLimitUSD:  meta.weeklyLimit,
 			MonthlyUsageUSD: usage.MonthlyUsageUSD,
-			MonthlyLimitUSD: lim.monthlyLimit,
+			MonthlyLimitUSD: meta.monthlyLimit,
 		})
 	}
 	return progress, nil
@@ -296,6 +307,27 @@ func (s *BundleSubscriptionService) List(ctx context.Context, params pagination.
 		return nil, nil, fmt.Errorf("list bundle subscriptions: %w", err)
 	}
 	return subs, result, nil
+}
+
+// EnrichPlansForList 为订阅列表批量加载 Plan 信息（handler 层调用，planCache 去重避免 N+1）
+// EnrichPlansForList batch-loads Plan info for a subscription list (called from handler layer).
+func (s *BundleSubscriptionService) EnrichPlansForList(ctx context.Context, subs []BundleSubscription) {
+	planCache := make(map[int64]*BundlePlan)
+	for i := range subs {
+		if subs[i].Plan != nil {
+			continue
+		}
+		if plan, ok := planCache[subs[i].PlanID]; ok {
+			subs[i].Plan = plan
+			continue
+		}
+		plan, err := s.planRepo.GetByID(ctx, subs[i].PlanID)
+		if err != nil {
+			continue
+		}
+		planCache[subs[i].PlanID] = plan
+		subs[i].Plan = plan
+	}
 }
 
 // ExtendBundle 延长套餐订阅有效期，同时延长关联的桥接 UserSubscription
