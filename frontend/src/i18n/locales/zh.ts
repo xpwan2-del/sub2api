@@ -7027,6 +7027,7 @@ export default {
       link: 'Link',
       alipay_direct: '支付宝（直连）',
       wxpay_direct: '微信支付（直连）',
+      balance: '余额支付',
     },
     status: {
       pending: '待支付',
@@ -7225,6 +7226,7 @@ export default {
       completedAt: '完成时间',
       expiresAt: '过期时间',
       feeRate: '手续费率',
+      balanceDeductAmount: '余额抵扣金额',
       refund: '退款',
       refundOrder: '退款订单',
       refundAmount: '退款金额',

@@ -6845,6 +6845,7 @@ export default {
       link: 'Link',
       alipay_direct: 'Alipay (Direct)',
       wxpay_direct: 'WeChat Pay (Direct)',
+      balance: 'Balance',
     },
     status: {
       pending: 'Pending',
@@ -7043,6 +7044,7 @@ export default {
       completedAt: 'Completed At',
       expiresAt: 'Expires At',
       feeRate: 'Fee Rate',
+      balanceDeductAmount: 'Balance Deduction Amount',
       refund: 'Refund',
       refundOrder: 'Refund Order',
       refundAmount: 'Refund Amount',
