@@ -23,42 +23,63 @@
         </div>
 
         <template v-else>
-          <!-- Bundle Info Header -->
-          <div class="overflow-hidden rounded-2xl border border-primary-500/20 bg-white dark:bg-dark-800">
-            <div class="flex items-center gap-3 border-b border-gray-100 p-4 dark:border-dark-700">
+          <!-- Bundle Info Header — 参考 BundlesView 活跃套餐卡片样式 -->
+          <div class="overflow-hidden rounded-2xl border border-primary-500/20 bg-gradient-to-r from-primary-50 to-white dark:from-primary-900/20 dark:to-dark-800">
+            <!-- 标题栏 -->
+            <div class="flex items-center gap-3 border-b border-primary-100 p-4 dark:border-dark-700">
               <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100 dark:bg-primary-900/40">
                 <Icon name="cube" size="lg" class="text-primary-600 dark:text-primary-400" />
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
                   <h2 class="truncate text-lg font-bold text-gray-900 dark:text-white">
-                    {{ bundle.plan?.name || t('bundles.currentBundle') }}
+                    {{ activePlan?.name || t('bundles.currentBundle') }}
                   </h2>
-                  <span :class="tierBadgeClass(bundle.plan?.tier)">
-                    {{ tierLabel(bundle.plan?.tier) }}
+                  <span :class="tierBadgeClass(activePlan?.tier)">
+                    {{ tierLabel(activePlan?.tier) }}
+                  </span>
+                  <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                    {{ t('bundles.active') }}
                   </span>
                 </div>
-                <div class="mt-0.5 flex flex-wrap gap-x-4 text-xs text-gray-500 dark:text-gray-400">
-                  <span>{{ formatExpirationDate(bundle.expires_at) }}</span>
-                  <span :class="remainingDaysClass(bundle.expires_at)">
-                    {{ remainingDaysText(bundle.expires_at) }}
-                  </span>
-                </div>
+                <p v-if="activePlan?.description" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ activePlan.description }}
+                </p>
               </div>
             </div>
 
-            <!-- Concurrency / RPM -->
-            <div class="flex gap-4 border-b border-gray-100 p-4 dark:border-dark-700">
-              <div class="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 dark:bg-dark-700/50">
-                <Icon name="bolt" size="sm" class="text-amber-500" />
-                <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.concurrency') }}</span>
-                <span class="text-sm font-bold text-gray-900 dark:text-white">{{ bundle.concurrency_limit || '-' }}</span>
+            <!-- 信息网格：到期时间 + 并发数 + RPM -->
+            <div class="grid gap-4 p-4 sm:grid-cols-3">
+              <!-- Expiration -->
+              <div class="rounded-xl bg-white/60 p-3 dark:bg-dark-700/40">
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.expiresAt') }}</p>
+                <p :class="expirationClass">
+                  {{ formatExpirationDate(bundle.expires_at) }}
+                </p>
+                <p :class="['mt-0.5 text-xs', remainingDaysColorClass]">
+                  {{ remainingDaysText(bundle.expires_at) }}
+                </p>
               </div>
-              <div class="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 dark:bg-dark-700/50">
-                <Icon name="clock" size="sm" class="text-blue-500" />
-                <span class="text-xs text-gray-500 dark:text-gray-400">RPM</span>
-                <span class="text-sm font-bold text-gray-900 dark:text-white">{{ bundle.rpm_limit || '-' }}</span>
+              <!-- Concurrency -->
+              <div class="rounded-xl bg-white/60 p-3 dark:bg-dark-700/40">
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.concurrency') }}</p>
+                <p class="text-lg font-bold text-gray-900 dark:text-white">{{ bundle.concurrency_limit || '-' }}</p>
               </div>
+              <!-- RPM -->
+              <div class="rounded-xl bg-white/60 p-3 dark:bg-dark-700/40">
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.rpm') }}</p>
+                <p class="text-lg font-bold text-gray-900 dark:text-white">{{ bundle.rpm_limit || '-' }}</p>
+              </div>
+            </div>
+
+            <div class="border-t border-primary-100 p-4 dark:border-dark-700">
+              <button
+                class="inline-flex items-center gap-1.5 rounded-xl bg-primary-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-600 active:bg-primary-700"
+                @click="router.push('/bundles')"
+              >
+                <Icon name="arrowLeft" size="sm" />
+                {{ t('bundles.backToBundles') }}
+              </button>
             </div>
           </div>
 
@@ -149,15 +170,6 @@
             </div>
           </div>
 
-          <!-- Back to Bundles -->
-          <div class="flex justify-center">
-            <button
-              class="text-sm text-gray-500 transition-colors hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
-              @click="router.push('/bundles')"
-            >
-              {{ t('bundles.backToBundles') }}
-            </button>
-          </div>
         </template>
       </template>
     </div>
@@ -165,12 +177,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { getMyBundle, getMyUsage } from '@/api/bundles'
-import type { BundleSubscription, BundleUsageProgress } from '@/types/bundle'
+import { getPlans, getMyBundle, getMyUsage } from '@/api/bundles'
+import type { BundlePlan, BundleSubscription, BundleUsageProgress } from '@/types/bundle'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { platformBadgeLightClass, platformBorderClass, platformLabel } from '@/utils/platformColors'
@@ -187,10 +199,18 @@ const appStore = useAppStore()
 
 // 页面加载状态
 const loading = ref(true)
+// 在售套餐计划列表（用于获取完整 plan 信息：名称、描述、tier）
+const plans = ref<BundlePlan[]>([])
 // 当前套餐订阅
 const bundle = ref<BundleSubscription | null>(null)
 // 各渠道组的用量进度列表
 const usages = ref<BundleUsageProgress[]>([])
+
+// 从 plans 中匹配当前订阅的 plan（和 BundlesView 一致的方式）
+const activePlan = computed<BundlePlan | null>(() => {
+  if (!bundle.value) return null
+  return plans.value.find(p => p.id === bundle.value!.plan_id) ?? null
+})
 
 function tierLabel(tier?: string): string {
   return t(getTierI18nKey(tier, 'user'))
@@ -235,24 +255,39 @@ function remainingDaysText(expiresAt: string): string {
   return t('bundles.daysRemaining', { days })
 }
 
-// 剩余天数文字颜色
-function remainingDaysClass(expiresAt: string): string {
-  const diff = new Date(expiresAt).getTime() - Date.now()
+// 到期日期文字颜色（<=3天红色 / <=7天橙色 / 正常灰色）
+const expirationClass = computed(() => {
+  if (!bundle.value?.expires_at) return 'text-lg font-bold text-gray-900 dark:text-white'
+  const diff = new Date(bundle.value.expires_at).getTime() - Date.now()
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
-  if (days <= 0) return 'font-medium text-red-600 dark:text-red-400'
+  if (days <= 0) return 'text-lg font-bold text-red-600 dark:text-red-400'
+  if (days <= 3) return 'text-lg font-bold text-red-600 dark:text-red-400'
+  if (days <= 7) return 'text-lg font-bold text-orange-600 dark:text-orange-400'
+  return 'text-lg font-bold text-gray-900 dark:text-white'
+})
+
+// 剩余天数文字颜色（辅助 expiration 下方的小字）
+const remainingDaysColorClass = computed(() => {
+  if (!bundle.value?.expires_at) return 'text-gray-400 dark:text-gray-500'
+  const diff = new Date(bundle.value.expires_at).getTime() - Date.now()
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
   if (days <= 3) return 'font-medium text-red-600 dark:text-red-400'
   if (days <= 7) return 'text-orange-600 dark:text-orange-400'
-  return ''
-}
+  return 'text-gray-400 dark:text-gray-500'
+})
 
-// 并行加载套餐订阅和用量数据
+// 并行加载套餐计划、订阅和用量数据
 async function loadData() {
   try {
     loading.value = true
-    const [bundleData, usageData] = await Promise.allSettled([
+    const [plansData, bundleData, usageData] = await Promise.allSettled([
+      getPlans(),
       getMyBundle(),
       getMyUsage()
     ])
+    if (plansData.status === 'fulfilled') {
+      plans.value = plansData.value
+    }
     if (bundleData.status === 'fulfilled') {
       // 防御性处理：后端可能返回空数组 []，JS 中 [] 为 truthy，需转为 null
       const raw = bundleData.value
