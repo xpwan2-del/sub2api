@@ -62,8 +62,10 @@
             </div>
           </template>
 
-          <template #cell-user_id="{ value }">
-            <span class="text-sm text-gray-700 dark:text-gray-300">#{{ value }}</span>
+          <template #cell-user_id="{ row }">
+            <span class="text-sm text-gray-700 dark:text-gray-300">
+              {{ row.user_email || `#${row.user_id}` }}
+            </span>
           </template>
 
           <template #cell-plan_id="{ row }">
@@ -119,26 +121,29 @@
           v-if="expandedRowId !== null"
           class="border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-dark-800 dark:bg-dark-800/50"
         >
-          <template v-if="expandedSubscription?.group_usages?.length">
+          <template v-if="usageLoading">
+            <p class="text-sm text-gray-400 dark:text-gray-500">{{ t('common.loading') }}</p>
+          </template>
+          <template v-else-if="usageProgress.length">
             <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
               {{ t('bundles.admin.groupUsageDetails') }}
             </h4>
             <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               <div
-                v-for="usage in expandedSubscription.group_usages"
-                :key="usage.id"
+                v-for="item in usageProgress"
+                :key="item.group_id"
                 class="rounded-lg border border-gray-200 bg-white p-3 dark:border-dark-600 dark:bg-dark-800"
               >
                 <div class="mb-2 flex items-center justify-between">
                   <span class="text-sm font-medium text-gray-900 dark:text-white">
-                    {{ usage.group?.name || `Group #${usage.group_id}` }}
+                    {{ item.group_name || `Group #${item.group_id}` }}
                   </span>
                   <span class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ usage.group?.platform || '' }}
+                    {{ item.platform || '' }}
                   </span>
                 </div>
-                <div v-if="usage.model_pattern" class="mb-2 text-xs text-gray-500 dark:text-gray-400">
-                  Model: {{ usage.model_pattern }}
+                <div v-if="item.model_pattern" class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                  Model: {{ item.model_pattern }}
                 </div>
                 <div class="space-y-1.5">
                   <!-- Daily -->
@@ -147,12 +152,12 @@
                     <div class="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-dark-600">
                       <div
                         class="h-1.5 rounded-full transition-all"
-                        :class="getProgressClass(usage.daily_usage_usd, usage.daily_limit_usd)"
-                        :style="{ width: getProgressWidth(usage.daily_usage_usd, usage.daily_limit_usd) }"
+                        :class="getProgressClass(item.daily_usage_usd, item.daily_limit_usd)"
+                        :style="{ width: getProgressWidth(item.daily_usage_usd, item.daily_limit_usd) }"
                       ></div>
                     </div>
                     <span class="w-28 text-right text-gray-600 dark:text-gray-300">
-                      ${{ usage.daily_usage_usd.toFixed(2) }} / ${{ usage.daily_limit_usd.toFixed(2) }}
+                      ${{ item.daily_usage_usd.toFixed(2) }} / ${{ item.daily_limit_usd.toFixed(2) }}
                     </span>
                   </div>
                   <!-- Weekly -->
@@ -161,12 +166,12 @@
                     <div class="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-dark-600">
                       <div
                         class="h-1.5 rounded-full transition-all"
-                        :class="getProgressClass(usage.weekly_usage_usd, usage.weekly_limit_usd)"
-                        :style="{ width: getProgressWidth(usage.weekly_usage_usd, usage.weekly_limit_usd) }"
+                        :class="getProgressClass(item.weekly_usage_usd, item.weekly_limit_usd)"
+                        :style="{ width: getProgressWidth(item.weekly_usage_usd, item.weekly_limit_usd) }"
                       ></div>
                     </div>
                     <span class="w-28 text-right text-gray-600 dark:text-gray-300">
-                      ${{ usage.weekly_usage_usd.toFixed(2) }} / ${{ usage.weekly_limit_usd.toFixed(2) }}
+                      ${{ item.weekly_usage_usd.toFixed(2) }} / ${{ item.weekly_limit_usd.toFixed(2) }}
                     </span>
                   </div>
                   <!-- Monthly -->
@@ -175,12 +180,12 @@
                     <div class="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-dark-600">
                       <div
                         class="h-1.5 rounded-full transition-all"
-                        :class="getProgressClass(usage.monthly_usage_usd, usage.monthly_limit_usd)"
-                        :style="{ width: getProgressWidth(usage.monthly_usage_usd, usage.monthly_limit_usd) }"
+                        :class="getProgressClass(item.monthly_usage_usd, item.monthly_limit_usd)"
+                        :style="{ width: getProgressWidth(item.monthly_usage_usd, item.monthly_limit_usd) }"
                       ></div>
                     </div>
                     <span class="w-28 text-right text-gray-600 dark:text-gray-300">
-                      ${{ usage.monthly_usage_usd.toFixed(2) }} / ${{ usage.monthly_limit_usd.toFixed(2) }}
+                      ${{ item.monthly_usage_usd.toFixed(2) }} / ${{ item.monthly_limit_usd.toFixed(2) }}
                     </span>
                   </div>
                 </div>
@@ -266,7 +271,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { bundlesAPI } from '@/api/admin/bundles'
 import { extractApiErrorMessage } from '@/utils/apiError'
-import type { BundleSubscription } from '@/types/bundle'
+import type { BundleSubscription, BundleUsageProgress } from '@/types/bundle'
 import type { Column } from '@/components/common/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
@@ -283,7 +288,7 @@ const appStore = useAppStore()
 // ==================== BundleSubscriptionsView：管理后台套餐订阅管理页 ====================
 // 提供套餐订阅的管理界面，包括：
 // - 订阅列表表格（支持按用户ID搜索、状态过滤）
-// - 展开行显示各渠道组的日/周/月用量进度条
+// - 展开行按需加载各渠道组的日/周/月用量进度条
 // - 延期（延长天数）和撤销操作
 
 // ==================== 状态 ====================
@@ -292,6 +297,8 @@ const appStore = useAppStore()
 const loading = ref(false)
 const subscriptions = ref<BundleSubscription[]>([])
 const expandedRowId = ref<number | null>(null)
+const usageProgress = ref<BundleUsageProgress[]>([])
+const usageLoading = ref(false)
 
 const filters = ref<{
   user_id: number | undefined
@@ -342,10 +349,6 @@ const statusOptions = computed(() => [
   { value: 'revoked', label: t('bundles.admin.statusRevoked') },
 ])
 
-const expandedSubscription = computed(() =>
-  subscriptions.value.find(s => s.id === expandedRowId.value) ?? null
-)
-
 // ==================== 工具函数 ====================
 // ==================== Helpers ====================
 
@@ -392,8 +395,22 @@ function sourceLabel(source: string): string {
   }
 }
 
-function toggleRow(id: number) {
-  expandedRowId.value = expandedRowId.value === id ? null : id
+async function toggleRow(id: number) {
+  if (expandedRowId.value === id) {
+    expandedRowId.value = null
+    usageProgress.value = []
+    return
+  }
+  expandedRowId.value = id
+  usageLoading.value = true
+  try {
+    usageProgress.value = await bundlesAPI.getSubscriptionUsageProgress(id)
+  } catch (err: unknown) {
+    appStore.showError(extractApiErrorMessage(err, t('common.error')))
+    usageProgress.value = []
+  } finally {
+    usageLoading.value = false
+  }
 }
 
 function getProgressWidth(used: number, limit: number): string {

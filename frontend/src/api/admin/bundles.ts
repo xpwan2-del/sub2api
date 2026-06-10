@@ -14,6 +14,7 @@ import type { BundleTier } from '@/constants/bundleTiers'
 import type {
   BundlePlan,
   BundleSubscription,
+  BundleUsageProgress,
   CreateBundlePlanRequest,
   CreateGroupQuotaRequest
 } from '@/types/bundle'
@@ -152,6 +153,21 @@ export async function extendSubscription(
   return data
 }
 
+/** 获取单个订阅的渠道组用量详情（展开行按需调用） */
+/**
+ * Get usage progress for a single bundle subscription
+ * @param id - Subscription ID
+ * @returns Usage progress per channel group
+ */
+export async function getSubscriptionUsageProgress(
+  id: number
+): Promise<BundleUsageProgress[]> {
+  const { data } = await apiClient.get<BundleUsageProgress[]>(
+    `/admin/bundle/subscriptions/${id}/usage-progress`
+  )
+  return data
+}
+
 export const bundlesAPI = {
   createPlan,
   updatePlan,
@@ -160,7 +176,8 @@ export const bundlesAPI = {
   disablePlan,
   listSubscriptions,
   revokeSubscription,
-  extendSubscription
+  extendSubscription,
+  getSubscriptionUsageProgress
 }
 
 export default bundlesAPI

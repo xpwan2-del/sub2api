@@ -1,7 +1,7 @@
 // bundle_handler.go 管理后台套餐 Handler
 // 提供套餐计划和订阅的管理端 API，包括：
 // - 套餐计划的创建、更新、查询、停用
-// - 套餐订阅的列表查询、撤销、延期
+// - 套餐订阅的列表查询（enrich Plan + User）、撤销、延期、用量详情
 
 package admin
 
@@ -20,6 +20,7 @@ import (
 type BundleAdminHandler struct {
 	bundlePlanService         *service.BundlePlanService
 	bundleSubscriptionService *service.BundleSubscriptionService
+	adminService              service.AdminService
 }
 
 // NewBundleAdminHandler 创建管理后台套餐 Handler
@@ -27,10 +28,12 @@ type BundleAdminHandler struct {
 func NewBundleAdminHandler(
 	bundlePlanService *service.BundlePlanService,
 	bundleSubscriptionService *service.BundleSubscriptionService,
+	adminService service.AdminService,
 ) *BundleAdminHandler {
 	return &BundleAdminHandler{
 		bundlePlanService:         bundlePlanService,
 		bundleSubscriptionService: bundleSubscriptionService,
+		adminService:              adminService,
 	}
 }
 
@@ -43,6 +46,13 @@ type UpdatePlanRequest = service.UpdateBundlePlanRequest
 // ExtendSubscriptionRequest represents the request body for extending a bundle subscription.
 type ExtendSubscriptionRequest struct {
 	Days int `json:"days" binding:"required,min=1"`
+}
+
+// adminSubscriptionResponse 管理端订阅列表响应 DTO（在 service 模型基础上 enrich user_email）
+// adminSubscriptionResponse is the DTO for admin subscription list with enriched user_email.
+type adminSubscriptionResponse struct {
+	service.BundleSubscription
+	UserEmail string `json:"user_email,omitempty"`
 }
 
 // CreatePlan 创建套餐计划
@@ -149,8 +159,8 @@ func (h *BundleAdminHandler) DisablePlan(c *gin.Context) {
 	response.Success(c, gin.H{"message": "Plan disabled successfully"})
 }
 
-// ListSubscriptions 分页查询套餐订阅列表
-// ListSubscriptions returns a paginated list of bundle subscriptions.
+// ListSubscriptions 分页查询套餐订阅列表（enrich Plan 名称 + User 邮箱）
+// ListSubscriptions returns a paginated list of bundle subscriptions with enriched plan and user info.
 // GET /admin/bundle/subscriptions
 func (h *BundleAdminHandler) ListSubscriptions(c *gin.Context) {
 	page, pageSize := response.ParsePagination(c)
@@ -175,7 +185,53 @@ func (h *BundleAdminHandler) ListSubscriptions(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.PaginatedWithResult(c, subs, toResponsePagination(pag))
+
+	// Enrich: 批量填充 Plan 信息
+	h.bundleSubscriptionService.EnrichPlansForList(c.Request.Context(), subs)
+
+	// Enrich: 批量填充 User 邮箱
+	userCache := make(map[int64]string)
+	for i := range subs {
+		uid := subs[i].UserID
+		if _, ok := userCache[uid]; ok {
+			continue
+		}
+		user, err := h.adminService.GetUserIncludeDeleted(c.Request.Context(), uid)
+		if err != nil {
+			userCache[uid] = ""
+			continue
+		}
+		userCache[uid] = user.Email
+	}
+
+	// 转换为响应 DTO
+	result := make([]adminSubscriptionResponse, len(subs))
+	for i := range subs {
+		result[i] = adminSubscriptionResponse{
+			BundleSubscription: subs[i],
+			UserEmail:          userCache[subs[i].UserID],
+		}
+	}
+
+	response.PaginatedWithResult(c, result, toResponsePagination(pag))
+}
+
+// GetSubscriptionUsageProgress 获取单个订阅的渠道组用量详情（展开行按需调用）
+// GetSubscriptionUsageProgress returns usage progress for a single bundle subscription.
+// GET /admin/bundle/subscriptions/:id/usage-progress
+func (h *BundleAdminHandler) GetSubscriptionUsageProgress(c *gin.Context) {
+	subID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid subscription ID")
+		return
+	}
+
+	progress, err := h.bundleSubscriptionService.GetBundleUsageProgress(c.Request.Context(), subID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, progress)
 }
 
 // RevokeSubscription 撤销套餐订阅

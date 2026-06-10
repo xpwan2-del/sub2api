@@ -670,6 +670,7 @@ func registerBundleRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		subs := bundles.Group("/subscriptions")
 		{
 			subs.GET("", h.Admin.Bundle.ListSubscriptions)
+			subs.GET("/:id/usage-progress", h.Admin.Bundle.GetSubscriptionUsageProgress)
 			subs.POST("/:id/revoke", h.Admin.Bundle.RevokeSubscription)
 			subs.POST("/:id/extend", h.Admin.Bundle.ExtendSubscription)
 		}

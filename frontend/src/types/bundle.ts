@@ -53,7 +53,8 @@ export interface BundleSubscription {
   concurrency_limit: number
   rpm_limit: number
   source: 'purchase' | 'redeem' | 'admin_assign'
-  group_usages: BundleSubscriptionUsage[]
+  /** 管理端列表 enrich 的用户邮箱 */
+  user_email?: string
 }
 
 /** 套餐订阅用量 — 按渠道组统计的日/周/月用量 */
