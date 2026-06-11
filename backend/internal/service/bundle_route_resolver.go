@@ -42,9 +42,10 @@ type ResolvedGroup struct {
 	GroupID          int64
 	Platform         string
 	Quota            BundlePlanGroupQuota
-	BundleSubID      int64 // 套餐订阅 ID，供中间件层进行 RPM/并发检查
-	ConcurrencyLimit int   // 快照：套餐并发上限（0=不限）
-	RPMLimit         int   // 快照：套餐 RPM 上限（0=不限）
+	BundleSubID      int64   // 套餐订阅 ID，供中间件层进行 RPM/并发检查
+	ConcurrencyLimit int     // 快照：套餐并发上限（0=不限）
+	RPMLimit         int     // 快照：套餐 RPM 上限（0=不限）
+	Group            *Group  // 完整的渠道组对象，供中间件注入到 apiKey 以供下游 handler 使用
 }
 
 // ResolveGroup 解析模型请求应使用的渠道组：先尝试模型级 glob 匹配，再回退到平台级匹配
@@ -79,7 +80,14 @@ func (r *BundleRouteResolver) ResolveGroup(ctx context.Context, modelName string
 			continue
 		}
 		if matchGlob(gq.ModelPattern, modelName) {
-			return makeResolvedGroup(gq, platform, bundleSubID, bundleSub), nil
+			resolved := makeResolvedGroup(gq, platform, bundleSubID, bundleSub)
+			// 加载完整 Group 对象，供下游 handler 做路由决策
+			group, groupErr := r.groupRepo.GetByIDLite(ctx, gq.GroupID)
+			if groupErr != nil {
+				return nil, fmt.Errorf("load resolved group %d: %w", gq.GroupID, groupErr)
+			}
+			resolved.Group = group
+			return resolved, nil
 		}
 	}
 
@@ -94,7 +102,9 @@ func (r *BundleRouteResolver) ResolveGroup(ctx context.Context, modelName string
 			continue
 		}
 		if group.Platform == platform {
-			return makeResolvedGroup(gq, platform, bundleSubID, bundleSub), nil
+			resolved := makeResolvedGroup(gq, platform, bundleSubID, bundleSub)
+			resolved.Group = group
+			return resolved, nil
 		}
 	}
 

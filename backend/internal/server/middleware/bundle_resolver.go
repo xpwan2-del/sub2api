@@ -169,6 +169,16 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 
 		// Inject resolved group_id into context for downstream middleware/handlers.
 		c.Set("bundle_resolved_group_id", resolved.GroupID)
+
+		// 将解析出的 Group 注入到 apiKey 对象，使下游 handler 自动获得正确的 group 信息。
+		// apiKey 是指针，修改其字段对后续所有中间件和 handler 可见。
+		if resolved.Group != nil {
+			groupID := resolved.GroupID
+			apiKey.GroupID = &groupID
+			apiKey.Group = resolved.Group
+			setGroupContext(c, resolved.Group)
+		}
+
 		c.Next()
 	}
 }
