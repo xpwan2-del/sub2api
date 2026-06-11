@@ -269,7 +269,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	bundleRouteResolver := service.NewBundleRouteResolver(bundleSubscriptionRepository, bundlePlanRepository, groupRepository)
 	bundleRPMCache := repository.NewBundleRPMCache(redisClient)
 	bundleConcurrencyCache := repository.NewBundleConcurrencyCache(redisClient)
-	bundleRouteResolverMiddleware := middleware.NewBundleRouteResolverMiddleware(bundleRouteResolver, bundleRPMCache, bundleConcurrencyCache)
+	bundleRouteResolverMiddleware := middleware.NewBundleRouteResolverMiddleware(bundleRouteResolver, bundleRPMCache, bundleConcurrencyCache, subscriptionService)
 	engine := server.ProvideRouter(configConfig, handlers, jwtAuthMiddleware, adminAuthMiddleware, apiKeyAuthMiddleware, bundleRouteResolverMiddleware, apiKeyService, subscriptionService, opsService, settingService, redisClient)
 	httpServer := server.ProvideHTTPServer(configConfig, engine)
 	opsMetricsCollector := service.ProvideOpsMetricsCollector(opsRepository, settingRepository, accountRepository, concurrencyService, db, redisClient, configConfig)

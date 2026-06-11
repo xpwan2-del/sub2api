@@ -8615,6 +8615,17 @@ func finalizePostUsageBilling(ctx context.Context, p *postUsageBillingParams, de
 		if p.Cost.ActualCost > 0 && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
 			deps.billingCacheService.QueueUpdateSubscriptionUsage(p.User.ID, *p.APIKey.GroupID, p.Cost.ActualCost)
 		}
+		// Bundle usage accumulation: also track usage in the bundle subsystem
+		// when this subscription is bridged from a bundle plan.
+		// Mirrors the logic in postUsageBilling (legacy path) so that the
+		// production repo.Apply() path also accumulates bundle usage.
+		if deps.bundleUsageService != nil && p.Subscription != nil &&
+			p.Subscription.BundleSubscriptionID != nil && *p.Subscription.BundleSubscriptionID > 0 &&
+			p.Subscription.GroupID > 0 && p.Cost.ActualCost > 0 {
+			if err := deps.bundleUsageService.AccumulateUsage(ctx, *p.Subscription.BundleSubscriptionID, p.Subscription.GroupID, p.Cost.ActualCost); err != nil {
+				slog.Error("accumulate bundle usage failed (finalize)", "bundle_subscription_id", *p.Subscription.BundleSubscriptionID, "group_id", p.Subscription.GroupID, "error", err)
+			}
+		}
 	} else if p.Cost.ActualCost > 0 && p.User != nil {
 		deps.billingCacheService.QueueDeductBalance(p.User.ID, p.Cost.ActualCost)
 	}

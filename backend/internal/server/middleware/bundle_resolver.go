@@ -21,10 +21,13 @@ import (
 // BundleRouteResolverMiddleware resolves which group should handle a request
 // for bundle API keys (keys with no group assignment but an active bundle subscription).
 // It also enforces bundle-level RPM and concurrency limits.
+// After resolving the group, it loads the bridged UserSubscription and injects
+// it into the gin context so downstream billing tracks bundle usage correctly.
 type BundleRouteResolverMiddleware struct {
-	resolver          *service.BundleRouteResolver
-	rpmCache          service.BundleRPMCache
-	concurrencyCache  service.BundleConcurrencyCache
+	resolver         *service.BundleRouteResolver
+	rpmCache         service.BundleRPMCache
+	concurrencyCache service.BundleConcurrencyCache
+	subscriptionSvc  *service.SubscriptionService
 }
 
 // NewBundleRouteResolverMiddleware 创建套餐路由解析中间件
@@ -33,11 +36,13 @@ func NewBundleRouteResolverMiddleware(
 	resolver *service.BundleRouteResolver,
 	rpmCache service.BundleRPMCache,
 	concurrencyCache service.BundleConcurrencyCache,
+	subscriptionSvc *service.SubscriptionService,
 ) *BundleRouteResolverMiddleware {
 	return &BundleRouteResolverMiddleware{
 		resolver:         resolver,
 		rpmCache:         rpmCache,
 		concurrencyCache: concurrencyCache,
+		subscriptionSvc:  subscriptionSvc,
 	}
 }
 
@@ -177,6 +182,38 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 			apiKey.GroupID = &groupID
 			apiKey.Group = resolved.Group
 			setGroupContext(c, resolved.Group)
+		}
+
+		// Load the bridged UserSubscription for the resolved group.
+		// For general bundle keys (GroupID==nil), the APIKeyAuth middleware skips
+		// subscription loading because apiKey.Group is nil at that point. We must
+		// load it here so that downstream billing enters the subscription path and
+		// accumulates bundle usage correctly.
+		if m.subscriptionSvc != nil && apiKey.User != nil && apiKey.GroupID != nil && resolved.Group != nil {
+			if resolved.Group.IsSubscriptionType() {
+				sub, subErr := m.subscriptionSvc.GetActiveSubscription(
+					c.Request.Context(),
+					apiKey.User.ID,
+					resolved.GroupID,
+				)
+				if subErr != nil {
+					slog.Error("bundle resolver: failed to load bridged subscription",
+						"user_id", apiKey.User.ID,
+						"group_id", resolved.GroupID,
+						"bundle_sub_id", resolved.BundleSubID,
+						"error", subErr,
+					)
+					// Do not abort — the request can still proceed via balance billing.
+					// The bundle usage will be lost for this request but the user is not blocked.
+				} else {
+					c.Set(string(ContextKeySubscription), sub)
+					slog.Debug("bundle resolver: loaded bridged subscription",
+						"subscription_id", sub.ID,
+						"bundle_sub_id", resolved.BundleSubID,
+						"group_id", resolved.GroupID,
+					)
+				}
+			}
 		}
 
 		c.Next()
