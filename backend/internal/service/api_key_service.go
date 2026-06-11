@@ -179,6 +179,11 @@ type UpdateAPIKeyRequest struct {
 	IPWhitelist []string `json:"ip_whitelist"` // IP 白名单（空数组清空）
 	IPBlacklist []string `json:"ip_blacklist"` // IP 黑名单（空数组清空）
 
+	// Key mode: "universal" (auto-route), "dedicated" (bundle+group), "normal" (standard). Empty = no change.
+	KeyMode string `json:"key_mode"`
+	// Bundle subscription ID for universal/dedicated modes
+	BundleSubscriptionID *int64 `json:"bundle_subscription_id"`
+
 	// Quota fields
 	Quota           *float64   `json:"quota"`       // Quota limit in USD (nil = no change, 0 = unlimited)
 	ExpiresAt       *time.Time `json:"expires_at"`  // Expiration time (nil = no change)
@@ -565,6 +570,20 @@ func (s *APIKeyService) Update(ctx context.Context, id int64, userID int64, req 
 		}
 
 		apiKey.GroupID = req.GroupID
+	}
+
+	// Handle key mode switch based on explicit KeyMode field
+	switch req.KeyMode {
+	case "universal":
+		// Universal mode: set bundle, clear group
+		apiKey.BundleSubscriptionID = req.BundleSubscriptionID
+		apiKey.GroupID = nil
+	case "dedicated":
+		// Dedicated mode: set bundle, keep/set group (handled by GroupID above)
+		apiKey.BundleSubscriptionID = req.BundleSubscriptionID
+	case "normal":
+		// Standard mode: clear bundle, keep/set group (handled by GroupID above)
+		apiKey.BundleSubscriptionID = nil
 	}
 
 	if req.Status != nil {

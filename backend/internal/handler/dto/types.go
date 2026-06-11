@@ -80,6 +80,10 @@ type APIKey struct {
 
 	User  *User  `json:"user,omitempty"`
 	Group *Group `json:"group,omitempty"`
+
+	// BundleSubscriptionID — present when key is a bundle key (universal or dedicated).
+	// nil = standard key bound to a specific group.
+	BundleSubscriptionID *int64 `json:"bundle_subscription_id,omitempty"`
 }
 
 type Group struct {

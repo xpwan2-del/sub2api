@@ -45,6 +45,7 @@ func (r *apiKeyRepository) Create(ctx context.Context, key *service.APIKey) erro
 		SetName(key.Name).
 		SetStatus(key.Status).
 		SetNillableGroupID(key.GroupID).
+		SetNillableBundleSubscriptionID(key.BundleSubscriptionID).
 		SetNillableLastUsedAt(key.LastUsedAt).
 		SetQuota(key.Quota).
 		SetQuotaUsed(key.QuotaUsed).
@@ -232,6 +233,13 @@ func (r *apiKeyRepository) Update(ctx context.Context, key *service.APIKey) erro
 		builder.SetGroupID(*key.GroupID)
 	} else {
 		builder.ClearGroupID()
+	}
+
+	// Bundle subscription ID (key mode)
+	if key.BundleSubscriptionID != nil {
+		builder.SetBundleSubscriptionID(*key.BundleSubscriptionID)
+	} else {
+		builder.ClearBundleSubscriptionID()
 	}
 
 	// Expiration time

@@ -102,8 +102,9 @@ func APIKeyFromService(k *service.APIKey) *APIKey {
 		Window5hStart: k.Window5hStart,
 		Window1dStart: k.Window1dStart,
 		Window7dStart: k.Window7dStart,
-		User:          UserFromServiceShallow(k.User),
-		Group:         GroupFromServiceShallow(k.Group),
+		User:                UserFromServiceShallow(k.User),
+		Group:               GroupFromServiceShallow(k.Group),
+		BundleSubscriptionID: k.BundleSubscriptionID,
 	}
 	if k.Window5hStart != nil && !service.IsWindowExpired(k.Window5hStart, service.RateLimitWindow5h) {
 		t := k.Window5hStart.Add(service.RateLimitWindow5h)

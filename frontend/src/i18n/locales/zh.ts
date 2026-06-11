@@ -773,6 +773,9 @@ export default {
       noGroupTitle: '请先分配分组',
       noGroupDescription:
         '此 API 密钥尚未分配分组，请先在密钥列表中点击分组列进行分配，然后才能查看使用配置。',
+      universalKeyTitle: '通用 Key · 自动路由',
+      universalKeyDescription:
+        '此密钥为通用 Key，支持自动路由至套餐内所有模型。根据下方所选客户端完成配置即可使用。',
       openai: {
         description: '将以下配置文件添加到 Codex CLI 配置目录中。',
         configTomlHint: '请确保以下内容位于 config.toml 文件的开头部分',

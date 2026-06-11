@@ -97,8 +97,15 @@
             </div>
           </template>
 
+          <template #cell-key_mode="{ row }">
+            <span :class="['badge', getKeyModeBadgeClass(getKeyMode(row))]">
+              {{ keyModeLabels[getKeyMode(row)] }}
+            </span>
+          </template>
+
           <template #cell-group="{ row }">
-            <div class="group/dropdown relative">
+            <!-- Normal key: allow inline group change -->
+            <div v-if="getKeyMode(row) === 'normal'" class="group/dropdown relative">
               <button
                 :ref="(el) => setGroupButtonRef(row.id, el)"
                 @click="openGroupSelector(row)"
@@ -131,6 +138,20 @@
                   />
                 </svg>
               </button>
+            </div>
+            <!-- Universal / Dedicated key: read-only display -->
+            <div v-else class="flex items-center gap-2">
+              <GroupBadge
+                v-if="row.group"
+                :name="row.group.name"
+                :platform="row.group.platform"
+                :subscription-type="row.group.subscription_type"
+                :rate-multiplier="row.group.rate_multiplier"
+                :user-rate-multiplier="userGroupRates[row.group.id]"
+              />
+              <span v-else class="text-sm text-gray-400 dark:text-dark-500">{{
+                getKeyMode(row) === 'universal' ? t('bundles.keyModeUniversal') : t('keys.noGroup')
+              }}</span>
             </div>
           </template>
 
@@ -405,8 +426,8 @@
         </div>
 
         <div>
-          <!-- Key Mode Selector (only when user has active bundle and in create mode) -->
-          <div v-if="hasActiveBundle && !showEditModal" class="mb-4">
+          <!-- Key Mode Selector (when user has active bundle, both create and edit) -->
+          <div v-if="hasActiveBundle" class="mb-4">
             <label class="input-label">{{ t('bundles.keyMode') }}</label>
             <div class="mt-2 space-y-2">
               <!-- Universal Key -->
@@ -478,10 +499,10 @@
             </div>
           </div>
 
-          <!-- Group Selector (hidden for universal mode in create) -->
-          <div v-if="!(!showEditModal && hasActiveBundle && keyMode === 'universal')">
+          <!-- Group Selector (hidden for universal mode) -->
+          <div v-if="!(hasActiveBundle && keyMode === 'universal')">
             <label class="input-label">
-              {{ hasActiveBundle && !showEditModal && keyMode === 'dedicated'
+              {{ hasActiveBundle && keyMode === 'dedicated'
                 ? t('bundles.selectBundleGroup')
                 : t('keys.groupLabel') }}
             </label>
@@ -1009,6 +1030,7 @@
       :base-url="publicSettings?.api_base_url || ''"
       :platform="selectedKey?.group?.platform || null"
       :allow-messages-dispatch="selectedKey?.group?.allow_messages_dispatch || false"
+      :is-universal-key="!!selectedKey?.bundle_subscription_id && !selectedKey?.group_id"
       @close="closeUseKeyModal"
     />
 
@@ -1183,9 +1205,31 @@ const appStore = useAppStore()
 const onboardingStore = useOnboardingStore()
 const { copyToClipboard: clipboardCopy } = useClipboard()
 
+// Derive key mode from bundle_subscription_id + group_id
+const getKeyMode = (row: { bundle_subscription_id?: number | null; group_id: number | null }): 'universal' | 'dedicated' | 'normal' => {
+  if (row.bundle_subscription_id && !row.group_id) return 'universal'
+  if (row.bundle_subscription_id && row.group_id) return 'dedicated'
+  return 'normal'
+}
+
+const getKeyModeBadgeClass = (mode: 'universal' | 'dedicated' | 'normal'): string => {
+  switch (mode) {
+    case 'universal': return 'badge-primary'
+    case 'dedicated': return 'badge-warning'
+    default: return 'badge-gray'
+  }
+}
+
+const keyModeLabels: Record<'universal' | 'dedicated' | 'normal', string> = {
+  universal: t('bundles.keyModeUniversal'),
+  dedicated: t('bundles.keyModeDedicated'),
+  normal: t('bundles.keyModeNormal')
+}
+
 const columns = computed<Column[]>(() => [
   { key: 'name', label: t('common.name'), sortable: true },
   { key: 'key', label: t('keys.apiKey'), sortable: false },
+  { key: 'key_mode', label: t('bundles.keyMode'), sortable: false },
   { key: 'group', label: t('keys.group'), sortable: false },
   { key: 'usage', label: t('keys.usage'), sortable: false },
   { key: 'rate_limit', label: t('keys.rateLimitColumn'), sortable: false },
@@ -1529,6 +1573,8 @@ const handleSort = (key: string, order: 'asc' | 'desc') => {
 
 const editKey = (key: ApiKey) => {
   selectedKey.value = key
+  // Derive key mode from bundle_subscription_id + group_id
+  keyMode.value = getKeyMode(key)
   const hasIPRestriction = (key.ip_whitelist?.length > 0) || (key.ip_blacklist?.length > 0)
   const hasExpiration = !!key.expires_at
   formData.value = {
@@ -1627,7 +1673,7 @@ const confirmDelete = (key: ApiKey) => {
 
 const handleSubmit = async () => {
   // Validate group_id is required (unless universal bundle mode)
-  const isUniversalBundle = hasActiveBundle.value && keyMode.value === 'universal' && !showEditModal.value
+  const isUniversalBundle = hasActiveBundle.value && keyMode.value === 'universal'
   if (formData.value.group_id === null && !isUniversalBundle) {
     appStore.showError(t('keys.groupRequired'))
     return
@@ -1683,9 +1729,22 @@ const handleSubmit = async () => {
   submitting.value = true
   try {
     if (showEditModal.value && selectedKey.value) {
+      // Determine group_id and bundle_subscription_id based on key mode for edit
+      let editGroupId: number | null = formData.value.group_id
+      let editBundleSubscriptionId: number | null | undefined = undefined
+      if (hasActiveBundle.value && keyMode.value === 'universal') {
+        editGroupId = null
+        editBundleSubscriptionId = activeBundle.value!.id
+      } else if (hasActiveBundle.value && keyMode.value === 'dedicated') {
+        editBundleSubscriptionId = activeBundle.value!.id
+      } else {
+        // Normal mode: clear bundle_subscription_id
+        editBundleSubscriptionId = null
+      }
+
       await keysAPI.update(selectedKey.value.id, {
         name: formData.value.name,
-        group_id: formData.value.group_id,
+        group_id: editGroupId,
         status: formData.value.status,
         ip_whitelist: ipWhitelist,
         ip_blacklist: ipBlacklist,
@@ -1694,6 +1753,8 @@ const handleSubmit = async () => {
         rate_limit_5h: rateLimitData.rate_limit_5h,
         rate_limit_1d: rateLimitData.rate_limit_1d,
         rate_limit_7d: rateLimitData.rate_limit_7d,
+        bundle_subscription_id: editBundleSubscriptionId,
+        key_mode: hasActiveBundle.value ? keyMode.value : '',
       })
       appStore.showSuccess(t('keys.keyUpdatedSuccess'))
     } else {

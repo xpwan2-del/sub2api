@@ -590,6 +590,7 @@ export interface ApiKey {
   reset_5h_at: string | null
   reset_1d_at: string | null
   reset_7d_at: string | null
+  bundle_subscription_id?: number | null // Bundle subscription ID (universal/dedicated key)
 }
 
 export interface CreateApiKeyRequest {
@@ -619,6 +620,8 @@ export interface UpdateApiKeyRequest {
   rate_limit_1d?: number
   rate_limit_7d?: number
   reset_rate_limit_usage?: boolean
+  bundle_subscription_id?: number | null // Bundle subscription ID for universal/dedicated key (null = clear to standard)
+  key_mode?: 'universal' | 'dedicated' | 'normal' | '' // Explicit key mode for edit
 }
 
 export interface CreateGroupRequest {
