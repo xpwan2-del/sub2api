@@ -277,6 +277,60 @@ func TestAPIKeyService_SnapshotRoundTrip_PreservesMessagesDispatchModelConfig(t 
 	require.Equal(t, apiKey.Group.MessagesDispatchModelConfig, roundTrip.Group.MessagesDispatchModelConfig)
 }
 
+func TestAPIKeyService_SnapshotRoundTrip_PreservesBundleSubscriptionID(t *testing.T) {
+	svc := NewAPIKeyService(nil, nil, nil, nil, nil, nil, &config.Config{})
+
+	// Scenario 1: universal bundle key (no group, with bundle_subscription_id)
+	bundleSubID := int64(42)
+	apiKey := &APIKey{
+		ID:                   1,
+		UserID:               2,
+		GroupID:              nil, // universal key: no fixed group
+		BundleSubscriptionID: &bundleSubID,
+		Key:                  "k-bundle-roundtrip",
+		Name:                 "Universal Bundle Key",
+		Status:               StatusActive,
+		User: &User{
+			ID:          2,
+			Status:      StatusActive,
+			Role:        RoleUser,
+			Balance:     10,
+			Concurrency: 3,
+		},
+	}
+
+	snapshot := svc.snapshotFromAPIKey(context.Background(), apiKey)
+	roundTrip := svc.snapshotToAPIKey(apiKey.Key, snapshot)
+
+	require.NotNil(t, roundTrip)
+	require.NotNil(t, roundTrip.BundleSubscriptionID)
+	require.Equal(t, bundleSubID, *roundTrip.BundleSubscriptionID)
+	require.Nil(t, roundTrip.GroupID, "universal key should have nil GroupID after round-trip")
+
+	// Scenario 2: normal key (no bundle_subscription_id)
+	normalKey := &APIKey{
+		ID:                   3,
+		UserID:               4,
+		BundleSubscriptionID: nil,
+		Key:                  "k-normal",
+		Name:                 "Normal Key",
+		Status:               StatusActive,
+		User: &User{
+			ID:          4,
+			Status:      StatusActive,
+			Role:        RoleUser,
+			Balance:     10,
+			Concurrency: 3,
+		},
+	}
+
+	snapshot2 := svc.snapshotFromAPIKey(context.Background(), normalKey)
+	roundTrip2 := svc.snapshotToAPIKey(normalKey.Key, snapshot2)
+
+	require.NotNil(t, roundTrip2)
+	require.Nil(t, roundTrip2.BundleSubscriptionID, "normal key should have nil BundleSubscriptionID after round-trip")
+}
+
 func TestAPIKeyService_GetByKey_IgnoresLegacyAuthCacheSnapshotWithoutMessagesDispatchConfig(t *testing.T) {
 	cache := &authCacheStub{}
 	var repoCalls int32
