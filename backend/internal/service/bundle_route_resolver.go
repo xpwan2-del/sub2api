@@ -170,14 +170,13 @@ func makeResolvedGroup(gq BundlePlanGroupQuota, platform string, bundleSubID int
 // resolveModelPlatform maps a model name prefix to a platform constant.
 func resolveModelPlatform(modelName string) string {
 	prefixes := map[string]string{
-		"gpt-":      domain.PlatformOpenAI,
-		"o1-":       domain.PlatformOpenAI,
-		"o3-":       domain.PlatformOpenAI,
-		"chatgpt-":  domain.PlatformOpenAI,
-		"dall-":     domain.PlatformOpenAI,
-		"claude-":   domain.PlatformAnthropic,
-		"gemini-":   domain.PlatformGemini,
-		"deepseek-": domain.PlatformOpenAI, // compatible protocol
+		"gpt-":     domain.PlatformOpenAI,
+		"o1-":      domain.PlatformOpenAI,
+		"o3-":      domain.PlatformOpenAI,
+		"chatgpt-": domain.PlatformOpenAI,
+		"dall-":    domain.PlatformOpenAI,
+		"claude-":  domain.PlatformAnthropic,
+		"gemini-":  domain.PlatformGemini,
 	}
 
 	lower := strings.ToLower(modelName)
@@ -187,8 +186,8 @@ func resolveModelPlatform(modelName string) string {
 		}
 	}
 
-	// Default to openai for unknown models (compatible protocol).
-	return domain.PlatformOpenAI
+	// Default to anthropic for unknown models.
+	return domain.PlatformAnthropic
 }
 
 // matchGlob 简易 glob 匹配，仅支持 '*' 通配符
