@@ -7,6 +7,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
@@ -56,6 +57,11 @@ func (r *BundleRouteResolver) ResolveGroup(ctx context.Context, modelName string
 		return nil, fmt.Errorf("load bundle subscription: %w", err)
 	}
 	if bundleSub.Status != BundleStatusActive {
+		slog.Warn("bundle route resolver: subscription not active",
+			"bundle_sub_id", bundleSubID,
+			"status", bundleSub.Status,
+			"model", modelName,
+		)
 		return nil, ErrBundleExpired
 	}
 
@@ -67,14 +73,33 @@ func (r *BundleRouteResolver) ResolveGroup(ctx context.Context, modelName string
 
 	platform := resolveModelPlatform(modelName)
 
+	slog.Info("bundle route resolver: resolving group",
+		"model", modelName,
+		"resolved_platform", platform,
+		"bundle_sub_id", bundleSubID,
+		"plan_id", plan.ID,
+		"plan_name", plan.Name,
+		"num_group_quotas", len(plan.GroupQuotas),
+	)
+
 	// Phase 1: Try model-level matching (glob patterns).
 	for _, gq := range plan.GroupQuotas {
 		if gq.QuotaScope != QuotaScopeModel || gq.ModelPattern == "" {
 			continue
 		}
 		if matchGlob(gq.ModelPattern, modelName) {
+			slog.Info("bundle route resolver: matched model-level glob",
+				"model", modelName,
+				"pattern", gq.ModelPattern,
+				"group_id", gq.GroupID,
+			)
 			return makeResolvedGroup(gq, platform, bundleSubID, bundleSub), nil
 		}
+		slog.Debug("bundle route resolver: model-level glob mismatch",
+			"model", modelName,
+			"pattern", gq.ModelPattern,
+			"group_id", gq.GroupID,
+		)
 	}
 
 	// Phase 2: Fallback to platform-level matching.
@@ -85,11 +110,45 @@ func (r *BundleRouteResolver) ResolveGroup(ctx context.Context, modelName string
 		}
 		group, err := r.groupRepo.GetByID(ctx, gq.GroupID)
 		if err != nil {
+			slog.Debug("bundle route resolver: failed to load group for platform matching",
+				"group_id", gq.GroupID,
+				"error", err,
+			)
 			continue
 		}
 		if group.Platform == platform {
+			slog.Info("bundle route resolver: matched platform-level",
+				"model", modelName,
+				"resolved_platform", platform,
+				"group_id", gq.GroupID,
+				"group_platform", group.Platform,
+			)
 			return makeResolvedGroup(gq, platform, bundleSubID, bundleSub), nil
 		}
+		slog.Debug("bundle route resolver: platform-level mismatch",
+			"model", modelName,
+			"resolved_platform", platform,
+			"group_id", gq.GroupID,
+			"group_platform", group.Platform,
+		)
+	}
+
+	// Log the full quota configuration for debugging when no match is found.
+	slog.Warn("bundle route resolver: model not included in bundle plan",
+		"model", modelName,
+		"resolved_platform", platform,
+		"bundle_sub_id", bundleSubID,
+		"plan_id", plan.ID,
+		"plan_name", plan.Name,
+	)
+	for i, gq := range plan.GroupQuotas {
+		slog.Warn("bundle route resolver: available quota entry",
+			"index", i,
+			"group_id", gq.GroupID,
+			"quota_scope", gq.QuotaScope,
+			"model_pattern", gq.ModelPattern,
+			"group_name", gq.GroupName,
+		)
 	}
 
 	return nil, ErrBundleModelNotIncluded

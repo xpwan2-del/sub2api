@@ -58,6 +58,9 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 		}
 		// Bundle keys carry BundleSubscriptionID from the database.
 		if apiKey.BundleSubscriptionID == nil || *apiKey.BundleSubscriptionID <= 0 {
+			slog.Debug("bundle resolver: skipping key without BundleSubscriptionID",
+				"api_key_id", apiKey.ID,
+			)
 			c.Next()
 			return
 		}
@@ -65,9 +68,22 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 		// Extract model name from request body.
 		modelName := extractModelFromRequest(c)
 		if modelName == "" {
+			slog.Warn("bundle resolver: bundle key request has no model field, skipping",
+				"api_key_id", apiKey.ID,
+				"bundle_sub_id", *apiKey.BundleSubscriptionID,
+				"method", c.Request.Method,
+				"path", c.Request.URL.Path,
+			)
 			c.Next()
 			return
 		}
+
+		slog.Info("bundle resolver: resolving group for bundle key",
+			"api_key_id", apiKey.ID,
+			"bundle_sub_id", *apiKey.BundleSubscriptionID,
+			"model", modelName,
+			"path", c.Request.URL.Path,
+		)
 
 		// Resolve group.
 		resolved, err := m.resolver.ResolveGroup(c.Request.Context(), modelName, *apiKey.BundleSubscriptionID)
