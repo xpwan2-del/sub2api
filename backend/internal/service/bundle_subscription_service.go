@@ -190,7 +190,7 @@ func (s *BundleSubscriptionService) GetUserActiveBundle(ctx context.Context, use
 	if s.cache != nil {
 		cached, err := s.cache.GetBundleSubscriptionCache(ctx, userID)
 		if err == nil && cached != nil {
-			return []BundleSubscription{{
+			sub := BundleSubscription{
 				ID:               cached.ID,
 				UserID:           userID,
 				PlanID:           cached.PlanID,
@@ -200,7 +200,12 @@ func (s *BundleSubscriptionService) GetUserActiveBundle(ctx context.Context, use
 				ConcurrencyLimit: cached.ConcurrencyLimit,
 				RPMLimit:         cached.RPMLimit,
 				Source:           cached.Source,
-			}}, nil
+			}
+			// Load the full plan (including group_quotas) for cache path.
+			if plan, planErr := s.planRepo.GetByID(ctx, cached.PlanID); planErr == nil && plan != nil {
+				sub.Plan = plan
+			}
+			return []BundleSubscription{sub}, nil
 		}
 	}
 

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/bundleplangroupquota"
 	"github.com/Wei-Shaw/sub2api/ent/bundlesubscription"
 	"github.com/Wei-Shaw/sub2api/ent/bundlesubscriptionusage"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
@@ -82,7 +83,10 @@ func (r *bundleSubscriptionRepository) GetActiveByUserID(ctx context.Context, us
 
 	results := make([]service.BundleSubscription, len(subs))
 	for i, s := range subs {
-		results[i] = *bundleSubscriptionToService(s)
+		result := bundleSubscriptionToService(s)
+		// Load associated plan with group quotas for each subscription
+		enrichSubscriptionPlan(ctx, client, result)
+		results[i] = *result
 	}
 	return results, nil
 }
@@ -207,4 +211,30 @@ func bundleSubscriptionUsageToService(src *dbent.BundleSubscriptionUsage) servic
 		MonthlyUsageUSD:      src.MonthlyUsageUsd,
 		MonthlyWindowStart:   src.MonthlyWindowStart,
 	}
+}
+
+// enrichSubscriptionPlan 加载订阅关联的套餐计划及其渠道组额度
+// enrichSubscriptionPlan loads the associated plan with group quotas for a subscription.
+func enrichSubscriptionPlan(ctx context.Context, client *dbent.Client, sub *service.BundleSubscription) {
+	planEntity, err := client.BundlePlan.Get(ctx, sub.PlanID)
+	if err != nil {
+		return // Plan not found or deleted; leave Plan nil
+	}
+
+	plan := bundlePlanToService(planEntity)
+
+	quotas, err := client.BundlePlanGroupQuota.Query().
+		Where(bundleplangroupquota.PlanIDEQ(sub.PlanID)).
+		All(ctx)
+	if err != nil {
+		return
+	}
+
+	plan.GroupQuotas = make([]service.BundlePlanGroupQuota, len(quotas))
+	for i, q := range quotas {
+		plan.GroupQuotas[i] = bundlePlanGroupQuotaToService(q)
+	}
+	enrichGroupQuotas(ctx, client, plan.GroupQuotas)
+
+	sub.Plan = plan
 }
