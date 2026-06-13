@@ -124,6 +124,10 @@ func (s *groupRepoStubForAdmin) GetAccountIDsByGroupIDs(_ context.Context, _ []i
 func (s *groupRepoStubForAdmin) UpdateSortOrders(_ context.Context, _ []GroupSortOrderUpdate) error {
 	return nil
 }
+func (s *groupRepoStubForAdmin) UpdateRateMultiplier(context.Context, int64, float64) error {
+	return nil
+}
+
 
 func TestAdminService_ListGroups_PassesSortParams(t *testing.T) {
 	repo := &groupRepoStubForAdmin{
@@ -642,6 +646,10 @@ func (s *groupRepoStubForFallbackCycle) GetAccountIDsByGroupIDs(_ context.Contex
 func (s *groupRepoStubForFallbackCycle) UpdateSortOrders(_ context.Context, _ []GroupSortOrderUpdate) error {
 	return nil
 }
+func (s *groupRepoStubForFallbackCycle) UpdateRateMultiplier(context.Context, int64, float64) error {
+	return nil
+}
+
 
 type groupRepoStubForInvalidRequestFallback struct {
 	groups  map[int64]*Group
@@ -717,6 +725,10 @@ func (s *groupRepoStubForInvalidRequestFallback) BindAccountsToGroup(_ context.C
 func (s *groupRepoStubForInvalidRequestFallback) UpdateSortOrders(_ context.Context, _ []GroupSortOrderUpdate) error {
 	return nil
 }
+func (s *groupRepoStubForInvalidRequestFallback) UpdateRateMultiplier(context.Context, int64, float64) error {
+	return nil
+}
+
 
 func TestAdminService_CreateGroup_InvalidRequestFallbackRejectsUnsupportedPlatform(t *testing.T) {
 	fallbackID := int64(10)

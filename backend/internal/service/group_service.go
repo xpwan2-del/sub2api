@@ -35,6 +35,8 @@ type GroupRepository interface {
 	BindAccountsToGroup(ctx context.Context, groupID int64, accountIDs []int64) error
 	// UpdateSortOrders 批量更新分组排序
 	UpdateSortOrders(ctx context.Context, updates []GroupSortOrderUpdate) error
+	// UpdateRateMultiplier 更新单个分组的 rate_multiplier（不触碰其他字段）。
+	UpdateRateMultiplier(ctx context.Context, groupID int64, multiplier float64) error
 }
 
 // GroupSortOrderUpdate 分组排序更新

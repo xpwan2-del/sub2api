@@ -148,6 +148,9 @@ func (r *fakeUpstreamPriceRepo) GetChange(context.Context, int64) (*dbent.Upstre
 func (r *fakeUpstreamPriceRepo) UpdateChangeApplied(context.Context, int64, int64, string, int64) error {
 	panic("unused")
 }
+func (r *fakeUpstreamPriceRepo) UpdateChangeDismissed(context.Context, int64, int64) error {
+	panic("unused")
+}
 func (r *fakeUpstreamPriceRepo) MarkChangesNotified(context.Context, []int64) error { panic("unused") }
 
 // --- tests ---

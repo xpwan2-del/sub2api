@@ -390,6 +390,22 @@ func (r *upstreamPriceRepository) UpdateChangeApplied(
 	return translatePersistenceError(err, service.ErrUpstreamPriceChangeNotFound, nil)
 }
 
+// UpdateChangeDismissed 标记一条 change 为 dismissed（管理员忽略，不进计费）。
+// 仅更新 status / applied_by / applied_at，applied_target / applied_target_id 保持默认。
+func (r *upstreamPriceRepository) UpdateChangeDismissed(
+	ctx context.Context,
+	id, adminID int64,
+) error {
+	client := clientFromContext(ctx, r.client)
+	now := time.Now().UTC()
+	_, err := client.UpstreamPriceChange.UpdateOneID(id).
+		SetStatus(service.UpstreamPriceChangeStatusDismissed).
+		SetAppliedBy(adminID).
+		SetAppliedAt(now).
+		Save(ctx)
+	return translatePersistenceError(err, service.ErrUpstreamPriceChangeNotFound, nil)
+}
+
 func (r *upstreamPriceRepository) MarkChangesNotified(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil

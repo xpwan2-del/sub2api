@@ -50,6 +50,10 @@ type ChannelRepository interface {
 	UpdateModelPricing(ctx context.Context, pricing *ChannelModelPricing) error
 	DeleteModelPricing(ctx context.Context, id int64) error
 	ReplaceModelPricing(ctx context.Context, channelID int64, pricingList []ChannelModelPricing) error
+	// ReplaceModelPricingForModel 更新指定 channel 下匹配 modelName 的定价行的
+	// input/output 单价（per-token USD）。若该 model 无定价行则插入一条新行（token 模式）。
+	// 匹配大小写不敏感；同一行包含多个 model 时只更新价格字段，不动 models 列表。
+	ReplaceModelPricingForModel(ctx context.Context, channelID int64, modelName string, inputPrice, outputPrice float64) error
 }
 
 // channelModelKey 渠道缓存复合键（显式包含 platform 防止跨平台同名模型冲突）

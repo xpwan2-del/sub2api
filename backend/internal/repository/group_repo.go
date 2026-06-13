@@ -870,3 +870,27 @@ func (r *groupRepository) UpdateSortOrders(ctx context.Context, updates []servic
 	}
 	return nil
 }
+
+// UpdateRateMultiplier 更新单个分组的 rate_multiplier，不动其他字段。
+// 不存在/已删除的分组返回 ErrGroupNotFound。
+func (r *groupRepository) UpdateRateMultiplier(ctx context.Context, groupID int64, multiplier float64) error {
+	result, err := r.sql.ExecContext(ctx,
+		`UPDATE groups SET rate_multiplier = $1, updated_at = NOW()
+		 WHERE id = $2 AND deleted_at IS NULL`,
+		multiplier, groupID,
+	)
+	if err != nil {
+		return fmt.Errorf("update group rate_multiplier: %w", err)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return service.ErrGroupNotFound
+	}
+	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventGroupChanged, nil, &groupID, nil); err != nil {
+		logger.LegacyPrintf("repository.group", "[SchedulerOutbox] enqueue group rate_multiplier update failed: group=%d err=%v", groupID, err)
+	}
+	return nil
+}

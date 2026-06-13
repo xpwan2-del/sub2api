@@ -86,6 +86,86 @@ func (r *channelRepository) ReplaceModelPricing(ctx context.Context, channelID i
 	})
 }
 
+// ReplaceModelPricingForModel 更新指定 channel 下匹配 modelName 的定价行价格。
+// 匹配规则：models JSON 数组中任一元素与 modelName 大小写不敏感相等。
+// 命中 → UPDATE input_price/output_price；未命中 → INSERT 一条 token 模式新行。
+// 单模型维度，不动其他定价行，不影响渠道缓存（由 ChannelService 调用方失效）。
+func (r *channelRepository) ReplaceModelPricingForModel(ctx context.Context, channelID int64, modelName string, inputPrice, outputPrice float64) error {
+	if modelName == "" {
+		return fmt.Errorf("model name is empty")
+	}
+	return r.runInTx(ctx, func(tx *sql.Tx) error {
+		return replaceModelPricingForModelTx(ctx, tx, channelID, modelName, inputPrice, outputPrice)
+	})
+}
+
+// replaceModelPricingForModelTx 在已有事务内执行单模型价格更新/插入。
+func replaceModelPricingForModelTx(ctx context.Context, exec dbExec, channelID int64, modelName string, inputPrice, outputPrice float64) error {
+	rows, err := exec.QueryContext(ctx,
+		`SELECT id, models FROM channel_model_pricing WHERE channel_id = $1 ORDER BY id`,
+		channelID,
+	)
+	if err != nil {
+		return fmt.Errorf("list model pricing for model replace: %w", err)
+	}
+
+	var matchedID int64
+	target := strings.ToLower(modelName)
+	for rows.Next() {
+		var id int64
+		var modelsJSON []byte
+		if err := rows.Scan(&id, &modelsJSON); err != nil {
+			_ = rows.Close()
+			return fmt.Errorf("scan model pricing: %w", err)
+		}
+		var models []string
+		if err := json.Unmarshal(modelsJSON, &models); err != nil {
+			models = nil
+		}
+		for _, m := range models {
+			if strings.ToLower(m) == target {
+				matchedID = id
+				break
+			}
+		}
+		if matchedID != 0 {
+			break
+		}
+	}
+	if cerr := rows.Err(); cerr != nil {
+		_ = rows.Close()
+		return fmt.Errorf("iterate model pricing: %w", cerr)
+	}
+	_ = rows.Close()
+
+	if matchedID != 0 {
+		_, err := exec.ExecContext(ctx,
+			`UPDATE channel_model_pricing
+			 SET input_price = $1, output_price = $2, updated_at = NOW()
+			 WHERE id = $3`,
+			inputPrice, outputPrice, matchedID,
+		)
+		if err != nil {
+			return fmt.Errorf("update model pricing for model: %w", err)
+		}
+		return nil
+	}
+
+	// 未命中：插入一条 token 模式新行（platform 留空由调用方场景决定，默认 anthropic）
+	pricing := &service.ChannelModelPricing{
+		ChannelID:   channelID,
+		Platform:    "anthropic",
+		Models:      []string{modelName},
+		BillingMode: service.BillingModeToken,
+		InputPrice:  &inputPrice,
+		OutputPrice: &outputPrice,
+	}
+	if err := createModelPricingExec(ctx, exec, pricing); err != nil {
+		return fmt.Errorf("insert model pricing for model: %w", err)
+	}
+	return nil
+}
+
 // --- 批量加载辅助方法 ---
 
 // batchLoadModelPricing 批量加载多个渠道的模型定价（含区间）

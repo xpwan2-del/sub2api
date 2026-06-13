@@ -303,6 +303,10 @@ func (m *mockGroupRepoForGateway) GetAccountIDsByGroupIDs(ctx context.Context, g
 func (m *mockGroupRepoForGateway) UpdateSortOrders(ctx context.Context, updates []GroupSortOrderUpdate) error {
 	return nil
 }
+func (m *mockGroupRepoForGateway) UpdateRateMultiplier(context.Context, int64, float64) error {
+	return nil
+}
+
 
 func ptr[T any](v T) *T {
 	return &v
