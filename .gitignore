@@ -134,6 +134,7 @@ docs/*
 !docs/BUNDLE_SUBSCRIPTION_DESIGN.md
 !docs/BUNDLE_SUBSCRIPTION_PLAN.md
 !docs/UPSTREAM_PRICE_SYNC_DESIGN.md
+!docs/UPSTREAM_PRICE_SYNC_PLAN.md
 !docs/legal/
 !docs/legal/*.md
 .serena/
