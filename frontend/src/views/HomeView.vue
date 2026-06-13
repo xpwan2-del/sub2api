@@ -40,6 +40,7 @@
             :title="t('home.viewDocs')"
           >
             <Icon name="book" size="md" />
+            <span class="home-jarvis-doc-label">{{ t('home.viewDocs') }}</span>
           </a>
 
           <button
@@ -241,12 +242,19 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   height: 36px;
   min-width: 36px;
+  padding: 0 10px;
   border: 1px solid rgba(37, 99, 235, 0.16);
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.42);
   color: rgba(15, 23, 42, 0.78);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
   transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
 }
 
@@ -402,6 +410,14 @@ onMounted(() => {
   .home-jarvis-actions {
     max-width: 52vw;
     overflow: visible;
+  }
+
+  .home-jarvis-action-button {
+    padding: 0;
+  }
+
+  .home-jarvis-doc-label {
+    display: none;
   }
 
   .home-jarvis-auth-link {
