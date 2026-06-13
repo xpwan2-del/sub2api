@@ -13,7 +13,7 @@
 
 ## Current Status
 
-当前阶段只完成方案文档，没有开始业务代码接入。
+当前已完成 Phase 1、Phase 2 和 Phase 3 的第一版接入。
 
 已经完成：
 
@@ -24,15 +24,17 @@
 - 已确认 sub2api 第一版只做最小必要改动。
 - 已在 sub2api 公共首页导航增加“AI 画布 / AI Canvas”入口，浏览器跳转到 `/apps/canvas`。
 - Infinite Canvas 已支持 `CANVAS_BASE_PATH=/apps/canvas`，静态资源、同源 API、WebDAV proxy 和普通 href 会使用 base path。
+- sub2api 已新增 `GET /api/v1/app/canvas/session`，基于现有 JWT 鉴权返回画布需要的最小 TOP-AI 用户摘要。
+- Infinite Canvas 已新增 `POST /api/auth/top-ai/session`，由画布后端调用 TOP-AI session endpoint，并换成画布本地 token。
+- Infinite Canvas 前端启动时会优先使用当前同域 TOP-AI `auth_token` 换取画布登录态；未登录时跳回 TOP-AI 登录页。
+- Infinite Canvas 已用 `TOP_AI_SESSION_URL` 和 `NEXT_PUBLIC_TOP_AI_LOGIN_PATH` 控制跨项目登录配置，不写死生产域名。
 
 还没有改：
 
 - sub2api 登录后控制台侧边栏还没有新增可选“AI 画布 / Canvas”入口。
-- sub2api 后端还没有新增 canvas session/SSO endpoint。
 - sub2api 网关计费还没有增加 `source=canvas` 来源标记。
 - sub2api 还没有提供给画布服务端使用的内部调用凭证方案。
-- Infinite Canvas 还没有接入 TOP-AI 登录态。
-- Infinite Canvas 还没有隐藏本地登录、注册、充值、credits 展示。
+- Infinite Canvas 还没有彻底隐藏本地登录、注册、充值、credits 展示。
 - Infinite Canvas 的 AI 请求还没有改为走 TOP-AI Gateway。
 - Infinite Canvas 的模型列表还没有改为读取 TOP-AI 模型目录。
 - Infinite Canvas 的 `webdav-proxy` 等安全问题还没有修复。
@@ -101,8 +103,10 @@
 TOP_AI_PUBLIC_BASE_URL=https://top-ai.example.com
 TOP_AI_INTERNAL_BASE_URL=http://top-ai-backend:3000
 TOP_AI_CANVAS_APP_KEY=<server-side-only-secret>
+TOP_AI_SESSION_URL=/api/v1/app/canvas/session
 CANVAS_BASE_PATH=/apps/canvas
 NEXT_PUBLIC_CANVAS_BASE_PATH=/apps/canvas
+NEXT_PUBLIC_TOP_AI_LOGIN_PATH=/login
 CANVAS_API_BASE_URL=http://top-ai-canvas-api:8080
 CANVAS_DISABLE_LOCAL_AUTH=true
 CANVAS_DISABLE_LOCAL_CREDITS=true
@@ -112,8 +116,10 @@ CANVAS_FORCE_TOP_AI_GATEWAY=true
 规则：
 
 - `TOP_AI_CANVAS_APP_KEY` 只能存在于 Infinite Canvas 后端服务端环境。
+- `TOP_AI_SESSION_URL` 给 Infinite Canvas 后端校验 TOP-AI 登录态使用；同域部署默认可用 `/api/v1/app/canvas/session`。
 - `CANVAS_BASE_PATH` 给 Infinite Canvas 构建和服务端路由使用。
 - `NEXT_PUBLIC_CANVAS_BASE_PATH` 只有在浏览器端代码确实需要读取 base path 时才使用。
+- `NEXT_PUBLIC_TOP_AI_LOGIN_PATH` 只允许是公开登录入口路径或 URL，不包含密钥。
 - 浏览器端只能知道公开 base URL 和公开 base path，不能知道服务端密钥。
 - 本地开发可以用 `http://127.0.0.1`，但不能提交成生产默认值。
 - 生产环境变量必须由部署系统注入，不写入 Git。
@@ -200,15 +206,23 @@ sub2api 第一版只做最小必要改动。
 GET /api/v1/app/canvas/session
 ```
 
-返回内容只包含画布需要的最小用户信息：
+返回内容只包含画布需要的最小用户信息，使用 sub2api 现有响应 envelope：
 
 ```json
 {
-  "user_id": "top-ai-user-id",
-  "display_name": "User",
-  "email": "user@example.com",
-  "balance_usd": 12.34,
-  "status": "active"
+  "code": 0,
+  "message": "success",
+  "data": {
+    "user": {
+      "id": 123,
+      "email": "user@example.com",
+      "username": "User",
+      "avatar_url": "https://example.com/avatar.png",
+      "balance": 12.34,
+      "concurrency": 10,
+      "status": "active"
+    }
+  }
 }
 ```
 
@@ -493,19 +507,21 @@ sub2api 改动：
 sub2api 改动：
 
 - 提供最小 SSO/session endpoint。
+- Endpoint 放在 `backend/internal/handler/auth_canvas_session.go` 和 `backend/internal/server/routes/auth.go`，继续使用现有 JWT 中间件。
 
 Infinite Canvas 改动：
 
 - 访问画布时校验 TOP-AI 登录态。
 - 未登录跳转 TOP-AI 登录页。
 - 已登录建立或更新本地用户映射。
-- 隐藏画布本地登录/注册入口。
+- SSO 代码放在 `service/auth_topai.go`、`handler/auth.go`、`router/router.go` 和 `web/src/stores/use-user-store.ts`，继续使用画布原有目录结构。
 
 验收：
 
 - 未登录访问画布会回到 TOP-AI 登录。
 - 登录后进入画布能识别同一个用户。
 - 不暴露用户 API Key。
+- 不把 Infinite Canvas 页面或后端塞进 sub2api。
 
 ### Phase 4: Model And Billing Integration
 
@@ -562,11 +578,19 @@ Response:
 
 ```json
 {
-  "user_id": "u_123",
-  "display_name": "TOP-AI User",
-  "email": "user@example.com",
-  "balance_usd": 10.25,
-  "status": "active"
+  "code": 0,
+  "message": "success",
+  "data": {
+    "user": {
+      "id": 123,
+      "email": "user@example.com",
+      "username": "TOP-AI User",
+      "avatar_url": "",
+      "balance": 10.25,
+      "concurrency": 10,
+      "status": "active"
+    }
+  }
 }
 ```
 
