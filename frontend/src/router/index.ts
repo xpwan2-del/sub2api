@@ -40,6 +40,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/jarvis-brain',
+    name: 'JarvisBrain',
+    component: () => import('@/views/public/JarvisBrainView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Neural Gateway'
+    }
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/auth/LoginView.vue'),

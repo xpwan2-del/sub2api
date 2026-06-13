@@ -18,6 +18,93 @@ export default {
       stickySession: '会话保持',
       realtimeBilling: '按量计费'
     },
+    jarvis: {
+      kicker: 'AI 路由智能中枢',
+      title: '模型流量，实时思考。',
+      description: '一个网关协调上游账号、延迟、额度、故障切换与计费信号，让接入系统像神经中枢一样持续运转。',
+      models: {
+        Claude: {
+          specialty: '长文 · 推理 · 写作',
+          intro: '我是 Claude，写报告像咨询顾问，讲道理像班主任，贵是贵点，但我真的稳。'
+        },
+        OpenAI: {
+          specialty: '工具调用 · 代码 · Agent',
+          intro: '我是 OpenAI，全场最会接工具的打工人，写代码、调 API、跑 Agent，我一条龙。'
+        },
+        Gemini: {
+          specialty: '多模态 · 长上下文 · Google 生态',
+          intro: '我是 Gemini，文字图片视频都能看，背后还有 Google，主打一个家里资源多。'
+        },
+        Grok: {
+          specialty: '实时感 · 个性 · 快速推理',
+          intro: '我是 Grok，别人一本正经，我先开个玩笑；能聊能冲，就是嘴比较快。'
+        },
+        Qwen: {
+          specialty: '中文 · 代码 · 开源',
+          intro: '我是 Qwen，中文我熟，代码我会，开源我给，老板问成本我也不慌。'
+        },
+        DeepSeek: {
+          specialty: '推理 · 代码 · 低成本',
+          intro: '我是 DeepSeek，我会推理，还便宜，还能打。你预算紧？巧了，我也擅长省钱。'
+        },
+        Kimi: {
+          specialty: '长上下文 · 文档 · 中文',
+          intro: '我是 Kimi，你把文档堆过来，我慢慢吃。长文档？别客气，我胃口大。'
+        },
+        Meta: {
+          specialty: '开源 · 本地部署 · 微调',
+          intro: '我是 Llama，不一定最会装，但最适合被你改装。想私有化？我搬进你服务器。'
+        },
+        Zhipu: {
+          specialty: '中文推理 · 企业 · 国产生态',
+          intro: '我是 GLM，中文业务我门儿清，写方案、做问答、进企业，我比较接地气。'
+        },
+        Baidu: {
+          specialty: '中文知识 · 搜索增强 · 落地',
+          intro: '我是 ERNIE，背靠百度搜索，别人靠记忆，我还能顺手翻资料。'
+        },
+        MiniMax: {
+          specialty: '中文对话 · 长上下文 · 应用体验',
+          intro: '我是 MiniMax，聊天不端着，长文也能扛，主打一个产品感比较顺。'
+        },
+        Mistral: {
+          specialty: '轻量高效 · 商用 · 欧洲生态',
+          intro: '我是 Mistral，法国来的效率派，不一定嗓门最大，但跑起来很利索。'
+        },
+        AWS: {
+          specialty: '云集成 · 企业部署 · 稳定',
+          intro: '我是 Nova，AWS 家亲儿子，上云、扩容、接企业系统，我熟得像回家。'
+        },
+        Hunyuan: {
+          specialty: '中文 · 多媒体 · 腾讯生态',
+          intro: '我是 Hunyuan，中文内容和社交场景我懂，毕竟腾讯系流量我见得多。'
+        },
+        Nvidia: {
+          specialty: '推理优化 · GPU · 私有化',
+          intro: '我是 Nemotron，别人谈模型，我先看显卡。GPU 吃满，性能拉满。'
+        },
+        Doubao: {
+          specialty: '中文内容 · 对话 · 产品化',
+          intro: '我是 Doubao，做内容我熟，用户爱不爱看，我比你老板还敏感。'
+        },
+        Microsoft: {
+          specialty: '小模型 · 高效率 · 端侧',
+          intro: '我是 Phi，别看我小，我省电省钱省机器。小身板，也能干正事。'
+        },
+        Perplexity: {
+          specialty: '联网搜索 · 引用 · 研究',
+          intro: '我是 Sonar，我不装全知全能，我会查，还会告诉你我从哪查的。'
+        },
+        AI21: {
+          specialty: '长上下文 · 文档 · 企业文本',
+          intro: '我是 Jamba，文档工作流我能啃，合同、报告、知识库，来多少我排队处理。'
+        },
+        Cohere: {
+          specialty: 'RAG · 多语言 · 企业检索',
+          intro: '我是 Cohere，企业 RAG 老熟人，别问我会不会聊天，问我资料找得准不准。'
+        }
+      }
+    },
     // 用户痛点区块
     painPoints: {
       title: '你是否也遇到这些问题？',
@@ -44,14 +131,6 @@ export default {
     solutions: {
       title: '我们帮你解决',
       subtitle: '简单三步，开始省心使用 AI'
-    },
-    features: {
-      unifiedGateway: '一键接入',
-      unifiedGatewayDesc: '获取一个 API 密钥，即可调用所有已接入的 AI 模型，无需分别申请。',
-      multiAccount: '稳定可靠',
-      multiAccountDesc: '智能调度多个上游账号，自动切换和负载均衡，告别频繁报错。',
-      balanceQuota: '用多少付多少',
-      balanceQuotaDesc: '按实际使用量计费，支持设置配额上限，团队用量一目了然。'
     },
     // 优势对比
     comparison: {
@@ -89,16 +168,6 @@ export default {
         }
       }
     },
-    providers: {
-      title: '已支持的 AI 模型',
-      description: '一个 API，多种选择',
-      supported: '已支持',
-      soon: '即将推出',
-      claude: 'Claude',
-      gemini: 'Gemini',
-      antigravity: 'Antigravity',
-      more: '更多'
-    },
     // CTA 区块
     cta: {
       title: '准备好开始了吗？',
@@ -106,7 +175,7 @@ export default {
       button: '免费注册'
     },
     footer: {
-      allRightsReserved: '保留所有权利。'
+      allRightsReserved: 'All rights reserved.'
     }
   },
 

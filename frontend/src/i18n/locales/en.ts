@@ -18,6 +18,93 @@ export default {
       stickySession: 'Session Persistence',
       realtimeBilling: 'Pay As You Go'
     },
+    jarvis: {
+      kicker: 'AI Routing Intelligence',
+      title: 'Model traffic, thinking in motion.',
+      description: 'One gateway coordinates upstream accounts, latency, quotas, fallback paths, and billing signals as a living command system.',
+      models: {
+        Claude: {
+          specialty: 'Long context · reasoning · writing',
+          intro: "I'm Claude. I write like a consultant, reason like a patient teacher, and yes, stability is kind of my brand."
+        },
+        OpenAI: {
+          specialty: 'Tool calling · code · agents',
+          intro: "I'm OpenAI. Code, APIs, tools, agents: hand me the workflow and I'll try to wire the whole machine."
+        },
+        Gemini: {
+          specialty: 'Multimodal · long context · Google ecosystem',
+          intro: "I'm Gemini. Text, images, video, long context, plus the Google toolbox. I bring a rather large backpack."
+        },
+        Grok: {
+          specialty: 'Real-time feel · personality · fast reasoning',
+          intro: "I'm Grok. I may crack the joke first, but I still show up fast when the reasoning gets serious."
+        },
+        Qwen: {
+          specialty: 'Chinese · code · open source',
+          intro: "I'm Qwen. Strong Chinese, solid code, open weights energy, and I don't make finance people panic."
+        },
+        DeepSeek: {
+          specialty: 'Reasoning · code · low cost',
+          intro: "I'm DeepSeek. I can reason, code, and keep the bill polite. Cheap and punchy is a valid personality."
+        },
+        Kimi: {
+          specialty: 'Long context · documents · Chinese',
+          intro: "I'm Kimi. Drop the documents here; I have a big appetite and a very patient reading habit."
+        },
+        Meta: {
+          specialty: 'Open source · local deploy · fine-tuning',
+          intro: "I'm Llama. Not the flashiest suit in the room, but if you want to customize and self-host, I'm moving in."
+        },
+        Zhipu: {
+          specialty: 'Chinese reasoning · enterprise · local ecosystem',
+          intro: "I'm GLM. Chinese business scenarios, proposals, enterprise Q&A: I know the hallway conversations too."
+        },
+        Baidu: {
+          specialty: 'Chinese knowledge · search-enhanced · deployment',
+          intro: "I'm ERNIE. I have search in the family, so when memory gets fuzzy, I know where to look."
+        },
+        MiniMax: {
+          specialty: 'Chinese chat · long context · product experience',
+          intro: "I'm MiniMax. Smooth chat, long context, and product polish. I try to feel less like a lab demo."
+        },
+        Mistral: {
+          specialty: 'Efficient · commercial · European ecosystem',
+          intro: "I'm Mistral. French efficiency, compact moves, fast runs. I don't need to shout to get work done."
+        },
+        AWS: {
+          specialty: 'Cloud integration · enterprise deploy · stable',
+          intro: "I'm Nova. Born in the AWS house, so scaling, deployment, and enterprise wiring feel like home turf."
+        },
+        Hunyuan: {
+          specialty: 'Chinese · multimedia · Tencent ecosystem',
+          intro: "I'm Hunyuan. Chinese content and social scenarios are familiar territory; I've seen plenty of traffic."
+        },
+        Nvidia: {
+          specialty: 'Inference optimization · GPU · private deployment',
+          intro: "I'm Nemotron. Others ask about prompts; I ask about GPUs. Feed the hardware and let it sprint."
+        },
+        Doubao: {
+          specialty: 'Chinese content · chat · productization',
+          intro: "I'm Doubao. Content, conversation, product feel: I can tell when users are about to scroll away."
+        },
+        Microsoft: {
+          specialty: 'Small models · efficiency · edge',
+          intro: "I'm Phi. Small frame, low appetite, useful output. Tiny can still do real work."
+        },
+        Perplexity: {
+          specialty: 'Web search · citations · research',
+          intro: "I'm Sonar. I don't pretend to know everything; I search, cite, and show my receipts."
+        },
+        AI21: {
+          specialty: 'Long context · documents · enterprise text',
+          intro: "I'm Jamba. Contracts, reports, knowledge bases: send the document queue and I'll start chewing."
+        },
+        Cohere: {
+          specialty: 'RAG · multilingual · enterprise retrieval',
+          intro: "I'm Cohere. Enterprise RAG is my regular route; ask less if I can chat, more if I can retrieve accurately."
+        }
+      }
+    },
     // Pain points section
     painPoints: {
       title: 'Sound Familiar?',
@@ -44,14 +131,6 @@ export default {
     solutions: {
       title: 'We Solve These Problems',
       subtitle: 'Three simple steps to stress-free AI access'
-    },
-    features: {
-      unifiedGateway: 'One-Click Access',
-      unifiedGatewayDesc: 'Get a single API key to call all connected AI models. No separate applications needed.',
-      multiAccount: 'Always Reliable',
-      multiAccountDesc: 'Smart routing across multiple upstream accounts with automatic failover. Say goodbye to errors.',
-      balanceQuota: 'Pay What You Use',
-      balanceQuotaDesc: 'Usage-based billing with quota limits. Full visibility into team consumption.'
     },
     // Comparison section
     comparison: {
@@ -88,16 +167,6 @@ export default {
           us: 'Quotas & detailed analytics'
         }
       }
-    },
-    providers: {
-      title: 'Supported AI Models',
-      description: 'One API, Multiple Choices',
-      supported: 'Supported',
-      soon: 'Soon',
-      claude: 'Claude',
-      gemini: 'Gemini',
-      antigravity: 'Antigravity',
-      more: 'More'
     },
     // CTA section
     cta: {
