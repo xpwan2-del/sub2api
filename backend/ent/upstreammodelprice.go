@@ -25,9 +25,9 @@ type UpstreamModelPrice struct {
 	ModelName string `json:"model_name,omitempty"`
 	// 映射后的本地模型名（可空，表示使用上游原名）
 	LocalModelName string `json:"local_model_name,omitempty"`
-	// 输入价格（每百万 token）
+	// 输入价格（per-token USD，与 channel_model_pricing / LiteLLM input_cost_per_token 一致）
 	InputPrice float64 `json:"input_price,omitempty"`
-	// 输出价格（每百万 token）
+	// 输出价格（per-token USD，与 channel_model_pricing / LiteLLM output_cost_per_token 一致）
 	OutputPrice float64 `json:"output_price,omitempty"`
 	// 缓存写入价格（可空）
 	CacheWritePrice *float64 `json:"cache_write_price,omitempty"`

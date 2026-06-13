@@ -37,9 +37,9 @@ func (UpstreamModelPrice) Fields() []ent.Field {
 			Optional().
 			Comment("映射后的本地模型名（可空，表示使用上游原名）"),
 		field.Float("input_price").
-			Comment("输入价格（每百万 token）"),
+			Comment("输入价格（per-token USD，与 channel_model_pricing / LiteLLM input_cost_per_token 一致）"),
 		field.Float("output_price").
-			Comment("输出价格（每百万 token）"),
+			Comment("输出价格（per-token USD，与 channel_model_pricing / LiteLLM output_cost_per_token 一致）"),
 		field.Float("cache_write_price").
 			Optional().
 			Nillable().

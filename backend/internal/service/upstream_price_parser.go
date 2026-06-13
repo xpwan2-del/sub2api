@@ -7,7 +7,10 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// UpstreamModelPrice 是解析后的标准化上游模型价格（per-token USD）。
+// UpstreamModelPrice 是解析后的标准化上游模型价格。
+//
+// 单位：per-token USD（与 channel_model_pricing / LiteLLM input_cost_per_token 一致；
+// 持久化到 ent.UpstreamModelPrice 时直接存原值，无需 ×1e6 单位转换）。
 type UpstreamModelPrice struct {
 	ModelName       string
 	LocalModelName  string
