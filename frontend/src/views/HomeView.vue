@@ -34,8 +34,8 @@
           <a
             v-if="docUrl"
             :href="docUrl"
-            target="_blank"
-            rel="noopener noreferrer"
+            :target="isExternalDocUrl ? '_blank' : undefined"
+            :rel="isExternalDocUrl ? 'noopener noreferrer' : undefined"
             class="home-jarvis-action-button"
             :title="t('home.viewDocs')"
           >
@@ -100,6 +100,7 @@ const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appS
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
 const brandLogo = computed(() => siteLogo.value || '/top-ai-logo.png')
+const isExternalDocUrl = computed(() => /^https?:\/\//i.test(docUrl.value))
 const currentYear = new Date().getFullYear()
 
 // Check if homeContent is a URL (for iframe display)
