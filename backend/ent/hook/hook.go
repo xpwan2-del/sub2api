@@ -45,6 +45,30 @@ func (f AccountGroupFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AccountGroupMutation", m)
 }
 
+// The AdminNotificationFunc type is an adapter to allow the use of ordinary
+// function as AdminNotification mutator.
+type AdminNotificationFunc func(context.Context, *ent.AdminNotificationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AdminNotificationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AdminNotificationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdminNotificationMutation", m)
+}
+
+// The AdminNotificationReadFunc type is an adapter to allow the use of ordinary
+// function as AdminNotificationRead mutator.
+type AdminNotificationReadFunc func(context.Context, *ent.AdminNotificationReadMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AdminNotificationReadFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AdminNotificationReadMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdminNotificationReadMutation", m)
+}
+
 // The AnnouncementFunc type is an adapter to allow the use of ordinary
 // function as Announcement mutator.
 type AnnouncementFunc func(context.Context, *ent.AnnouncementMutation) (ent.Value, error)
@@ -379,6 +403,42 @@ func (f TLSFingerprintProfileFunc) Mutate(ctx context.Context, m ent.Mutation) (
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TLSFingerprintProfileMutation", m)
+}
+
+// The UpstreamModelPriceFunc type is an adapter to allow the use of ordinary
+// function as UpstreamModelPrice mutator.
+type UpstreamModelPriceFunc func(context.Context, *ent.UpstreamModelPriceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UpstreamModelPriceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UpstreamModelPriceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UpstreamModelPriceMutation", m)
+}
+
+// The UpstreamPriceChangeFunc type is an adapter to allow the use of ordinary
+// function as UpstreamPriceChange mutator.
+type UpstreamPriceChangeFunc func(context.Context, *ent.UpstreamPriceChangeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UpstreamPriceChangeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UpstreamPriceChangeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UpstreamPriceChangeMutation", m)
+}
+
+// The UpstreamPriceSourceFunc type is an adapter to allow the use of ordinary
+// function as UpstreamPriceSource mutator.
+type UpstreamPriceSourceFunc func(context.Context, *ent.UpstreamPriceSourceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UpstreamPriceSourceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UpstreamPriceSourceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UpstreamPriceSourceMutation", m)
 }
 
 // The UsageCleanupTaskFunc type is an adapter to allow the use of ordinary

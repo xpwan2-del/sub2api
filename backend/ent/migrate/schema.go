@@ -247,6 +247,74 @@ var (
 			},
 		},
 	}
+	// AdminNotificationsColumns holds the columns for the "admin_notifications" table.
+	AdminNotificationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "type", Type: field.TypeString, Size: 40, Default: "system"},
+		{Name: "title", Type: field.TypeString, Size: 200},
+		{Name: "content", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "severity", Type: field.TypeString, Size: 20, Default: "info"},
+		{Name: "target_link", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "related_ids", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// AdminNotificationsTable holds the schema information for the "admin_notifications" table.
+	AdminNotificationsTable = &schema.Table{
+		Name:       "admin_notifications",
+		Columns:    AdminNotificationsColumns,
+		PrimaryKey: []*schema.Column{AdminNotificationsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "adminnotification_severity",
+				Unique:  false,
+				Columns: []*schema.Column{AdminNotificationsColumns[4]},
+			},
+			{
+				Name:    "adminnotification_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{AdminNotificationsColumns[7]},
+			},
+		},
+	}
+	// AdminNotificationReadsColumns holds the columns for the "admin_notification_reads" table.
+	AdminNotificationReadsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "read_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "notification_id", Type: field.TypeInt64},
+	}
+	// AdminNotificationReadsTable holds the schema information for the "admin_notification_reads" table.
+	AdminNotificationReadsTable = &schema.Table{
+		Name:       "admin_notification_reads",
+		Columns:    AdminNotificationReadsColumns,
+		PrimaryKey: []*schema.Column{AdminNotificationReadsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "admin_notification_reads_admin_notifications_reads",
+				Columns:    []*schema.Column{AdminNotificationReadsColumns[4]},
+				RefColumns: []*schema.Column{AdminNotificationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "adminnotificationread_notification_id",
+				Unique:  false,
+				Columns: []*schema.Column{AdminNotificationReadsColumns[4]},
+			},
+			{
+				Name:    "adminnotificationread_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{AdminNotificationReadsColumns[1]},
+			},
+			{
+				Name:    "adminnotificationread_notification_id_user_id",
+				Unique:  true,
+				Columns: []*schema.Column{AdminNotificationReadsColumns[4], AdminNotificationReadsColumns[1]},
+			},
+		},
+	}
 	// AnnouncementsColumns holds the columns for the "announcements" table.
 	AnnouncementsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1411,6 +1479,133 @@ var (
 		Columns:    TLSFingerprintProfilesColumns,
 		PrimaryKey: []*schema.Column{TLSFingerprintProfilesColumns[0]},
 	}
+	// UpstreamModelPricesColumns holds the columns for the "upstream_model_prices" table.
+	UpstreamModelPricesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "model_name", Type: field.TypeString},
+		{Name: "local_model_name", Type: field.TypeString, Nullable: true},
+		{Name: "input_price", Type: field.TypeFloat64},
+		{Name: "output_price", Type: field.TypeFloat64},
+		{Name: "cache_write_price", Type: field.TypeFloat64, Nullable: true},
+		{Name: "cache_read_price", Type: field.TypeFloat64, Nullable: true},
+		{Name: "image_output_price", Type: field.TypeFloat64, Nullable: true},
+		{Name: "per_request_price", Type: field.TypeFloat64, Nullable: true},
+		{Name: "currency", Type: field.TypeString, Size: 10, Default: "USD"},
+		{Name: "raw_payload", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "fetched_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "source_id", Type: field.TypeInt64},
+	}
+	// UpstreamModelPricesTable holds the schema information for the "upstream_model_prices" table.
+	UpstreamModelPricesTable = &schema.Table{
+		Name:       "upstream_model_prices",
+		Columns:    UpstreamModelPricesColumns,
+		PrimaryKey: []*schema.Column{UpstreamModelPricesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "upstream_model_prices_upstream_price_sources_prices",
+				Columns:    []*schema.Column{UpstreamModelPricesColumns[12]},
+				RefColumns: []*schema.Column{UpstreamPriceSourcesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "upstreammodelprice_source_id_model_name",
+				Unique:  true,
+				Columns: []*schema.Column{UpstreamModelPricesColumns[12], UpstreamModelPricesColumns[1]},
+			},
+		},
+	}
+	// UpstreamPriceChangesColumns holds the columns for the "upstream_price_changes" table.
+	UpstreamPriceChangesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "model_name", Type: field.TypeString},
+		{Name: "local_model_name", Type: field.TypeString, Nullable: true},
+		{Name: "change_type", Type: field.TypeString, Size: 20},
+		{Name: "prev_input_price", Type: field.TypeFloat64, Nullable: true},
+		{Name: "prev_output_price", Type: field.TypeFloat64, Nullable: true},
+		{Name: "curr_input_price", Type: field.TypeFloat64},
+		{Name: "curr_output_price", Type: field.TypeFloat64},
+		{Name: "input_delta_pct", Type: field.TypeFloat64, Default: 0},
+		{Name: "output_delta_pct", Type: field.TypeFloat64, Default: 0},
+		{Name: "detected_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "notified", Type: field.TypeBool, Default: false},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending"},
+		{Name: "suggested_input_price", Type: field.TypeFloat64, Default: 0},
+		{Name: "suggested_output_price", Type: field.TypeFloat64, Default: 0},
+		{Name: "suggested_multiplier", Type: field.TypeFloat64, Nullable: true},
+		{Name: "applied_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "applied_by", Type: field.TypeInt64, Nullable: true},
+		{Name: "applied_target", Type: field.TypeString, Nullable: true, Size: 30},
+		{Name: "applied_target_id", Type: field.TypeInt64, Default: 0},
+		{Name: "source_id", Type: field.TypeInt64},
+	}
+	// UpstreamPriceChangesTable holds the schema information for the "upstream_price_changes" table.
+	UpstreamPriceChangesTable = &schema.Table{
+		Name:       "upstream_price_changes",
+		Columns:    UpstreamPriceChangesColumns,
+		PrimaryKey: []*schema.Column{UpstreamPriceChangesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "upstream_price_changes_upstream_price_sources_changes",
+				Columns:    []*schema.Column{UpstreamPriceChangesColumns[20]},
+				RefColumns: []*schema.Column{UpstreamPriceSourcesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "upstreampricechange_status",
+				Unique:  false,
+				Columns: []*schema.Column{UpstreamPriceChangesColumns[12]},
+			},
+			{
+				Name:    "upstreampricechange_source_id_detected_at",
+				Unique:  false,
+				Columns: []*schema.Column{UpstreamPriceChangesColumns[20], UpstreamPriceChangesColumns[10]},
+			},
+		},
+	}
+	// UpstreamPriceSourcesColumns holds the columns for the "upstream_price_sources" table.
+	UpstreamPriceSourcesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "name", Type: field.TypeString, Size: 100},
+		{Name: "platform", Type: field.TypeString, Size: 50, Default: "mixed"},
+		{Name: "base_url", Type: field.TypeString, Size: 500},
+		{Name: "pricing_endpoint", Type: field.TypeString, Size: 500, Default: "/api/pricing"},
+		{Name: "api_key", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "parser_type", Type: field.TypeString, Size: 30, Default: "one_api"},
+		{Name: "parser_config", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "model_alias_map", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "sync_interval_minutes", Type: field.TypeInt, Default: 360},
+		{Name: "alert_threshold_pct", Type: field.TypeFloat64, Default: 0},
+		{Name: "cooldown_minutes", Type: field.TypeInt, Default: 60},
+		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "last_sync_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "last_sync_status", Type: field.TypeString, Size: 20, Default: ""},
+		{Name: "last_sync_error", Type: field.TypeString, Nullable: true, Size: 1000},
+		{Name: "last_hash", Type: field.TypeString, Nullable: true, Size: 128},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// UpstreamPriceSourcesTable holds the schema information for the "upstream_price_sources" table.
+	UpstreamPriceSourcesTable = &schema.Table{
+		Name:       "upstream_price_sources",
+		Columns:    UpstreamPriceSourcesColumns,
+		PrimaryKey: []*schema.Column{UpstreamPriceSourcesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "upstreampricesource_enabled",
+				Unique:  false,
+				Columns: []*schema.Column{UpstreamPriceSourcesColumns[12]},
+			},
+			{
+				Name:    "upstreampricesource_last_sync_at",
+				Unique:  false,
+				Columns: []*schema.Column{UpstreamPriceSourcesColumns[13]},
+			},
+		},
+	}
 	// UsageCleanupTasksColumns holds the columns for the "usage_cleanup_tasks" table.
 	UsageCleanupTasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1908,6 +2103,8 @@ var (
 		APIKeysTable,
 		AccountsTable,
 		AccountGroupsTable,
+		AdminNotificationsTable,
+		AdminNotificationReadsTable,
 		AnnouncementsTable,
 		AnnouncementReadsTable,
 		AuthIdentitiesTable,
@@ -1936,6 +2133,9 @@ var (
 		SettingsTable,
 		SubscriptionPlansTable,
 		TLSFingerprintProfilesTable,
+		UpstreamModelPricesTable,
+		UpstreamPriceChangesTable,
+		UpstreamPriceSourcesTable,
 		UsageCleanupTasksTable,
 		UsageLogsTable,
 		UsersTable,
@@ -1961,6 +2161,13 @@ func init() {
 	AccountGroupsTable.ForeignKeys[1].RefTable = GroupsTable
 	AccountGroupsTable.Annotation = &entsql.Annotation{
 		Table: "account_groups",
+	}
+	AdminNotificationsTable.Annotation = &entsql.Annotation{
+		Table: "admin_notifications",
+	}
+	AdminNotificationReadsTable.ForeignKeys[0].RefTable = AdminNotificationsTable
+	AdminNotificationReadsTable.Annotation = &entsql.Annotation{
+		Table: "admin_notification_reads",
 	}
 	AnnouncementsTable.Annotation = &entsql.Annotation{
 		Table: "announcements",
@@ -2061,6 +2268,17 @@ func init() {
 	}
 	TLSFingerprintProfilesTable.Annotation = &entsql.Annotation{
 		Table: "tls_fingerprint_profiles",
+	}
+	UpstreamModelPricesTable.ForeignKeys[0].RefTable = UpstreamPriceSourcesTable
+	UpstreamModelPricesTable.Annotation = &entsql.Annotation{
+		Table: "upstream_model_prices",
+	}
+	UpstreamPriceChangesTable.ForeignKeys[0].RefTable = UpstreamPriceSourcesTable
+	UpstreamPriceChangesTable.Annotation = &entsql.Annotation{
+		Table: "upstream_price_changes",
+	}
+	UpstreamPriceSourcesTable.Annotation = &entsql.Annotation{
+		Table: "upstream_price_sources",
 	}
 	UsageCleanupTasksTable.Annotation = &entsql.Annotation{
 		Table: "usage_cleanup_tasks",

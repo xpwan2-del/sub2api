@@ -17,6 +17,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/accountgroup"
+	"github.com/Wei-Shaw/sub2api/ent/adminnotification"
+	"github.com/Wei-Shaw/sub2api/ent/adminnotificationread"
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
@@ -46,6 +48,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
+	"github.com/Wei-Shaw/sub2api/ent/upstreammodelprice"
+	"github.com/Wei-Shaw/sub2api/ent/upstreampricechange"
+	"github.com/Wei-Shaw/sub2api/ent/upstreampricesource"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
@@ -69,6 +74,10 @@ type Client struct {
 	Account *AccountClient
 	// AccountGroup is the client for interacting with the AccountGroup builders.
 	AccountGroup *AccountGroupClient
+	// AdminNotification is the client for interacting with the AdminNotification builders.
+	AdminNotification *AdminNotificationClient
+	// AdminNotificationRead is the client for interacting with the AdminNotificationRead builders.
+	AdminNotificationRead *AdminNotificationReadClient
 	// Announcement is the client for interacting with the Announcement builders.
 	Announcement *AnnouncementClient
 	// AnnouncementRead is the client for interacting with the AnnouncementRead builders.
@@ -125,6 +134,12 @@ type Client struct {
 	SubscriptionPlan *SubscriptionPlanClient
 	// TLSFingerprintProfile is the client for interacting with the TLSFingerprintProfile builders.
 	TLSFingerprintProfile *TLSFingerprintProfileClient
+	// UpstreamModelPrice is the client for interacting with the UpstreamModelPrice builders.
+	UpstreamModelPrice *UpstreamModelPriceClient
+	// UpstreamPriceChange is the client for interacting with the UpstreamPriceChange builders.
+	UpstreamPriceChange *UpstreamPriceChangeClient
+	// UpstreamPriceSource is the client for interacting with the UpstreamPriceSource builders.
+	UpstreamPriceSource *UpstreamPriceSourceClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
 	UsageCleanupTask *UsageCleanupTaskClient
 	// UsageLog is the client for interacting with the UsageLog builders.
@@ -155,6 +170,8 @@ func (c *Client) init() {
 	c.APIKey = NewAPIKeyClient(c.config)
 	c.Account = NewAccountClient(c.config)
 	c.AccountGroup = NewAccountGroupClient(c.config)
+	c.AdminNotification = NewAdminNotificationClient(c.config)
+	c.AdminNotificationRead = NewAdminNotificationReadClient(c.config)
 	c.Announcement = NewAnnouncementClient(c.config)
 	c.AnnouncementRead = NewAnnouncementReadClient(c.config)
 	c.AuthIdentity = NewAuthIdentityClient(c.config)
@@ -183,6 +200,9 @@ func (c *Client) init() {
 	c.Setting = NewSettingClient(c.config)
 	c.SubscriptionPlan = NewSubscriptionPlanClient(c.config)
 	c.TLSFingerprintProfile = NewTLSFingerprintProfileClient(c.config)
+	c.UpstreamModelPrice = NewUpstreamModelPriceClient(c.config)
+	c.UpstreamPriceChange = NewUpstreamPriceChangeClient(c.config)
+	c.UpstreamPriceSource = NewUpstreamPriceSourceClient(c.config)
 	c.UsageCleanupTask = NewUsageCleanupTaskClient(c.config)
 	c.UsageLog = NewUsageLogClient(c.config)
 	c.User = NewUserClient(c.config)
@@ -286,6 +306,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		APIKey:                        NewAPIKeyClient(cfg),
 		Account:                       NewAccountClient(cfg),
 		AccountGroup:                  NewAccountGroupClient(cfg),
+		AdminNotification:             NewAdminNotificationClient(cfg),
+		AdminNotificationRead:         NewAdminNotificationReadClient(cfg),
 		Announcement:                  NewAnnouncementClient(cfg),
 		AnnouncementRead:              NewAnnouncementReadClient(cfg),
 		AuthIdentity:                  NewAuthIdentityClient(cfg),
@@ -314,6 +336,9 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Setting:                       NewSettingClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
+		UpstreamModelPrice:            NewUpstreamModelPriceClient(cfg),
+		UpstreamPriceChange:           NewUpstreamPriceChangeClient(cfg),
+		UpstreamPriceSource:           NewUpstreamPriceSourceClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
 		UsageLog:                      NewUsageLogClient(cfg),
 		User:                          NewUserClient(cfg),
@@ -344,6 +369,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		APIKey:                        NewAPIKeyClient(cfg),
 		Account:                       NewAccountClient(cfg),
 		AccountGroup:                  NewAccountGroupClient(cfg),
+		AdminNotification:             NewAdminNotificationClient(cfg),
+		AdminNotificationRead:         NewAdminNotificationReadClient(cfg),
 		Announcement:                  NewAnnouncementClient(cfg),
 		AnnouncementRead:              NewAnnouncementReadClient(cfg),
 		AuthIdentity:                  NewAuthIdentityClient(cfg),
@@ -372,6 +399,9 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Setting:                       NewSettingClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
+		UpstreamModelPrice:            NewUpstreamModelPriceClient(cfg),
+		UpstreamPriceChange:           NewUpstreamPriceChangeClient(cfg),
+		UpstreamPriceSource:           NewUpstreamPriceSourceClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
 		UsageLog:                      NewUsageLogClient(cfg),
 		User:                          NewUserClient(cfg),
@@ -409,15 +439,17 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.AuthIdentity, c.AuthIdentityChannel, c.BundlePlan, c.BundlePlanGroupQuota,
+		c.APIKey, c.Account, c.AccountGroup, c.AdminNotification,
+		c.AdminNotificationRead, c.Announcement, c.AnnouncementRead, c.AuthIdentity,
+		c.AuthIdentityChannel, c.BundlePlan, c.BundlePlanGroupQuota,
 		c.BundleSubscription, c.BundleSubscriptionUsage, c.ChannelMonitor,
 		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
 		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
-		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
+		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UpstreamModelPrice,
+		c.UpstreamPriceChange, c.UpstreamPriceSource, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserPlatformQuota, c.UserSubscription,
 	} {
@@ -429,15 +461,17 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.AuthIdentity, c.AuthIdentityChannel, c.BundlePlan, c.BundlePlanGroupQuota,
+		c.APIKey, c.Account, c.AccountGroup, c.AdminNotification,
+		c.AdminNotificationRead, c.Announcement, c.AnnouncementRead, c.AuthIdentity,
+		c.AuthIdentityChannel, c.BundlePlan, c.BundlePlanGroupQuota,
 		c.BundleSubscription, c.BundleSubscriptionUsage, c.ChannelMonitor,
 		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
 		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
-		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
+		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UpstreamModelPrice,
+		c.UpstreamPriceChange, c.UpstreamPriceSource, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserPlatformQuota, c.UserSubscription,
 	} {
@@ -454,6 +488,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Account.mutate(ctx, m)
 	case *AccountGroupMutation:
 		return c.AccountGroup.mutate(ctx, m)
+	case *AdminNotificationMutation:
+		return c.AdminNotification.mutate(ctx, m)
+	case *AdminNotificationReadMutation:
+		return c.AdminNotificationRead.mutate(ctx, m)
 	case *AnnouncementMutation:
 		return c.Announcement.mutate(ctx, m)
 	case *AnnouncementReadMutation:
@@ -510,6 +548,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SubscriptionPlan.mutate(ctx, m)
 	case *TLSFingerprintProfileMutation:
 		return c.TLSFingerprintProfile.mutate(ctx, m)
+	case *UpstreamModelPriceMutation:
+		return c.UpstreamModelPrice.mutate(ctx, m)
+	case *UpstreamPriceChangeMutation:
+		return c.UpstreamPriceChange.mutate(ctx, m)
+	case *UpstreamPriceSourceMutation:
+		return c.UpstreamPriceSource.mutate(ctx, m)
 	case *UsageCleanupTaskMutation:
 		return c.UsageCleanupTask.mutate(ctx, m)
 	case *UsageLogMutation:
@@ -1026,6 +1070,304 @@ func (c *AccountGroupClient) mutate(ctx context.Context, m *AccountGroupMutation
 		return (&AccountGroupDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AccountGroup mutation op: %q", m.Op())
+	}
+}
+
+// AdminNotificationClient is a client for the AdminNotification schema.
+type AdminNotificationClient struct {
+	config
+}
+
+// NewAdminNotificationClient returns a client for the AdminNotification from the given config.
+func NewAdminNotificationClient(c config) *AdminNotificationClient {
+	return &AdminNotificationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `adminnotification.Hooks(f(g(h())))`.
+func (c *AdminNotificationClient) Use(hooks ...Hook) {
+	c.hooks.AdminNotification = append(c.hooks.AdminNotification, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `adminnotification.Intercept(f(g(h())))`.
+func (c *AdminNotificationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AdminNotification = append(c.inters.AdminNotification, interceptors...)
+}
+
+// Create returns a builder for creating a AdminNotification entity.
+func (c *AdminNotificationClient) Create() *AdminNotificationCreate {
+	mutation := newAdminNotificationMutation(c.config, OpCreate)
+	return &AdminNotificationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AdminNotification entities.
+func (c *AdminNotificationClient) CreateBulk(builders ...*AdminNotificationCreate) *AdminNotificationCreateBulk {
+	return &AdminNotificationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AdminNotificationClient) MapCreateBulk(slice any, setFunc func(*AdminNotificationCreate, int)) *AdminNotificationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AdminNotificationCreateBulk{err: fmt.Errorf("calling to AdminNotificationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AdminNotificationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AdminNotificationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AdminNotification.
+func (c *AdminNotificationClient) Update() *AdminNotificationUpdate {
+	mutation := newAdminNotificationMutation(c.config, OpUpdate)
+	return &AdminNotificationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AdminNotificationClient) UpdateOne(_m *AdminNotification) *AdminNotificationUpdateOne {
+	mutation := newAdminNotificationMutation(c.config, OpUpdateOne, withAdminNotification(_m))
+	return &AdminNotificationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AdminNotificationClient) UpdateOneID(id int64) *AdminNotificationUpdateOne {
+	mutation := newAdminNotificationMutation(c.config, OpUpdateOne, withAdminNotificationID(id))
+	return &AdminNotificationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AdminNotification.
+func (c *AdminNotificationClient) Delete() *AdminNotificationDelete {
+	mutation := newAdminNotificationMutation(c.config, OpDelete)
+	return &AdminNotificationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AdminNotificationClient) DeleteOne(_m *AdminNotification) *AdminNotificationDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AdminNotificationClient) DeleteOneID(id int64) *AdminNotificationDeleteOne {
+	builder := c.Delete().Where(adminnotification.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AdminNotificationDeleteOne{builder}
+}
+
+// Query returns a query builder for AdminNotification.
+func (c *AdminNotificationClient) Query() *AdminNotificationQuery {
+	return &AdminNotificationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAdminNotification},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AdminNotification entity by its id.
+func (c *AdminNotificationClient) Get(ctx context.Context, id int64) (*AdminNotification, error) {
+	return c.Query().Where(adminnotification.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AdminNotificationClient) GetX(ctx context.Context, id int64) *AdminNotification {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryReads queries the reads edge of a AdminNotification.
+func (c *AdminNotificationClient) QueryReads(_m *AdminNotification) *AdminNotificationReadQuery {
+	query := (&AdminNotificationReadClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(adminnotification.Table, adminnotification.FieldID, id),
+			sqlgraph.To(adminnotificationread.Table, adminnotificationread.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, adminnotification.ReadsTable, adminnotification.ReadsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AdminNotificationClient) Hooks() []Hook {
+	return c.hooks.AdminNotification
+}
+
+// Interceptors returns the client interceptors.
+func (c *AdminNotificationClient) Interceptors() []Interceptor {
+	return c.inters.AdminNotification
+}
+
+func (c *AdminNotificationClient) mutate(ctx context.Context, m *AdminNotificationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AdminNotificationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AdminNotificationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AdminNotificationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AdminNotificationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AdminNotification mutation op: %q", m.Op())
+	}
+}
+
+// AdminNotificationReadClient is a client for the AdminNotificationRead schema.
+type AdminNotificationReadClient struct {
+	config
+}
+
+// NewAdminNotificationReadClient returns a client for the AdminNotificationRead from the given config.
+func NewAdminNotificationReadClient(c config) *AdminNotificationReadClient {
+	return &AdminNotificationReadClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `adminnotificationread.Hooks(f(g(h())))`.
+func (c *AdminNotificationReadClient) Use(hooks ...Hook) {
+	c.hooks.AdminNotificationRead = append(c.hooks.AdminNotificationRead, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `adminnotificationread.Intercept(f(g(h())))`.
+func (c *AdminNotificationReadClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AdminNotificationRead = append(c.inters.AdminNotificationRead, interceptors...)
+}
+
+// Create returns a builder for creating a AdminNotificationRead entity.
+func (c *AdminNotificationReadClient) Create() *AdminNotificationReadCreate {
+	mutation := newAdminNotificationReadMutation(c.config, OpCreate)
+	return &AdminNotificationReadCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AdminNotificationRead entities.
+func (c *AdminNotificationReadClient) CreateBulk(builders ...*AdminNotificationReadCreate) *AdminNotificationReadCreateBulk {
+	return &AdminNotificationReadCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AdminNotificationReadClient) MapCreateBulk(slice any, setFunc func(*AdminNotificationReadCreate, int)) *AdminNotificationReadCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AdminNotificationReadCreateBulk{err: fmt.Errorf("calling to AdminNotificationReadClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AdminNotificationReadCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AdminNotificationReadCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AdminNotificationRead.
+func (c *AdminNotificationReadClient) Update() *AdminNotificationReadUpdate {
+	mutation := newAdminNotificationReadMutation(c.config, OpUpdate)
+	return &AdminNotificationReadUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AdminNotificationReadClient) UpdateOne(_m *AdminNotificationRead) *AdminNotificationReadUpdateOne {
+	mutation := newAdminNotificationReadMutation(c.config, OpUpdateOne, withAdminNotificationRead(_m))
+	return &AdminNotificationReadUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AdminNotificationReadClient) UpdateOneID(id int64) *AdminNotificationReadUpdateOne {
+	mutation := newAdminNotificationReadMutation(c.config, OpUpdateOne, withAdminNotificationReadID(id))
+	return &AdminNotificationReadUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AdminNotificationRead.
+func (c *AdminNotificationReadClient) Delete() *AdminNotificationReadDelete {
+	mutation := newAdminNotificationReadMutation(c.config, OpDelete)
+	return &AdminNotificationReadDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AdminNotificationReadClient) DeleteOne(_m *AdminNotificationRead) *AdminNotificationReadDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AdminNotificationReadClient) DeleteOneID(id int64) *AdminNotificationReadDeleteOne {
+	builder := c.Delete().Where(adminnotificationread.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AdminNotificationReadDeleteOne{builder}
+}
+
+// Query returns a query builder for AdminNotificationRead.
+func (c *AdminNotificationReadClient) Query() *AdminNotificationReadQuery {
+	return &AdminNotificationReadQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAdminNotificationRead},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AdminNotificationRead entity by its id.
+func (c *AdminNotificationReadClient) Get(ctx context.Context, id int64) (*AdminNotificationRead, error) {
+	return c.Query().Where(adminnotificationread.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AdminNotificationReadClient) GetX(ctx context.Context, id int64) *AdminNotificationRead {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryNotification queries the notification edge of a AdminNotificationRead.
+func (c *AdminNotificationReadClient) QueryNotification(_m *AdminNotificationRead) *AdminNotificationQuery {
+	query := (&AdminNotificationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(adminnotificationread.Table, adminnotificationread.FieldID, id),
+			sqlgraph.To(adminnotification.Table, adminnotification.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, adminnotificationread.NotificationTable, adminnotificationread.NotificationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AdminNotificationReadClient) Hooks() []Hook {
+	return c.hooks.AdminNotificationRead
+}
+
+// Interceptors returns the client interceptors.
+func (c *AdminNotificationReadClient) Interceptors() []Interceptor {
+	return c.inters.AdminNotificationRead
+}
+
+func (c *AdminNotificationReadClient) mutate(ctx context.Context, m *AdminNotificationReadMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AdminNotificationReadCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AdminNotificationReadUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AdminNotificationReadUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AdminNotificationReadDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AdminNotificationRead mutation op: %q", m.Op())
 	}
 }
 
@@ -5287,6 +5629,469 @@ func (c *TLSFingerprintProfileClient) mutate(ctx context.Context, m *TLSFingerpr
 	}
 }
 
+// UpstreamModelPriceClient is a client for the UpstreamModelPrice schema.
+type UpstreamModelPriceClient struct {
+	config
+}
+
+// NewUpstreamModelPriceClient returns a client for the UpstreamModelPrice from the given config.
+func NewUpstreamModelPriceClient(c config) *UpstreamModelPriceClient {
+	return &UpstreamModelPriceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `upstreammodelprice.Hooks(f(g(h())))`.
+func (c *UpstreamModelPriceClient) Use(hooks ...Hook) {
+	c.hooks.UpstreamModelPrice = append(c.hooks.UpstreamModelPrice, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `upstreammodelprice.Intercept(f(g(h())))`.
+func (c *UpstreamModelPriceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UpstreamModelPrice = append(c.inters.UpstreamModelPrice, interceptors...)
+}
+
+// Create returns a builder for creating a UpstreamModelPrice entity.
+func (c *UpstreamModelPriceClient) Create() *UpstreamModelPriceCreate {
+	mutation := newUpstreamModelPriceMutation(c.config, OpCreate)
+	return &UpstreamModelPriceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UpstreamModelPrice entities.
+func (c *UpstreamModelPriceClient) CreateBulk(builders ...*UpstreamModelPriceCreate) *UpstreamModelPriceCreateBulk {
+	return &UpstreamModelPriceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UpstreamModelPriceClient) MapCreateBulk(slice any, setFunc func(*UpstreamModelPriceCreate, int)) *UpstreamModelPriceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UpstreamModelPriceCreateBulk{err: fmt.Errorf("calling to UpstreamModelPriceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UpstreamModelPriceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UpstreamModelPriceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UpstreamModelPrice.
+func (c *UpstreamModelPriceClient) Update() *UpstreamModelPriceUpdate {
+	mutation := newUpstreamModelPriceMutation(c.config, OpUpdate)
+	return &UpstreamModelPriceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UpstreamModelPriceClient) UpdateOne(_m *UpstreamModelPrice) *UpstreamModelPriceUpdateOne {
+	mutation := newUpstreamModelPriceMutation(c.config, OpUpdateOne, withUpstreamModelPrice(_m))
+	return &UpstreamModelPriceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UpstreamModelPriceClient) UpdateOneID(id int64) *UpstreamModelPriceUpdateOne {
+	mutation := newUpstreamModelPriceMutation(c.config, OpUpdateOne, withUpstreamModelPriceID(id))
+	return &UpstreamModelPriceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UpstreamModelPrice.
+func (c *UpstreamModelPriceClient) Delete() *UpstreamModelPriceDelete {
+	mutation := newUpstreamModelPriceMutation(c.config, OpDelete)
+	return &UpstreamModelPriceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UpstreamModelPriceClient) DeleteOne(_m *UpstreamModelPrice) *UpstreamModelPriceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UpstreamModelPriceClient) DeleteOneID(id int64) *UpstreamModelPriceDeleteOne {
+	builder := c.Delete().Where(upstreammodelprice.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UpstreamModelPriceDeleteOne{builder}
+}
+
+// Query returns a query builder for UpstreamModelPrice.
+func (c *UpstreamModelPriceClient) Query() *UpstreamModelPriceQuery {
+	return &UpstreamModelPriceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUpstreamModelPrice},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UpstreamModelPrice entity by its id.
+func (c *UpstreamModelPriceClient) Get(ctx context.Context, id int64) (*UpstreamModelPrice, error) {
+	return c.Query().Where(upstreammodelprice.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UpstreamModelPriceClient) GetX(ctx context.Context, id int64) *UpstreamModelPrice {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySource queries the source edge of a UpstreamModelPrice.
+func (c *UpstreamModelPriceClient) QuerySource(_m *UpstreamModelPrice) *UpstreamPriceSourceQuery {
+	query := (&UpstreamPriceSourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(upstreammodelprice.Table, upstreammodelprice.FieldID, id),
+			sqlgraph.To(upstreampricesource.Table, upstreampricesource.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, upstreammodelprice.SourceTable, upstreammodelprice.SourceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UpstreamModelPriceClient) Hooks() []Hook {
+	return c.hooks.UpstreamModelPrice
+}
+
+// Interceptors returns the client interceptors.
+func (c *UpstreamModelPriceClient) Interceptors() []Interceptor {
+	return c.inters.UpstreamModelPrice
+}
+
+func (c *UpstreamModelPriceClient) mutate(ctx context.Context, m *UpstreamModelPriceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UpstreamModelPriceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UpstreamModelPriceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UpstreamModelPriceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UpstreamModelPriceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UpstreamModelPrice mutation op: %q", m.Op())
+	}
+}
+
+// UpstreamPriceChangeClient is a client for the UpstreamPriceChange schema.
+type UpstreamPriceChangeClient struct {
+	config
+}
+
+// NewUpstreamPriceChangeClient returns a client for the UpstreamPriceChange from the given config.
+func NewUpstreamPriceChangeClient(c config) *UpstreamPriceChangeClient {
+	return &UpstreamPriceChangeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `upstreampricechange.Hooks(f(g(h())))`.
+func (c *UpstreamPriceChangeClient) Use(hooks ...Hook) {
+	c.hooks.UpstreamPriceChange = append(c.hooks.UpstreamPriceChange, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `upstreampricechange.Intercept(f(g(h())))`.
+func (c *UpstreamPriceChangeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UpstreamPriceChange = append(c.inters.UpstreamPriceChange, interceptors...)
+}
+
+// Create returns a builder for creating a UpstreamPriceChange entity.
+func (c *UpstreamPriceChangeClient) Create() *UpstreamPriceChangeCreate {
+	mutation := newUpstreamPriceChangeMutation(c.config, OpCreate)
+	return &UpstreamPriceChangeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UpstreamPriceChange entities.
+func (c *UpstreamPriceChangeClient) CreateBulk(builders ...*UpstreamPriceChangeCreate) *UpstreamPriceChangeCreateBulk {
+	return &UpstreamPriceChangeCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UpstreamPriceChangeClient) MapCreateBulk(slice any, setFunc func(*UpstreamPriceChangeCreate, int)) *UpstreamPriceChangeCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UpstreamPriceChangeCreateBulk{err: fmt.Errorf("calling to UpstreamPriceChangeClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UpstreamPriceChangeCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UpstreamPriceChangeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UpstreamPriceChange.
+func (c *UpstreamPriceChangeClient) Update() *UpstreamPriceChangeUpdate {
+	mutation := newUpstreamPriceChangeMutation(c.config, OpUpdate)
+	return &UpstreamPriceChangeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UpstreamPriceChangeClient) UpdateOne(_m *UpstreamPriceChange) *UpstreamPriceChangeUpdateOne {
+	mutation := newUpstreamPriceChangeMutation(c.config, OpUpdateOne, withUpstreamPriceChange(_m))
+	return &UpstreamPriceChangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UpstreamPriceChangeClient) UpdateOneID(id int64) *UpstreamPriceChangeUpdateOne {
+	mutation := newUpstreamPriceChangeMutation(c.config, OpUpdateOne, withUpstreamPriceChangeID(id))
+	return &UpstreamPriceChangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UpstreamPriceChange.
+func (c *UpstreamPriceChangeClient) Delete() *UpstreamPriceChangeDelete {
+	mutation := newUpstreamPriceChangeMutation(c.config, OpDelete)
+	return &UpstreamPriceChangeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UpstreamPriceChangeClient) DeleteOne(_m *UpstreamPriceChange) *UpstreamPriceChangeDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UpstreamPriceChangeClient) DeleteOneID(id int64) *UpstreamPriceChangeDeleteOne {
+	builder := c.Delete().Where(upstreampricechange.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UpstreamPriceChangeDeleteOne{builder}
+}
+
+// Query returns a query builder for UpstreamPriceChange.
+func (c *UpstreamPriceChangeClient) Query() *UpstreamPriceChangeQuery {
+	return &UpstreamPriceChangeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUpstreamPriceChange},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UpstreamPriceChange entity by its id.
+func (c *UpstreamPriceChangeClient) Get(ctx context.Context, id int64) (*UpstreamPriceChange, error) {
+	return c.Query().Where(upstreampricechange.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UpstreamPriceChangeClient) GetX(ctx context.Context, id int64) *UpstreamPriceChange {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySource queries the source edge of a UpstreamPriceChange.
+func (c *UpstreamPriceChangeClient) QuerySource(_m *UpstreamPriceChange) *UpstreamPriceSourceQuery {
+	query := (&UpstreamPriceSourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(upstreampricechange.Table, upstreampricechange.FieldID, id),
+			sqlgraph.To(upstreampricesource.Table, upstreampricesource.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, upstreampricechange.SourceTable, upstreampricechange.SourceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UpstreamPriceChangeClient) Hooks() []Hook {
+	return c.hooks.UpstreamPriceChange
+}
+
+// Interceptors returns the client interceptors.
+func (c *UpstreamPriceChangeClient) Interceptors() []Interceptor {
+	return c.inters.UpstreamPriceChange
+}
+
+func (c *UpstreamPriceChangeClient) mutate(ctx context.Context, m *UpstreamPriceChangeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UpstreamPriceChangeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UpstreamPriceChangeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UpstreamPriceChangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UpstreamPriceChangeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UpstreamPriceChange mutation op: %q", m.Op())
+	}
+}
+
+// UpstreamPriceSourceClient is a client for the UpstreamPriceSource schema.
+type UpstreamPriceSourceClient struct {
+	config
+}
+
+// NewUpstreamPriceSourceClient returns a client for the UpstreamPriceSource from the given config.
+func NewUpstreamPriceSourceClient(c config) *UpstreamPriceSourceClient {
+	return &UpstreamPriceSourceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `upstreampricesource.Hooks(f(g(h())))`.
+func (c *UpstreamPriceSourceClient) Use(hooks ...Hook) {
+	c.hooks.UpstreamPriceSource = append(c.hooks.UpstreamPriceSource, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `upstreampricesource.Intercept(f(g(h())))`.
+func (c *UpstreamPriceSourceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UpstreamPriceSource = append(c.inters.UpstreamPriceSource, interceptors...)
+}
+
+// Create returns a builder for creating a UpstreamPriceSource entity.
+func (c *UpstreamPriceSourceClient) Create() *UpstreamPriceSourceCreate {
+	mutation := newUpstreamPriceSourceMutation(c.config, OpCreate)
+	return &UpstreamPriceSourceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UpstreamPriceSource entities.
+func (c *UpstreamPriceSourceClient) CreateBulk(builders ...*UpstreamPriceSourceCreate) *UpstreamPriceSourceCreateBulk {
+	return &UpstreamPriceSourceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UpstreamPriceSourceClient) MapCreateBulk(slice any, setFunc func(*UpstreamPriceSourceCreate, int)) *UpstreamPriceSourceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UpstreamPriceSourceCreateBulk{err: fmt.Errorf("calling to UpstreamPriceSourceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UpstreamPriceSourceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UpstreamPriceSourceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UpstreamPriceSource.
+func (c *UpstreamPriceSourceClient) Update() *UpstreamPriceSourceUpdate {
+	mutation := newUpstreamPriceSourceMutation(c.config, OpUpdate)
+	return &UpstreamPriceSourceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UpstreamPriceSourceClient) UpdateOne(_m *UpstreamPriceSource) *UpstreamPriceSourceUpdateOne {
+	mutation := newUpstreamPriceSourceMutation(c.config, OpUpdateOne, withUpstreamPriceSource(_m))
+	return &UpstreamPriceSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UpstreamPriceSourceClient) UpdateOneID(id int64) *UpstreamPriceSourceUpdateOne {
+	mutation := newUpstreamPriceSourceMutation(c.config, OpUpdateOne, withUpstreamPriceSourceID(id))
+	return &UpstreamPriceSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UpstreamPriceSource.
+func (c *UpstreamPriceSourceClient) Delete() *UpstreamPriceSourceDelete {
+	mutation := newUpstreamPriceSourceMutation(c.config, OpDelete)
+	return &UpstreamPriceSourceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UpstreamPriceSourceClient) DeleteOne(_m *UpstreamPriceSource) *UpstreamPriceSourceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UpstreamPriceSourceClient) DeleteOneID(id int64) *UpstreamPriceSourceDeleteOne {
+	builder := c.Delete().Where(upstreampricesource.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UpstreamPriceSourceDeleteOne{builder}
+}
+
+// Query returns a query builder for UpstreamPriceSource.
+func (c *UpstreamPriceSourceClient) Query() *UpstreamPriceSourceQuery {
+	return &UpstreamPriceSourceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUpstreamPriceSource},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UpstreamPriceSource entity by its id.
+func (c *UpstreamPriceSourceClient) Get(ctx context.Context, id int64) (*UpstreamPriceSource, error) {
+	return c.Query().Where(upstreampricesource.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UpstreamPriceSourceClient) GetX(ctx context.Context, id int64) *UpstreamPriceSource {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPrices queries the prices edge of a UpstreamPriceSource.
+func (c *UpstreamPriceSourceClient) QueryPrices(_m *UpstreamPriceSource) *UpstreamModelPriceQuery {
+	query := (&UpstreamModelPriceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(upstreampricesource.Table, upstreampricesource.FieldID, id),
+			sqlgraph.To(upstreammodelprice.Table, upstreammodelprice.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, upstreampricesource.PricesTable, upstreampricesource.PricesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryChanges queries the changes edge of a UpstreamPriceSource.
+func (c *UpstreamPriceSourceClient) QueryChanges(_m *UpstreamPriceSource) *UpstreamPriceChangeQuery {
+	query := (&UpstreamPriceChangeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(upstreampricesource.Table, upstreampricesource.FieldID, id),
+			sqlgraph.To(upstreampricechange.Table, upstreampricechange.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, upstreampricesource.ChangesTable, upstreampricesource.ChangesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UpstreamPriceSourceClient) Hooks() []Hook {
+	return c.hooks.UpstreamPriceSource
+}
+
+// Interceptors returns the client interceptors.
+func (c *UpstreamPriceSourceClient) Interceptors() []Interceptor {
+	return c.inters.UpstreamPriceSource
+}
+
+func (c *UpstreamPriceSourceClient) mutate(ctx context.Context, m *UpstreamPriceSourceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UpstreamPriceSourceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UpstreamPriceSourceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UpstreamPriceSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UpstreamPriceSourceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UpstreamPriceSource mutation op: %q", m.Op())
+	}
+}
+
 // UsageCleanupTaskClient is a client for the UsageCleanupTask schema.
 type UsageCleanupTaskClient struct {
 	config
@@ -6777,28 +7582,30 @@ func (c *UserSubscriptionClient) mutate(ctx context.Context, m *UserSubscription
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
-		AuthIdentityChannel, BundlePlan, BundlePlanGroupQuota, BundleSubscription,
-		BundleSubscriptionUsage, ChannelMonitor, ChannelMonitorDailyRollup,
-		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
-		UserSubscription []ent.Hook
+		APIKey, Account, AccountGroup, AdminNotification, AdminNotificationRead,
+		Announcement, AnnouncementRead, AuthIdentity, AuthIdentityChannel, BundlePlan,
+		BundlePlanGroupQuota, BundleSubscription, BundleSubscriptionUsage,
+		ChannelMonitor, ChannelMonitorDailyRollup, ChannelMonitorHistory,
+		ChannelMonitorRequestTemplate, ErrorPassthroughRule, Group, IdempotencyRecord,
+		IdentityAdoptionDecision, PaymentAuditLog, PaymentOrder,
+		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage, Proxy,
+		RedeemCode, SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		UpstreamModelPrice, UpstreamPriceChange, UpstreamPriceSource, UsageCleanupTask,
+		UsageLog, User, UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
+		UserPlatformQuota, UserSubscription []ent.Hook
 	}
 	inters struct {
-		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
-		AuthIdentityChannel, BundlePlan, BundlePlanGroupQuota, BundleSubscription,
-		BundleSubscriptionUsage, ChannelMonitor, ChannelMonitorDailyRollup,
-		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
-		UserSubscription []ent.Interceptor
+		APIKey, Account, AccountGroup, AdminNotification, AdminNotificationRead,
+		Announcement, AnnouncementRead, AuthIdentity, AuthIdentityChannel, BundlePlan,
+		BundlePlanGroupQuota, BundleSubscription, BundleSubscriptionUsage,
+		ChannelMonitor, ChannelMonitorDailyRollup, ChannelMonitorHistory,
+		ChannelMonitorRequestTemplate, ErrorPassthroughRule, Group, IdempotencyRecord,
+		IdentityAdoptionDecision, PaymentAuditLog, PaymentOrder,
+		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage, Proxy,
+		RedeemCode, SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		UpstreamModelPrice, UpstreamPriceChange, UpstreamPriceSource, UsageCleanupTask,
+		UsageLog, User, UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
+		UserPlatformQuota, UserSubscription []ent.Interceptor
 	}
 )
 

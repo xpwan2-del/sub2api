@@ -14,6 +14,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/accountgroup"
+	"github.com/Wei-Shaw/sub2api/ent/adminnotification"
+	"github.com/Wei-Shaw/sub2api/ent/adminnotificationread"
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
@@ -43,6 +45,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
+	"github.com/Wei-Shaw/sub2api/ent/upstreammodelprice"
+	"github.com/Wei-Shaw/sub2api/ent/upstreampricechange"
+	"github.com/Wei-Shaw/sub2api/ent/upstreampricesource"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
@@ -114,6 +119,8 @@ func checkColumn(t, c string) error {
 			apikey.Table:                        apikey.ValidColumn,
 			account.Table:                       account.ValidColumn,
 			accountgroup.Table:                  accountgroup.ValidColumn,
+			adminnotification.Table:             adminnotification.ValidColumn,
+			adminnotificationread.Table:         adminnotificationread.ValidColumn,
 			announcement.Table:                  announcement.ValidColumn,
 			announcementread.Table:              announcementread.ValidColumn,
 			authidentity.Table:                  authidentity.ValidColumn,
@@ -142,6 +149,9 @@ func checkColumn(t, c string) error {
 			setting.Table:                       setting.ValidColumn,
 			subscriptionplan.Table:              subscriptionplan.ValidColumn,
 			tlsfingerprintprofile.Table:         tlsfingerprintprofile.ValidColumn,
+			upstreammodelprice.Table:            upstreammodelprice.ValidColumn,
+			upstreampricechange.Table:           upstreampricechange.ValidColumn,
+			upstreampricesource.Table:           upstreampricesource.ValidColumn,
 			usagecleanuptask.Table:              usagecleanuptask.ValidColumn,
 			usagelog.Table:                      usagelog.ValidColumn,
 			user.Table:                          user.ValidColumn,

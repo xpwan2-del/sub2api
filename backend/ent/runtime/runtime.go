@@ -7,6 +7,8 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/accountgroup"
+	"github.com/Wei-Shaw/sub2api/ent/adminnotification"
+	"github.com/Wei-Shaw/sub2api/ent/adminnotificationread"
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
@@ -37,6 +39,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
+	"github.com/Wei-Shaw/sub2api/ent/upstreammodelprice"
+	"github.com/Wei-Shaw/sub2api/ent/upstreampricechange"
+	"github.com/Wei-Shaw/sub2api/ent/upstreampricesource"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
@@ -266,6 +271,60 @@ func init() {
 	accountgroupDescCreatedAt := accountgroupFields[3].Descriptor()
 	// accountgroup.DefaultCreatedAt holds the default value on creation for the created_at field.
 	accountgroup.DefaultCreatedAt = accountgroupDescCreatedAt.Default.(func() time.Time)
+	adminnotificationFields := schema.AdminNotification{}.Fields()
+	_ = adminnotificationFields
+	// adminnotificationDescType is the schema descriptor for type field.
+	adminnotificationDescType := adminnotificationFields[0].Descriptor()
+	// adminnotification.DefaultType holds the default value on creation for the type field.
+	adminnotification.DefaultType = adminnotificationDescType.Default.(string)
+	// adminnotification.TypeValidator is a validator for the "type" field. It is called by the builders before save.
+	adminnotification.TypeValidator = adminnotificationDescType.Validators[0].(func(string) error)
+	// adminnotificationDescTitle is the schema descriptor for title field.
+	adminnotificationDescTitle := adminnotificationFields[1].Descriptor()
+	// adminnotification.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	adminnotification.TitleValidator = func() func(string) error {
+		validators := adminnotificationDescTitle.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(title string) error {
+			for _, fn := range fns {
+				if err := fn(title); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// adminnotificationDescContent is the schema descriptor for content field.
+	adminnotificationDescContent := adminnotificationFields[2].Descriptor()
+	// adminnotification.ContentValidator is a validator for the "content" field. It is called by the builders before save.
+	adminnotification.ContentValidator = adminnotificationDescContent.Validators[0].(func(string) error)
+	// adminnotificationDescSeverity is the schema descriptor for severity field.
+	adminnotificationDescSeverity := adminnotificationFields[3].Descriptor()
+	// adminnotification.DefaultSeverity holds the default value on creation for the severity field.
+	adminnotification.DefaultSeverity = adminnotificationDescSeverity.Default.(string)
+	// adminnotification.SeverityValidator is a validator for the "severity" field. It is called by the builders before save.
+	adminnotification.SeverityValidator = adminnotificationDescSeverity.Validators[0].(func(string) error)
+	// adminnotificationDescTargetLink is the schema descriptor for target_link field.
+	adminnotificationDescTargetLink := adminnotificationFields[4].Descriptor()
+	// adminnotification.TargetLinkValidator is a validator for the "target_link" field. It is called by the builders before save.
+	adminnotification.TargetLinkValidator = adminnotificationDescTargetLink.Validators[0].(func(string) error)
+	// adminnotificationDescCreatedAt is the schema descriptor for created_at field.
+	adminnotificationDescCreatedAt := adminnotificationFields[6].Descriptor()
+	// adminnotification.DefaultCreatedAt holds the default value on creation for the created_at field.
+	adminnotification.DefaultCreatedAt = adminnotificationDescCreatedAt.Default.(func() time.Time)
+	adminnotificationreadFields := schema.AdminNotificationRead{}.Fields()
+	_ = adminnotificationreadFields
+	// adminnotificationreadDescReadAt is the schema descriptor for read_at field.
+	adminnotificationreadDescReadAt := adminnotificationreadFields[2].Descriptor()
+	// adminnotificationread.DefaultReadAt holds the default value on creation for the read_at field.
+	adminnotificationread.DefaultReadAt = adminnotificationreadDescReadAt.Default.(func() time.Time)
+	// adminnotificationreadDescCreatedAt is the schema descriptor for created_at field.
+	adminnotificationreadDescCreatedAt := adminnotificationreadFields[3].Descriptor()
+	// adminnotificationread.DefaultCreatedAt holds the default value on creation for the created_at field.
+	adminnotificationread.DefaultCreatedAt = adminnotificationreadDescCreatedAt.Default.(func() time.Time)
 	announcementFields := schema.Announcement{}.Fields()
 	_ = announcementFields
 	// announcementDescTitle is the schema descriptor for title field.
@@ -1745,6 +1804,170 @@ func init() {
 	tlsfingerprintprofileDescEnableGrease := tlsfingerprintprofileFields[2].Descriptor()
 	// tlsfingerprintprofile.DefaultEnableGrease holds the default value on creation for the enable_grease field.
 	tlsfingerprintprofile.DefaultEnableGrease = tlsfingerprintprofileDescEnableGrease.Default.(bool)
+	upstreammodelpriceFields := schema.UpstreamModelPrice{}.Fields()
+	_ = upstreammodelpriceFields
+	// upstreammodelpriceDescModelName is the schema descriptor for model_name field.
+	upstreammodelpriceDescModelName := upstreammodelpriceFields[1].Descriptor()
+	// upstreammodelprice.ModelNameValidator is a validator for the "model_name" field. It is called by the builders before save.
+	upstreammodelprice.ModelNameValidator = upstreammodelpriceDescModelName.Validators[0].(func(string) error)
+	// upstreammodelpriceDescCurrency is the schema descriptor for currency field.
+	upstreammodelpriceDescCurrency := upstreammodelpriceFields[9].Descriptor()
+	// upstreammodelprice.DefaultCurrency holds the default value on creation for the currency field.
+	upstreammodelprice.DefaultCurrency = upstreammodelpriceDescCurrency.Default.(string)
+	// upstreammodelprice.CurrencyValidator is a validator for the "currency" field. It is called by the builders before save.
+	upstreammodelprice.CurrencyValidator = upstreammodelpriceDescCurrency.Validators[0].(func(string) error)
+	// upstreammodelpriceDescFetchedAt is the schema descriptor for fetched_at field.
+	upstreammodelpriceDescFetchedAt := upstreammodelpriceFields[11].Descriptor()
+	// upstreammodelprice.DefaultFetchedAt holds the default value on creation for the fetched_at field.
+	upstreammodelprice.DefaultFetchedAt = upstreammodelpriceDescFetchedAt.Default.(func() time.Time)
+	upstreampricechangeFields := schema.UpstreamPriceChange{}.Fields()
+	_ = upstreampricechangeFields
+	// upstreampricechangeDescModelName is the schema descriptor for model_name field.
+	upstreampricechangeDescModelName := upstreampricechangeFields[1].Descriptor()
+	// upstreampricechange.ModelNameValidator is a validator for the "model_name" field. It is called by the builders before save.
+	upstreampricechange.ModelNameValidator = upstreampricechangeDescModelName.Validators[0].(func(string) error)
+	// upstreampricechangeDescChangeType is the schema descriptor for change_type field.
+	upstreampricechangeDescChangeType := upstreampricechangeFields[3].Descriptor()
+	// upstreampricechange.ChangeTypeValidator is a validator for the "change_type" field. It is called by the builders before save.
+	upstreampricechange.ChangeTypeValidator = upstreampricechangeDescChangeType.Validators[0].(func(string) error)
+	// upstreampricechangeDescInputDeltaPct is the schema descriptor for input_delta_pct field.
+	upstreampricechangeDescInputDeltaPct := upstreampricechangeFields[8].Descriptor()
+	// upstreampricechange.DefaultInputDeltaPct holds the default value on creation for the input_delta_pct field.
+	upstreampricechange.DefaultInputDeltaPct = upstreampricechangeDescInputDeltaPct.Default.(float64)
+	// upstreampricechangeDescOutputDeltaPct is the schema descriptor for output_delta_pct field.
+	upstreampricechangeDescOutputDeltaPct := upstreampricechangeFields[9].Descriptor()
+	// upstreampricechange.DefaultOutputDeltaPct holds the default value on creation for the output_delta_pct field.
+	upstreampricechange.DefaultOutputDeltaPct = upstreampricechangeDescOutputDeltaPct.Default.(float64)
+	// upstreampricechangeDescDetectedAt is the schema descriptor for detected_at field.
+	upstreampricechangeDescDetectedAt := upstreampricechangeFields[10].Descriptor()
+	// upstreampricechange.DefaultDetectedAt holds the default value on creation for the detected_at field.
+	upstreampricechange.DefaultDetectedAt = upstreampricechangeDescDetectedAt.Default.(func() time.Time)
+	// upstreampricechangeDescNotified is the schema descriptor for notified field.
+	upstreampricechangeDescNotified := upstreampricechangeFields[11].Descriptor()
+	// upstreampricechange.DefaultNotified holds the default value on creation for the notified field.
+	upstreampricechange.DefaultNotified = upstreampricechangeDescNotified.Default.(bool)
+	// upstreampricechangeDescStatus is the schema descriptor for status field.
+	upstreampricechangeDescStatus := upstreampricechangeFields[12].Descriptor()
+	// upstreampricechange.DefaultStatus holds the default value on creation for the status field.
+	upstreampricechange.DefaultStatus = upstreampricechangeDescStatus.Default.(string)
+	// upstreampricechange.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	upstreampricechange.StatusValidator = upstreampricechangeDescStatus.Validators[0].(func(string) error)
+	// upstreampricechangeDescSuggestedInputPrice is the schema descriptor for suggested_input_price field.
+	upstreampricechangeDescSuggestedInputPrice := upstreampricechangeFields[13].Descriptor()
+	// upstreampricechange.DefaultSuggestedInputPrice holds the default value on creation for the suggested_input_price field.
+	upstreampricechange.DefaultSuggestedInputPrice = upstreampricechangeDescSuggestedInputPrice.Default.(float64)
+	// upstreampricechangeDescSuggestedOutputPrice is the schema descriptor for suggested_output_price field.
+	upstreampricechangeDescSuggestedOutputPrice := upstreampricechangeFields[14].Descriptor()
+	// upstreampricechange.DefaultSuggestedOutputPrice holds the default value on creation for the suggested_output_price field.
+	upstreampricechange.DefaultSuggestedOutputPrice = upstreampricechangeDescSuggestedOutputPrice.Default.(float64)
+	// upstreampricechangeDescAppliedTarget is the schema descriptor for applied_target field.
+	upstreampricechangeDescAppliedTarget := upstreampricechangeFields[18].Descriptor()
+	// upstreampricechange.AppliedTargetValidator is a validator for the "applied_target" field. It is called by the builders before save.
+	upstreampricechange.AppliedTargetValidator = upstreampricechangeDescAppliedTarget.Validators[0].(func(string) error)
+	// upstreampricechangeDescAppliedTargetID is the schema descriptor for applied_target_id field.
+	upstreampricechangeDescAppliedTargetID := upstreampricechangeFields[19].Descriptor()
+	// upstreampricechange.DefaultAppliedTargetID holds the default value on creation for the applied_target_id field.
+	upstreampricechange.DefaultAppliedTargetID = upstreampricechangeDescAppliedTargetID.Default.(int64)
+	upstreampricesourceFields := schema.UpstreamPriceSource{}.Fields()
+	_ = upstreampricesourceFields
+	// upstreampricesourceDescName is the schema descriptor for name field.
+	upstreampricesourceDescName := upstreampricesourceFields[0].Descriptor()
+	// upstreampricesource.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	upstreampricesource.NameValidator = func() func(string) error {
+		validators := upstreampricesourceDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// upstreampricesourceDescPlatform is the schema descriptor for platform field.
+	upstreampricesourceDescPlatform := upstreampricesourceFields[1].Descriptor()
+	// upstreampricesource.DefaultPlatform holds the default value on creation for the platform field.
+	upstreampricesource.DefaultPlatform = upstreampricesourceDescPlatform.Default.(string)
+	// upstreampricesource.PlatformValidator is a validator for the "platform" field. It is called by the builders before save.
+	upstreampricesource.PlatformValidator = upstreampricesourceDescPlatform.Validators[0].(func(string) error)
+	// upstreampricesourceDescBaseURL is the schema descriptor for base_url field.
+	upstreampricesourceDescBaseURL := upstreampricesourceFields[2].Descriptor()
+	// upstreampricesource.BaseURLValidator is a validator for the "base_url" field. It is called by the builders before save.
+	upstreampricesource.BaseURLValidator = func() func(string) error {
+		validators := upstreampricesourceDescBaseURL.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(base_url string) error {
+			for _, fn := range fns {
+				if err := fn(base_url); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// upstreampricesourceDescPricingEndpoint is the schema descriptor for pricing_endpoint field.
+	upstreampricesourceDescPricingEndpoint := upstreampricesourceFields[3].Descriptor()
+	// upstreampricesource.DefaultPricingEndpoint holds the default value on creation for the pricing_endpoint field.
+	upstreampricesource.DefaultPricingEndpoint = upstreampricesourceDescPricingEndpoint.Default.(string)
+	// upstreampricesource.PricingEndpointValidator is a validator for the "pricing_endpoint" field. It is called by the builders before save.
+	upstreampricesource.PricingEndpointValidator = upstreampricesourceDescPricingEndpoint.Validators[0].(func(string) error)
+	// upstreampricesourceDescAPIKey is the schema descriptor for api_key field.
+	upstreampricesourceDescAPIKey := upstreampricesourceFields[4].Descriptor()
+	// upstreampricesource.APIKeyValidator is a validator for the "api_key" field. It is called by the builders before save.
+	upstreampricesource.APIKeyValidator = upstreampricesourceDescAPIKey.Validators[0].(func(string) error)
+	// upstreampricesourceDescParserType is the schema descriptor for parser_type field.
+	upstreampricesourceDescParserType := upstreampricesourceFields[5].Descriptor()
+	// upstreampricesource.DefaultParserType holds the default value on creation for the parser_type field.
+	upstreampricesource.DefaultParserType = upstreampricesourceDescParserType.Default.(string)
+	// upstreampricesource.ParserTypeValidator is a validator for the "parser_type" field. It is called by the builders before save.
+	upstreampricesource.ParserTypeValidator = upstreampricesourceDescParserType.Validators[0].(func(string) error)
+	// upstreampricesourceDescSyncIntervalMinutes is the schema descriptor for sync_interval_minutes field.
+	upstreampricesourceDescSyncIntervalMinutes := upstreampricesourceFields[8].Descriptor()
+	// upstreampricesource.DefaultSyncIntervalMinutes holds the default value on creation for the sync_interval_minutes field.
+	upstreampricesource.DefaultSyncIntervalMinutes = upstreampricesourceDescSyncIntervalMinutes.Default.(int)
+	// upstreampricesourceDescAlertThresholdPct is the schema descriptor for alert_threshold_pct field.
+	upstreampricesourceDescAlertThresholdPct := upstreampricesourceFields[9].Descriptor()
+	// upstreampricesource.DefaultAlertThresholdPct holds the default value on creation for the alert_threshold_pct field.
+	upstreampricesource.DefaultAlertThresholdPct = upstreampricesourceDescAlertThresholdPct.Default.(float64)
+	// upstreampricesourceDescCooldownMinutes is the schema descriptor for cooldown_minutes field.
+	upstreampricesourceDescCooldownMinutes := upstreampricesourceFields[10].Descriptor()
+	// upstreampricesource.DefaultCooldownMinutes holds the default value on creation for the cooldown_minutes field.
+	upstreampricesource.DefaultCooldownMinutes = upstreampricesourceDescCooldownMinutes.Default.(int)
+	// upstreampricesourceDescEnabled is the schema descriptor for enabled field.
+	upstreampricesourceDescEnabled := upstreampricesourceFields[11].Descriptor()
+	// upstreampricesource.DefaultEnabled holds the default value on creation for the enabled field.
+	upstreampricesource.DefaultEnabled = upstreampricesourceDescEnabled.Default.(bool)
+	// upstreampricesourceDescLastSyncStatus is the schema descriptor for last_sync_status field.
+	upstreampricesourceDescLastSyncStatus := upstreampricesourceFields[13].Descriptor()
+	// upstreampricesource.DefaultLastSyncStatus holds the default value on creation for the last_sync_status field.
+	upstreampricesource.DefaultLastSyncStatus = upstreampricesourceDescLastSyncStatus.Default.(string)
+	// upstreampricesource.LastSyncStatusValidator is a validator for the "last_sync_status" field. It is called by the builders before save.
+	upstreampricesource.LastSyncStatusValidator = upstreampricesourceDescLastSyncStatus.Validators[0].(func(string) error)
+	// upstreampricesourceDescLastSyncError is the schema descriptor for last_sync_error field.
+	upstreampricesourceDescLastSyncError := upstreampricesourceFields[14].Descriptor()
+	// upstreampricesource.LastSyncErrorValidator is a validator for the "last_sync_error" field. It is called by the builders before save.
+	upstreampricesource.LastSyncErrorValidator = upstreampricesourceDescLastSyncError.Validators[0].(func(string) error)
+	// upstreampricesourceDescLastHash is the schema descriptor for last_hash field.
+	upstreampricesourceDescLastHash := upstreampricesourceFields[15].Descriptor()
+	// upstreampricesource.LastHashValidator is a validator for the "last_hash" field. It is called by the builders before save.
+	upstreampricesource.LastHashValidator = upstreampricesourceDescLastHash.Validators[0].(func(string) error)
+	// upstreampricesourceDescCreatedAt is the schema descriptor for created_at field.
+	upstreampricesourceDescCreatedAt := upstreampricesourceFields[16].Descriptor()
+	// upstreampricesource.DefaultCreatedAt holds the default value on creation for the created_at field.
+	upstreampricesource.DefaultCreatedAt = upstreampricesourceDescCreatedAt.Default.(func() time.Time)
+	// upstreampricesourceDescUpdatedAt is the schema descriptor for updated_at field.
+	upstreampricesourceDescUpdatedAt := upstreampricesourceFields[17].Descriptor()
+	// upstreampricesource.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	upstreampricesource.DefaultUpdatedAt = upstreampricesourceDescUpdatedAt.Default.(func() time.Time)
+	// upstreampricesource.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	upstreampricesource.UpdateDefaultUpdatedAt = upstreampricesourceDescUpdatedAt.UpdateDefault.(func() time.Time)
 	usagecleanuptaskMixin := schema.UsageCleanupTask{}.Mixin()
 	usagecleanuptaskMixinFields0 := usagecleanuptaskMixin[0].Fields()
 	_ = usagecleanuptaskMixinFields0

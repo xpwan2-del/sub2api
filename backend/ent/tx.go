@@ -20,6 +20,10 @@ type Tx struct {
 	Account *AccountClient
 	// AccountGroup is the client for interacting with the AccountGroup builders.
 	AccountGroup *AccountGroupClient
+	// AdminNotification is the client for interacting with the AdminNotification builders.
+	AdminNotification *AdminNotificationClient
+	// AdminNotificationRead is the client for interacting with the AdminNotificationRead builders.
+	AdminNotificationRead *AdminNotificationReadClient
 	// Announcement is the client for interacting with the Announcement builders.
 	Announcement *AnnouncementClient
 	// AnnouncementRead is the client for interacting with the AnnouncementRead builders.
@@ -76,6 +80,12 @@ type Tx struct {
 	SubscriptionPlan *SubscriptionPlanClient
 	// TLSFingerprintProfile is the client for interacting with the TLSFingerprintProfile builders.
 	TLSFingerprintProfile *TLSFingerprintProfileClient
+	// UpstreamModelPrice is the client for interacting with the UpstreamModelPrice builders.
+	UpstreamModelPrice *UpstreamModelPriceClient
+	// UpstreamPriceChange is the client for interacting with the UpstreamPriceChange builders.
+	UpstreamPriceChange *UpstreamPriceChangeClient
+	// UpstreamPriceSource is the client for interacting with the UpstreamPriceSource builders.
+	UpstreamPriceSource *UpstreamPriceSourceClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
 	UsageCleanupTask *UsageCleanupTaskClient
 	// UsageLog is the client for interacting with the UsageLog builders.
@@ -226,6 +236,8 @@ func (tx *Tx) init() {
 	tx.APIKey = NewAPIKeyClient(tx.config)
 	tx.Account = NewAccountClient(tx.config)
 	tx.AccountGroup = NewAccountGroupClient(tx.config)
+	tx.AdminNotification = NewAdminNotificationClient(tx.config)
+	tx.AdminNotificationRead = NewAdminNotificationReadClient(tx.config)
 	tx.Announcement = NewAnnouncementClient(tx.config)
 	tx.AnnouncementRead = NewAnnouncementReadClient(tx.config)
 	tx.AuthIdentity = NewAuthIdentityClient(tx.config)
@@ -254,6 +266,9 @@ func (tx *Tx) init() {
 	tx.Setting = NewSettingClient(tx.config)
 	tx.SubscriptionPlan = NewSubscriptionPlanClient(tx.config)
 	tx.TLSFingerprintProfile = NewTLSFingerprintProfileClient(tx.config)
+	tx.UpstreamModelPrice = NewUpstreamModelPriceClient(tx.config)
+	tx.UpstreamPriceChange = NewUpstreamPriceChangeClient(tx.config)
+	tx.UpstreamPriceSource = NewUpstreamPriceSourceClient(tx.config)
 	tx.UsageCleanupTask = NewUsageCleanupTaskClient(tx.config)
 	tx.UsageLog = NewUsageLogClient(tx.config)
 	tx.User = NewUserClient(tx.config)
