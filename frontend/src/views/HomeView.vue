@@ -17,13 +17,13 @@
     <JarvisGatewayScene
       class="home-jarvis-scene"
       :copy-kicker="t('home.jarvis.kicker')"
-      :copy-title="t('home.jarvis.title')"
-      :copy-description="t('home.jarvis.description')"
+      :copy-title="siteName"
+      :copy-description="siteSubtitle"
     >
       <template #brand>
         <router-link to="/home" class="home-jarvis-brand-card">
-          <img :src="brandLogo" alt="TOP-AI" class="home-jarvis-wide-logo" />
-          <span class="home-jarvis-brand-word">TOP-AI</span>
+          <img :src="brandLogo" :alt="siteName" class="home-jarvis-wide-logo" />
+          <span class="home-jarvis-brand-word">{{ siteName }}</span>
         </router-link>
       </template>
 
@@ -74,7 +74,7 @@
     </JarvisGatewayScene>
 
     <footer class="home-jarvis-footer">
-      © {{ currentYear }} Top-ai. {{ t('home.footer.allRightsReserved') }}
+      © {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}
     </footer>
   </div>
 </template>
@@ -93,6 +93,8 @@ const authStore = useAuthStore()
 const appStore = useAppStore()
 
 // Site settings - directly from appStore (already initialized from injected config)
+const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'TOP-AI')
+const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || t('home.jarvis.description'))
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
