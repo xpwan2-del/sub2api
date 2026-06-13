@@ -38,6 +38,13 @@
         <Icon name="grid" size="sm" />
         <span>{{ t('home.models') }}</span>
       </router-link>
+      <a
+        :href="canvasPath"
+        class="public-topbar-nav-link"
+      >
+        <Icon name="brain" size="sm" />
+        <span>{{ t('home.canvas') }}</span>
+      </a>
       <LocaleSwitcher />
       <button
         class="public-topbar-icon-button"
@@ -78,6 +85,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 const { appStore, siteName, siteSubtitle, brandLogo, docLink, isExternalDocUrl } = usePublicBranding()
 
+const canvasPath = '/apps/canvas'
 const displaySubtitle = computed(() => siteSubtitle.value || 'Pioneers of AI')
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)

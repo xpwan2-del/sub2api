@@ -5,6 +5,7 @@ export default {
     viewDocs: '查看文档',
     docs: '文档',
     models: '模型广场',
+    canvas: 'AI 画布',
     switchToLight: '切换到浅色模式',
     switchToDark: '切换到深色模式',
     dashboard: '控制台',

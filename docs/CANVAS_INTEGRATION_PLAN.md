@@ -22,10 +22,11 @@
 - 已确认第一版不嵌入 iframe，不把画布源码塞进 sub2api。
 - 已确认两个项目继续平级独立：`sub2api` 和 `infinite-canvas`
 - 已确认 sub2api 第一版只做最小必要改动。
+- 已在 sub2api 公共首页导航增加“AI 画布 / AI Canvas”入口，浏览器跳转到 `/apps/canvas`。
 
 还没有改：
 
-- sub2api 首页还没有新增“AI 画布 / Canvas”真实入口。
+- sub2api 登录后控制台侧边栏还没有新增可选“AI 画布 / Canvas”入口。
 - sub2api 后端还没有新增 canvas session/SSO endpoint。
 - sub2api 网关计费还没有增加 `source=canvas` 来源标记。
 - sub2api 还没有提供给画布服务端使用的内部调用凭证方案。

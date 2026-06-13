@@ -5,6 +5,7 @@ export default {
     viewDocs: 'View Documentation',
     docs: 'Docs',
     models: 'Models',
+    canvas: 'AI Canvas',
     switchToLight: 'Switch to Light Mode',
     switchToDark: 'Switch to Dark Mode',
     dashboard: 'Dashboard',
