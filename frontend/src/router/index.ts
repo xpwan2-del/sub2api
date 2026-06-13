@@ -58,6 +58,16 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/models',
+    name: 'ModelCatalog',
+    component: () => import('@/views/public/ModelCatalogView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Model Catalog',
+      titleKey: 'modelCatalog.title'
+    }
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/auth/LoginView.vue'),

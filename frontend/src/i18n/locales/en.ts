@@ -4,6 +4,7 @@ export default {
     viewOnGithub: 'View on GitHub',
     viewDocs: 'View Documentation',
     docs: 'Docs',
+    models: 'Models',
     switchToLight: 'Switch to Light Mode',
     switchToDark: 'Switch to Dark Mode',
     dashboard: 'Dashboard',
@@ -313,6 +314,58 @@ export default {
       redirecting: 'Redirecting to login page...',
       restarting: 'Service is restarting, please wait...',
       timeout: 'Service restart is taking longer than expected. Please refresh the page manually.'
+    }
+  },
+
+  modelCatalog: {
+    navLabel: 'Models',
+    kicker: 'Public Model Catalog',
+    title: 'Model Catalog',
+    subtitle: '',
+    available: 'Available',
+    loading: 'Syncing model catalog...',
+    loadFailed: 'Failed to load model catalog',
+    retry: 'Retry',
+    empty: 'No matching models are available, or no sellable models have been connected yet.',
+    searchPlaceholder: 'Search model or platform',
+    copyName: 'Copy model',
+    copied: 'Model name copied',
+    startUsing: 'Start using',
+    stats: {
+      models: 'Models',
+      platforms: 'Platforms',
+      currency: 'Billing'
+    },
+    filters: {
+      allPlatforms: 'All platforms',
+      allCapabilities: 'All capabilities',
+      allBilling: 'All billing'
+    },
+    capabilities: {
+      reasoning: 'Reasoning',
+      coding: 'Coding',
+      longContext: 'Long context',
+      lowCost: 'Low cost',
+      multimodal: 'Multimodal',
+      fast: 'Fast'
+    },
+    billingModes: {
+      token: 'Token',
+      image: 'Image',
+      per_request: 'Per request',
+      unknown: 'Price pending'
+    },
+    price: {
+      input: 'Input / 1M',
+      output: 'Output / 1M',
+      image: 'Image output',
+      request: 'Per request',
+      unavailable: 'Price pending'
+    },
+    sort: {
+      price: 'Lowest price',
+      name: 'Name',
+      provider: 'Platform'
     }
   },
 

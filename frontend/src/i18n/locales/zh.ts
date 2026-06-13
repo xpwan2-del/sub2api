@@ -4,6 +4,7 @@ export default {
     viewOnGithub: '在 GitHub 上查看',
     viewDocs: '查看文档',
     docs: '文档',
+    models: '模型广场',
     switchToLight: '切换到浅色模式',
     switchToDark: '切换到深色模式',
     dashboard: '控制台',
@@ -313,6 +314,58 @@ export default {
       redirecting: '正在跳转到登录页面...',
       restarting: '服务正在重启，请稍候...',
       timeout: '服务重启时间超出预期，请手动刷新页面。'
+    }
+  },
+
+  modelCatalog: {
+    navLabel: '模型广场',
+    kicker: 'Public Model Catalog',
+    title: '模型广场',
+    subtitle: '',
+    available: '可用',
+    loading: '正在同步模型列表...',
+    loadFailed: '模型列表加载失败',
+    retry: '重试',
+    empty: '当前没有符合条件的模型，或管理员尚未接入可售模型。',
+    searchPlaceholder: '搜索模型名或平台',
+    copyName: '复制模型名',
+    copied: '模型名已复制',
+    startUsing: '开始使用',
+    stats: {
+      models: '模型',
+      platforms: '平台',
+      currency: '结算'
+    },
+    filters: {
+      allPlatforms: '全部平台',
+      allCapabilities: '全部能力',
+      allBilling: '全部计费'
+    },
+    capabilities: {
+      reasoning: '推理',
+      coding: '编程',
+      longContext: '长上下文',
+      lowCost: '低价',
+      multimodal: '多模态',
+      fast: '高速'
+    },
+    billingModes: {
+      token: 'Token 计费',
+      image: '图片计费',
+      per_request: '按次计费',
+      unknown: '价格待配置'
+    },
+    price: {
+      input: '输入 / 1M',
+      output: '输出 / 1M',
+      image: '图片输出',
+      request: '单次请求',
+      unavailable: '价格待配置'
+    },
+    sort: {
+      price: '价格优先',
+      name: '按名称',
+      provider: '按平台'
     }
   },
 
