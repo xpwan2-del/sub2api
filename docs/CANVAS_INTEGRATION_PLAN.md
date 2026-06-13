@@ -23,6 +23,7 @@
 - 已确认两个项目继续平级独立：`sub2api` 和 `infinite-canvas`
 - 已确认 sub2api 第一版只做最小必要改动。
 - 已在 sub2api 公共首页导航增加“AI 画布 / AI Canvas”入口，浏览器跳转到 `/apps/canvas`。
+- Infinite Canvas 已支持 `CANVAS_BASE_PATH=/apps/canvas`，静态资源、同源 API、WebDAV proxy 和普通 href 会使用 base path。
 
 还没有改：
 
@@ -30,7 +31,6 @@
 - sub2api 后端还没有新增 canvas session/SSO endpoint。
 - sub2api 网关计费还没有增加 `source=canvas` 来源标记。
 - sub2api 还没有提供给画布服务端使用的内部调用凭证方案。
-- Infinite Canvas 还没有支持 `/apps/canvas` basePath。
 - Infinite Canvas 还没有接入 TOP-AI 登录态。
 - Infinite Canvas 还没有隐藏本地登录、注册、充值、credits 展示。
 - Infinite Canvas 的 AI 请求还没有改为走 TOP-AI Gateway。
