@@ -1623,6 +1623,10 @@ func (stubGroupRepo) UpdateSortOrders(ctx context.Context, updates []service.Gro
 	return nil
 }
 
+func (stubGroupRepo) UpdateRateMultiplier(ctx context.Context, groupID int64, multiplier float64) error {
+	return errors.New("not implemented")
+}
+
 type stubAccountRepo struct {
 	bulkUpdateIDs []int64
 }

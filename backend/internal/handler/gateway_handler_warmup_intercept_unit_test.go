@@ -97,6 +97,7 @@ func (f *fakeGroupRepo) BindAccountsToGroup(context.Context, int64, []int64) err
 func (f *fakeGroupRepo) UpdateSortOrders(context.Context, []service.GroupSortOrderUpdate) error {
 	return nil
 }
+func (f *fakeGroupRepo) UpdateRateMultiplier(context.Context, int64, float64) error { return nil }
 
 type fakeConcurrencyCache struct{}
 
