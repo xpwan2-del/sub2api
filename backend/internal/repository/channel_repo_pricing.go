@@ -239,6 +239,42 @@ func (r *channelRepository) ListGroupsByChannels(ctx context.Context, channelIDs
 	return result, nil
 }
 
+// CountDistinctModelsByGroups 返回每个 group 绑定的去重模型数。
+// 用于 lock_price 误伤检测：ModelCount > 1 表示改该 group 倍率会连带影响其他模型。
+// 通过 channel_groups → channel_model_pricing.models JSONB 展开后按 group 聚合 DISTINCT 模型。
+func (r *channelRepository) CountDistinctModelsByGroups(ctx context.Context, groupIDs []int64) (map[int64]int, error) {
+	out := make(map[int64]int, len(groupIDs))
+	if len(groupIDs) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT cg.group_id, COUNT(DISTINCT m) AS model_count
+		 FROM channel_groups cg
+		 JOIN channel_model_pricing p ON p.channel_id = cg.channel_id
+		 CROSS JOIN LATERAL jsonb_array_elements_text(p.models) AS m
+		 WHERE cg.group_id = ANY($1)
+		 GROUP BY cg.group_id`,
+		pq.Array(groupIDs),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("count distinct models by groups: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	for rows.Next() {
+		var gid int64
+		var cnt int
+		if err := rows.Scan(&gid, &cnt); err != nil {
+			return nil, fmt.Errorf("scan model count by group: %w", err)
+		}
+		out[gid] = cnt
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate model count by group: %w", err)
+	}
+	return out, nil
+}
+
 // --- 批量加载辅助方法 ---
 
 // batchLoadModelPricing 批量加载多个渠道的模型定价（含区间）

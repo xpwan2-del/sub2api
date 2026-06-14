@@ -59,6 +59,8 @@ type ChannelRepository interface {
 	ListChannelsByModel(ctx context.Context, modelName string) ([]ChannelApplyTarget, error)
 	// ListGroupsByChannels 返回与给定 channels 关联的所有 group（通过 channel_groups）。
 	ListGroupsByChannels(ctx context.Context, channelIDs []int64) ([]GroupApplyTarget, error)
+	// CountDistinctModelsByGroups 返回每个 group 绑定的去重模型数（误伤检测用）。
+	CountDistinctModelsByGroups(ctx context.Context, groupIDs []int64) (map[int64]int, error)
 }
 
 // ChannelApplyTarget 渠道下拉项（follow_cost 模式）。
@@ -72,6 +74,7 @@ type GroupApplyTarget struct {
 	ID             int64   `json:"id"`
 	Name           string  `json:"name"`
 	RateMultiplier float64 `json:"rate_multiplier"`
+	ModelCount     int     `json:"model_count"` // 该 group 绑定的去重模型数（误伤检测用）
 }
 
 // channelModelKey 渠道缓存复合键（显式包含 platform 防止跨平台同名模型冲突）

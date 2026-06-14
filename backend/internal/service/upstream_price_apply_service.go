@@ -46,6 +46,8 @@ type GroupRateWriter interface {
 type ApplyTargetReader interface {
 	ListChannelsByModel(ctx context.Context, modelName string) ([]ChannelApplyTarget, error)
 	ListGroupsByChannels(ctx context.Context, channelIDs []int64) ([]GroupApplyTarget, error)
+	// CountDistinctModelsByGroups 返回每个 group 绑定的去重模型数（误伤检测用）。
+	CountDistinctModelsByGroups(ctx context.Context, groupIDs []int64) (map[int64]int, error)
 }
 
 // ApplyTargetsResponse apply 弹窗下拉数据。

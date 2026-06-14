@@ -55,6 +55,10 @@ func (a applyTargetReaderAdapter) ListGroupsByChannels(ctx context.Context, chan
 	return a.repo.ListGroupsByChannels(ctx, channelIDs)
 }
 
+func (a applyTargetReaderAdapter) CountDistinctModelsByGroups(ctx context.Context, groupIDs []int64) (map[int64]int, error) {
+	return a.repo.CountDistinctModelsByGroups(ctx, groupIDs)
+}
+
 // ReplaceModelPricingForModel delegates to ChannelRepository.
 func (a channelPricingWriterAdapter) ReplaceModelPricingForModel(ctx context.Context, channelID int64, modelName string, inputPrice, outputPrice float64) error {
 	if a.channel == nil || a.channel.repo == nil {

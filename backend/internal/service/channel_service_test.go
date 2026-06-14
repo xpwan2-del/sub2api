@@ -175,6 +175,10 @@ func (m *mockChannelRepository) ListGroupsByChannels(context.Context, []int64) (
 	return []GroupApplyTarget{}, nil
 }
 
+func (m *mockChannelRepository) CountDistinctModelsByGroups(context.Context, []int64) (map[int64]int, error) {
+	return map[int64]int{}, nil
+}
+
 // ---------------------------------------------------------------------------
 // Mock: APIKeyAuthCacheInvalidator
 // ---------------------------------------------------------------------------
