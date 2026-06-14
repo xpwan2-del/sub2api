@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
@@ -32,7 +33,7 @@ func NewAdminNotificationRepository(client *dbent.Client) service.AdminNotificat
 // Create 插入一条新通知，回写生成的 ID / 时间戳。
 func (r *adminNotificationRepository) Create(ctx context.Context, n *dbent.AdminNotification) error {
 	if n == nil {
-		return service.ErrAdminNotificationNotFound
+		return errors.New("admin notification is nil")
 	}
 	client := clientFromContext(ctx, r.client)
 

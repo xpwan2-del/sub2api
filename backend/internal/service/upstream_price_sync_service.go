@@ -53,6 +53,10 @@ type UpstreamPriceSyncConfig struct {
 	// DefaultIntervalMinutes source.SyncIntervalMinutes<=0 时的回退同步间隔。
 	// <=0 时用 upstreamPriceSyncDefaultIntervalMinutes。
 	DefaultIntervalMinutes int
+	// FrontendURL 站点基础 URL（来自 server.frontend_url 配置），用于把告警邮件里的
+	// target_link 拼成绝对 URL（站内通知仍可用相对路径，前端 bell 会处理两者）。
+	// 留空时 target_link 保持相对路径（站内通知可用，邮件链接不可点击）。
+	FrontendURL string
 }
 
 // GroupRateReader 读取某本地模型相关 group 的代表性计费倍率。
@@ -470,7 +474,7 @@ func (s *UpstreamPriceSyncService) emitAlert(ctx context.Context, src *dbent.Ups
 
 	severity := classifySeverity(rows)
 	title, content := buildChangeReport(src, rows)
-	targetLink := fmt.Sprintf("/admin/upstream-pricing/changes?source=%d", src.ID)
+	targetLink := buildTargetLink(s.cfg.FrontendURL, src.ID)
 	changeIDs := make([]int64, 0, len(rows))
 	for _, r := range rows {
 		if r.ID > 0 {
@@ -522,6 +526,19 @@ func (s *UpstreamPriceSyncService) emitAlert(ctx context.Context, src *dbent.Ups
 			slog.Warn("upstream price sync: mark changes notified failed", "source_id", src.ID, "err", err)
 		}
 	}
+}
+
+// buildTargetLink 生成价格变动详情链接。配置了 frontendURL（server.frontend_url）
+// 时拼成绝对 URL（邮件可点击），否则回退到相对路径（仅站内通知可用）。
+// 与 NotificationEmailService.baseURL 的语义保持一致，前端 AdminNotificationBell
+// 对绝对/相对链接都已做处理（http 开头开新窗，否则 router.push）。
+func buildTargetLink(frontendURL string, sourceID int64) string {
+	path := fmt.Sprintf("/admin/upstream-pricing/changes?source=%d", sourceID)
+	base := strings.TrimSpace(frontendURL)
+	if base == "" {
+		return path
+	}
+	return strings.TrimRight(base, "/") + path
 }
 
 // markSuccess 写成功同步状态。

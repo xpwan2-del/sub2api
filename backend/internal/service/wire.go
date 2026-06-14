@@ -689,6 +689,7 @@ func ProvideUpstreamPriceSyncService(
 	redisClient *redis.Client,
 	encryptor SecretEncryptor,
 	httpClient HTTPUpstream,
+	cfg *config.Config,
 ) *UpstreamPriceSyncService {
 	svc := NewUpstreamPriceSyncService(
 		priceRepo,
@@ -700,7 +701,7 @@ func ProvideUpstreamPriceSyncService(
 		redisClient,
 		encryptor,
 		httpClient,
-		UpstreamPriceSyncConfig{},
+		UpstreamPriceSyncConfig{FrontendURL: cfg.Server.FrontendURL},
 	)
 	svc.Start()
 	return svc

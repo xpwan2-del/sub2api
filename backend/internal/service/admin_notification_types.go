@@ -29,7 +29,7 @@ type AdminNotificationRepository interface {
 	ListUnreadByUser(ctx context.Context, userID int64, limit int) ([]*dbent.AdminNotification, error)
 
 	// CountUnreadByUser 统计该 admin 用户未读通知数量。
-	CountUnreadByUser(ctx context.Context, userId int64) (int64, error)
+	CountUnreadByUser(ctx context.Context, userID int64) (int64, error)
 
 	// MarkRead 标记某通知对该用户已读。幂等：重复标记不报错、不重复插入。
 	MarkRead(ctx context.Context, notificationID, userID int64, readAt time.Time) error
