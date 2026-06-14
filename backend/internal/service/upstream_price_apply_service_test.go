@@ -26,6 +26,16 @@ type applyFakeRepo struct {
 		id, adminID int64
 		called      bool
 	}
+	snapshot struct {
+		id, channelID   int64
+		prevIn, prevOut float64
+		prevMul         *float64
+		called          bool
+	}
+	reverted struct {
+		id, adminID int64
+		called      bool
+	}
 }
 
 func newApplyFakeRepo() *applyFakeRepo {
@@ -57,6 +67,26 @@ func (r *applyFakeRepo) UpdateChangeDismissed(_ context.Context, id, adminID int
 	}{id: id, adminID: adminID, called: true}
 	if c, ok := r.changes[id]; ok {
 		c.Status = UpstreamPriceChangeStatusDismissed
+	}
+	return nil
+}
+func (r *applyFakeRepo) SetAppliedSnapshot(_ context.Context, id, channelID int64, prevIn, prevOut float64, prevMul *float64) error {
+	r.snapshot = struct {
+		id, channelID   int64
+		prevIn, prevOut float64
+		prevMul         *float64
+		called          bool
+	}{id: id, channelID: channelID, prevIn: prevIn, prevOut: prevOut, prevMul: prevMul, called: true}
+	return nil
+}
+func (r *applyFakeRepo) MarkReverted(_ context.Context, id, adminID int64) error {
+	r.reverted = struct {
+		id, adminID int64
+		called      bool
+	}{id: id, adminID: adminID, called: true}
+	if c, ok := r.changes[id]; ok {
+		now := time.Now()
+		c.RevertedAt = &now
 	}
 	return nil
 }

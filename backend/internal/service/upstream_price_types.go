@@ -62,4 +62,6 @@ type UpstreamPriceRepository interface {
 	// UpdateChangeDismissed 标记一条 change 为 dismissed（管理员忽略，不进计费）。
 	UpdateChangeDismissed(ctx context.Context, id, adminID int64) error
 	MarkChangesNotified(ctx context.Context, ids []int64) error
+	SetAppliedSnapshot(ctx context.Context, id, channelID int64, prevInputPrice, prevOutputPrice float64, prevMultiplier *float64) error
+	MarkReverted(ctx context.Context, id, adminID int64) error
 }

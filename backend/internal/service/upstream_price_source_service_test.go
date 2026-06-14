@@ -152,6 +152,10 @@ func (r *fakeUpstreamPriceRepo) UpdateChangeDismissed(context.Context, int64, in
 	panic("unused")
 }
 func (r *fakeUpstreamPriceRepo) MarkChangesNotified(context.Context, []int64) error { panic("unused") }
+func (r *fakeUpstreamPriceRepo) SetAppliedSnapshot(context.Context, int64, int64, float64, float64, *float64) error {
+	panic("unused")
+}
+func (r *fakeUpstreamPriceRepo) MarkReverted(context.Context, int64, int64) error { panic("unused") }
 
 // --- tests ---
 

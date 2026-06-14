@@ -211,6 +211,16 @@ func (r *syncPriceRepo) GetChange(_ context.Context, id int64) (*dbent.UpstreamP
 }
 func (r *syncPriceRepo) UpdateChangeApplied(context.Context, int64, int64, string, int64) error { return nil }
 func (r *syncPriceRepo) UpdateChangeDismissed(context.Context, int64, int64) error               { return nil }
+func (r *syncPriceRepo) SetAppliedSnapshot(_ context.Context, _ int64, _ int64, _, _ float64, _ *float64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return nil
+}
+func (r *syncPriceRepo) MarkReverted(_ context.Context, _, _ int64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return nil
+}
 func (r *syncPriceRepo) MarkChangesNotified(_ context.Context, ids []int64) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

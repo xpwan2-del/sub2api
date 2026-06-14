@@ -418,6 +418,39 @@ func (r *upstreamPriceRepository) MarkChangesNotified(ctx context.Context, ids [
 	return translatePersistenceError(err, nil, nil)
 }
 
+// SetAppliedSnapshot 记录 apply 前的实际值快照（覆盖保护 + 撤销回滚用）。
+// prevMultiplier 为 nil 时不写倍率字段（follow_cost 模式）。
+func (r *upstreamPriceRepository) SetAppliedSnapshot(
+	ctx context.Context,
+	id, channelID int64,
+	prevInputPrice, prevOutputPrice float64,
+	prevMultiplier *float64,
+) error {
+	client := clientFromContext(ctx, r.client)
+	upd := client.UpstreamPriceChange.UpdateOneID(id).
+		SetAppliedPrevInputPrice(prevInputPrice).
+		SetAppliedPrevOutputPrice(prevOutputPrice).
+		SetAppliedChannelID(channelID)
+	if prevMultiplier != nil {
+		upd = upd.SetPrevMultiplier(*prevMultiplier)
+	}
+	if _, err := upd.Save(ctx); err != nil {
+		return translatePersistenceError(err, service.ErrUpstreamPriceChangeNotFound, nil)
+	}
+	return nil
+}
+
+// MarkReverted 标记 change 已撤销（reverted_at + reverted_by）。status 保持 applied。
+func (r *upstreamPriceRepository) MarkReverted(ctx context.Context, id, adminID int64) error {
+	client := clientFromContext(ctx, r.client)
+	now := time.Now().UTC()
+	_, err := client.UpstreamPriceChange.UpdateOneID(id).
+		SetRevertedAt(now).
+		SetRevertedBy(adminID).
+		Save(ctx)
+	return translatePersistenceError(err, service.ErrUpstreamPriceChangeNotFound, nil)
+}
+
 // ============================================================
 // helpers
 // ============================================================
