@@ -109,12 +109,29 @@ export interface ApplyTargetGroup {
   id: number
   name: string
   rate_multiplier: number
+  model_count: number
+}
+
+/** apply 弹窗中某个 group 的告警（如该分组下无对应模型，无法应用） */
+export interface ApplyTargetWarning {
+  group_id: number
+  group_name: string
+  message: string
 }
 
 /** apply 弹窗下拉数据：GET /changes/:id/targets */
 export interface ApplyTargetsResponse {
   channels: ApplyTargetChannel[]
   groups: ApplyTargetGroup[]
+  warnings?: ApplyTargetWarning[]
+}
+
+/** 批量操作结果：批量 follow_cost / 批量撤销 等接口的统一返回 */
+export interface BatchOperationResult {
+  total: number
+  success: number
+  failed: number
+  errors?: Array<{ change_id: number; error: string }>
 }
 
 // ==================== Compare（对比） ====================

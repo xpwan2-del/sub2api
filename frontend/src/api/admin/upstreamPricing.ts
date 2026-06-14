@@ -26,7 +26,8 @@ import type {
   ListUpstreamPriceChangesParams,
   ApplyUpstreamPriceChangeRequest,
   ApplyTargetsResponse,
-  UpstreamPriceCompareRow
+  UpstreamPriceCompareRow,
+  BatchOperationResult
 } from '@/types/upstreamPricing'
 
 const BASE = '/admin/upstream-price'
@@ -121,6 +122,23 @@ export async function dismissChange(id: number): Promise<{ message: string }> {
   return data
 }
 
+/** 批量 follow_cost：对所有（或指定 source 的）pending 变动一键应用 */
+export async function batchApplyFollowCost(sourceId?: number): Promise<BatchOperationResult> {
+  const { data } = await apiClient.post<BatchOperationResult>(
+    `${BASE}/changes/batch-apply-follow-cost`,
+    { source_id: sourceId ?? null }
+  )
+  return data
+}
+
+/** 撤销一次 apply（恢复 apply 前的 channel 单价 + group 倍率） */
+export async function revertChange(id: number): Promise<{ message: string }> {
+  const { data } = await apiClient.post<{ message: string }>(
+    `${BASE}/changes/${id}/revert`
+  )
+  return data
+}
+
 // ==================== Compare ====================
 
 /** 价格对比（需传 source_id，未指定时返回 []） */
@@ -142,6 +160,8 @@ export const upstreamPricingAPI = {
   getApplyTargets,
   applyChange,
   dismissChange,
+  batchApplyFollowCost,
+  revertChange,
   comparePrices
 }
 
