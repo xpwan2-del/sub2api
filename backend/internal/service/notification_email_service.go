@@ -32,6 +32,9 @@ const (
 	NotificationEmailEventContentModerationDisabled   = "content_moderation.account_disabled"
 	NotificationEmailEventOpsAlert                    = "ops.alert"
 	NotificationEmailEventOpsScheduledReport          = "ops.scheduled_report"
+	// NotificationEmailEventUpstreamPriceChange 上游价格变动告警（发给配置的运维收件人）。
+	// Task 12 会完善多语言模板；当前提供最小可用模板以保证 Send 不报"event not found"。
+	NotificationEmailEventUpstreamPriceChange = "ops.upstream_price_change"
 
 	notificationEmailTemplateKeyPrefix    = "notification_email_template:"
 	notificationEmailPreferenceKeyPrefix  = "notification_email_preference:"
@@ -887,6 +890,10 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 			"report_start_time":   "2026-05-19 12:00",
 			"report_end_time":     "2026-05-20 12:00",
 			"report_html":         "<h2>日报</h2><p>请求量：1024</p>",
+			"source_name":         "openai-official",
+			"change_summary":      "2 涨 1 跌 3 新增",
+			"change_details":      "<p>gpt-4o: 5.00 → 6.00 USD/M</p>",
+			"target_link":         "https://example.com/admin/upstream-pricing/changes",
 		}
 	}
 	return map[string]string{
@@ -933,6 +940,10 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 		"report_start_time":   "2026-05-19 12:00",
 		"report_end_time":     "2026-05-20 12:00",
 		"report_html":         "<h2>Daily summary</h2><p>Requests: 1024</p>",
+		"source_name":         "openai-official",
+		"change_summary":      "2 up, 1 down, 3 new",
+		"change_details":      "<p>gpt-4o: 5.00 -> 6.00 USD/M</p>",
+		"target_link":         "https://example.com/admin/upstream-pricing/changes",
 	}
 }
 
@@ -949,6 +960,7 @@ var notificationEmailEventOrder = []string{
 	NotificationEmailEventContentModerationDisabled,
 	NotificationEmailEventOpsAlert,
 	NotificationEmailEventOpsScheduledReport,
+	NotificationEmailEventUpstreamPriceChange,
 }
 
 var notificationEmailEventDefinitions = map[string]NotificationEmailEventInfo{
@@ -1052,6 +1064,15 @@ var notificationEmailEventDefinitions = map[string]NotificationEmailEventInfo{
 		Optional:    false,
 		Placeholders: append(append([]string{}, notificationEmailCommonPlaceholders...),
 			"report_name", "report_type", "report_start_time", "report_end_time", "report_html"),
+	},
+	NotificationEmailEventUpstreamPriceChange: {
+		Event:       NotificationEmailEventUpstreamPriceChange,
+		Label:       "Upstream price change alert",
+		Description: "Sent to configured operations recipients when an upstream pricing source detects model price changes.",
+		Category:    "ops",
+		Optional:    false,
+		Placeholders: append(append([]string{}, notificationEmailCommonPlaceholders...),
+			"source_name", "change_summary", "change_details", "target_link"),
 	},
 }
 
@@ -1315,6 +1336,25 @@ var notificationEmailOfficialTemplates = map[string]map[string]notificationEmail
 <p><strong>类型</strong>：{{report_type}}</p>
 <p><strong>时间范围</strong>：{{report_start_time}} - {{report_end_time}}</p>
 <div>{{report_html}}</div>`),
+		},
+	},
+	NotificationEmailEventUpstreamPriceChange: {
+		// 最小可用模板；Task 12 会完善为带变动明细表的精美模板。
+		notificationEmailDefaultLocale: {
+			Subject: "[{{site_name}}] Upstream price change - {{source_name}}",
+			HTML: notificationEmailCard("#ea580c", "Upstream price change", `
+<p><strong>Source</strong>: {{source_name}}</p>
+<p>{{change_summary}}</p>
+<div>{{change_details}}</div>
+<p><a href="{{target_link}}">Review changes</a></p>`),
+		},
+		notificationEmailLocaleChinese: {
+			Subject: "[{{site_name}}] 上游价格变动 - {{source_name}}",
+			HTML: notificationEmailCard("#ea580c", "上游价格变动", `
+<p><strong>来源</strong>：{{source_name}}</p>
+<p>{{change_summary}}</p>
+<div>{{change_details}}</div>
+<p><a href="{{target_link}}">查看变动详情</a></p>`),
 		},
 	},
 }
