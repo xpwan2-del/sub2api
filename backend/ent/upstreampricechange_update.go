@@ -583,6 +583,18 @@ func (_u *UpstreamPriceChangeUpdate) ClearRevertedBy() *UpstreamPriceChangeUpdat
 	return _u
 }
 
+// SetAppliedChannelsSnapshot sets the "applied_channels_snapshot" field.
+func (_u *UpstreamPriceChangeUpdate) SetAppliedChannelsSnapshot(v []byte) *UpstreamPriceChangeUpdate {
+	_u.mutation.SetAppliedChannelsSnapshot(v)
+	return _u
+}
+
+// ClearAppliedChannelsSnapshot clears the value of the "applied_channels_snapshot" field.
+func (_u *UpstreamPriceChangeUpdate) ClearAppliedChannelsSnapshot() *UpstreamPriceChangeUpdate {
+	_u.mutation.ClearAppliedChannelsSnapshot()
+	return _u
+}
+
 // SetSource sets the "source" edge to the UpstreamPriceSource entity.
 func (_u *UpstreamPriceChangeUpdate) SetSource(v *UpstreamPriceSource) *UpstreamPriceChangeUpdate {
 	return _u.SetSourceID(v.ID)
@@ -827,6 +839,12 @@ func (_u *UpstreamPriceChangeUpdate) sqlSave(ctx context.Context) (_node int, er
 	}
 	if _u.mutation.RevertedByCleared() {
 		_spec.ClearField(upstreampricechange.FieldRevertedBy, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.AppliedChannelsSnapshot(); ok {
+		_spec.SetField(upstreampricechange.FieldAppliedChannelsSnapshot, field.TypeBytes, value)
+	}
+	if _u.mutation.AppliedChannelsSnapshotCleared() {
+		_spec.ClearField(upstreampricechange.FieldAppliedChannelsSnapshot, field.TypeBytes)
 	}
 	if _u.mutation.SourceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1431,6 +1449,18 @@ func (_u *UpstreamPriceChangeUpdateOne) ClearRevertedBy() *UpstreamPriceChangeUp
 	return _u
 }
 
+// SetAppliedChannelsSnapshot sets the "applied_channels_snapshot" field.
+func (_u *UpstreamPriceChangeUpdateOne) SetAppliedChannelsSnapshot(v []byte) *UpstreamPriceChangeUpdateOne {
+	_u.mutation.SetAppliedChannelsSnapshot(v)
+	return _u
+}
+
+// ClearAppliedChannelsSnapshot clears the value of the "applied_channels_snapshot" field.
+func (_u *UpstreamPriceChangeUpdateOne) ClearAppliedChannelsSnapshot() *UpstreamPriceChangeUpdateOne {
+	_u.mutation.ClearAppliedChannelsSnapshot()
+	return _u
+}
+
 // SetSource sets the "source" edge to the UpstreamPriceSource entity.
 func (_u *UpstreamPriceChangeUpdateOne) SetSource(v *UpstreamPriceSource) *UpstreamPriceChangeUpdateOne {
 	return _u.SetSourceID(v.ID)
@@ -1705,6 +1735,12 @@ func (_u *UpstreamPriceChangeUpdateOne) sqlSave(ctx context.Context) (_node *Ups
 	}
 	if _u.mutation.RevertedByCleared() {
 		_spec.ClearField(upstreampricechange.FieldRevertedBy, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.AppliedChannelsSnapshot(); ok {
+		_spec.SetField(upstreampricechange.FieldAppliedChannelsSnapshot, field.TypeBytes, value)
+	}
+	if _u.mutation.AppliedChannelsSnapshotCleared() {
+		_spec.ClearField(upstreampricechange.FieldAppliedChannelsSnapshot, field.TypeBytes)
 	}
 	if _u.mutation.SourceCleared() {
 		edge := &sqlgraph.EdgeSpec{

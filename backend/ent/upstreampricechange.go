@@ -70,6 +70,8 @@ type UpstreamPriceChange struct {
 	RevertedAt *time.Time `json:"reverted_at,omitempty"`
 	// 执行撤销的管理员用户ID
 	RevertedBy *int64 `json:"reverted_by,omitempty"`
+	// 批量 apply 时记录所有命中 channel 的 prev 价快照（JSON），供撤销遍历恢复
+	AppliedChannelsSnapshot *[]byte `json:"applied_channels_snapshot,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UpstreamPriceChangeQuery when eager-loading is set.
 	Edges        UpstreamPriceChangeEdges `json:"edges"`
@@ -101,6 +103,8 @@ func (*UpstreamPriceChange) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case upstreampricechange.FieldAppliedChannelsSnapshot:
+			values[i] = new([]byte)
 		case upstreampricechange.FieldNotified:
 			values[i] = new(sql.NullBool)
 		case upstreampricechange.FieldPrevInputPrice, upstreampricechange.FieldPrevOutputPrice, upstreampricechange.FieldCurrInputPrice, upstreampricechange.FieldCurrOutputPrice, upstreampricechange.FieldInputDeltaPct, upstreampricechange.FieldOutputDeltaPct, upstreampricechange.FieldSuggestedInputPrice, upstreampricechange.FieldSuggestedOutputPrice, upstreampricechange.FieldSuggestedMultiplier, upstreampricechange.FieldAppliedPrevInputPrice, upstreampricechange.FieldAppliedPrevOutputPrice, upstreampricechange.FieldPrevMultiplier:
@@ -299,6 +303,12 @@ func (_m *UpstreamPriceChange) assignValues(columns []string, values []any) erro
 				_m.RevertedBy = new(int64)
 				*_m.RevertedBy = value.Int64
 			}
+		case upstreampricechange.FieldAppliedChannelsSnapshot:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field applied_channels_snapshot", values[i])
+			} else if value != nil {
+				_m.AppliedChannelsSnapshot = value
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -437,6 +447,11 @@ func (_m *UpstreamPriceChange) String() string {
 	builder.WriteString(", ")
 	if v := _m.RevertedBy; v != nil {
 		builder.WriteString("reverted_by=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.AppliedChannelsSnapshot; v != nil {
+		builder.WriteString("applied_channels_snapshot=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')

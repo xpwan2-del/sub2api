@@ -2,7 +2,9 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
@@ -449,6 +451,38 @@ func (r *upstreamPriceRepository) MarkReverted(ctx context.Context, id, adminID 
 		SetRevertedBy(adminID).
 		Save(ctx)
 	return translatePersistenceError(err, service.ErrUpstreamPriceChangeNotFound, nil)
+}
+
+// SetAppliedChannelsSnapshot 记录批量 apply 时所有命中 channel 的 prev 价（JSON），供撤销遍历恢复。
+func (r *upstreamPriceRepository) SetAppliedChannelsSnapshot(ctx context.Context, id int64, snapshots []service.AppliedChannelSnapshot) error {
+	data, err := json.Marshal(snapshots)
+	if err != nil {
+		return fmt.Errorf("marshal channels snapshot: %w", err)
+	}
+	client := clientFromContext(ctx, r.client)
+	if _, err := client.UpstreamPriceChange.UpdateOneID(id).
+		SetAppliedChannelsSnapshot(data).
+		Save(ctx); err != nil {
+		return translatePersistenceError(err, service.ErrUpstreamPriceChangeNotFound, nil)
+	}
+	return nil
+}
+
+// GetAppliedChannelsSnapshot 读取批量 apply 时记录的 channel 快照。无记录返回 nil。
+func (r *upstreamPriceRepository) GetAppliedChannelsSnapshot(ctx context.Context, id int64) ([]service.AppliedChannelSnapshot, error) {
+	client := clientFromContext(ctx, r.client)
+	ch, err := client.UpstreamPriceChange.Get(ctx, id)
+	if err != nil {
+		return nil, translatePersistenceError(err, service.ErrUpstreamPriceChangeNotFound, nil)
+	}
+	if ch.AppliedChannelsSnapshot == nil || len(*ch.AppliedChannelsSnapshot) == 0 {
+		return nil, nil
+	}
+	var snaps []service.AppliedChannelSnapshot
+	if err := json.Unmarshal(*ch.AppliedChannelsSnapshot, &snaps); err != nil {
+		return nil, fmt.Errorf("unmarshal channels snapshot: %w", err)
+	}
+	return snaps, nil
 }
 
 // ============================================================

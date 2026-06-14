@@ -36,6 +36,7 @@ type applyFakeRepo struct {
 		id, adminID int64
 		called      bool
 	}
+	channelsSnapshot []AppliedChannelSnapshot
 }
 
 func newApplyFakeRepo() *applyFakeRepo {
@@ -90,6 +91,13 @@ func (r *applyFakeRepo) MarkReverted(_ context.Context, id, adminID int64) error
 	}
 	return nil
 }
+func (r *applyFakeRepo) SetAppliedChannelsSnapshot(_ context.Context, _ int64, snapshots []AppliedChannelSnapshot) error {
+	r.channelsSnapshot = snapshots
+	return nil
+}
+func (r *applyFakeRepo) GetAppliedChannelsSnapshot(_ context.Context, _ int64) ([]AppliedChannelSnapshot, error) {
+	return r.channelsSnapshot, nil
+}
 
 // 其余未使用方法（满足接口）
 func (r *applyFakeRepo) CreateSource(context.Context, *dbent.UpstreamPriceSource) error {
@@ -123,10 +131,28 @@ func (r *applyFakeRepo) ListAllModelPricesAsMap(context.Context, int64) (map[str
 func (r *applyFakeRepo) InsertChanges(context.Context, []*dbent.UpstreamPriceChange) error {
 	panic("unused")
 }
-func (r *applyFakeRepo) ListPendingChanges(context.Context, ChangeFilters) ([]*dbent.UpstreamPriceChange, error) {
-	panic("unused")
+func (r *applyFakeRepo) ListPendingChanges(_ context.Context, filters ChangeFilters) ([]*dbent.UpstreamPriceChange, error) {
+	var out []*dbent.UpstreamPriceChange
+	for _, c := range r.changes {
+		if filters.Status != "" && c.Status != filters.Status {
+			continue
+		}
+		if filters.SourceID != 0 && c.SourceID != filters.SourceID {
+			continue
+		}
+		out = append(out, c)
+	}
+	return out, nil
 }
 func (r *applyFakeRepo) MarkChangesNotified(context.Context, []int64) error { panic("unused") }
+
+// channelWriteCall 记录单次 ReplaceModelPricingForModel 调用，供多 channel 撤销测试断言。
+type channelWriteCall struct {
+	channelID   int64
+	model       string
+	inputPrice  float64
+	outputPrice float64
+}
 
 // fakeChannelWriter 记录对 channel_model_pricing 的写入调用。
 type fakeChannelWriter struct {
@@ -136,6 +162,8 @@ type fakeChannelWriter struct {
 	lastOutputPrice  float64
 	cacheInvalidated bool
 	called           bool
+
+	calls []channelWriteCall
 
 	curInputPrice  float64
 	curOutputPrice float64
@@ -147,6 +175,12 @@ func (f *fakeChannelWriter) ReplaceModelPricingForModel(_ context.Context, chann
 	f.lastModel = modelName
 	f.lastInputPrice = inputPrice
 	f.lastOutputPrice = outputPrice
+	f.calls = append(f.calls, channelWriteCall{
+		channelID:   channelID,
+		model:       modelName,
+		inputPrice:  inputPrice,
+		outputPrice: outputPrice,
+	})
 	return nil
 }
 func (f *fakeChannelWriter) InvalidateChannelCache() { f.cacheInvalidated = true }
@@ -575,4 +609,31 @@ func TestRevert_MissingAppliedSnapshot_ReturnsError(t *testing.T) {
 	assert.False(t, ch.called)
 	assert.False(t, grp.called)
 	assert.False(t, repo.reverted.called)
+}
+
+func TestRevert_BatchMultiChannel_RestoresAllChannels(t *testing.T) {
+	repo := newApplyFakeRepo()
+	c := newPendingChange(1)
+	c.Status = UpstreamPriceChangeStatusApplied
+	c.AppliedTarget = appliedTargetChannelPricing
+	// applied_channel_id 留 nil（批量 apply 不填单值），用 channels snapshot
+	repo.changes[1] = c
+	// 模拟批量 apply 记录了 2 个 channel 的 prev 价
+	repo.channelsSnapshot = []AppliedChannelSnapshot{
+		{ChannelID: 10, PrevInputPrice: 0.012, PrevOutputPrice: 0.060},
+		{ChannelID: 11, PrevInputPrice: 0.011, PrevOutputPrice: 0.055},
+	}
+	ch := &fakeChannelWriter{}
+	svc := NewUpstreamPriceApplyService(repo, ch, &fakeGroupWriter{}, nil, NewSlogAuditLogger())
+
+	err := svc.Revert(context.Background(), 1, 99)
+	require.NoError(t, err)
+
+	// 两个 channel 都被恢复
+	require.Len(t, ch.calls, 2)
+	assert.Equal(t, int64(10), ch.calls[0].channelID)
+	assert.Equal(t, 0.012, ch.calls[0].inputPrice)
+	assert.Equal(t, int64(11), ch.calls[1].channelID)
+	assert.Equal(t, 0.055, ch.calls[1].outputPrice)
+	assert.True(t, repo.reverted.called)
 }

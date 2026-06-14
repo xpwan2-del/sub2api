@@ -119,6 +119,10 @@ func (UpstreamPriceChange) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("执行撤销的管理员用户ID"),
+		field.Bytes("applied_channels_snapshot").
+			Optional().
+			Nillable().
+			Comment("批量 apply 时记录所有命中 channel 的 prev 价快照（JSON），供撤销遍历恢复"),
 	}
 }
 

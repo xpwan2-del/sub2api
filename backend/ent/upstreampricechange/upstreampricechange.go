@@ -66,6 +66,8 @@ const (
 	FieldRevertedAt = "reverted_at"
 	// FieldRevertedBy holds the string denoting the reverted_by field in the database.
 	FieldRevertedBy = "reverted_by"
+	// FieldAppliedChannelsSnapshot holds the string denoting the applied_channels_snapshot field in the database.
+	FieldAppliedChannelsSnapshot = "applied_channels_snapshot"
 	// EdgeSource holds the string denoting the source edge name in mutations.
 	EdgeSource = "source"
 	// Table holds the table name of the upstreampricechange in the database.
@@ -108,6 +110,7 @@ var Columns = []string{
 	FieldPrevMultiplier,
 	FieldRevertedAt,
 	FieldRevertedBy,
+	FieldAppliedChannelsSnapshot,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

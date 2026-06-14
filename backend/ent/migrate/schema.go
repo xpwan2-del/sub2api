@@ -1544,6 +1544,7 @@ var (
 		{Name: "prev_multiplier", Type: field.TypeFloat64, Nullable: true},
 		{Name: "reverted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "reverted_by", Type: field.TypeInt64, Nullable: true},
+		{Name: "applied_channels_snapshot", Type: field.TypeBytes, Nullable: true},
 		{Name: "source_id", Type: field.TypeInt64},
 	}
 	// UpstreamPriceChangesTable holds the schema information for the "upstream_price_changes" table.
@@ -1554,7 +1555,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "upstream_price_changes_upstream_price_sources_changes",
-				Columns:    []*schema.Column{UpstreamPriceChangesColumns[26]},
+				Columns:    []*schema.Column{UpstreamPriceChangesColumns[27]},
 				RefColumns: []*schema.Column{UpstreamPriceSourcesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -1568,7 +1569,7 @@ var (
 			{
 				Name:    "upstreampricechange_source_id_detected_at",
 				Unique:  false,
-				Columns: []*schema.Column{UpstreamPriceChangesColumns[26], UpstreamPriceChangesColumns[10]},
+				Columns: []*schema.Column{UpstreamPriceChangesColumns[27], UpstreamPriceChangesColumns[10]},
 			},
 		},
 	}

@@ -156,6 +156,12 @@ func (r *fakeUpstreamPriceRepo) SetAppliedSnapshot(context.Context, int64, int64
 	panic("unused")
 }
 func (r *fakeUpstreamPriceRepo) MarkReverted(context.Context, int64, int64) error { panic("unused") }
+func (r *fakeUpstreamPriceRepo) SetAppliedChannelsSnapshot(context.Context, int64, []AppliedChannelSnapshot) error {
+	panic("unused")
+}
+func (r *fakeUpstreamPriceRepo) GetAppliedChannelsSnapshot(context.Context, int64) ([]AppliedChannelSnapshot, error) {
+	panic("unused")
+}
 
 // --- tests ---
 

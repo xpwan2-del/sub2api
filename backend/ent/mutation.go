@@ -40822,6 +40822,7 @@ type UpstreamPriceChangeMutation struct {
 	reverted_at                  *time.Time
 	reverted_by                  *int64
 	addreverted_by               *int64
+	applied_channels_snapshot    *[]byte
 	clearedFields                map[string]struct{}
 	source                       *int64
 	clearedsource                bool
@@ -42362,6 +42363,55 @@ func (m *UpstreamPriceChangeMutation) ResetRevertedBy() {
 	delete(m.clearedFields, upstreampricechange.FieldRevertedBy)
 }
 
+// SetAppliedChannelsSnapshot sets the "applied_channels_snapshot" field.
+func (m *UpstreamPriceChangeMutation) SetAppliedChannelsSnapshot(b []byte) {
+	m.applied_channels_snapshot = &b
+}
+
+// AppliedChannelsSnapshot returns the value of the "applied_channels_snapshot" field in the mutation.
+func (m *UpstreamPriceChangeMutation) AppliedChannelsSnapshot() (r []byte, exists bool) {
+	v := m.applied_channels_snapshot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAppliedChannelsSnapshot returns the old "applied_channels_snapshot" field's value of the UpstreamPriceChange entity.
+// If the UpstreamPriceChange object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UpstreamPriceChangeMutation) OldAppliedChannelsSnapshot(ctx context.Context) (v *[]byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAppliedChannelsSnapshot is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAppliedChannelsSnapshot requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAppliedChannelsSnapshot: %w", err)
+	}
+	return oldValue.AppliedChannelsSnapshot, nil
+}
+
+// ClearAppliedChannelsSnapshot clears the value of the "applied_channels_snapshot" field.
+func (m *UpstreamPriceChangeMutation) ClearAppliedChannelsSnapshot() {
+	m.applied_channels_snapshot = nil
+	m.clearedFields[upstreampricechange.FieldAppliedChannelsSnapshot] = struct{}{}
+}
+
+// AppliedChannelsSnapshotCleared returns if the "applied_channels_snapshot" field was cleared in this mutation.
+func (m *UpstreamPriceChangeMutation) AppliedChannelsSnapshotCleared() bool {
+	_, ok := m.clearedFields[upstreampricechange.FieldAppliedChannelsSnapshot]
+	return ok
+}
+
+// ResetAppliedChannelsSnapshot resets all changes to the "applied_channels_snapshot" field.
+func (m *UpstreamPriceChangeMutation) ResetAppliedChannelsSnapshot() {
+	m.applied_channels_snapshot = nil
+	delete(m.clearedFields, upstreampricechange.FieldAppliedChannelsSnapshot)
+}
+
 // ClearSource clears the "source" edge to the UpstreamPriceSource entity.
 func (m *UpstreamPriceChangeMutation) ClearSource() {
 	m.clearedsource = true
@@ -42423,7 +42473,7 @@ func (m *UpstreamPriceChangeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UpstreamPriceChangeMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 27)
 	if m.source != nil {
 		fields = append(fields, upstreampricechange.FieldSourceID)
 	}
@@ -42502,6 +42552,9 @@ func (m *UpstreamPriceChangeMutation) Fields() []string {
 	if m.reverted_by != nil {
 		fields = append(fields, upstreampricechange.FieldRevertedBy)
 	}
+	if m.applied_channels_snapshot != nil {
+		fields = append(fields, upstreampricechange.FieldAppliedChannelsSnapshot)
+	}
 	return fields
 }
 
@@ -42562,6 +42615,8 @@ func (m *UpstreamPriceChangeMutation) Field(name string) (ent.Value, bool) {
 		return m.RevertedAt()
 	case upstreampricechange.FieldRevertedBy:
 		return m.RevertedBy()
+	case upstreampricechange.FieldAppliedChannelsSnapshot:
+		return m.AppliedChannelsSnapshot()
 	}
 	return nil, false
 }
@@ -42623,6 +42678,8 @@ func (m *UpstreamPriceChangeMutation) OldField(ctx context.Context, name string)
 		return m.OldRevertedAt(ctx)
 	case upstreampricechange.FieldRevertedBy:
 		return m.OldRevertedBy(ctx)
+	case upstreampricechange.FieldAppliedChannelsSnapshot:
+		return m.OldAppliedChannelsSnapshot(ctx)
 	}
 	return nil, fmt.Errorf("unknown UpstreamPriceChange field %s", name)
 }
@@ -42813,6 +42870,13 @@ func (m *UpstreamPriceChangeMutation) SetField(name string, value ent.Value) err
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRevertedBy(v)
+		return nil
+	case upstreampricechange.FieldAppliedChannelsSnapshot:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAppliedChannelsSnapshot(v)
 		return nil
 	}
 	return fmt.Errorf("unknown UpstreamPriceChange field %s", name)
@@ -43078,6 +43142,9 @@ func (m *UpstreamPriceChangeMutation) ClearedFields() []string {
 	if m.FieldCleared(upstreampricechange.FieldRevertedBy) {
 		fields = append(fields, upstreampricechange.FieldRevertedBy)
 	}
+	if m.FieldCleared(upstreampricechange.FieldAppliedChannelsSnapshot) {
+		fields = append(fields, upstreampricechange.FieldAppliedChannelsSnapshot)
+	}
 	return fields
 }
 
@@ -43130,6 +43197,9 @@ func (m *UpstreamPriceChangeMutation) ClearField(name string) error {
 		return nil
 	case upstreampricechange.FieldRevertedBy:
 		m.ClearRevertedBy()
+		return nil
+	case upstreampricechange.FieldAppliedChannelsSnapshot:
+		m.ClearAppliedChannelsSnapshot()
 		return nil
 	}
 	return fmt.Errorf("unknown UpstreamPriceChange nullable field %s", name)
@@ -43216,6 +43286,9 @@ func (m *UpstreamPriceChangeMutation) ResetField(name string) error {
 		return nil
 	case upstreampricechange.FieldRevertedBy:
 		m.ResetRevertedBy()
+		return nil
+	case upstreampricechange.FieldAppliedChannelsSnapshot:
+		m.ResetAppliedChannelsSnapshot()
 		return nil
 	}
 	return fmt.Errorf("unknown UpstreamPriceChange field %s", name)

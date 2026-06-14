@@ -34,6 +34,13 @@ type ChangeFilters struct {
 	Limit    int
 }
 
+// AppliedChannelSnapshot 批量 apply 时单个 channel 的 prev 价快照（用于撤销恢复）。
+type AppliedChannelSnapshot struct {
+	ChannelID       int64   `json:"channel_id"`
+	PrevInputPrice  float64 `json:"prev_input_price"`
+	PrevOutputPrice float64 `json:"prev_output_price"`
+}
+
 // UpstreamPriceRepository 封装上游价格三张表（source / model_price / change）的持久化操作。
 //
 // DTO 直接使用 ent 生成的实体类型（*dbent.UpstreamPriceSource 等），
@@ -64,4 +71,8 @@ type UpstreamPriceRepository interface {
 	MarkChangesNotified(ctx context.Context, ids []int64) error
 	SetAppliedSnapshot(ctx context.Context, id, channelID int64, prevInputPrice, prevOutputPrice float64, prevMultiplier *float64) error
 	MarkReverted(ctx context.Context, id, adminID int64) error
+	// SetAppliedChannelsSnapshot 记录批量 apply 时所有命中 channel 的 prev 价（JSON），供撤销遍历恢复。
+	SetAppliedChannelsSnapshot(ctx context.Context, id int64, snapshots []AppliedChannelSnapshot) error
+	// GetAppliedChannelsSnapshot 读取批量 apply 时记录的 channel 快照。无记录返回 nil。
+	GetAppliedChannelsSnapshot(ctx context.Context, id int64) ([]AppliedChannelSnapshot, error)
 }

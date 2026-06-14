@@ -347,6 +347,12 @@ func (_c *UpstreamPriceChangeCreate) SetNillableRevertedBy(v *int64) *UpstreamPr
 	return _c
 }
 
+// SetAppliedChannelsSnapshot sets the "applied_channels_snapshot" field.
+func (_c *UpstreamPriceChangeCreate) SetAppliedChannelsSnapshot(v []byte) *UpstreamPriceChangeCreate {
+	_c.mutation.SetAppliedChannelsSnapshot(v)
+	return _c
+}
+
 // SetSource sets the "source" edge to the UpstreamPriceSource entity.
 func (_c *UpstreamPriceChangeCreate) SetSource(v *UpstreamPriceSource) *UpstreamPriceChangeCreate {
 	return _c.SetSourceID(v.ID)
@@ -611,6 +617,10 @@ func (_c *UpstreamPriceChangeCreate) createSpec() (*UpstreamPriceChange, *sqlgra
 	if value, ok := _c.mutation.RevertedBy(); ok {
 		_spec.SetField(upstreampricechange.FieldRevertedBy, field.TypeInt64, value)
 		_node.RevertedBy = &value
+	}
+	if value, ok := _c.mutation.AppliedChannelsSnapshot(); ok {
+		_spec.SetField(upstreampricechange.FieldAppliedChannelsSnapshot, field.TypeBytes, value)
+		_node.AppliedChannelsSnapshot = &value
 	}
 	if nodes := _c.mutation.SourceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1164,6 +1174,24 @@ func (u *UpstreamPriceChangeUpsert) AddRevertedBy(v int64) *UpstreamPriceChangeU
 // ClearRevertedBy clears the value of the "reverted_by" field.
 func (u *UpstreamPriceChangeUpsert) ClearRevertedBy() *UpstreamPriceChangeUpsert {
 	u.SetNull(upstreampricechange.FieldRevertedBy)
+	return u
+}
+
+// SetAppliedChannelsSnapshot sets the "applied_channels_snapshot" field.
+func (u *UpstreamPriceChangeUpsert) SetAppliedChannelsSnapshot(v []byte) *UpstreamPriceChangeUpsert {
+	u.Set(upstreampricechange.FieldAppliedChannelsSnapshot, v)
+	return u
+}
+
+// UpdateAppliedChannelsSnapshot sets the "applied_channels_snapshot" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsert) UpdateAppliedChannelsSnapshot() *UpstreamPriceChangeUpsert {
+	u.SetExcluded(upstreampricechange.FieldAppliedChannelsSnapshot)
+	return u
+}
+
+// ClearAppliedChannelsSnapshot clears the value of the "applied_channels_snapshot" field.
+func (u *UpstreamPriceChangeUpsert) ClearAppliedChannelsSnapshot() *UpstreamPriceChangeUpsert {
+	u.SetNull(upstreampricechange.FieldAppliedChannelsSnapshot)
 	return u
 }
 
@@ -1771,6 +1799,27 @@ func (u *UpstreamPriceChangeUpsertOne) UpdateRevertedBy() *UpstreamPriceChangeUp
 func (u *UpstreamPriceChangeUpsertOne) ClearRevertedBy() *UpstreamPriceChangeUpsertOne {
 	return u.Update(func(s *UpstreamPriceChangeUpsert) {
 		s.ClearRevertedBy()
+	})
+}
+
+// SetAppliedChannelsSnapshot sets the "applied_channels_snapshot" field.
+func (u *UpstreamPriceChangeUpsertOne) SetAppliedChannelsSnapshot(v []byte) *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetAppliedChannelsSnapshot(v)
+	})
+}
+
+// UpdateAppliedChannelsSnapshot sets the "applied_channels_snapshot" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertOne) UpdateAppliedChannelsSnapshot() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdateAppliedChannelsSnapshot()
+	})
+}
+
+// ClearAppliedChannelsSnapshot clears the value of the "applied_channels_snapshot" field.
+func (u *UpstreamPriceChangeUpsertOne) ClearAppliedChannelsSnapshot() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearAppliedChannelsSnapshot()
 	})
 }
 
@@ -2542,6 +2591,27 @@ func (u *UpstreamPriceChangeUpsertBulk) UpdateRevertedBy() *UpstreamPriceChangeU
 func (u *UpstreamPriceChangeUpsertBulk) ClearRevertedBy() *UpstreamPriceChangeUpsertBulk {
 	return u.Update(func(s *UpstreamPriceChangeUpsert) {
 		s.ClearRevertedBy()
+	})
+}
+
+// SetAppliedChannelsSnapshot sets the "applied_channels_snapshot" field.
+func (u *UpstreamPriceChangeUpsertBulk) SetAppliedChannelsSnapshot(v []byte) *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetAppliedChannelsSnapshot(v)
+	})
+}
+
+// UpdateAppliedChannelsSnapshot sets the "applied_channels_snapshot" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertBulk) UpdateAppliedChannelsSnapshot() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdateAppliedChannelsSnapshot()
+	})
+}
+
+// ClearAppliedChannelsSnapshot clears the value of the "applied_channels_snapshot" field.
+func (u *UpstreamPriceChangeUpsertBulk) ClearAppliedChannelsSnapshot() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearAppliedChannelsSnapshot()
 	})
 }
 

@@ -317,21 +317,35 @@ func (s *UpstreamPriceApplyService) Revert(ctx context.Context, changeID, adminI
 		return errors.BadRequest("ALREADY_REVERTED",
 			fmt.Sprintf("change %d already reverted", changeID))
 	}
-	if ch.AppliedChannelID == nil || ch.AppliedPrevInputPrice == nil {
-		return errors.BadRequest("MISSING_APPLIED_SNAPSHOT",
-			fmt.Sprintf("change %d missing applied-prev snapshot, manual revert required", changeID))
-	}
 
 	modelName := ch.LocalModelName
 	if modelName == "" {
 		modelName = ch.ModelName
 	}
 
-	// 恢复 channel 单价（用 apply 时记录的 applied_channel_id 锚点，不重新 resolve）
+	// 恢复 channel 单价：优先用批量 channels snapshot（遍历恢复所有），否则用单条 applied_channel_id。
+	channelSnaps, snapErr := s.priceRepo.GetAppliedChannelsSnapshot(ctx, changeID)
+	if snapErr != nil {
+		return fmt.Errorf("get applied channels snapshot: %w", snapErr)
+	}
 	if s.channelWriter != nil {
-		if err := s.channelWriter.ReplaceModelPricingForModel(ctx, *ch.AppliedChannelID, modelName,
-			*ch.AppliedPrevInputPrice, *ch.AppliedPrevOutputPrice); err != nil {
-			return fmt.Errorf("restore channel pricing on revert: %w", err)
+		if len(channelSnaps) > 0 {
+			// 批量 apply 的：遍历恢复所有 channel
+			for _, snap := range channelSnaps {
+				if err := s.channelWriter.ReplaceModelPricingForModel(ctx, snap.ChannelID, modelName,
+					snap.PrevInputPrice, snap.PrevOutputPrice); err != nil {
+					return fmt.Errorf("restore channel pricing on revert: %w", err)
+				}
+			}
+		} else if ch.AppliedChannelID != nil && ch.AppliedPrevInputPrice != nil {
+			// 单条 apply 的（Task 7 原逻辑）：恢复单 channel
+			if err := s.channelWriter.ReplaceModelPricingForModel(ctx, *ch.AppliedChannelID, modelName,
+				*ch.AppliedPrevInputPrice, *ch.AppliedPrevOutputPrice); err != nil {
+				return fmt.Errorf("restore channel pricing on revert: %w", err)
+			}
+		} else {
+			return errors.BadRequest("MISSING_APPLIED_SNAPSHOT",
+				fmt.Sprintf("change %d missing applied-prev snapshot, manual revert required", changeID))
 		}
 		s.channelWriter.InvalidateChannelCache()
 	}

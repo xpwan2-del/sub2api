@@ -185,6 +185,11 @@ func RevertedBy(v int64) predicate.UpstreamPriceChange {
 	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldRevertedBy, v))
 }
 
+// AppliedChannelsSnapshot applies equality check predicate on the "applied_channels_snapshot" field. It's identical to AppliedChannelsSnapshotEQ.
+func AppliedChannelsSnapshot(v []byte) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldAppliedChannelsSnapshot, v))
+}
+
 // SourceIDEQ applies the EQ predicate on the "source_id" field.
 func SourceIDEQ(v int64) predicate.UpstreamPriceChange {
 	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldSourceID, v))
@@ -1428,6 +1433,56 @@ func RevertedByIsNil() predicate.UpstreamPriceChange {
 // RevertedByNotNil applies the NotNil predicate on the "reverted_by" field.
 func RevertedByNotNil() predicate.UpstreamPriceChange {
 	return predicate.UpstreamPriceChange(sql.FieldNotNull(FieldRevertedBy))
+}
+
+// AppliedChannelsSnapshotEQ applies the EQ predicate on the "applied_channels_snapshot" field.
+func AppliedChannelsSnapshotEQ(v []byte) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldAppliedChannelsSnapshot, v))
+}
+
+// AppliedChannelsSnapshotNEQ applies the NEQ predicate on the "applied_channels_snapshot" field.
+func AppliedChannelsSnapshotNEQ(v []byte) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNEQ(FieldAppliedChannelsSnapshot, v))
+}
+
+// AppliedChannelsSnapshotIn applies the In predicate on the "applied_channels_snapshot" field.
+func AppliedChannelsSnapshotIn(vs ...[]byte) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIn(FieldAppliedChannelsSnapshot, vs...))
+}
+
+// AppliedChannelsSnapshotNotIn applies the NotIn predicate on the "applied_channels_snapshot" field.
+func AppliedChannelsSnapshotNotIn(vs ...[]byte) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotIn(FieldAppliedChannelsSnapshot, vs...))
+}
+
+// AppliedChannelsSnapshotGT applies the GT predicate on the "applied_channels_snapshot" field.
+func AppliedChannelsSnapshotGT(v []byte) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGT(FieldAppliedChannelsSnapshot, v))
+}
+
+// AppliedChannelsSnapshotGTE applies the GTE predicate on the "applied_channels_snapshot" field.
+func AppliedChannelsSnapshotGTE(v []byte) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGTE(FieldAppliedChannelsSnapshot, v))
+}
+
+// AppliedChannelsSnapshotLT applies the LT predicate on the "applied_channels_snapshot" field.
+func AppliedChannelsSnapshotLT(v []byte) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLT(FieldAppliedChannelsSnapshot, v))
+}
+
+// AppliedChannelsSnapshotLTE applies the LTE predicate on the "applied_channels_snapshot" field.
+func AppliedChannelsSnapshotLTE(v []byte) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLTE(FieldAppliedChannelsSnapshot, v))
+}
+
+// AppliedChannelsSnapshotIsNil applies the IsNil predicate on the "applied_channels_snapshot" field.
+func AppliedChannelsSnapshotIsNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIsNull(FieldAppliedChannelsSnapshot))
+}
+
+// AppliedChannelsSnapshotNotNil applies the NotNil predicate on the "applied_channels_snapshot" field.
+func AppliedChannelsSnapshotNotNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotNull(FieldAppliedChannelsSnapshot))
 }
 
 // HasSource applies the HasEdge predicate on the "source" edge.

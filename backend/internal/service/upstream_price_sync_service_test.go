@@ -221,6 +221,16 @@ func (r *syncPriceRepo) MarkReverted(_ context.Context, _, _ int64) error {
 	defer r.mu.Unlock()
 	return nil
 }
+func (r *syncPriceRepo) SetAppliedChannelsSnapshot(_ context.Context, _ int64, _ []AppliedChannelSnapshot) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return nil
+}
+func (r *syncPriceRepo) GetAppliedChannelsSnapshot(_ context.Context, _ int64) ([]AppliedChannelSnapshot, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return nil, nil
+}
 func (r *syncPriceRepo) MarkChangesNotified(_ context.Context, ids []int64) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
