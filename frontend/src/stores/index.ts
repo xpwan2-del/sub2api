@@ -12,6 +12,7 @@ export { useAnnouncementStore } from './announcements'
 export { usePaymentStore } from './payment'
 export { useAdminComplianceStore } from './adminCompliance'
 export { useBundleStore } from './bundles'
+export { useAdminNotificationStore } from './adminNotifications'
 
 // Re-export types for convenience
 export type { User, LoginRequest, RegisterRequest, AuthResponse } from '@/types'

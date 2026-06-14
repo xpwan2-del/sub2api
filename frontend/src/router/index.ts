@@ -711,6 +711,44 @@ const routes: RouteRecordRaw[] = [
     }
   },
 
+  // ==================== Upstream Price Sync Admin Routes ====================
+  {
+    path: '/admin/upstream-pricing/sources',
+    name: 'AdminUpstreamSources',
+    component: () => import('@/views/admin/upstream-pricing/UpstreamSourcesView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Upstream Price Sources',
+      titleKey: 'nav.upstreamSources',
+      descriptionKey: 'upstreamPricing.sources.description'
+    }
+  },
+  {
+    path: '/admin/upstream-pricing/changes',
+    name: 'AdminUpstreamPriceChanges',
+    component: () => import('@/views/admin/upstream-pricing/UpstreamPriceChangesView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Upstream Price Changes',
+      titleKey: 'nav.upstreamPriceChanges',
+      descriptionKey: 'upstreamPricing.changes.description'
+    }
+  },
+  {
+    path: '/admin/upstream-pricing/compare',
+    name: 'AdminUpstreamPriceCompare',
+    component: () => import('@/views/admin/upstream-pricing/UpstreamPriceCompareView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Upstream Price Compare',
+      titleKey: 'nav.upstreamPriceCompare',
+      descriptionKey: 'upstreamPricing.compare.description'
+    }
+  },
+
   // ==================== 404 Not Found ====================
   {
     path: '/:pathMatch(.*)*',
