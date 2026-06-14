@@ -287,6 +287,43 @@ func (h *UpstreamPriceHandler) RevertChange(c *gin.Context) {
 	response.Success(c, gin.H{"message": "Change reverted successfully"})
 }
 
+// BatchApplyFollowCostRequest 批量 follow_cost 请求
+type BatchApplyFollowCostRequest struct {
+	SourceID *int64 `json:"source_id"`
+}
+
+// BatchOperationResult 批量操作结果（对齐前端 accounts.ts BatchOperationResult 约定）
+type BatchOperationResult struct {
+	Total   int              `json:"total"`
+	Success int              `json:"success"`
+	Failed  int              `json:"failed"`
+	Errors  []map[string]any `json:"errors,omitempty"`
+}
+
+// BatchApplyFollowCost POST /admin/upstream-price/changes/batch-apply-follow-cost
+func (h *UpstreamPriceHandler) BatchApplyFollowCost(c *gin.Context) {
+	var req BatchApplyFollowCostRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorFrom(c, infraerrors.BadRequest("VALIDATION_ERROR", err.Error()))
+		return
+	}
+	adminID := adminUserID(c)
+	res, err := h.applyService.ApplyAllPendingFollowCost(c.Request.Context(), req.SourceID, adminID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	result := BatchOperationResult{
+		Total:   len(res.Succeeded) + len(res.Failed),
+		Success: len(res.Succeeded),
+		Failed:  len(res.Failed),
+	}
+	for id, e := range res.Failed {
+		result.Errors = append(result.Errors, map[string]any{"change_id": id, "error": e.Error()})
+	}
+	response.Success(c, result)
+}
+
 // ===== Compare =====
 
 // ComparePrices GET /admin/upstream-price/compare?source_id=
