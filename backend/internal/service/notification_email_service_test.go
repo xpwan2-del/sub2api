@@ -157,6 +157,55 @@ func TestNotificationEmailAdditionalEventsAreListedAndPreviewable(t *testing.T) 
 	}
 }
 
+func TestNotificationEmailUpstreamPriceChangeTemplateRendersBilingual(t *testing.T) {
+	ctx := context.Background()
+	svc := NewNotificationEmailService(newNotificationEmailMemorySettingRepo(), nil)
+
+	// Render with the same variable shape the sync service actually sends
+	// (source_name / change_summary / Markdown change_details / target_link).
+	markdownDetails := "| model | prev in -> curr in | in delta% | suggested in |\n|---|---|---|---|\n| gpt-4o | 5 -> 6 | +20.00% | 6 |"
+
+	for _, locale := range []string{"en", "zh"} {
+		preview, err := svc.PreviewTemplate(ctx, NotificationEmailPreviewInput{
+			Event:  NotificationEmailEventUpstreamPriceChange,
+			Locale: locale,
+			Variables: map[string]string{
+				"source_name":    "openai-official",
+				"change_summary": "2 up, 1 down, 1 new, 0 removed",
+				"change_details": markdownDetails,
+				"target_link":    "https://example.com/admin/upstream-pricing/changes",
+			},
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, preview.Subject)
+		require.NotEmpty(t, preview.HTML)
+		require.Contains(t, preview.Subject, "openai-official")
+		require.Contains(t, preview.HTML, "openai-official")
+		require.Contains(t, preview.HTML, "2 up, 1 down, 1 new, 0 removed")
+		// The Markdown change_details must be present and HTML-escaped (safe), wrapped in <pre>.
+		require.Contains(t, preview.HTML, "<pre")
+		require.Contains(t, preview.HTML, "prev in -&gt; curr in")
+		require.Contains(t, preview.HTML, "gpt-4o")
+		require.Contains(t, preview.HTML, "https://example.com/admin/upstream-pricing/changes")
+		// No raw HTML injection from the Markdown payload.
+		require.NotContains(t, preview.HTML, "<table><")
+	}
+
+	// confirm the event is listed and exposes the expected placeholders
+	infos := svc.ListEventInfos()
+	var found bool
+	for _, info := range infos {
+		if info.Event == NotificationEmailEventUpstreamPriceChange {
+			found = true
+			require.Contains(t, info.Placeholders, "source_name")
+			require.Contains(t, info.Placeholders, "change_summary")
+			require.Contains(t, info.Placeholders, "change_details")
+			require.Contains(t, info.Placeholders, "target_link")
+		}
+	}
+	require.True(t, found, "upstream_price_change event must be listed")
+}
+
 func TestNotificationEmailRawHTMLVariablesAreTrustedOnlyForHTMLPlaceholders(t *testing.T) {
 	require.True(t, notificationEmailRawHTMLAllowed(NotificationEmailEventOpsScheduledReport, "report_html"))
 	require.False(t, notificationEmailRawHTMLAllowed(NotificationEmailEventOpsScheduledReport, "recipient_name"))

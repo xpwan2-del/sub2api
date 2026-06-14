@@ -891,8 +891,8 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 			"report_end_time":     "2026-05-20 12:00",
 			"report_html":         "<h2>日报</h2><p>请求量：1024</p>",
 			"source_name":         "openai-official",
-			"change_summary":      "2 涨 1 跌 3 新增",
-			"change_details":      "<p>gpt-4o: 5.00 → 6.00 USD/M</p>",
+			"change_summary":      "2 涨 1 跌 1 新增 0 下架",
+			"change_details":      "| 模型 | 原输入价 -> 现输入价 | 输入变动% | 建议输入价 |\n|---|---|---|---|\n| gpt-4o | 5 -> 6 | +20.00% | 6 |\n| gpt-4o-mini | 0.15 -> 0.12 | -20.00% | 0.12 |\n| o3-mini | - -> 1.1 | +inf% | 1.1 |",
 			"target_link":         "https://example.com/admin/upstream-pricing/changes",
 		}
 	}
@@ -941,8 +941,8 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 		"report_end_time":     "2026-05-20 12:00",
 		"report_html":         "<h2>Daily summary</h2><p>Requests: 1024</p>",
 		"source_name":         "openai-official",
-		"change_summary":      "2 up, 1 down, 3 new",
-		"change_details":      "<p>gpt-4o: 5.00 -> 6.00 USD/M</p>",
+		"change_summary":      "2 up, 1 down, 1 new, 0 removed",
+		"change_details":      "| model | prev in -> curr in | in delta% | suggested in |\n|---|---|---|---|\n| gpt-4o | 5 -> 6 | +20.00% | 6 |\n| gpt-4o-mini | 0.15 -> 0.12 | -20.00% | 0.12 |\n| o3-mini | - -> 1.1 | +inf% | 1.1 |",
 		"target_link":         "https://example.com/admin/upstream-pricing/changes",
 	}
 }
@@ -1339,22 +1339,29 @@ var notificationEmailOfficialTemplates = map[string]map[string]notificationEmail
 		},
 	},
 	NotificationEmailEventUpstreamPriceChange: {
-		// 最小可用模板；Task 12 会完善为带变动明细表的精美模板。
 		notificationEmailDefaultLocale: {
-			Subject: "[{{site_name}}] Upstream price change - {{source_name}}",
+			Subject: "[{{site_name}}] Upstream price change - {{source_name}} ({{change_summary}})",
 			HTML: notificationEmailCard("#ea580c", "Upstream price change", `
+<p>Hello {{recipient_name}},</p>
+<p>An upstream pricing source reported model price changes during the latest sync.</p>
 <p><strong>Source</strong>: {{source_name}}</p>
-<p>{{change_summary}}</p>
-<div>{{change_details}}</div>
-<p><a href="{{target_link}}">Review changes</a></p>`),
+<p><strong>Changes</strong>: {{change_summary}}</p>
+<p style="font-weight:600;">Change details</p>
+<pre style="background:#f4f4f5;border:1px solid #e4e4e7;border-radius:8px;padding:16px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;overflow-x:auto;">{{change_details}}</pre>
+<p><a class="button" href="{{target_link}}">Review changes</a></p>
+<p class="muted">Review each change in the admin console to apply suggested prices or dismiss it.</p>`),
 		},
 		notificationEmailLocaleChinese: {
-			Subject: "[{{site_name}}] 上游价格变动 - {{source_name}}",
+			Subject: "[{{site_name}}] 上游价格变动 - {{source_name}}（{{change_summary}}）",
 			HTML: notificationEmailCard("#ea580c", "上游价格变动", `
+<p>{{recipient_name}}，您好：</p>
+<p>一次上游价格同步检测到模型价格发生变动。</p>
 <p><strong>来源</strong>：{{source_name}}</p>
-<p>{{change_summary}}</p>
-<div>{{change_details}}</div>
-<p><a href="{{target_link}}">查看变动详情</a></p>`),
+<p><strong>变动摘要</strong>：{{change_summary}}</p>
+<p style="font-weight:600;">变动明细</p>
+<pre style="background:#f4f4f5;border:1px solid #e4e4e7;border-radius:8px;padding:16px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;overflow-x:auto;">{{change_details}}</pre>
+<p><a class="button" href="{{target_link}}">查看变动详情</a></p>
+<p class="muted">请前往管理后台逐条确认：采纳建议价或忽略本次变动。</p>`),
 		},
 	},
 }
