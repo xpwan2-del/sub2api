@@ -84,6 +84,7 @@ export interface UpstreamPriceChange {
   suggested_multiplier: number | null
   status: UpstreamPriceChangeStatus | string
   detected_at: string
+  reverted_at?: string
 }
 
 export interface ListUpstreamPriceChangesParams {

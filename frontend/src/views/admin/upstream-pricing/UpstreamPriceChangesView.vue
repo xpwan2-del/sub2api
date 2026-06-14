@@ -27,6 +27,19 @@
 
       <!-- Changes Table -->
       <template #table>
+        <div
+          v-if="changes.some((c) => c.status === 'pending')"
+          class="mb-3 flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm dark:border-dark-600 dark:bg-dark-800"
+        >
+          <span class="text-gray-600 dark:text-gray-300">{{ t('upstreamPricing.changes.batchWarning') }}</span>
+          <button
+            @click="handleBatchApplyFollowCost"
+            :disabled="batching"
+            class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {{ t('upstreamPricing.changes.batchFollowCost') }}
+          </button>
+        </div>
         <DataTable :columns="columns" :data="changes" :loading="loading">
           <template #cell-source_id="{ value }">
             <span class="text-sm">{{ sourceLabel(value) }}</span>
@@ -91,6 +104,15 @@
               >
                 {{ t('upstreamPricing.changes.dismiss') }}
               </button>
+              <button
+                v-if="row.status === 'applied' && !row.reverted_at"
+                @click="handleRevert(row)"
+                :disabled="busyId === row.id"
+                class="rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50 dark:bg-amber-900/20 dark:text-amber-300 dark:hover:bg-amber-900/40"
+              >
+                {{ t('upstreamPricing.changes.revert') }}
+              </button>
+              <span v-else-if="row.reverted_at" class="text-xs text-gray-400">{{ t('upstreamPricing.changes.revertedLabel') }}</span>
               <span v-else class="text-xs text-gray-400">—</span>
             </div>
           </template>
@@ -122,6 +144,14 @@
               {{ applyMode === 'lock_price' ? t('upstreamPricing.changes.lockPrice') : t('upstreamPricing.changes.followCost') }}
             </span>
           </div>
+        </div>
+
+        <div
+          v-if="applyMode === 'lock_price' && applyTargets.warnings?.length"
+          class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-300"
+        >
+          <div class="mb-1 font-medium">{{ t('upstreamPricing.changes.collateralWarning') }}</div>
+          <div v-for="w in applyTargets.warnings" :key="w.group_id" class="text-xs">{{ w.message }}</div>
         </div>
 
         <div>
@@ -182,6 +212,7 @@ const appStore = useAppStore()
 
 const loading = ref(false)
 const applying = ref(false)
+const batching = ref(false)
 const busyId = ref<number | null>(null)
 const changes = ref<UpstreamPriceChange[]>([])
 const sources = ref<UpstreamPriceSource[]>([])
@@ -374,6 +405,34 @@ async function handleDismiss(row: UpstreamPriceChange) {
   try {
     await upstreamPricingAPI.dismissChange(row.id)
     appStore.showSuccess(t('upstreamPricing.changes.dismissed'))
+    loadChanges()
+  } catch (err: unknown) {
+    appStore.showError(extractApiErrorMessage(err, t('common.error')))
+  } finally {
+    busyId.value = null
+  }
+}
+
+async function handleBatchApplyFollowCost() {
+  if (!window.confirm(t('upstreamPricing.changes.batchWarning'))) return
+  batching.value = true
+  try {
+    const result = await upstreamPricingAPI.batchApplyFollowCost(filterSourceId.value ?? undefined)
+    appStore.showSuccess(t('upstreamPricing.changes.batchApplied', { success: result.success, failed: result.failed }))
+    loadChanges()
+  } catch (err: unknown) {
+    appStore.showError(extractApiErrorMessage(err, t('common.error')))
+  } finally {
+    batching.value = false
+  }
+}
+
+async function handleRevert(row: UpstreamPriceChange) {
+  if (!window.confirm(t('upstreamPricing.changes.revertConfirm'))) return
+  busyId.value = row.id
+  try {
+    await upstreamPricingAPI.revertChange(row.id)
+    appStore.showSuccess(t('upstreamPricing.changes.reverted'))
     loadChanges()
   } catch (err: unknown) {
     appStore.showError(extractApiErrorMessage(err, t('common.error')))
