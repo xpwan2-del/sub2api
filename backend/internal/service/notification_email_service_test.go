@@ -162,8 +162,21 @@ func TestNotificationEmailUpstreamPriceChangeTemplateRendersBilingual(t *testing
 	svc := NewNotificationEmailService(newNotificationEmailMemorySettingRepo(), nil)
 
 	// Render with the same variable shape the sync service actually sends
-	// (source_name / change_summary / Markdown change_details / target_link).
+	// (source_name / structured change_up/down/new/removed counts / Markdown
+	// change_details / target_link). The summary line is rendered per-locale by
+	// the template itself, so only flat numeric counts are passed in.
 	markdownDetails := "| model | prev in -> curr in | in delta% | suggested in |\n|---|---|---|---|\n| gpt-4o | 5 -> 6 | +20.00% | 6 |"
+
+	// Expected localized summary fragments produced by each template (body).
+	expectedSummary := map[string]string{
+		"en": "2 up, 1 down, 1 new, 0 removed",
+		"zh": "2 涨，1 跌，1 新增，0 下架",
+	}
+	// Subjects render without spaces (zh: 2涨，1跌，1新增，0下架).
+	expectedSubjectSummary := map[string]string{
+		"en": "2 up, 1 down, 1 new, 0 removed",
+		"zh": "2涨，1跌，1新增，0下架",
+	}
 
 	for _, locale := range []string{"en", "zh"} {
 		preview, err := svc.PreviewTemplate(ctx, NotificationEmailPreviewInput{
@@ -171,7 +184,10 @@ func TestNotificationEmailUpstreamPriceChangeTemplateRendersBilingual(t *testing
 			Locale: locale,
 			Variables: map[string]string{
 				"source_name":    "openai-official",
-				"change_summary": "2 up, 1 down, 1 new, 0 removed",
+				"change_up":      "2",
+				"change_down":    "1",
+				"change_new":     "1",
+				"change_removed": "0",
 				"change_details": markdownDetails,
 				"target_link":    "https://example.com/admin/upstream-pricing/changes",
 			},
@@ -180,8 +196,9 @@ func TestNotificationEmailUpstreamPriceChangeTemplateRendersBilingual(t *testing
 		require.NotEmpty(t, preview.Subject)
 		require.NotEmpty(t, preview.HTML)
 		require.Contains(t, preview.Subject, "openai-official")
+		require.Contains(t, preview.Subject, expectedSubjectSummary[locale])
 		require.Contains(t, preview.HTML, "openai-official")
-		require.Contains(t, preview.HTML, "2 up, 1 down, 1 new, 0 removed")
+		require.Contains(t, preview.HTML, expectedSummary[locale])
 		// The Markdown change_details must be present and HTML-escaped (safe), wrapped in <pre>.
 		require.Contains(t, preview.HTML, "<pre")
 		require.Contains(t, preview.HTML, "prev in -&gt; curr in")
@@ -189,6 +206,11 @@ func TestNotificationEmailUpstreamPriceChangeTemplateRendersBilingual(t *testing
 		require.Contains(t, preview.HTML, "https://example.com/admin/upstream-pricing/changes")
 		// No raw HTML injection from the Markdown payload.
 		require.NotContains(t, preview.HTML, "<table><")
+		// zh renders the localized Chinese summary (no English fragment leaks).
+		if locale == "zh" {
+			require.NotContains(t, preview.HTML, "2 up, 1 down, 1 new, 0 removed")
+			require.NotContains(t, preview.Subject, "2 up, 1 down, 1 new, 0 removed")
+		}
 	}
 
 	// confirm the event is listed and exposes the expected placeholders
@@ -198,9 +220,13 @@ func TestNotificationEmailUpstreamPriceChangeTemplateRendersBilingual(t *testing
 		if info.Event == NotificationEmailEventUpstreamPriceChange {
 			found = true
 			require.Contains(t, info.Placeholders, "source_name")
-			require.Contains(t, info.Placeholders, "change_summary")
+			require.Contains(t, info.Placeholders, "change_up")
+			require.Contains(t, info.Placeholders, "change_down")
+			require.Contains(t, info.Placeholders, "change_new")
+			require.Contains(t, info.Placeholders, "change_removed")
 			require.Contains(t, info.Placeholders, "change_details")
 			require.Contains(t, info.Placeholders, "target_link")
+			require.NotContains(t, info.Placeholders, "change_summary")
 		}
 	}
 	require.True(t, found, "upstream_price_change event must be listed")

@@ -9,6 +9,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -496,9 +497,13 @@ func (s *UpstreamPriceSyncService) emitAlert(ctx context.Context, src *dbent.Ups
 		if err != nil {
 			slog.Warn("upstream price sync: list alert recipients failed", "source_id", src.ID, "err", err)
 		} else {
+			upCount, downCount, newCount, removedCount := countChanges(rows)
 			vars := map[string]string{
 				"source_name":    src.Name,
-				"change_summary": summarizeChanges(rows),
+				"change_up":      strconv.Itoa(upCount),
+				"change_down":    strconv.Itoa(downCount),
+				"change_new":     strconv.Itoa(newCount),
+				"change_removed": strconv.Itoa(removedCount),
 				"change_details": content,
 				"target_link":    targetLink,
 			}
@@ -710,9 +715,9 @@ func classifySeverity(rows []*dbent.UpstreamPriceChange) string {
 	}
 }
 
-// summarizeChanges 生成"N涨 M跌 K新增"摘要。
-func summarizeChanges(rows []*dbent.UpstreamPriceChange) string {
-	var up, down, added, gone int
+// countChanges 统计各 change_type 数量。返回的扁平字段由邮件模板按收件人
+// locale 各自渲染本语言文案，避免在 sync 侧预格式化英文摘要。
+func countChanges(rows []*dbent.UpstreamPriceChange) (up, down, added, gone int) {
 	for _, r := range rows {
 		switch PriceChangeType(r.ChangeType) {
 		case PriceChangeUp:
@@ -725,13 +730,13 @@ func summarizeChanges(rows []*dbent.UpstreamPriceChange) string {
 			gone++
 		}
 	}
-	return fmt.Sprintf("%d up, %d down, %d new, %d removed", up, down, added, gone)
+	return up, down, added, gone
 }
 
 // buildChangeReport 构造 Markdown 明细表（admin 通知 content + 邮件 change_details 共用）。
 func buildChangeReport(src *dbent.UpstreamPriceSource, rows []*dbent.UpstreamPriceChange) (title, content string) {
-	summary := summarizeChanges(rows)
-	title = fmt.Sprintf("%s price changes: %s", src.Name, summary)
+	up, down, added, gone := countChanges(rows)
+	title = fmt.Sprintf("%s price changes: %d up, %d down, %d new, %d removed", src.Name, up, down, added, gone)
 
 	var b strings.Builder
 	_, _ = b.WriteString("| model | prev in -> curr in | in delta% | suggested in |\n")
