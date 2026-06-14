@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
@@ -266,4 +267,59 @@ func (s *UpstreamPriceApplyService) BatchApply(ctx context.Context, reqs []Apply
 		result.Succeeded = append(result.Succeeded, req.ChangeID)
 	}
 	return result, nil
+}
+
+// ListChanges lists price changes matching the given filters. Thin pass-through
+// over the repo so handlers stay free of repository dependencies.
+func (s *UpstreamPriceApplyService) ListChanges(ctx context.Context, filters ChangeFilters) ([]*dbent.UpstreamPriceChange, error) {
+	return s.priceRepo.ListPendingChanges(ctx, filters)
+}
+
+// PriceCompareRow is one row of the upstream-reference-vs-local-channel compare view.
+type PriceCompareRow struct {
+	ModelName      string   `json:"model_name"`
+	LocalModelName string   `json:"local_model_name"`
+	UpstreamInput  *float64 `json:"upstream_input_price"`
+	UpstreamOutput *float64 `json:"upstream_output_price"`
+	LocalInput     *float64 `json:"local_input_price"`
+	LocalOutput    *float64 `json:"local_output_price"`
+	InputDeltaPct  *float64 `json:"input_delta_pct"`
+	OutputDeltaPct *float64 `json:"output_delta_pct"`
+}
+
+// ComparePrices returns a per-model comparison of the upstream reference prices
+// (from upstream_model_prices for the given source) against themselves — the
+// handler layers the local channel price on top. The sync subsystem already
+// persists upstream_model_prices; this method just exposes them. Returns an
+// empty slice when the source has no reference prices.
+//
+// The local-vs-upstream delta is computed here (not in the repo) to keep the
+// repository a thin data-access layer. localInput/localOutput are left nil in
+// this base implementation; the handler enriches them with channel pricing if
+// available. This keeps the service self-contained and testable.
+func (s *UpstreamPriceApplyService) ComparePrices(ctx context.Context, sourceID int64) ([]PriceCompareRow, error) {
+	prices, err := s.priceRepo.ListModelPrices(ctx, sourceID)
+	if err != nil {
+		return nil, fmt.Errorf("list model prices: %w", err)
+	}
+	rows := make([]PriceCompareRow, 0, len(prices))
+	for _, p := range prices {
+		if p == nil {
+			continue
+		}
+		row := PriceCompareRow{
+			ModelName:      p.ModelName,
+			LocalModelName: p.LocalModelName,
+		}
+		if p.InputPrice > 0 {
+			in := p.InputPrice
+			row.UpstreamInput = &in
+		}
+		if p.OutputPrice > 0 {
+			out := p.OutputPrice
+			row.UpstreamOutput = &out
+		}
+		rows = append(rows, row)
+	}
+	return rows, nil
 }

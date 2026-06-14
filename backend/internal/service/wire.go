@@ -599,6 +599,19 @@ var ProviderSet = wire.NewSet(
 	NewBundleRouteResolver,
 	NewBundleUsageService,
 	ProvideBundleExpiryService,
+
+	// Upstream price sync subsystem (Tasks 1-11)
+	NewUpstreamPriceSourceService,
+	NewAdminNotificationService,
+	NewUpstreamPriceApplyService,
+	NewSlogAuditLogger,
+	ProvideUpstreamPriceSyncService,
+	// Adapter providers — each returns its target interface directly, so no
+	// wire.Bind is needed: wire keys these by the interface return type.
+	NewChannelPricingWriterAdapter,
+	NewGroupRateWriterAdapter,
+	NewGroupRateReaderAdapter,
+	NewAlertRecipientReaderAdapter,
 )
 
 // ProvideUserPlatformQuotaUsageFlusher 创建并启动 UserPlatformQuotaUsageFlusher。
@@ -659,6 +672,36 @@ func ProvideChannelMonitorRunner(svc *ChannelMonitorService, settingService *Set
 // ProvideBundleExpiryService creates and starts BundleExpiryService.
 func ProvideBundleExpiryService(bundleUsageRepo BundleUsageRepository, bundleSubRepo BundleSubscriptionRepository, userSubRepo UserSubscriptionRepository) *BundleExpiryService {
 	svc := NewBundleExpiryService(bundleUsageRepo, bundleSubRepo, userSubRepo, time.Minute)
+	svc.Start()
+	return svc
+}
+
+// ProvideUpstreamPriceSyncService constructs the upstream-price sync service
+// and starts its background goroutine (mirrors ProvideOpsMetricsCollector).
+// Stop() is wired into cmd/server/wire.go provideCleanup so it shuts down on SIGTERM.
+func ProvideUpstreamPriceSyncService(
+	priceRepo UpstreamPriceRepository,
+	notifService *AdminNotificationService,
+	emailService *NotificationEmailService,
+	groupReader GroupRateReader,
+	recipientReader AlertRecipientReader,
+	opsRepo OpsRepository,
+	redisClient *redis.Client,
+	encryptor SecretEncryptor,
+	httpClient HTTPUpstream,
+) *UpstreamPriceSyncService {
+	svc := NewUpstreamPriceSyncService(
+		priceRepo,
+		notifService,
+		emailService,
+		groupReader,
+		recipientReader,
+		opsRepo,
+		redisClient,
+		encryptor,
+		httpClient,
+		UpstreamPriceSyncConfig{},
+	)
 	svc.Start()
 	return svc
 }

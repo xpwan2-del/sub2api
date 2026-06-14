@@ -103,6 +103,12 @@ func RegisterAdminRoutes(
 
 		// 邀请返利（专属用户管理）
 		registerAffiliateRoutes(admin, h)
+
+		// 上游价格同步（source CRUD / 变动审计 / 对比）
+		registerUpstreamPriceRoutes(admin, h)
+
+		// 管理员站内通知（未读 / 已读标记）
+		registerAdminNotificationRoutes(admin, h)
 	}
 
 			// 套餐管理
@@ -688,5 +694,42 @@ func registerBundleRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 			subs.POST("/:id/revoke", h.Admin.Bundle.RevokeSubscription)
 			subs.POST("/:id/extend", h.Admin.Bundle.ExtendSubscription)
 		}
+	}
+}
+
+// registerUpstreamPriceRoutes wires the upstream-price-sync admin endpoints:
+// source CRUD, manual sync/test, change list/apply/dismiss, and the compare view.
+func registerUpstreamPriceRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	up := admin.Group("/upstream-price")
+	{
+		sources := up.Group("/sources")
+		{
+			sources.POST("", h.Admin.UpstreamPrice.CreateSource)
+			sources.GET("", h.Admin.UpstreamPrice.ListSources)
+			sources.PUT("/:id", h.Admin.UpstreamPrice.UpdateSource)
+			sources.DELETE("/:id", h.Admin.UpstreamPrice.DeleteSource)
+			sources.POST("/:id/test", h.Admin.UpstreamPrice.TestConnection)
+			sources.POST("/:id/sync", h.Admin.UpstreamPrice.SyncSource)
+		}
+
+		changes := up.Group("/changes")
+		{
+			changes.GET("", h.Admin.UpstreamPrice.ListChanges)
+			changes.POST("/:id/apply", h.Admin.UpstreamPrice.ApplyChange)
+			changes.POST("/:id/dismiss", h.Admin.UpstreamPrice.DismissChange)
+		}
+
+		up.GET("/compare", h.Admin.UpstreamPrice.ComparePrices)
+	}
+}
+
+// registerAdminNotificationRoutes wires the admin in-site notification endpoints.
+func registerAdminNotificationRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	notifs := admin.Group("/admin-notifications")
+	{
+		notifs.GET("/unread", h.Admin.AdminNotification.ListUnread)
+		notifs.GET("/unread/count", h.Admin.AdminNotification.CountUnread)
+		notifs.POST("/:id/read", h.Admin.AdminNotification.MarkRead)
+		notifs.POST("/read-all", h.Admin.AdminNotification.MarkAllRead)
 	}
 }

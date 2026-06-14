@@ -38,6 +38,8 @@ type AdminHandlers struct {
 	Affiliate              *admin.AffiliateHandler
 	Bundle                 *admin.BundleAdminHandler
 	Compliance             *admin.ComplianceHandler
+	UpstreamPrice          *admin.UpstreamPriceHandler
+	AdminNotification      *admin.AdminNotificationHandler
 }
 
 // Handlers contains all HTTP handlers

@@ -100,6 +100,8 @@ var ProviderSet = wire.NewSet(
 	NewBundleUsageRepository,
 	NewBundleRPMCache,
 	NewBundleConcurrencyCache,
+	NewUpstreamPriceRepository,    // upstream price sync subsystem
+	NewAdminNotificationRepository, // admin in-site notifications
 
 	// Cache implementations
 	NewGatewayCache,
