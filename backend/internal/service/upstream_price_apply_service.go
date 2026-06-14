@@ -228,6 +228,15 @@ func (s *UpstreamPriceApplyService) Apply(ctx context.Context, req ApplyRequest,
 	return nil
 }
 
+// 读 apply 前实际值（用于覆盖保护 + 撤销回滚）。
+// 通过 type assertion 从 channelWriter / groupWriter 扩展获取，不增构造参数。
+type channelPricingSnapshotReader interface {
+	GetCurrentPriceForModel(ctx context.Context, channelID int64, modelName string) (inputPrice, outputPrice float64, err error)
+}
+type groupRateSnapshotReader interface {
+	GetRateMultiplierByGroupID(ctx context.Context, groupID int64) (float64, error)
+}
+
 // resolveChannelForGroup 解析 group → channel。ApplyService 不持有 ChannelService
 // 的 group 映射能力，因此通过 ChannelPricingWriter 扩展方法获取（若实现）；
 // 若 writer 不支持则返回 BadRequest 引导管理员用 follow_cost + channel_id。

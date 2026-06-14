@@ -167,6 +167,10 @@ func (m *mockChannelRepository) ReplaceModelPricingForModel(context.Context, int
 	return nil
 }
 
+func (m *mockChannelRepository) GetCurrentPriceForModel(context.Context, int64, string) (float64, float64, error) {
+	return 0, 0, nil
+}
+
 func (m *mockChannelRepository) ListChannelsByModel(context.Context, string) ([]ChannelApplyTarget, error) {
 	return []ChannelApplyTarget{}, nil
 }

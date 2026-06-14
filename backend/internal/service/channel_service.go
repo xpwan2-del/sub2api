@@ -54,6 +54,9 @@ type ChannelRepository interface {
 	// input/output 单价（per-token USD）。若该 model 无定价行则插入一条新行（token 模式）。
 	// 匹配大小写不敏感；同一行包含多个 model 时只更新价格字段，不动 models 列表。
 	ReplaceModelPricingForModel(ctx context.Context, channelID int64, modelName string, inputPrice, outputPrice float64) error
+	// GetCurrentPriceForModel 读取指定 channel 下匹配 modelName 的当前单价（per-token USD）。
+	// 用于 apply 前快照（覆盖保护 + 撤销回滚）。未命中返回 (0,0,nil)。
+	GetCurrentPriceForModel(ctx context.Context, channelID int64, modelName string) (inputPrice, outputPrice float64, err error)
 
 	// ListChannelsByModel 返回 models JSONB 含 modelName 的所有 channel（apply 下拉用）。
 	ListChannelsByModel(ctx context.Context, modelName string) ([]ChannelApplyTarget, error)

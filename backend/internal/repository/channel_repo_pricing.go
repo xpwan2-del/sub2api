@@ -166,6 +166,42 @@ func replaceModelPricingForModelTx(ctx context.Context, exec dbExec, channelID i
 	return nil
 }
 
+// GetCurrentPriceForModel 读取指定 channel 下匹配 modelName 的当前单价（per-token USD）。
+// 用于 apply 前快照（覆盖保护 + 撤销回滚）。未命中返回 (0,0,nil)。
+func (r *channelRepository) GetCurrentPriceForModel(ctx context.Context, channelID int64, modelName string) (float64, float64, error) {
+	if modelName == "" {
+		return 0, 0, fmt.Errorf("model name is empty")
+	}
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT p.input_price, p.output_price, p.models
+		 FROM channel_model_pricing p
+		 WHERE p.channel_id = $1`,
+		channelID,
+	)
+	if err != nil {
+		return 0, 0, fmt.Errorf("query current price for model: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	target := strings.ToLower(modelName)
+	for rows.Next() {
+		var in, out float64
+		var modelsJSON []byte
+		if err := rows.Scan(&in, &out, &modelsJSON); err != nil {
+			return 0, 0, fmt.Errorf("scan current price for model: %w", err)
+		}
+		var models []string
+		if err := json.Unmarshal(modelsJSON, &models); err != nil {
+			continue
+		}
+		for _, m := range models {
+			if strings.ToLower(m) == target {
+				return in, out, rows.Err()
+			}
+		}
+	}
+	return 0, 0, rows.Err()
+}
+
 // --- 按模型名查询 channel / 关联 group（apply 目标选择器） ---
 
 // ListChannelsByModel 找出 channel_model_pricing.models JSONB 含 modelName 的所有渠道。

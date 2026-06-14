@@ -106,6 +106,9 @@ type fakeChannelWriter struct {
 	lastOutputPrice  float64
 	cacheInvalidated bool
 	called           bool
+
+	curInputPrice  float64
+	curOutputPrice float64
 }
 
 func (f *fakeChannelWriter) ReplaceModelPricingForModel(_ context.Context, channelID int64, modelName string, inputPrice, outputPrice float64) error {
@@ -117,6 +120,11 @@ func (f *fakeChannelWriter) ReplaceModelPricingForModel(_ context.Context, chann
 	return nil
 }
 func (f *fakeChannelWriter) InvalidateChannelCache() { f.cacheInvalidated = true }
+
+// GetCurrentPriceForModel 支持 apply 前快照的读路径（type assertion 扩展）。
+func (f *fakeChannelWriter) GetCurrentPriceForModel(_ context.Context, _ int64, _ string) (float64, float64, error) {
+	return f.curInputPrice, f.curOutputPrice, nil
+}
 
 // fakeChannelWriterWithResolver 同时支持 lock_price 的 group→channel 解析。
 type fakeChannelWriterWithResolver struct {
@@ -136,6 +144,8 @@ type fakeGroupWriter struct {
 	lastGroupID    int64
 	lastMultiplier float64
 	called         bool
+
+	curMultiplier float64
 }
 
 func (f *fakeGroupWriter) UpdateRateMultiplier(_ context.Context, groupID int64, multiplier float64) error {
@@ -143,6 +153,11 @@ func (f *fakeGroupWriter) UpdateRateMultiplier(_ context.Context, groupID int64,
 	f.lastGroupID = groupID
 	f.lastMultiplier = multiplier
 	return nil
+}
+
+// GetRateMultiplierByGroupID 支持 apply 前快照的读路径（type assertion 扩展）。
+func (f *fakeGroupWriter) GetRateMultiplierByGroupID(_ context.Context, _ int64) (float64, error) {
+	return f.curMultiplier, nil
 }
 
 // captureAuditLogger 记录最后一条审计事件。

@@ -86,6 +86,17 @@ func (a channelPricingWriterAdapter) GetChannelIDForGroup(ctx context.Context, g
 	return a.channel.repo.GetChannelIDByGroupID(ctx, groupID)
 }
 
+// GetCurrentPriceForModel reads the current per-token price for a model on a
+// channel, used to snapshot apply-prev values (coverage protection + revert).
+// Delegates to ChannelRepository; satisfies the optional
+// channelPricingSnapshotReader interface via type assertion.
+func (a channelPricingWriterAdapter) GetCurrentPriceForModel(ctx context.Context, channelID int64, modelName string) (float64, float64, error) {
+	if a.channel == nil || a.channel.repo == nil {
+		return 0, 0, nil
+	}
+	return a.channel.repo.GetCurrentPriceForModel(ctx, channelID, modelName)
+}
+
 // ===== GroupRateWriter adapter =====
 
 // groupRateWriterAdapter wraps GroupRepository.UpdateRateMultiplier to satisfy
@@ -102,6 +113,23 @@ func NewGroupRateWriterAdapter(groupRepo GroupRepository) GroupRateWriter {
 // UpdateRateMultiplier delegates to GroupRepository.
 func (a groupRateWriterAdapter) UpdateRateMultiplier(ctx context.Context, groupID int64, multiplier float64) error {
 	return a.groupRepo.UpdateRateMultiplier(ctx, groupID, multiplier)
+}
+
+// GetRateMultiplierByGroupID reads the current rate_multiplier for a group,
+// used to snapshot apply-prev values (coverage protection + revert). Satisfies
+// the optional groupRateSnapshotReader interface via type assertion.
+//
+// Uses GetByIDLite (not GetByID) because only RateMultiplier is read — the
+// account-count aggregate that GetByID performs is wasted work here.
+func (a groupRateWriterAdapter) GetRateMultiplierByGroupID(ctx context.Context, groupID int64) (float64, error) {
+	if a.groupRepo == nil {
+		return 0, nil
+	}
+	g, err := a.groupRepo.GetByIDLite(ctx, groupID)
+	if err != nil {
+		return 0, err
+	}
+	return g.RateMultiplier, nil
 }
 
 // ===== GroupRateReader adapter =====
@@ -199,12 +227,14 @@ func (a alertRecipientReaderAdapter) ListAlertRecipients(ctx context.Context) ([
 
 // Compile-time assertions that adapters satisfy their interfaces.
 var (
-	_ ChannelPricingWriter = channelPricingWriterAdapter{}
-	_ GroupRateWriter      = groupRateWriterAdapter{}
-	_ GroupRateReader      = groupRateReaderAdapter{}
-	_ AlertRecipientReader = alertRecipientReaderAdapter{}
-	_ ApplyTargetReader    = applyTargetReaderAdapter{}
-	_ groupChannelResolver = channelPricingWriterAdapter{}
+	_ ChannelPricingWriter          = channelPricingWriterAdapter{}
+	_ GroupRateWriter               = groupRateWriterAdapter{}
+	_ GroupRateReader               = groupRateReaderAdapter{}
+	_ AlertRecipientReader          = alertRecipientReaderAdapter{}
+	_ ApplyTargetReader             = applyTargetReaderAdapter{}
+	_ groupChannelResolver          = channelPricingWriterAdapter{}
+	_ channelPricingSnapshotReader  = channelPricingWriterAdapter{}
+	_ groupRateSnapshotReader       = groupRateWriterAdapter{}
 )
 
 // groupChannelResolver is mirrored from apply_service.go for the compile-time
