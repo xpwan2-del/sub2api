@@ -2,6 +2,7 @@ package handler
 
 import (
 	"math"
+	"net/http"
 	"sort"
 	"strings"
 	"sync"
@@ -14,6 +15,8 @@ import (
 )
 
 const publicModelCatalogCacheTTL = 120 * time.Second
+const publicModelCatalogRateWindow = time.Minute
+const publicModelCatalogRateLimit = 120
 
 // PublicModelCatalogHandler exposes a public, read-only model catalog.
 //
@@ -25,18 +28,25 @@ type PublicModelCatalogHandler struct {
 	cacheMu        sync.RWMutex
 	cachedAt       time.Time
 	cachedCatalog  []publicModelCatalogItem
+	rateMu         sync.Mutex
+	rateBuckets    map[string]publicModelCatalogRateBucket
 }
 
 func NewPublicModelCatalogHandler(channelService *service.ChannelService) *PublicModelCatalogHandler {
-	return &PublicModelCatalogHandler{channelService: channelService}
+	return &PublicModelCatalogHandler{
+		channelService: channelService,
+		rateBuckets:    make(map[string]publicModelCatalogRateBucket),
+	}
 }
 
 type publicModelCatalogItem struct {
-	Name     string              `json:"name"`
-	Provider string              `json:"provider"`
-	Platform string              `json:"platform"`
-	Status   string              `json:"status"`
-	Pricing  *publicModelPricing `json:"pricing"`
+	Name         string              `json:"name"`
+	Provider     string              `json:"provider"`
+	Platform     string              `json:"platform"`
+	Status       string              `json:"status"`
+	Description  string              `json:"description"`
+	Capabilities []string            `json:"capabilities"`
+	Pricing      *publicModelPricing `json:"pricing"`
 }
 
 type publicModelPricing struct {
@@ -61,9 +71,20 @@ type publicPricingIntervalDTO struct {
 	PerRequestPrice *float64 `json:"per_request_price"`
 }
 
+type publicModelCatalogRateBucket struct {
+	windowStart time.Time
+	count       int
+}
+
 // List returns the public catalog.
 // GET /api/v1/public/models/catalog
 func (h *PublicModelCatalogHandler) List(c *gin.Context) {
+	if !h.allowRequest(c.ClientIP()) {
+		c.Header("Retry-After", "60")
+		response.Error(c, http.StatusTooManyRequests, "Too many requests")
+		return
+	}
+
 	if cached, ok := h.cached(); ok {
 		response.Success(c, cached)
 		return
@@ -79,6 +100,35 @@ func (h *PublicModelCatalogHandler) List(c *gin.Context) {
 	h.storeCache(catalog)
 
 	response.Success(c, catalog)
+}
+
+func (h *PublicModelCatalogHandler) allowRequest(clientIP string) bool {
+	now := time.Now()
+	key := strings.TrimSpace(clientIP)
+	if key == "" {
+		key = "unknown"
+	}
+
+	h.rateMu.Lock()
+	defer h.rateMu.Unlock()
+
+	for bucketKey, bucket := range h.rateBuckets {
+		if now.Sub(bucket.windowStart) > publicModelCatalogRateWindow*2 {
+			delete(h.rateBuckets, bucketKey)
+		}
+	}
+
+	bucket := h.rateBuckets[key]
+	if bucket.windowStart.IsZero() || now.Sub(bucket.windowStart) >= publicModelCatalogRateWindow {
+		h.rateBuckets[key] = publicModelCatalogRateBucket{windowStart: now, count: 1}
+		return true
+	}
+	if bucket.count >= publicModelCatalogRateLimit {
+		return false
+	}
+	bucket.count++
+	h.rateBuckets[key] = bucket
+	return true
 }
 
 func (h *PublicModelCatalogHandler) cached() ([]publicModelCatalogItem, bool) {
@@ -113,11 +163,13 @@ func buildPublicModelCatalog(channels []service.AvailableChannel) []publicModelC
 			}
 
 			item := publicModelCatalogItem{
-				Name:     model.Name,
-				Provider: providerLabel(model.Platform),
-				Platform: model.Platform,
-				Status:   "available",
-				Pricing:  toPublicPricing(model.Pricing),
+				Name:         model.Name,
+				Provider:     providerLabel(model.Platform),
+				Platform:     model.Platform,
+				Status:       "available",
+				Description:  publicModelDescription(model.Name, model.Platform, model.Pricing),
+				Capabilities: publicModelCapabilities(model.Name, model.Platform, model.Pricing),
+				Pricing:      toPublicPricing(model.Pricing),
 			}
 
 			key := strings.ToLower(model.Platform) + "\x00" + strings.ToLower(model.Name)
@@ -224,9 +276,103 @@ func publicPricingScore(p *publicModelPricing) float64 {
 func copyPublicCatalog(src []publicModelCatalogItem) []publicModelCatalogItem {
 	out := make([]publicModelCatalogItem, len(src))
 	copy(out, src)
+	for i := range out {
+		out[i].Capabilities = append([]string(nil), src[i].Capabilities...)
+	}
 	return out
 }
 
 func providerLabel(platform string) string {
 	return strings.TrimSpace(platform)
+}
+
+func publicModelCapabilities(name, platform string, pricing *service.ChannelModelPricing) []string {
+	text := strings.ToLower(strings.TrimSpace(name) + " " + strings.TrimSpace(platform))
+	capabilities := make([]string, 0, len(capabilityOrderForPublicCatalog()))
+	add := func(value string) {
+		for _, existing := range capabilities {
+			if existing == value {
+				return
+			}
+		}
+		capabilities = append(capabilities, value)
+	}
+
+	if containsAny(text, "o1", "o3", "o4", "r1", "reason", "think", "deepseek", "sonnet", "opus", "grok", "gemini-2.5", "gemini-3", "gpt-5") {
+		add("reasoning")
+	}
+	if containsAny(text, "code", "coder", "claude", "sonnet", "gpt", "deepseek", "qwen", "glm", "kimi") {
+		add("coding")
+	}
+	if containsAny(text, "long", "context", "128k", "200k", "1m", "gemini", "claude", "kimi", "qwen") {
+		add("longContext")
+	}
+	if containsAny(text, "4o", "omni", "vision", "image", "video", "grok", "gemini", "claude", "sora", "veo", "kling", "wan", "hailuo", "seedream", "seedance") {
+		add("multimodal")
+	}
+	if containsAny(text, "flash", "mini", "haiku", "turbo", "fast", "lite") {
+		add("fast")
+	}
+	if containsAny(text, "mini", "flash", "haiku", "lite", "cheap") || publicPricingScore(toPublicPricing(pricing)) <= 0.000002 {
+		add("lowCost")
+	}
+
+	sort.SliceStable(capabilities, func(i, j int) bool {
+		return capabilityRank(capabilities[i]) < capabilityRank(capabilities[j])
+	})
+	return capabilities
+}
+
+func publicModelDescription(name, platform string, pricing *service.ChannelModelPricing) string {
+	capabilities := publicModelCapabilities(name, platform, pricing)
+	if len(capabilities) == 0 {
+		return "适合通过 TOP-AI 网关调用的通用模型。"
+	}
+
+	labels := make([]string, 0, len(capabilities))
+	for _, capability := range capabilities {
+		switch capability {
+		case "reasoning":
+			labels = append(labels, "推理")
+		case "coding":
+			labels = append(labels, "编程")
+		case "longContext":
+			labels = append(labels, "长上下文")
+		case "lowCost":
+			labels = append(labels, "低成本")
+		case "multimodal":
+			labels = append(labels, "多模态")
+		case "fast":
+			labels = append(labels, "快速响应")
+		}
+	}
+	if len(labels) == 0 {
+		return "适合通过 TOP-AI 网关调用的通用模型。"
+	}
+	if len(labels) > 3 {
+		labels = labels[:3]
+	}
+	return "适合" + strings.Join(labels, "、") + "场景。"
+}
+
+func containsAny(text string, values ...string) bool {
+	for _, value := range values {
+		if strings.Contains(text, value) {
+			return true
+		}
+	}
+	return false
+}
+
+func capabilityOrderForPublicCatalog() []string {
+	return []string{"reasoning", "coding", "longContext", "lowCost", "multimodal", "fast"}
+}
+
+func capabilityRank(value string) int {
+	for i, item := range capabilityOrderForPublicCatalog() {
+		if item == value {
+			return i
+		}
+	}
+	return 999
 }

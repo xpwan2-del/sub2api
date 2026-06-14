@@ -6,6 +6,7 @@ export interface ModelCatalogCard {
   id: string
   name: string
   provider: string
+  description: string
   platforms: string[]
   status: string
   pricing: PublicModelPricing | null
@@ -42,7 +43,7 @@ export function buildModelCatalog(rows: PublicModelCatalogItem[]): ModelCatalogB
     if (!name) continue
 
     const key = name.toLowerCase()
-    const capabilities: string[] = []
+    const capabilities = normalizeCapabilities(row.capabilities?.length ? row.capabilities : inferModelCapabilities(row))
     const current = grouped.get(key)
 
     if (!current) {
@@ -50,6 +51,7 @@ export function buildModelCatalog(rows: PublicModelCatalogItem[]): ModelCatalogB
         id: key.replace(/[^a-z0-9._-]+/g, '-'),
         name,
         provider: row.provider || row.platform,
+        description: row.description?.trim() || modelDescriptionFromCapabilities(capabilities),
         platforms: row.platform ? [row.platform] : [],
         status: row.status,
         pricing: row.pricing,
@@ -59,6 +61,9 @@ export function buildModelCatalog(rows: PublicModelCatalogItem[]): ModelCatalogB
     }
 
     current.provider = current.provider || row.provider || row.platform
+    if (!current.description && row.description?.trim()) {
+      current.description = row.description.trim()
+    }
     if (row.platform && !current.platforms.includes(row.platform)) {
       current.platforms.push(row.platform)
     }
@@ -145,6 +150,56 @@ function preferPricing(next: PublicModelPricing | null, current: PublicModelPric
 
 function mergeSortedCapabilities(a: string[], b: string[]): string[] {
   return Array.from(new Set([...a, ...b])).sort(compareCapabilities)
+}
+
+function normalizeCapabilities(values?: string[]): string[] {
+  return Array.from(new Set((values || []).map((value) => value.trim()).filter(Boolean))).sort(compareCapabilities)
+}
+
+function inferModelCapabilities(row: PublicModelCatalogItem): string[] {
+  const text = `${row.name || ''} ${row.provider || ''} ${row.platform || ''}`.toLowerCase()
+  const capabilities: string[] = []
+  const add = (value: string) => {
+    if (!capabilities.includes(value)) capabilities.push(value)
+  }
+
+  if (containsAny(text, ['o1', 'o3', 'o4', 'r1', 'reason', 'think', 'deepseek', 'sonnet', 'opus', 'grok', 'gemini-2.5', 'gemini-3', 'gpt-5'])) {
+    add('reasoning')
+  }
+  if (containsAny(text, ['code', 'coder', 'claude', 'sonnet', 'gpt', 'deepseek', 'qwen', 'glm', 'kimi'])) {
+    add('coding')
+  }
+  if (containsAny(text, ['long', 'context', '128k', '200k', '1m', 'gemini', 'claude', 'kimi', 'qwen'])) {
+    add('longContext')
+  }
+  if (containsAny(text, ['4o', 'omni', 'vision', 'image', 'video', 'grok', 'gemini', 'claude', 'sora', 'veo', 'kling', 'wan', 'hailuo', 'seedream', 'seedance'])) {
+    add('multimodal')
+  }
+  if (containsAny(text, ['flash', 'mini', 'haiku', 'turbo', 'fast', 'lite'])) {
+    add('fast')
+  }
+  if (containsAny(text, ['mini', 'flash', 'haiku', 'lite', 'cheap']) || modelPriceScore(row.pricing) <= 0.000002) {
+    add('lowCost')
+  }
+
+  return normalizeCapabilities(capabilities)
+}
+
+function modelDescriptionFromCapabilities(capabilities: string[]): string {
+  if (capabilities.length === 0) return 'Available through the TOP-AI gateway.'
+  const labels: Record<string, string> = {
+    reasoning: 'reasoning',
+    coding: 'coding',
+    longContext: 'long context',
+    lowCost: 'low-cost',
+    multimodal: 'multimodal',
+    fast: 'fast response'
+  }
+  return `Suited for ${capabilities.slice(0, 3).map((capability) => labels[capability] || capability).join(', ')} workloads.`
+}
+
+function containsAny(text: string, values: string[]): boolean {
+  return values.some((value) => text.includes(value))
 }
 
 function compareCapabilities(a: string, b: string): number {

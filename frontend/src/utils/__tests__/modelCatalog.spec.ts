@@ -56,6 +56,7 @@ describe('modelCatalog utils', () => {
     const catalog = buildModelCatalog(rows)
 
     expect(catalog.facets.platforms).toEqual(['anthropic', 'openai'])
+    expect(catalog.facets.capabilities).toContain('coding')
     expect(catalog.facets.billingModes).toEqual(['token'])
   })
 
@@ -71,5 +72,19 @@ describe('modelCatalog utils', () => {
     })
 
     expect(filtered.map((item) => item.name)).toEqual(['claude-sonnet-4'])
+  })
+
+  it('filters by inferred capability without showing unavailable models', () => {
+    const catalog = buildModelCatalog(rows)
+
+    const filtered = filterModelCatalog(catalog.items, {
+      search: '',
+      platform: '',
+      capability: 'lowCost',
+      billingMode: '',
+      sortBy: 'name'
+    })
+
+    expect(filtered.map((item) => item.name)).toEqual(['gpt-4o-mini'])
   })
 })

@@ -27,6 +27,8 @@ export interface PublicModelCatalogItem {
   provider: string
   platform: string
   status: string
+  description?: string
+  capabilities?: string[]
   pricing: PublicModelPricing | null
 }
 

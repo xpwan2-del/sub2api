@@ -16,6 +16,8 @@
       :capabilities="model.capabilities"
     />
 
+    <p class="model-card-description">{{ model.description }}</p>
+
     <div class="model-platform-row">
       <span
         v-for="platform in model.platforms"
@@ -131,6 +133,15 @@ const primaryPlatform = computed(() => props.model.platforms[0] as any)
   font-weight: 800;
   padding: 6px 8px;
   text-transform: uppercase;
+}
+
+.model-card-description {
+  position: relative;
+  min-height: 44px;
+  color: rgba(203, 213, 225, 0.78);
+  font-size: 13px;
+  line-height: 1.65;
+  margin: -3px 0 0;
 }
 
 .model-platform-row {
