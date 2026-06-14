@@ -474,7 +474,7 @@ func (s *UpstreamPriceSyncService) emitAlert(ctx context.Context, src *dbent.Ups
 		return
 	}
 
-	// 【第2项】阈值过滤：小幅变动不发双通道告警（变动仍入库，只是不通知）。
+	// 阈值过滤：小幅变动不发双通道告警（变动仍入库，只是不通知）。
 	// threshold=0（默认）= 不过滤 = 全部告警（向后兼容）。
 	// 判定口径：max(|InputDeltaPct|, |OutputDeltaPct|)。
 	// 比 classifySeverity（仅看 InputDeltaPct）更严格 —— output-only 的涨价也会触发告警。
