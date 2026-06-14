@@ -167,6 +167,14 @@ func (m *mockChannelRepository) ReplaceModelPricingForModel(context.Context, int
 	return nil
 }
 
+func (m *mockChannelRepository) ListChannelsByModel(context.Context, string) ([]ChannelApplyTarget, error) {
+	return []ChannelApplyTarget{}, nil
+}
+
+func (m *mockChannelRepository) ListGroupsByChannels(context.Context, []int64) ([]GroupApplyTarget, error) {
+	return []GroupApplyTarget{}, nil
+}
+
 // ---------------------------------------------------------------------------
 // Mock: APIKeyAuthCacheInvalidator
 // ---------------------------------------------------------------------------

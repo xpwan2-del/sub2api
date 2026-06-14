@@ -41,6 +41,19 @@ type GroupRateWriter interface {
 	UpdateRateMultiplier(ctx context.Context, groupID int64, multiplier float64) error
 }
 
+// ApplyTargetReader 读取 apply 目标下拉列表（follow_cost→channels，lock_price→groups）。
+// 由 ApplyTargetReaderAdapter 适配 ChannelRepository，避免 ApplyService 直接依赖 repo。
+type ApplyTargetReader interface {
+	ListChannelsByModel(ctx context.Context, modelName string) ([]ChannelApplyTarget, error)
+	ListGroupsByChannels(ctx context.Context, channelIDs []int64) ([]GroupApplyTarget, error)
+}
+
+// ApplyTargetsResponse apply 弹窗下拉数据。
+type ApplyTargetsResponse struct {
+	Channels []ChannelApplyTarget `json:"channels"` // follow_cost 用
+	Groups   []GroupApplyTarget   `json:"groups"`   // lock_price 用
+}
+
 // AuditEvent 审计事件载荷。
 type AuditEvent struct {
 	Action  string         // 如 "upstream_price.apply"
@@ -83,16 +96,18 @@ type UpstreamPriceApplyService struct {
 	priceRepo     UpstreamPriceRepository
 	channelWriter ChannelPricingWriter
 	groupWriter   GroupRateWriter
+	targetReader  ApplyTargetReader
 	auditLogger   AuditLogger
 }
 
 // NewUpstreamPriceApplyService 构造 ApplyService。
-// channelWriter / groupWriter / auditLogger 可为 nil（测试或部分接线场景），
+// channelWriter / groupWriter / targetReader / auditLogger 可为 nil（测试或部分接线场景），
 // nil 时对应写入会被跳过并记 slog 警告（仅审计仍尽力记录）。
 func NewUpstreamPriceApplyService(
 	priceRepo UpstreamPriceRepository,
 	channelWriter ChannelPricingWriter,
 	groupWriter GroupRateWriter,
+	targetReader ApplyTargetReader,
 	auditLogger AuditLogger,
 ) *UpstreamPriceApplyService {
 	if auditLogger == nil {
@@ -102,6 +117,7 @@ func NewUpstreamPriceApplyService(
 		priceRepo:     priceRepo,
 		channelWriter: channelWriter,
 		groupWriter:   groupWriter,
+		targetReader:  targetReader,
 		auditLogger:   auditLogger,
 	}
 }
@@ -322,4 +338,51 @@ func (s *UpstreamPriceApplyService) ComparePrices(ctx context.Context, sourceID 
 		rows = append(rows, row)
 	}
 	return rows, nil
+}
+
+// GetApplyTargets 返回某 change 在本地相关的 channel + group 列表，供 apply 弹窗下拉填充。
+//
+// channels：channel_model_pricing.models JSONB 含 change.LocalModelName 的所有渠道（follow_cost 用）。
+// groups：与上述 channels 通过 channel_groups 关联的 group（lock_price 用）。
+// targetReader 为 nil（未接线）时返回空 channels + groups，前端退化为输入框。
+func (s *UpstreamPriceApplyService) GetApplyTargets(ctx context.Context, changeID int64) (*ApplyTargetsResponse, error) {
+	resp := &ApplyTargetsResponse{
+		Channels: []ChannelApplyTarget{},
+		Groups:   []GroupApplyTarget{},
+	}
+	if s.targetReader == nil {
+		return resp, nil
+	}
+
+	change, err := s.priceRepo.GetChange(ctx, changeID)
+	if err != nil {
+		return nil, fmt.Errorf("get price change: %w", err)
+	}
+	modelName := change.LocalModelName
+	if modelName == "" {
+		modelName = change.ModelName
+	}
+	if modelName == "" {
+		return resp, nil
+	}
+
+	channels, err := s.targetReader.ListChannelsByModel(ctx, modelName)
+	if err != nil {
+		return nil, fmt.Errorf("list channels by model: %w", err)
+	}
+	if len(channels) == 0 {
+		return resp, nil
+	}
+	resp.Channels = channels
+
+	channelIDs := make([]int64, 0, len(channels))
+	for _, c := range channels {
+		channelIDs = append(channelIDs, c.ID)
+	}
+	groups, err := s.targetReader.ListGroupsByChannels(ctx, channelIDs)
+	if err != nil {
+		return nil, fmt.Errorf("list groups by channels: %w", err)
+	}
+	resp.Groups = groups
+	return resp, nil
 }

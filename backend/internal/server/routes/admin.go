@@ -715,6 +715,7 @@ func registerUpstreamPriceRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		changes := up.Group("/changes")
 		{
 			changes.GET("", h.Admin.UpstreamPrice.ListChanges)
+			changes.GET("/:id/targets", h.Admin.UpstreamPrice.GetApplyTargets)
 			changes.POST("/:id/apply", h.Admin.UpstreamPrice.ApplyChange)
 			changes.POST("/:id/dismiss", h.Admin.UpstreamPrice.DismissChange)
 		}

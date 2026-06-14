@@ -237,6 +237,28 @@ func (h *UpstreamPriceHandler) ApplyChange(c *gin.Context) {
 	response.Success(c, gin.H{"message": "Change applied successfully"})
 }
 
+// GetApplyTargets GET /admin/upstream-price/changes/:id/targets
+// Returns the channels (follow_cost) and groups (lock_price) relevant to the
+// change's local_model_name, for the apply-dialog dropdowns.
+func (h *UpstreamPriceHandler) GetApplyTargets(c *gin.Context) {
+	id, ok := parseIDParam(c, "id")
+	if !ok {
+		return
+	}
+	targets, err := h.applyService.GetApplyTargets(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	if targets == nil {
+		targets = &service.ApplyTargetsResponse{
+			Channels: []service.ChannelApplyTarget{},
+			Groups:   []service.GroupApplyTarget{},
+		}
+	}
+	response.Success(c, targets)
+}
+
 // DismissChange POST /admin/upstream-price/changes/:id/dismiss
 func (h *UpstreamPriceHandler) DismissChange(c *gin.Context) {
 	id, ok := parseIDParam(c, "id")

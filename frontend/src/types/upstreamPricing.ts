@@ -96,6 +96,27 @@ export interface ApplyUpstreamPriceChangeRequest {
   target_id?: number
 }
 
+// ==================== Apply Targets（下拉目标） ====================
+
+/** apply 弹窗的渠道下拉项（follow_cost 模式） */
+export interface ApplyTargetChannel {
+  id: number
+  name: string
+}
+
+/** apply 弹窗的分组下拉项（lock_price 模式） */
+export interface ApplyTargetGroup {
+  id: number
+  name: string
+  rate_multiplier: number
+}
+
+/** apply 弹窗下拉数据：GET /changes/:id/targets */
+export interface ApplyTargetsResponse {
+  channels: ApplyTargetChannel[]
+  groups: ApplyTargetGroup[]
+}
+
 // ==================== Compare（对比） ====================
 
 /** 单个模型的 上游 vs 本地 价格对比行（service.PriceCompareRow） */

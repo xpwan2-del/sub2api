@@ -125,9 +125,20 @@
         </div>
 
         <div>
-          <label class="input-label">{{ t('upstreamPricing.changes.targetId') }}</label>
-          <input v-model.number="targetIdInput" type="number" min="0" class="input" :placeholder="t('upstreamPricing.changes.targetIdPlaceholder')" />
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('upstreamPricing.changes.targetIdHint') }}</p>
+          <label class="input-label">
+            {{ applyMode === 'lock_price' ? t('upstreamPricing.changes.targetGroup') : t('upstreamPricing.changes.targetChannel') }}
+          </label>
+          <Select
+            v-model="targetIdInput"
+            :options="targetOptions"
+            :placeholder="targetPlaceholder"
+            :empty-text="t('upstreamPricing.changes.noTargets')"
+            searchable
+            class="w-full"
+          />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ applyMode === 'lock_price' ? t('upstreamPricing.changes.targetGroupHint') : t('upstreamPricing.changes.targetChannelHint') }}
+          </p>
         </div>
       </div>
 
@@ -153,7 +164,8 @@ import { formatRelativeTime } from '@/utils/format'
 import type {
   UpstreamPriceChange,
   UpstreamPriceSource,
-  UpstreamPriceApplyMode
+  UpstreamPriceApplyMode,
+  ApplyTargetsResponse
 } from '@/types/upstreamPricing'
 import type { Column } from '@/components/common/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
@@ -207,12 +219,37 @@ const showApplyDialog = ref(false)
 const applyTarget = ref<UpstreamPriceChange | null>(null)
 const applyMode = ref<UpstreamPriceApplyMode>('follow_cost')
 const targetIdInput = ref<number | null>(null)
+const applyTargets = ref<ApplyTargetsResponse>({ channels: [], groups: [] })
+const loadingTargets = ref(false)
 
 const applyTitle = computed(() =>
   applyMode.value === 'lock_price'
     ? t('upstreamPricing.changes.lockPrice')
     : t('upstreamPricing.changes.followCost')
 )
+
+// 下拉选项：follow_cost → channels；lock_price → groups
+const targetOptions = computed(() => {
+  if (applyMode.value === 'lock_price') {
+    return applyTargets.value.groups.map((g) => ({
+      value: g.id,
+      label: `${g.name} (× ${Number(g.rate_multiplier).toFixed(2)})`
+    }))
+  }
+  return applyTargets.value.channels.map((c) => ({
+    value: c.id,
+    label: c.name
+  }))
+})
+
+const targetPlaceholder = computed(() => {
+  const list = applyMode.value === 'lock_price' ? applyTargets.value.groups : applyTargets.value.channels
+  if (loadingTargets.value) return t('common.loading')
+  if (list.length === 0) return t('upstreamPricing.changes.noTargets')
+  return applyMode.value === 'lock_price'
+    ? t('upstreamPricing.changes.targetGroupPlaceholder')
+    : t('upstreamPricing.changes.targetChannelPlaceholder')
+})
 
 // ==================== Helpers ====================
 
@@ -294,7 +331,21 @@ function openApply(row: UpstreamPriceChange, mode: UpstreamPriceApplyMode) {
   applyTarget.value = row
   applyMode.value = mode
   targetIdInput.value = null
+  applyTargets.value = { channels: [], groups: [] }
   showApplyDialog.value = true
+  loadApplyTargets(row.id)
+}
+
+async function loadApplyTargets(changeId: number) {
+  loadingTargets.value = true
+  try {
+    applyTargets.value = await upstreamPricingAPI.getApplyTargets(changeId)
+  } catch {
+    // 失败时保留下拉（空列表），不阻塞 apply 流程
+    applyTargets.value = { channels: [], groups: [] }
+  } finally {
+    loadingTargets.value = false
+  }
 }
 
 async function confirmApply() {

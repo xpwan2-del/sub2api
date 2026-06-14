@@ -33,6 +33,28 @@ func NewChannelPricingWriterAdapter(channel *ChannelService) ChannelPricingWrite
 	return channelPricingWriterAdapter{channel: channel}
 }
 
+// NewApplyTargetReaderAdapter wires ChannelService.repo into an ApplyTargetReader.
+// repo 为 nil 时返回 nil（ApplyService 会跳过目标查询，前端退化为输入框）。
+func NewApplyTargetReaderAdapter(channel *ChannelService) ApplyTargetReader {
+	if channel == nil || channel.repo == nil {
+		return nil
+	}
+	return applyTargetReaderAdapter{repo: channel.repo}
+}
+
+// applyTargetReaderAdapter 把 ChannelRepository 的两个查询方法适配为 ApplyTargetReader。
+type applyTargetReaderAdapter struct {
+	repo ChannelRepository
+}
+
+func (a applyTargetReaderAdapter) ListChannelsByModel(ctx context.Context, modelName string) ([]ChannelApplyTarget, error) {
+	return a.repo.ListChannelsByModel(ctx, modelName)
+}
+
+func (a applyTargetReaderAdapter) ListGroupsByChannels(ctx context.Context, channelIDs []int64) ([]GroupApplyTarget, error) {
+	return a.repo.ListGroupsByChannels(ctx, channelIDs)
+}
+
 // ReplaceModelPricingForModel delegates to ChannelRepository.
 func (a channelPricingWriterAdapter) ReplaceModelPricingForModel(ctx context.Context, channelID int64, modelName string, inputPrice, outputPrice float64) error {
 	if a.channel == nil || a.channel.repo == nil {
@@ -177,6 +199,7 @@ var (
 	_ GroupRateWriter      = groupRateWriterAdapter{}
 	_ GroupRateReader      = groupRateReaderAdapter{}
 	_ AlertRecipientReader = alertRecipientReaderAdapter{}
+	_ ApplyTargetReader    = applyTargetReaderAdapter{}
 	_ groupChannelResolver = channelPricingWriterAdapter{}
 )
 

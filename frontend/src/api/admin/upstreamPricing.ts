@@ -10,6 +10,7 @@
  *   POST   /admin/upstream-price/sources/:id/test
  *   POST   /admin/upstream-price/sources/:id/sync
  *   GET    /admin/upstream-price/changes
+ *   GET    /admin/upstream-price/changes/:id/targets
  *   POST   /admin/upstream-price/changes/:id/apply
  *   POST   /admin/upstream-price/changes/:id/dismiss
  *   GET    /admin/upstream-price/compare
@@ -24,6 +25,7 @@ import type {
   UpstreamPriceChange,
   ListUpstreamPriceChangesParams,
   ApplyUpstreamPriceChangeRequest,
+  ApplyTargetsResponse,
   UpstreamPriceCompareRow
 } from '@/types/upstreamPricing'
 
@@ -101,6 +103,16 @@ export async function applyChange(
   return data
 }
 
+/** 拉取 apply 弹窗的下拉目标：channels（follow_cost）+ groups（lock_price） */
+export async function getApplyTargets(
+  changeId: number
+): Promise<ApplyTargetsResponse> {
+  const { data } = await apiClient.get<ApplyTargetsResponse>(
+    `${BASE}/changes/${changeId}/targets`
+  )
+  return data ?? { channels: [], groups: [] }
+}
+
 /** 忽略变动 */
 export async function dismissChange(id: number): Promise<{ message: string }> {
   const { data } = await apiClient.post<{ message: string }>(
@@ -127,6 +139,7 @@ export const upstreamPricingAPI = {
   testSource,
   syncSource,
   listChanges,
+  getApplyTargets,
   applyChange,
   dismissChange,
   comparePrices

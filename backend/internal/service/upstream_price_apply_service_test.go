@@ -180,7 +180,7 @@ func TestApply_FollowCost_WritesChannelPricingAndMarksApplied(t *testing.T) {
 	grp := &fakeGroupWriter{}
 	audit := &captureAuditLogger{}
 
-	svc := NewUpstreamPriceApplyService(repo, ch, grp, audit)
+	svc := NewUpstreamPriceApplyService(repo, ch, grp, nil, audit)
 	err := svc.Apply(context.Background(), ApplyRequest{ChangeID: 1, Mode: ApplyFollowCost, TargetID: 10}, 99)
 	require.NoError(t, err)
 
@@ -218,7 +218,7 @@ func TestApply_LockPrice_WritesChannelPricingAndGroupMultiplier(t *testing.T) {
 	grp := &fakeGroupWriter{}
 	audit := &captureAuditLogger{}
 
-	svc := NewUpstreamPriceApplyService(repo, ch, grp, audit)
+	svc := NewUpstreamPriceApplyService(repo, ch, grp, nil, audit)
 	err := svc.Apply(context.Background(), ApplyRequest{ChangeID: 1, Mode: ApplyLockPrice, TargetID: 7}, 99)
 	require.NoError(t, err)
 
@@ -246,7 +246,7 @@ func TestApply_NonPending_ReturnsBadRequest(t *testing.T) {
 	grp := &fakeGroupWriter{}
 	audit := &captureAuditLogger{}
 
-	svc := NewUpstreamPriceApplyService(repo, ch, grp, audit)
+	svc := NewUpstreamPriceApplyService(repo, ch, grp, nil, audit)
 	err := svc.Apply(context.Background(), ApplyRequest{ChangeID: 1, Mode: ApplyFollowCost, TargetID: 10}, 99)
 
 	require.Error(t, err)
@@ -266,7 +266,7 @@ func TestApply_LockPrice_WithoutSuggestedMultiplier_ReturnsBadRequest(t *testing
 	grp := &fakeGroupWriter{}
 	audit := &captureAuditLogger{}
 
-	svc := NewUpstreamPriceApplyService(repo, ch, grp, audit)
+	svc := NewUpstreamPriceApplyService(repo, ch, grp, nil, audit)
 	err := svc.Apply(context.Background(), ApplyRequest{ChangeID: 1, Mode: ApplyLockPrice, TargetID: 7}, 99)
 
 	require.Error(t, err)
@@ -284,7 +284,7 @@ func TestDismiss_MarksDismissed_NoBillingWrite(t *testing.T) {
 	grp := &fakeGroupWriter{}
 	audit := &captureAuditLogger{}
 
-	svc := NewUpstreamPriceApplyService(repo, ch, grp, audit)
+	svc := NewUpstreamPriceApplyService(repo, ch, grp, nil, audit)
 	err := svc.Dismiss(context.Background(), 1, 88)
 	require.NoError(t, err)
 
@@ -315,7 +315,7 @@ func TestBatchApply_MixedResults(t *testing.T) {
 	ch := &fakeChannelWriter{}
 	grp := &fakeGroupWriter{}
 	audit := &captureAuditLogger{}
-	svc := NewUpstreamPriceApplyService(repo, ch, grp, audit)
+	svc := NewUpstreamPriceApplyService(repo, ch, grp, nil, audit)
 
 	res, err := svc.BatchApply(context.Background(), []ApplyRequest{
 		{ChangeID: 1, Mode: ApplyFollowCost, TargetID: 10},

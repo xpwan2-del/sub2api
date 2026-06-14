@@ -166,6 +166,79 @@ func replaceModelPricingForModelTx(ctx context.Context, exec dbExec, channelID i
 	return nil
 }
 
+// --- 按模型名查询 channel / 关联 group（apply 目标选择器） ---
+
+// ListChannelsByModel 找出 channel_model_pricing.models JSONB 含 modelName 的所有渠道。
+// 匹配规则：models JSON 数组中任一元素与 modelName 大小写不敏感相等。
+// 返回 channel_id + channel name（去重，按 id 升序）。
+func (r *channelRepository) ListChannelsByModel(ctx context.Context, modelName string) ([]service.ChannelApplyTarget, error) {
+	if modelName == "" {
+		return []service.ChannelApplyTarget{}, nil
+	}
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT DISTINCT c.id, c.name
+		 FROM channels c
+		 JOIN channel_model_pricing p ON p.channel_id = c.id
+		 WHERE EXISTS (
+		   SELECT 1 FROM jsonb_array_elements_text(p.models) AS m
+		   WHERE LOWER(m) = LOWER($1)
+		 )
+		 ORDER BY c.id`,
+		modelName,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list channels by model: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	result := make([]service.ChannelApplyTarget, 0)
+	for rows.Next() {
+		var t service.ChannelApplyTarget
+		if err := rows.Scan(&t.ID, &t.Name); err != nil {
+			return nil, fmt.Errorf("scan channel by model: %w", err)
+		}
+		result = append(result, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate channels by model: %w", err)
+	}
+	return result, nil
+}
+
+// ListGroupsByChannels 返回与给定 channelIDs 关联的所有 group（通过 channel_groups）。
+// 返回 group_id + group.name + group.rate_multiplier（去重，按 group id 升序）。
+// 跳过已软删除的 group。
+func (r *channelRepository) ListGroupsByChannels(ctx context.Context, channelIDs []int64) ([]service.GroupApplyTarget, error) {
+	if len(channelIDs) == 0 {
+		return []service.GroupApplyTarget{}, nil
+	}
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT DISTINCT g.id, g.name, g.rate_multiplier
+		 FROM groups g
+		 JOIN channel_groups cg ON cg.group_id = g.id
+		 WHERE cg.channel_id = ANY($1) AND g.deleted_at IS NULL
+		 ORDER BY g.id`,
+		pq.Array(channelIDs),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list groups by channels: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	result := make([]service.GroupApplyTarget, 0)
+	for rows.Next() {
+		var t service.GroupApplyTarget
+		if err := rows.Scan(&t.ID, &t.Name, &t.RateMultiplier); err != nil {
+			return nil, fmt.Errorf("scan group by channels: %w", err)
+		}
+		result = append(result, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate groups by channels: %w", err)
+	}
+	return result, nil
+}
+
 // --- 批量加载辅助方法 ---
 
 // batchLoadModelPricing 批量加载多个渠道的模型定价（含区间）
