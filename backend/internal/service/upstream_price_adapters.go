@@ -173,11 +173,11 @@ func (a alertRecipientReaderAdapter) ListAlertRecipients(ctx context.Context) ([
 
 // Compile-time assertions that adapters satisfy their interfaces.
 var (
-	_ ChannelPricingWriter   = channelPricingWriterAdapter{}
-	_ GroupRateWriter        = groupRateWriterAdapter{}
-	_ GroupRateReader        = groupRateReaderAdapter{}
-	_ AlertRecipientReader   = alertRecipientReaderAdapter{}
-	_ groupChannelResolver   = channelPricingWriterAdapter{}
+	_ ChannelPricingWriter = channelPricingWriterAdapter{}
+	_ GroupRateWriter      = groupRateWriterAdapter{}
+	_ GroupRateReader      = groupRateReaderAdapter{}
+	_ AlertRecipientReader = alertRecipientReaderAdapter{}
+	_ groupChannelResolver = channelPricingWriterAdapter{}
 )
 
 // groupChannelResolver is mirrored from apply_service.go for the compile-time

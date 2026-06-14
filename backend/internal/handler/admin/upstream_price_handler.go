@@ -56,16 +56,16 @@ type CreateSourceRequest struct {
 
 // UpdateSourceRequest mirrors editable fields for updates (all optional).
 type UpdateSourceRequest struct {
-	Name                *string                 `json:"name" binding:"omitempty,max=100"`
-	Platform            *string                 `json:"platform"`
-	BaseURL             *string                 `json:"base_url" binding:"omitempty,url"`
-	PricingEndpoint     *string                 `json:"pricing_endpoint"`
-	APIKey              *string                 `json:"api_key"`
-	ParserType          *string                 `json:"parser_type"`
-	ParserConfig        map[string]interface{}  `json:"parser_config"`
-	ModelAliasMap       map[string]string       `json:"model_alias_map"`
-	SyncIntervalMinutes *int                    `json:"sync_interval_minutes"`
-	Enabled             *bool                   `json:"enabled"`
+	Name                *string                `json:"name" binding:"omitempty,max=100"`
+	Platform            *string                `json:"platform"`
+	BaseURL             *string                `json:"base_url" binding:"omitempty,url"`
+	PricingEndpoint     *string                `json:"pricing_endpoint"`
+	APIKey              *string                `json:"api_key"`
+	ParserType          *string                `json:"parser_type"`
+	ParserConfig        map[string]interface{} `json:"parser_config"`
+	ModelAliasMap       map[string]string      `json:"model_alias_map"`
+	SyncIntervalMinutes *int                   `json:"sync_interval_minutes"`
+	Enabled             *bool                  `json:"enabled"`
 }
 
 // CreateSource POST /admin/upstream-price/sources
