@@ -498,6 +498,7 @@ export default {
   // Navigation
   nav: {
     dashboard: '仪表盘',
+    canvas: 'AI 画布',
     announcements: '公告',
     apiKeys: 'API 密钥',
     usage: '使用记录',

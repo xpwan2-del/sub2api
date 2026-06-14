@@ -498,6 +498,7 @@ export default {
   // Navigation
   nav: {
     dashboard: 'Dashboard',
+    canvas: 'AI Canvas',
     announcements: 'Announcements',
     apiKeys: 'API Keys',
     usage: 'Usage',

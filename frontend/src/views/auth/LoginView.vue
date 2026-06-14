@@ -464,6 +464,15 @@ function validateForm(): boolean {
 
 // ==================== Form Handlers ====================
 
+async function redirectAfterLogin(): Promise<void> {
+  const redirectTo = (router.currentRoute.value.query.redirect as string) || '/dashboard'
+  if (redirectTo.startsWith('/apps/canvas')) {
+    window.location.assign(redirectTo)
+    return
+  }
+  await router.push(redirectTo)
+}
+
 async function handleLogin(): Promise<void> {
   // Clear previous error
   errorMessage.value = ''
@@ -498,8 +507,7 @@ async function handleLogin(): Promise<void> {
     appStore.showSuccess(t('auth.loginSuccess'))
 
     // Redirect to dashboard or intended route
-    const redirectTo = (router.currentRoute.value.query.redirect as string) || '/dashboard'
-    await router.push(redirectTo)
+    await redirectAfterLogin()
   } catch (error: unknown) {
     // Reset Turnstile on error
     if (turnstileRef.value) {
@@ -532,8 +540,7 @@ async function handle2FAVerify(code: string): Promise<void> {
     appStore.showSuccess(t('auth.loginSuccess'))
 
     // Redirect to dashboard or intended route
-    const redirectTo = (router.currentRoute.value.query.redirect as string) || '/dashboard'
-    await router.push(redirectTo)
+    await redirectAfterLogin()
   } catch (error: unknown) {
     const err = error as { message?: string; response?: { data?: { message?: string } } }
     const message = err.response?.data?.message || err.message || t('profile.totp.loginFailed')

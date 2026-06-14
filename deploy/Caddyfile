@@ -30,6 +30,25 @@ api.sub2api.com {
 	# =========================================================================
 	# 反向代理配置
 	# =========================================================================
+	handle /apps/canvas* {
+		reverse_proxy {$CANVAS_UPSTREAM:localhost:3000} {
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Prefix /apps/canvas
+			header_up CF-Connecting-IP {http.request.header.CF-Connecting-IP}
+
+			transport http {
+				keepalive 120s
+				keepalive_idle_conns 128
+				read_buffer 16KB
+				write_buffer 16KB
+				compression off
+			}
+		}
+	}
+
 	reverse_proxy localhost:8080 {
 		# 健康检查
 		health_uri /health

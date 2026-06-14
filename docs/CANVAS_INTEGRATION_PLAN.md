@@ -13,7 +13,7 @@
 
 ## Current Status
 
-当前已完成 Phase 1、Phase 2 和 Phase 3 的第一版接入。
+当前已完成入口、basePath、SSO、参考素材 R2/S3 存储驱动、安全加固、Infinite Canvas 走 TOP-AI Gateway 的代码层接入，以及 sub2api Caddyfile 的 `/apps/canvas` 反代示例；真实服务器部署和扣费链路还需要在服务器环境联调验收。
 
 已经完成：
 
@@ -23,28 +23,38 @@
 - 已确认两个项目继续平级独立：`sub2api` 和 `infinite-canvas`
 - 已确认 sub2api 第一版只做最小必要改动。
 - 已在 sub2api 公共首页导航增加“AI 画布 / AI Canvas”入口，浏览器跳转到 `/apps/canvas`。
+- 已在 sub2api 登录后控制台侧边栏增加“AI 画布 / AI Canvas”入口，浏览器跳转到 `/apps/canvas`。
 - Infinite Canvas 已支持 `CANVAS_BASE_PATH=/apps/canvas`，静态资源、同源 API、WebDAV proxy 和普通 href 会使用 base path。
 - sub2api 已新增 `GET /api/v1/app/canvas/session`，基于现有 JWT 鉴权返回画布需要的最小 TOP-AI 用户摘要。
 - Infinite Canvas 已新增 `POST /api/auth/top-ai/session`，由画布后端调用 TOP-AI session endpoint，并换成画布本地 token。
 - Infinite Canvas 前端启动时会优先使用当前同域 TOP-AI `auth_token` 换取画布登录态；未登录时跳回 TOP-AI 登录页。
 - Infinite Canvas 已用 `TOP_AI_SESSION_URL` 和 `NEXT_PUBLIC_TOP_AI_LOGIN_PATH` 控制跨项目登录配置，不写死生产域名。
+- Cloudflare R2 生产素材桶已创建并验证：bucket `canvas`，location `Asia-Pacific (APAC)`，public domain `https://media.888tech.club`。
+- R2 生命周期已配置：`temp/upload/` 1 天删除，`temp/reference/` 7 天删除，`failed/` 1 天删除，`generated/` 30 天删除，`saved/` 不自动删除。
+- R2 写入和公网读取已用 `temp/upload/codex-r2-check.txt` 验证通过。
+- Infinite Canvas 的参考素材上传已支持 `MEDIA_STORAGE_DRIVER=local/r2`，生产可把 `POST /api/v1/media/references` 写入 R2 `temp/reference/` 并返回公网 URL。
+- R2 service 层已增加默认跳过的 live integration test，可用本地私密 R2 env 验证上传和公网读取。
+- Infinite Canvas 已支持 `CANVAS_DISABLE_LOCAL_AUTH=true`，公开注册/登录入口会提示使用 TOP-AI 登录，管理员登录不受影响。
+- Infinite Canvas 已支持 `CANVAS_DISABLE_LOCAL_CREDITS=true`，前台用户余额和生成面板不展示画布本地 credits。
+- Infinite Canvas 已支持 `CANVAS_FORCE_TOP_AI_GATEWAY=true`，AI 生成请求由画布后端使用服务端 `TOP_AI_GATEWAY_API_KEY` 转发到 TOP-AI Gateway，不把网关密钥下发浏览器。
+- Infinite Canvas AI 请求会带 `X-Canvas-Source: infinite-canvas`、`X-Top-AI-User-ID`、`X-Client-Request-ID`，JSON 请求体会补充 `metadata.source=canvas`。
+- Infinite Canvas 公开设置会从 TOP-AI `GET /api/v1/public/models/catalog` 读取可用模型名；读不到时记录日志并保留本地兜底，避免前端直接不可用。
+- Infinite Canvas 已给 AI 请求增加 body 上限和用户维度限流。
+- Infinite Canvas `webdav-proxy` 已要求画布登录态、阻断 localhost/private IP/metadata 地址、支持 host allowlist 和请求体大小限制。
+- sub2api `deploy/Caddyfile` 已增加 `/apps/canvas*` 反代示例，默认转发到 `localhost:3000`，生产可用 `CANVAS_UPSTREAM` 指向 Infinite Canvas 独立服务。
 
-还没有改：
+还没有完成或还需要生产联调：
 
-- sub2api 登录后控制台侧边栏还没有新增可选“AI 画布 / Canvas”入口。
-- sub2api 网关计费还没有增加 `source=canvas` 来源标记。
-- sub2api 还没有提供给画布服务端使用的内部调用凭证方案。
-- Infinite Canvas 还没有彻底隐藏本地登录、注册、充值、credits 展示。
-- Infinite Canvas 的 AI 请求还没有改为走 TOP-AI Gateway。
-- Infinite Canvas 的模型列表还没有改为读取 TOP-AI 模型目录。
-- Infinite Canvas 的 `webdav-proxy` 等安全问题还没有修复。
-- 部署层还没有增加 `/apps/canvas` 反代规则。
+- 服务器上还需要实际配置并启动 Infinite Canvas 服务，设置 `CANVAS_UPSTREAM`、`CANVAS_BASE_PATH=/apps/canvas` 和 `NEXT_PUBLIC_CANVAS_BASE_PATH=/apps/canvas`，再 reload Caddy 验证。
+- sub2api 网关数据库账单表还没有新增独立 `source` 字段；当前第一版按本文约定通过请求 header、client request id 和 JSON metadata 标记来源，不重构计费表。
+- TOP-AI 真实扣费是否按最终用户还是按画布服务端 API Key 归账，需要用生产网关 API Key 和测试用户完成端到端验收。
+- 余额不足跳回 TOP-AI 充值页的具体入口，需要等生产 TOP-AI 充值 URL 确认后配置。
 
-这些未完成项必须按后面的 Phase 顺序分阶段实现，不能一次性混在一个大提交里。
+这些剩余项必须继续按项目边界推进，不能把画布代码嵌进 sub2api。
 
 ## Non-goals
 
-第一版不做这些事情：
+当前第一版集成不做这些事情：
 
 - 不把 Infinite Canvas 的 Next.js/React 代码塞进 `sub2api/frontend/src/`。
 - 不把 Infinite Canvas 的 Go 后端直接合并进 `sub2api/backend/internal/`。
@@ -54,6 +64,8 @@
 - 不新增一套和 TOP-AI 并行的用户余额系统。
 - 不让用户在画布里单独填写上游 API Key。
 - 不在前端硬编码模型价格、模型列表或结算货币。
+- 不把大体积视频/图片/音频素材长期压到 sub2api 或业务服务器本地磁盘。
+- 不把参考素材上传、生成结果归档、用户素材云同步混成一个功能。
 
 ## Repository Boundaries
 
@@ -89,9 +101,24 @@
 - 不允许为了接入画布复制一套 sub2api 登录逻辑到画布前端。
 - 不允许公开暴露内部网关密钥、管理员接口、上游渠道配置。
 - 不允许把 TOP-AI 内部应用凭证写进前端构建产物。
+- 不允许把 R2/S3 `secret access key`、Cloudflare token 或对象存储写入凭证写进前端构建产物。
 - 不允许在代码里写死生产域名、端口、密钥、模型价格。
 - 不允许一次提交同时修改 sub2api 入口、SSO、网关计费、Infinite Canvas basePath 和安全修复。
 - 每个 Phase 必须能独立验证和回滚。
+- R2 存储职责必须保持清晰：`/api/v1/media/references` 只负责参考素材上传；网关计费、模型列表、生成结果归档和 WebDAV 修复分别放在各自代码层，不把逻辑塞进媒体上传 handler。
+- Infinite Canvas 的浏览器本地素材使用 localForage；不要把它误当成 R2 云存储，也不要在第一版迁移整个素材库。
+- sub2api 现有 S3/R2 兼容代码只属于备份/数据管理，不能复用 sub2api 现有备份 S3/R2 代码做画布媒体。
+
+## Implementation Placement Rules
+
+新增代码必须放回项目原有分层：
+
+- `handler/` 只处理 HTTP 入参和响应；R2 业务逻辑放 `service/`。
+- `config/config.go` 放 `MEDIA_STORAGE_DRIVER` 和 R2 服务端配置。
+- `handler/media_reference.go` 继续作为 `POST /api/v1/media/references` 入口。
+- `web/src/services/api/` 放前端 API 请求；页面组件不直接写上传细节。
+- 不能复用 sub2api 现有备份 S3/R2 代码做画布媒体。
+- 不新增没有项目先例的顶层目录。
 
 ## Configuration Rules
 
@@ -103,6 +130,8 @@
 TOP_AI_PUBLIC_BASE_URL=https://top-ai.example.com
 TOP_AI_INTERNAL_BASE_URL=http://top-ai-backend:3000
 TOP_AI_CANVAS_APP_KEY=<server-side-only-secret>
+TOP_AI_MODEL_CATALOG_URL=http://top-ai-backend:3000/api/v1/public/models/catalog
+TOP_AI_GATEWAY_API_KEY=<server-side-only-top-ai-api-key>
 TOP_AI_SESSION_URL=/api/v1/app/canvas/session
 CANVAS_BASE_PATH=/apps/canvas
 NEXT_PUBLIC_CANVAS_BASE_PATH=/apps/canvas
@@ -111,19 +140,71 @@ CANVAS_API_BASE_URL=http://top-ai-canvas-api:8080
 CANVAS_DISABLE_LOCAL_AUTH=true
 CANVAS_DISABLE_LOCAL_CREDITS=true
 CANVAS_FORCE_TOP_AI_GATEWAY=true
+AI_REQUEST_MAX_BYTES=83886080
+AI_USER_RATE_LIMIT=30
+WEBDAV_PROXY_MAX_BYTES=104857600
+WEBDAV_PROXY_ALLOWED_HOSTS=webdav.example.com
+MEDIA_STORAGE_DRIVER=r2
+R2_BUCKET=canvas
+R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+R2_PUBLIC_BASE_URL=https://media.888tech.club
+R2_ACCESS_KEY_ID=<server-side-only-access-key>
+R2_SECRET_ACCESS_KEY=<server-side-only-secret-key>
+R2_TEMP_REFERENCE_PREFIX=temp/reference
 ```
 
 规则：
 
 - `TOP_AI_CANVAS_APP_KEY` 只能存在于 Infinite Canvas 后端服务端环境。
+- `TOP_AI_GATEWAY_API_KEY` 只能存在于 Infinite Canvas 后端服务端环境，用来让画布服务端调用 TOP-AI Gateway。
+- `TOP_AI_MODEL_CATALOG_URL` 可显式指定 TOP-AI 模型目录；不配置时由 `TOP_AI_INTERNAL_BASE_URL` 或 `TOP_AI_PUBLIC_BASE_URL` 推导。
 - `TOP_AI_SESSION_URL` 给 Infinite Canvas 后端校验 TOP-AI 登录态使用；同域部署默认可用 `/api/v1/app/canvas/session`。
 - `CANVAS_BASE_PATH` 给 Infinite Canvas 构建和服务端路由使用。
 - `NEXT_PUBLIC_CANVAS_BASE_PATH` 只有在浏览器端代码确实需要读取 base path 时才使用。
 - `NEXT_PUBLIC_TOP_AI_LOGIN_PATH` 只允许是公开登录入口路径或 URL，不包含密钥。
+- `MEDIA_STORAGE_DRIVER` 控制画布参考素材存储，生产使用 `r2`，本地开发可保留 `local`。
+- `MEDIA_STORAGE_DRIVER` 不能复用 `STORAGE_DRIVER`；`STORAGE_DRIVER` 已经是数据库驱动配置。
+- `R2_ACCESS_KEY_ID` 和 `R2_SECRET_ACCESS_KEY` 只能存在于 Infinite Canvas 后端服务端环境。
+- `WEBDAV_PROXY_ALLOWED_HOSTS` 生产建议配置成可信 WebDAV 域名列表；不配置时仍会阻断内网、localhost 和云 metadata 地址。
+- R2/S3 凭证不能下发到浏览器，浏览器只能拿到后端返回的公开素材 URL 或短期上传地址。
 - 浏览器端只能知道公开 base URL 和公开 base path，不能知道服务端密钥。
 - 本地开发可以用 `http://127.0.0.1`，但不能提交成生产默认值。
 - 生产环境变量必须由部署系统注入，不写入 Git。
 - 如果需要新增配置文件，必须放在各项目现有配置目录，不新建随意目录。
+
+## Production Media Storage Strategy
+
+视频生成不能依赖把大文件长期压在 sub2api、Nginx 或 Infinite Canvas 本地磁盘。生产媒体存储使用 Cloudflare R2，凭证只放 Infinite Canvas 后端环境。
+
+R2 约定：
+
+```text
+bucket: canvas
+location: Asia-Pacific (APAC)
+public base URL: https://media.888tech.club
+
+temp/upload/      临时直传/未绑定素材，1 天删除
+temp/reference/   视频模型参考素材，7 天删除
+failed/           失败任务残留，1 天删除
+generated/        AI 生成结果，30 天删除
+saved/            用户主动保存的素材，不自动删除
+```
+
+媒体存储当前只做参考素材：
+
+- 保持 `POST /api/v1/media/references` 响应结构：`id`、`url`、`mimeType`、`bytes`。
+- 继续保留图片、视频、音频的服务端类型和大小限制。
+- R2 object key 使用业务前缀和随机 ID，例如 `temp/reference/<uuid>.mp4`。
+- 不使用用户上传的原始路径作为 object key。
+- `MEDIA_STORAGE_DRIVER=local` 时保持现有本地开发行为。
+- `MEDIA_STORAGE_DRIVER=r2` 时返回 `R2_PUBLIC_BASE_URL` 下的公网 URL。
+- `GET /api/media/references/:id` 继续服务 local driver；R2 driver 可以不依赖该路由。
+
+媒体存储当前不做：
+
+- 生成结果写入 `generated/`。
+- 用户主动保存素材写入 `saved/`。
+- 浏览器 direct upload/直传 R2、分片上传、TOP-AI 扣费或 `source=canvas` 记录；这些属于网关和任务归档职责。
 
 ## Route Strategy
 
@@ -180,7 +261,7 @@ sub2api 第一版只做最小必要改动。
 建议位置：
 
 - 首页顶部操作区增加“AI 画布 / Canvas”入口。
-- 登录后控制台侧边栏可后续增加“AI 画布 / Canvas”入口。
+- 登录后控制台侧边栏增加“AI 画布 / Canvas”入口。
 - 模型广场或文档页不强行塞入口，避免页面职责混乱。
 
 建议文件范围：
@@ -329,8 +410,9 @@ canvas_user.updated_at
 
 处理方式：
 
-- 隐藏画布自己的 credits/recharge/admin credit 调整入口。
-- 画布 UI 余额展示来自 TOP-AI。
+- 隐藏画布前台自己的 credits/recharge 展示。
+- 管理后台本地 credit 调整只作为内部管理能力保留，不作为用户售卖入口。
+- 画布 UI 不展示本地 credits，后续如需余额展示应来自 TOP-AI。
 - 余额不足时跳转 TOP-AI 充值页。
 
 保留：
@@ -415,28 +497,23 @@ TOP-AI 返回：
 top-ai-web
   sub2api frontend + backend
 
-top-ai-canvas-web
-  Infinite Canvas Next.js frontend
-
-top-ai-canvas-api
-  Infinite Canvas Go backend
+top-ai-canvas
+  Infinite Canvas Next.js frontend + internal Go backend
 ```
 
-反代规则示例：
+当前 `sub2api/deploy/Caddyfile` 已按独立服务方式增加：
 
 ```text
-/                -> sub2api
-/api             -> sub2api backend
-/apps/canvas/api -> Infinite Canvas API proxy or Canvas backend
-/apps/canvas     -> Infinite Canvas frontend
+/apps/canvas* -> {$CANVAS_UPSTREAM:localhost:3000}
+/*            -> sub2api
 ```
 
-实际规则要根据部署环境决定。
+这里不能用会剥离路径前缀的规则。Infinite Canvas 构建时设置了 `CANVAS_BASE_PATH=/apps/canvas`，所以反代必须把 `/apps/canvas` 原样传给画布服务。
 
 注意：
 
 - `/api` 目前通常属于 sub2api，不能被画布抢走。
-- 画布自己的 API 建议挂到 `/apps/canvas/api` 或由画布前端内部 proxy 处理。
+- 画布自己的 API 由画布 Next.js 服务内部 proxy 处理；外部 Caddy 只需要把 `/apps/canvas*` 整体转到 Infinite Canvas 服务。
 - 反代匹配顺序必须让画布路径整体优先于 sub2api 默认路由。
 - 如果同时配置 `/apps/canvas/api` 和 `/apps/canvas`，更具体的 `/apps/canvas/api` 必须优先于 `/apps/canvas`，避免画布 API 被前端页面路由吃掉。
 - 如果部署平台不适合 path mount，备用方案是 `canvas.top-ai.example.com` 子域名，但仍然保持 TOP-AI 统一登录和计费。
@@ -469,7 +546,7 @@ top-ai-canvas-api
 sub2api 改动：
 
 - 首页增加“AI 画布 / Canvas”入口。
-- 登录后控制台可选增加菜单入口。
+- 登录后控制台增加菜单入口。
 - i18n 增加中英文文案。
 
 不做：
@@ -490,8 +567,8 @@ sub2api 改动：
 部署改动：
 
 - 增加 `/apps/canvas` 反代。
-- 调整 Infinite Canvas basePath。
-- 修复资源路径、跳转路径、API proxy 路径。
+- 确认 Infinite Canvas 已支持的 basePath 配置在生产构建中生效。
+- 修复或验证资源路径、跳转路径、API proxy 路径。
 
 验收：
 
@@ -523,7 +600,42 @@ Infinite Canvas 改动：
 - 不暴露用户 API Key。
 - 不把 Infinite Canvas 页面或后端塞进 sub2api。
 
-### Phase 4: Model And Billing Integration
+### Phase 4: Reference Media Storage
+
+目标：先把视频模型参考素材从本地磁盘切到 R2/S3。
+
+任务：
+
+- 媒体引用访问控制。
+- 只把 `POST /api/v1/media/references` 的参考素材上传接入 R2/S3 storage driver。
+- 保留 local fallback 给本地开发。
+- 不改生成结果归档、不改用户素材云同步、不改 TOP-AI 扣费。
+
+验收：
+
+- `POST /api/v1/media/references` 返回 R2 公网 URL。
+- 参考素材 URL 能被上游视频模型公网拉取。
+- 浏览器构建产物中没有 R2/S3 写入密钥。
+
+### Phase 5: Security Hardening
+
+目标：解决公开上线前风险。
+
+任务：
+
+- 修复 `webdav-proxy` 开放代理问题。
+- AI 请求加 body 限制。
+- 用户维度限流。
+- 关闭危险默认配置。
+- 清理本地调试入口。
+
+验收：
+
+- 无未鉴权开放代理。
+- 无公开上游密钥。
+- 无可绕过 TOP-AI 余额的生成路径。
+
+### Phase 6: Model And Billing Integration
 
 目标：画布使用 TOP-AI 模型和余额。
 
@@ -546,25 +658,6 @@ Infinite Canvas 改动：
 - 生成图片/视频会扣 TOP-AI 余额。
 - TOP-AI 后台能看到画布来源用量。
 - 余额不足提示正确。
-
-### Phase 5: Security Hardening
-
-目标：解决公开上线前风险。
-
-任务：
-
-- 修复 `webdav-proxy` 开放代理问题。
-- AI 请求加 body 限制。
-- 用户维度限流。
-- 媒体引用访问控制。
-- 关闭危险默认配置。
-- 清理本地调试入口。
-
-验收：
-
-- 无未鉴权开放代理。
-- 无公开上游密钥。
-- 无可绕过 TOP-AI 余额的生成路径。
 
 ## API Contract Draft
 
@@ -669,18 +762,14 @@ Infinite Canvas owns:
 | 暴露模型成本 | 商业数据泄漏 | 只返回公开销售价格 |
 | 同时大改两边 | 难回滚，难定位问题 | 分阶段提交，每阶段可独立验收 |
 
-## Recommended First Implementation Order
+## Recommended Implementation Order
 
-1. 确认 `/apps/canvas` 作为入口路径。
-2. 在 sub2api 首页加跳转入口，不改核心业务。
-3. 部署层把 Infinite Canvas 挂到 `/apps/canvas`。
-4. 让 Infinite Canvas 支持 basePath。
-5. 加 TOP-AI session 校验接口。
-6. 画布隐藏本地登录注册。
-7. 画布读取 TOP-AI 模型目录。
-8. 画布 AI 请求接入 TOP-AI Gateway。
-9. 画布隐藏本地充值和 credits。
-10. 修复安全问题后再公开上线。
+按四组优先级推进；上面的 Phase 用来控制提交和回滚边界，不拆成过多零碎 step：
+
+1. 入口和登录：保持 `/apps/canvas` 独立跳转，完成同域挂载、basePath、TOP-AI session 校验和登录态映射。
+2. 媒体存储：先把 `POST /api/v1/media/references` 的参考素材存储切到 R2，保留 local fallback，不混入生成结果归档和用户素材云同步。
+3. 安全加固：修复 `webdav-proxy`、请求大小、限流、密钥泄漏和绕过计费路径。
+4. 业务打通：模型列表读取 TOP-AI，AI 请求走 TOP-AI Gateway，余额和扣费统一回 TOP-AI，再按需接入 `generated/` 和 `saved/` 存储。
 
 ## Rollback Plan
 
@@ -689,8 +778,9 @@ Infinite Canvas owns:
 - Phase 1 回滚：移除 TOP-AI 首页/菜单的画布入口，业务不受影响。
 - Phase 2 回滚：移除 `/apps/canvas` 反代规则，Infinite Canvas 仍可回到独立端口或独立域名运行。
 - Phase 3 回滚：关闭 Canvas SSO 校验开关，恢复仅内部测试访问，不开放给用户。
-- Phase 4 回滚：关闭 Canvas 走 TOP-AI Gateway 的开关，禁止公开生成入口，避免绕过计费。
-- Phase 5 回滚：安全修复不能回滚到不安全状态；如果修复引起问题，应关闭相关功能而不是恢复开放代理或无限制请求。
+- Phase 4 回滚：如果 R2/S3 存储接入引起问题，应关闭参考视频/大文件上传入口，不能恢复成无限制大文件穿透业务服务器。
+- Phase 5 回滚：安全修复不能回滚到不安全状态；如果修复引起问题，应关闭相关入口，而不是恢复开放代理或无限制请求。
+- Phase 6 回滚：关闭 Canvas 走 TOP-AI Gateway 的开关，禁止公开生成入口，避免绕过计费。
 
 回滚原则：
 
@@ -699,7 +789,9 @@ Infinite Canvas owns:
 - 不回滚到泄漏密钥、开放代理、无限流的状态。
 - 每个 Phase 单独提交，提交信息写清楚影响范围。
 
-## Acceptance Checklist
+## Production Acceptance Checklist
+
+这是完整生产上线前的最终验收，不代表当前阶段已经全部完成。
 
 - [ ] sub2api 和 Infinite Canvas 仍然是两个独立项目目录。
 - [ ] sub2api 没有嵌入画布 React/Next.js 源码。
@@ -713,6 +805,10 @@ Infinite Canvas owns:
 - [ ] AI 生成通过 TOP-AI Gateway。
 - [ ] 扣费进入 TOP-AI 余额/账单体系。
 - [ ] 用量记录能看出 `source=canvas`。
+- [ ] 生产参考素材存储使用 R2/S3，不依赖业务服务器本地磁盘长期保存大文件。
+- [ ] R2/S3 凭证只存在服务端环境变量和本地私密凭证文件中，没有进入 Git 或前端构建产物。
+- [ ] R2 生命周期规则覆盖 `temp/upload/`、`temp/reference/`、`failed/` 和 `generated/`。
+- [ ] 参考素材 URL 能被上游视频模型公网拉取。
 - [ ] 没有开放代理、明文密钥、绕过计费路径。
 - [ ] 中英文入口文案完整。
 - [ ] 每个阶段都有独立提交，方便回滚。
