@@ -54,6 +54,18 @@ const (
 	FieldAppliedTarget = "applied_target"
 	// FieldAppliedTargetID holds the string denoting the applied_target_id field in the database.
 	FieldAppliedTargetID = "applied_target_id"
+	// FieldAppliedPrevInputPrice holds the string denoting the applied_prev_input_price field in the database.
+	FieldAppliedPrevInputPrice = "applied_prev_input_price"
+	// FieldAppliedPrevOutputPrice holds the string denoting the applied_prev_output_price field in the database.
+	FieldAppliedPrevOutputPrice = "applied_prev_output_price"
+	// FieldAppliedChannelID holds the string denoting the applied_channel_id field in the database.
+	FieldAppliedChannelID = "applied_channel_id"
+	// FieldPrevMultiplier holds the string denoting the prev_multiplier field in the database.
+	FieldPrevMultiplier = "prev_multiplier"
+	// FieldRevertedAt holds the string denoting the reverted_at field in the database.
+	FieldRevertedAt = "reverted_at"
+	// FieldRevertedBy holds the string denoting the reverted_by field in the database.
+	FieldRevertedBy = "reverted_by"
 	// EdgeSource holds the string denoting the source edge name in mutations.
 	EdgeSource = "source"
 	// Table holds the table name of the upstreampricechange in the database.
@@ -90,6 +102,12 @@ var Columns = []string{
 	FieldAppliedBy,
 	FieldAppliedTarget,
 	FieldAppliedTargetID,
+	FieldAppliedPrevInputPrice,
+	FieldAppliedPrevOutputPrice,
+	FieldAppliedChannelID,
+	FieldPrevMultiplier,
+	FieldRevertedAt,
+	FieldRevertedBy,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -235,6 +253,36 @@ func ByAppliedTarget(opts ...sql.OrderTermOption) OrderOption {
 // ByAppliedTargetID orders the results by the applied_target_id field.
 func ByAppliedTargetID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAppliedTargetID, opts...).ToFunc()
+}
+
+// ByAppliedPrevInputPrice orders the results by the applied_prev_input_price field.
+func ByAppliedPrevInputPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAppliedPrevInputPrice, opts...).ToFunc()
+}
+
+// ByAppliedPrevOutputPrice orders the results by the applied_prev_output_price field.
+func ByAppliedPrevOutputPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAppliedPrevOutputPrice, opts...).ToFunc()
+}
+
+// ByAppliedChannelID orders the results by the applied_channel_id field.
+func ByAppliedChannelID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAppliedChannelID, opts...).ToFunc()
+}
+
+// ByPrevMultiplier orders the results by the prev_multiplier field.
+func ByPrevMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPrevMultiplier, opts...).ToFunc()
+}
+
+// ByRevertedAt orders the results by the reverted_at field.
+func ByRevertedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRevertedAt, opts...).ToFunc()
+}
+
+// ByRevertedBy orders the results by the reverted_by field.
+func ByRevertedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRevertedBy, opts...).ToFunc()
 }
 
 // BySourceField orders the results by source field.

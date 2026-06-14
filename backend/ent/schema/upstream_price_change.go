@@ -94,6 +94,31 @@ func (UpstreamPriceChange) Fields() []ent.Field {
 		field.Int64("applied_target_id").
 			Default(0).
 			Comment("应用目标记录ID"),
+		field.Float("applied_prev_input_price").
+			Optional().
+			Nillable().
+			Comment("应用前 channel 该模型的实际输入单价快照（用于撤销回滚）"),
+		field.Float("applied_prev_output_price").
+			Optional().
+			Nillable().
+			Comment("应用前 channel 该模型的实际输出单价快照（用于撤销回滚）"),
+		field.Int64("applied_channel_id").
+			Optional().
+			Nillable().
+			Comment("应用时实际写入单价的 channel_id（撤销回滚锚点）"),
+		field.Float("prev_multiplier").
+			Optional().
+			Nillable().
+			Comment("应用前 group 的实际倍率快照（仅 lock_price，用于撤销回滚）"),
+		field.Time("reverted_at").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).
+			Comment("撤销应用的时间"),
+		field.Int64("reverted_by").
+			Optional().
+			Nillable().
+			Comment("执行撤销的管理员用户ID"),
 	}
 }
 

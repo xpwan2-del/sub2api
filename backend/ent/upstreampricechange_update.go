@@ -428,6 +428,161 @@ func (_u *UpstreamPriceChangeUpdate) AddAppliedTargetID(v int64) *UpstreamPriceC
 	return _u
 }
 
+// SetAppliedPrevInputPrice sets the "applied_prev_input_price" field.
+func (_u *UpstreamPriceChangeUpdate) SetAppliedPrevInputPrice(v float64) *UpstreamPriceChangeUpdate {
+	_u.mutation.ResetAppliedPrevInputPrice()
+	_u.mutation.SetAppliedPrevInputPrice(v)
+	return _u
+}
+
+// SetNillableAppliedPrevInputPrice sets the "applied_prev_input_price" field if the given value is not nil.
+func (_u *UpstreamPriceChangeUpdate) SetNillableAppliedPrevInputPrice(v *float64) *UpstreamPriceChangeUpdate {
+	if v != nil {
+		_u.SetAppliedPrevInputPrice(*v)
+	}
+	return _u
+}
+
+// AddAppliedPrevInputPrice adds value to the "applied_prev_input_price" field.
+func (_u *UpstreamPriceChangeUpdate) AddAppliedPrevInputPrice(v float64) *UpstreamPriceChangeUpdate {
+	_u.mutation.AddAppliedPrevInputPrice(v)
+	return _u
+}
+
+// ClearAppliedPrevInputPrice clears the value of the "applied_prev_input_price" field.
+func (_u *UpstreamPriceChangeUpdate) ClearAppliedPrevInputPrice() *UpstreamPriceChangeUpdate {
+	_u.mutation.ClearAppliedPrevInputPrice()
+	return _u
+}
+
+// SetAppliedPrevOutputPrice sets the "applied_prev_output_price" field.
+func (_u *UpstreamPriceChangeUpdate) SetAppliedPrevOutputPrice(v float64) *UpstreamPriceChangeUpdate {
+	_u.mutation.ResetAppliedPrevOutputPrice()
+	_u.mutation.SetAppliedPrevOutputPrice(v)
+	return _u
+}
+
+// SetNillableAppliedPrevOutputPrice sets the "applied_prev_output_price" field if the given value is not nil.
+func (_u *UpstreamPriceChangeUpdate) SetNillableAppliedPrevOutputPrice(v *float64) *UpstreamPriceChangeUpdate {
+	if v != nil {
+		_u.SetAppliedPrevOutputPrice(*v)
+	}
+	return _u
+}
+
+// AddAppliedPrevOutputPrice adds value to the "applied_prev_output_price" field.
+func (_u *UpstreamPriceChangeUpdate) AddAppliedPrevOutputPrice(v float64) *UpstreamPriceChangeUpdate {
+	_u.mutation.AddAppliedPrevOutputPrice(v)
+	return _u
+}
+
+// ClearAppliedPrevOutputPrice clears the value of the "applied_prev_output_price" field.
+func (_u *UpstreamPriceChangeUpdate) ClearAppliedPrevOutputPrice() *UpstreamPriceChangeUpdate {
+	_u.mutation.ClearAppliedPrevOutputPrice()
+	return _u
+}
+
+// SetAppliedChannelID sets the "applied_channel_id" field.
+func (_u *UpstreamPriceChangeUpdate) SetAppliedChannelID(v int64) *UpstreamPriceChangeUpdate {
+	_u.mutation.ResetAppliedChannelID()
+	_u.mutation.SetAppliedChannelID(v)
+	return _u
+}
+
+// SetNillableAppliedChannelID sets the "applied_channel_id" field if the given value is not nil.
+func (_u *UpstreamPriceChangeUpdate) SetNillableAppliedChannelID(v *int64) *UpstreamPriceChangeUpdate {
+	if v != nil {
+		_u.SetAppliedChannelID(*v)
+	}
+	return _u
+}
+
+// AddAppliedChannelID adds value to the "applied_channel_id" field.
+func (_u *UpstreamPriceChangeUpdate) AddAppliedChannelID(v int64) *UpstreamPriceChangeUpdate {
+	_u.mutation.AddAppliedChannelID(v)
+	return _u
+}
+
+// ClearAppliedChannelID clears the value of the "applied_channel_id" field.
+func (_u *UpstreamPriceChangeUpdate) ClearAppliedChannelID() *UpstreamPriceChangeUpdate {
+	_u.mutation.ClearAppliedChannelID()
+	return _u
+}
+
+// SetPrevMultiplier sets the "prev_multiplier" field.
+func (_u *UpstreamPriceChangeUpdate) SetPrevMultiplier(v float64) *UpstreamPriceChangeUpdate {
+	_u.mutation.ResetPrevMultiplier()
+	_u.mutation.SetPrevMultiplier(v)
+	return _u
+}
+
+// SetNillablePrevMultiplier sets the "prev_multiplier" field if the given value is not nil.
+func (_u *UpstreamPriceChangeUpdate) SetNillablePrevMultiplier(v *float64) *UpstreamPriceChangeUpdate {
+	if v != nil {
+		_u.SetPrevMultiplier(*v)
+	}
+	return _u
+}
+
+// AddPrevMultiplier adds value to the "prev_multiplier" field.
+func (_u *UpstreamPriceChangeUpdate) AddPrevMultiplier(v float64) *UpstreamPriceChangeUpdate {
+	_u.mutation.AddPrevMultiplier(v)
+	return _u
+}
+
+// ClearPrevMultiplier clears the value of the "prev_multiplier" field.
+func (_u *UpstreamPriceChangeUpdate) ClearPrevMultiplier() *UpstreamPriceChangeUpdate {
+	_u.mutation.ClearPrevMultiplier()
+	return _u
+}
+
+// SetRevertedAt sets the "reverted_at" field.
+func (_u *UpstreamPriceChangeUpdate) SetRevertedAt(v time.Time) *UpstreamPriceChangeUpdate {
+	_u.mutation.SetRevertedAt(v)
+	return _u
+}
+
+// SetNillableRevertedAt sets the "reverted_at" field if the given value is not nil.
+func (_u *UpstreamPriceChangeUpdate) SetNillableRevertedAt(v *time.Time) *UpstreamPriceChangeUpdate {
+	if v != nil {
+		_u.SetRevertedAt(*v)
+	}
+	return _u
+}
+
+// ClearRevertedAt clears the value of the "reverted_at" field.
+func (_u *UpstreamPriceChangeUpdate) ClearRevertedAt() *UpstreamPriceChangeUpdate {
+	_u.mutation.ClearRevertedAt()
+	return _u
+}
+
+// SetRevertedBy sets the "reverted_by" field.
+func (_u *UpstreamPriceChangeUpdate) SetRevertedBy(v int64) *UpstreamPriceChangeUpdate {
+	_u.mutation.ResetRevertedBy()
+	_u.mutation.SetRevertedBy(v)
+	return _u
+}
+
+// SetNillableRevertedBy sets the "reverted_by" field if the given value is not nil.
+func (_u *UpstreamPriceChangeUpdate) SetNillableRevertedBy(v *int64) *UpstreamPriceChangeUpdate {
+	if v != nil {
+		_u.SetRevertedBy(*v)
+	}
+	return _u
+}
+
+// AddRevertedBy adds value to the "reverted_by" field.
+func (_u *UpstreamPriceChangeUpdate) AddRevertedBy(v int64) *UpstreamPriceChangeUpdate {
+	_u.mutation.AddRevertedBy(v)
+	return _u
+}
+
+// ClearRevertedBy clears the value of the "reverted_by" field.
+func (_u *UpstreamPriceChangeUpdate) ClearRevertedBy() *UpstreamPriceChangeUpdate {
+	_u.mutation.ClearRevertedBy()
+	return _u
+}
+
 // SetSource sets the "source" edge to the UpstreamPriceSource entity.
 func (_u *UpstreamPriceChangeUpdate) SetSource(v *UpstreamPriceSource) *UpstreamPriceChangeUpdate {
 	return _u.SetSourceID(v.ID)
@@ -621,6 +776,57 @@ func (_u *UpstreamPriceChangeUpdate) sqlSave(ctx context.Context) (_node int, er
 	}
 	if value, ok := _u.mutation.AddedAppliedTargetID(); ok {
 		_spec.AddField(upstreampricechange.FieldAppliedTargetID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AppliedPrevInputPrice(); ok {
+		_spec.SetField(upstreampricechange.FieldAppliedPrevInputPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedAppliedPrevInputPrice(); ok {
+		_spec.AddField(upstreampricechange.FieldAppliedPrevInputPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.AppliedPrevInputPriceCleared() {
+		_spec.ClearField(upstreampricechange.FieldAppliedPrevInputPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.AppliedPrevOutputPrice(); ok {
+		_spec.SetField(upstreampricechange.FieldAppliedPrevOutputPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedAppliedPrevOutputPrice(); ok {
+		_spec.AddField(upstreampricechange.FieldAppliedPrevOutputPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.AppliedPrevOutputPriceCleared() {
+		_spec.ClearField(upstreampricechange.FieldAppliedPrevOutputPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.AppliedChannelID(); ok {
+		_spec.SetField(upstreampricechange.FieldAppliedChannelID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedAppliedChannelID(); ok {
+		_spec.AddField(upstreampricechange.FieldAppliedChannelID, field.TypeInt64, value)
+	}
+	if _u.mutation.AppliedChannelIDCleared() {
+		_spec.ClearField(upstreampricechange.FieldAppliedChannelID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.PrevMultiplier(); ok {
+		_spec.SetField(upstreampricechange.FieldPrevMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPrevMultiplier(); ok {
+		_spec.AddField(upstreampricechange.FieldPrevMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.PrevMultiplierCleared() {
+		_spec.ClearField(upstreampricechange.FieldPrevMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.RevertedAt(); ok {
+		_spec.SetField(upstreampricechange.FieldRevertedAt, field.TypeTime, value)
+	}
+	if _u.mutation.RevertedAtCleared() {
+		_spec.ClearField(upstreampricechange.FieldRevertedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.RevertedBy(); ok {
+		_spec.SetField(upstreampricechange.FieldRevertedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevertedBy(); ok {
+		_spec.AddField(upstreampricechange.FieldRevertedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.RevertedByCleared() {
+		_spec.ClearField(upstreampricechange.FieldRevertedBy, field.TypeInt64)
 	}
 	if _u.mutation.SourceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1070,6 +1276,161 @@ func (_u *UpstreamPriceChangeUpdateOne) AddAppliedTargetID(v int64) *UpstreamPri
 	return _u
 }
 
+// SetAppliedPrevInputPrice sets the "applied_prev_input_price" field.
+func (_u *UpstreamPriceChangeUpdateOne) SetAppliedPrevInputPrice(v float64) *UpstreamPriceChangeUpdateOne {
+	_u.mutation.ResetAppliedPrevInputPrice()
+	_u.mutation.SetAppliedPrevInputPrice(v)
+	return _u
+}
+
+// SetNillableAppliedPrevInputPrice sets the "applied_prev_input_price" field if the given value is not nil.
+func (_u *UpstreamPriceChangeUpdateOne) SetNillableAppliedPrevInputPrice(v *float64) *UpstreamPriceChangeUpdateOne {
+	if v != nil {
+		_u.SetAppliedPrevInputPrice(*v)
+	}
+	return _u
+}
+
+// AddAppliedPrevInputPrice adds value to the "applied_prev_input_price" field.
+func (_u *UpstreamPriceChangeUpdateOne) AddAppliedPrevInputPrice(v float64) *UpstreamPriceChangeUpdateOne {
+	_u.mutation.AddAppliedPrevInputPrice(v)
+	return _u
+}
+
+// ClearAppliedPrevInputPrice clears the value of the "applied_prev_input_price" field.
+func (_u *UpstreamPriceChangeUpdateOne) ClearAppliedPrevInputPrice() *UpstreamPriceChangeUpdateOne {
+	_u.mutation.ClearAppliedPrevInputPrice()
+	return _u
+}
+
+// SetAppliedPrevOutputPrice sets the "applied_prev_output_price" field.
+func (_u *UpstreamPriceChangeUpdateOne) SetAppliedPrevOutputPrice(v float64) *UpstreamPriceChangeUpdateOne {
+	_u.mutation.ResetAppliedPrevOutputPrice()
+	_u.mutation.SetAppliedPrevOutputPrice(v)
+	return _u
+}
+
+// SetNillableAppliedPrevOutputPrice sets the "applied_prev_output_price" field if the given value is not nil.
+func (_u *UpstreamPriceChangeUpdateOne) SetNillableAppliedPrevOutputPrice(v *float64) *UpstreamPriceChangeUpdateOne {
+	if v != nil {
+		_u.SetAppliedPrevOutputPrice(*v)
+	}
+	return _u
+}
+
+// AddAppliedPrevOutputPrice adds value to the "applied_prev_output_price" field.
+func (_u *UpstreamPriceChangeUpdateOne) AddAppliedPrevOutputPrice(v float64) *UpstreamPriceChangeUpdateOne {
+	_u.mutation.AddAppliedPrevOutputPrice(v)
+	return _u
+}
+
+// ClearAppliedPrevOutputPrice clears the value of the "applied_prev_output_price" field.
+func (_u *UpstreamPriceChangeUpdateOne) ClearAppliedPrevOutputPrice() *UpstreamPriceChangeUpdateOne {
+	_u.mutation.ClearAppliedPrevOutputPrice()
+	return _u
+}
+
+// SetAppliedChannelID sets the "applied_channel_id" field.
+func (_u *UpstreamPriceChangeUpdateOne) SetAppliedChannelID(v int64) *UpstreamPriceChangeUpdateOne {
+	_u.mutation.ResetAppliedChannelID()
+	_u.mutation.SetAppliedChannelID(v)
+	return _u
+}
+
+// SetNillableAppliedChannelID sets the "applied_channel_id" field if the given value is not nil.
+func (_u *UpstreamPriceChangeUpdateOne) SetNillableAppliedChannelID(v *int64) *UpstreamPriceChangeUpdateOne {
+	if v != nil {
+		_u.SetAppliedChannelID(*v)
+	}
+	return _u
+}
+
+// AddAppliedChannelID adds value to the "applied_channel_id" field.
+func (_u *UpstreamPriceChangeUpdateOne) AddAppliedChannelID(v int64) *UpstreamPriceChangeUpdateOne {
+	_u.mutation.AddAppliedChannelID(v)
+	return _u
+}
+
+// ClearAppliedChannelID clears the value of the "applied_channel_id" field.
+func (_u *UpstreamPriceChangeUpdateOne) ClearAppliedChannelID() *UpstreamPriceChangeUpdateOne {
+	_u.mutation.ClearAppliedChannelID()
+	return _u
+}
+
+// SetPrevMultiplier sets the "prev_multiplier" field.
+func (_u *UpstreamPriceChangeUpdateOne) SetPrevMultiplier(v float64) *UpstreamPriceChangeUpdateOne {
+	_u.mutation.ResetPrevMultiplier()
+	_u.mutation.SetPrevMultiplier(v)
+	return _u
+}
+
+// SetNillablePrevMultiplier sets the "prev_multiplier" field if the given value is not nil.
+func (_u *UpstreamPriceChangeUpdateOne) SetNillablePrevMultiplier(v *float64) *UpstreamPriceChangeUpdateOne {
+	if v != nil {
+		_u.SetPrevMultiplier(*v)
+	}
+	return _u
+}
+
+// AddPrevMultiplier adds value to the "prev_multiplier" field.
+func (_u *UpstreamPriceChangeUpdateOne) AddPrevMultiplier(v float64) *UpstreamPriceChangeUpdateOne {
+	_u.mutation.AddPrevMultiplier(v)
+	return _u
+}
+
+// ClearPrevMultiplier clears the value of the "prev_multiplier" field.
+func (_u *UpstreamPriceChangeUpdateOne) ClearPrevMultiplier() *UpstreamPriceChangeUpdateOne {
+	_u.mutation.ClearPrevMultiplier()
+	return _u
+}
+
+// SetRevertedAt sets the "reverted_at" field.
+func (_u *UpstreamPriceChangeUpdateOne) SetRevertedAt(v time.Time) *UpstreamPriceChangeUpdateOne {
+	_u.mutation.SetRevertedAt(v)
+	return _u
+}
+
+// SetNillableRevertedAt sets the "reverted_at" field if the given value is not nil.
+func (_u *UpstreamPriceChangeUpdateOne) SetNillableRevertedAt(v *time.Time) *UpstreamPriceChangeUpdateOne {
+	if v != nil {
+		_u.SetRevertedAt(*v)
+	}
+	return _u
+}
+
+// ClearRevertedAt clears the value of the "reverted_at" field.
+func (_u *UpstreamPriceChangeUpdateOne) ClearRevertedAt() *UpstreamPriceChangeUpdateOne {
+	_u.mutation.ClearRevertedAt()
+	return _u
+}
+
+// SetRevertedBy sets the "reverted_by" field.
+func (_u *UpstreamPriceChangeUpdateOne) SetRevertedBy(v int64) *UpstreamPriceChangeUpdateOne {
+	_u.mutation.ResetRevertedBy()
+	_u.mutation.SetRevertedBy(v)
+	return _u
+}
+
+// SetNillableRevertedBy sets the "reverted_by" field if the given value is not nil.
+func (_u *UpstreamPriceChangeUpdateOne) SetNillableRevertedBy(v *int64) *UpstreamPriceChangeUpdateOne {
+	if v != nil {
+		_u.SetRevertedBy(*v)
+	}
+	return _u
+}
+
+// AddRevertedBy adds value to the "reverted_by" field.
+func (_u *UpstreamPriceChangeUpdateOne) AddRevertedBy(v int64) *UpstreamPriceChangeUpdateOne {
+	_u.mutation.AddRevertedBy(v)
+	return _u
+}
+
+// ClearRevertedBy clears the value of the "reverted_by" field.
+func (_u *UpstreamPriceChangeUpdateOne) ClearRevertedBy() *UpstreamPriceChangeUpdateOne {
+	_u.mutation.ClearRevertedBy()
+	return _u
+}
+
 // SetSource sets the "source" edge to the UpstreamPriceSource entity.
 func (_u *UpstreamPriceChangeUpdateOne) SetSource(v *UpstreamPriceSource) *UpstreamPriceChangeUpdateOne {
 	return _u.SetSourceID(v.ID)
@@ -1293,6 +1654,57 @@ func (_u *UpstreamPriceChangeUpdateOne) sqlSave(ctx context.Context) (_node *Ups
 	}
 	if value, ok := _u.mutation.AddedAppliedTargetID(); ok {
 		_spec.AddField(upstreampricechange.FieldAppliedTargetID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AppliedPrevInputPrice(); ok {
+		_spec.SetField(upstreampricechange.FieldAppliedPrevInputPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedAppliedPrevInputPrice(); ok {
+		_spec.AddField(upstreampricechange.FieldAppliedPrevInputPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.AppliedPrevInputPriceCleared() {
+		_spec.ClearField(upstreampricechange.FieldAppliedPrevInputPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.AppliedPrevOutputPrice(); ok {
+		_spec.SetField(upstreampricechange.FieldAppliedPrevOutputPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedAppliedPrevOutputPrice(); ok {
+		_spec.AddField(upstreampricechange.FieldAppliedPrevOutputPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.AppliedPrevOutputPriceCleared() {
+		_spec.ClearField(upstreampricechange.FieldAppliedPrevOutputPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.AppliedChannelID(); ok {
+		_spec.SetField(upstreampricechange.FieldAppliedChannelID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedAppliedChannelID(); ok {
+		_spec.AddField(upstreampricechange.FieldAppliedChannelID, field.TypeInt64, value)
+	}
+	if _u.mutation.AppliedChannelIDCleared() {
+		_spec.ClearField(upstreampricechange.FieldAppliedChannelID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.PrevMultiplier(); ok {
+		_spec.SetField(upstreampricechange.FieldPrevMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPrevMultiplier(); ok {
+		_spec.AddField(upstreampricechange.FieldPrevMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.PrevMultiplierCleared() {
+		_spec.ClearField(upstreampricechange.FieldPrevMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.RevertedAt(); ok {
+		_spec.SetField(upstreampricechange.FieldRevertedAt, field.TypeTime, value)
+	}
+	if _u.mutation.RevertedAtCleared() {
+		_spec.ClearField(upstreampricechange.FieldRevertedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.RevertedBy(); ok {
+		_spec.SetField(upstreampricechange.FieldRevertedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevertedBy(); ok {
+		_spec.AddField(upstreampricechange.FieldRevertedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.RevertedByCleared() {
+		_spec.ClearField(upstreampricechange.FieldRevertedBy, field.TypeInt64)
 	}
 	if _u.mutation.SourceCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -263,6 +263,90 @@ func (_c *UpstreamPriceChangeCreate) SetNillableAppliedTargetID(v *int64) *Upstr
 	return _c
 }
 
+// SetAppliedPrevInputPrice sets the "applied_prev_input_price" field.
+func (_c *UpstreamPriceChangeCreate) SetAppliedPrevInputPrice(v float64) *UpstreamPriceChangeCreate {
+	_c.mutation.SetAppliedPrevInputPrice(v)
+	return _c
+}
+
+// SetNillableAppliedPrevInputPrice sets the "applied_prev_input_price" field if the given value is not nil.
+func (_c *UpstreamPriceChangeCreate) SetNillableAppliedPrevInputPrice(v *float64) *UpstreamPriceChangeCreate {
+	if v != nil {
+		_c.SetAppliedPrevInputPrice(*v)
+	}
+	return _c
+}
+
+// SetAppliedPrevOutputPrice sets the "applied_prev_output_price" field.
+func (_c *UpstreamPriceChangeCreate) SetAppliedPrevOutputPrice(v float64) *UpstreamPriceChangeCreate {
+	_c.mutation.SetAppliedPrevOutputPrice(v)
+	return _c
+}
+
+// SetNillableAppliedPrevOutputPrice sets the "applied_prev_output_price" field if the given value is not nil.
+func (_c *UpstreamPriceChangeCreate) SetNillableAppliedPrevOutputPrice(v *float64) *UpstreamPriceChangeCreate {
+	if v != nil {
+		_c.SetAppliedPrevOutputPrice(*v)
+	}
+	return _c
+}
+
+// SetAppliedChannelID sets the "applied_channel_id" field.
+func (_c *UpstreamPriceChangeCreate) SetAppliedChannelID(v int64) *UpstreamPriceChangeCreate {
+	_c.mutation.SetAppliedChannelID(v)
+	return _c
+}
+
+// SetNillableAppliedChannelID sets the "applied_channel_id" field if the given value is not nil.
+func (_c *UpstreamPriceChangeCreate) SetNillableAppliedChannelID(v *int64) *UpstreamPriceChangeCreate {
+	if v != nil {
+		_c.SetAppliedChannelID(*v)
+	}
+	return _c
+}
+
+// SetPrevMultiplier sets the "prev_multiplier" field.
+func (_c *UpstreamPriceChangeCreate) SetPrevMultiplier(v float64) *UpstreamPriceChangeCreate {
+	_c.mutation.SetPrevMultiplier(v)
+	return _c
+}
+
+// SetNillablePrevMultiplier sets the "prev_multiplier" field if the given value is not nil.
+func (_c *UpstreamPriceChangeCreate) SetNillablePrevMultiplier(v *float64) *UpstreamPriceChangeCreate {
+	if v != nil {
+		_c.SetPrevMultiplier(*v)
+	}
+	return _c
+}
+
+// SetRevertedAt sets the "reverted_at" field.
+func (_c *UpstreamPriceChangeCreate) SetRevertedAt(v time.Time) *UpstreamPriceChangeCreate {
+	_c.mutation.SetRevertedAt(v)
+	return _c
+}
+
+// SetNillableRevertedAt sets the "reverted_at" field if the given value is not nil.
+func (_c *UpstreamPriceChangeCreate) SetNillableRevertedAt(v *time.Time) *UpstreamPriceChangeCreate {
+	if v != nil {
+		_c.SetRevertedAt(*v)
+	}
+	return _c
+}
+
+// SetRevertedBy sets the "reverted_by" field.
+func (_c *UpstreamPriceChangeCreate) SetRevertedBy(v int64) *UpstreamPriceChangeCreate {
+	_c.mutation.SetRevertedBy(v)
+	return _c
+}
+
+// SetNillableRevertedBy sets the "reverted_by" field if the given value is not nil.
+func (_c *UpstreamPriceChangeCreate) SetNillableRevertedBy(v *int64) *UpstreamPriceChangeCreate {
+	if v != nil {
+		_c.SetRevertedBy(*v)
+	}
+	return _c
+}
+
 // SetSource sets the "source" edge to the UpstreamPriceSource entity.
 func (_c *UpstreamPriceChangeCreate) SetSource(v *UpstreamPriceSource) *UpstreamPriceChangeCreate {
 	return _c.SetSourceID(v.ID)
@@ -503,6 +587,30 @@ func (_c *UpstreamPriceChangeCreate) createSpec() (*UpstreamPriceChange, *sqlgra
 	if value, ok := _c.mutation.AppliedTargetID(); ok {
 		_spec.SetField(upstreampricechange.FieldAppliedTargetID, field.TypeInt64, value)
 		_node.AppliedTargetID = value
+	}
+	if value, ok := _c.mutation.AppliedPrevInputPrice(); ok {
+		_spec.SetField(upstreampricechange.FieldAppliedPrevInputPrice, field.TypeFloat64, value)
+		_node.AppliedPrevInputPrice = &value
+	}
+	if value, ok := _c.mutation.AppliedPrevOutputPrice(); ok {
+		_spec.SetField(upstreampricechange.FieldAppliedPrevOutputPrice, field.TypeFloat64, value)
+		_node.AppliedPrevOutputPrice = &value
+	}
+	if value, ok := _c.mutation.AppliedChannelID(); ok {
+		_spec.SetField(upstreampricechange.FieldAppliedChannelID, field.TypeInt64, value)
+		_node.AppliedChannelID = &value
+	}
+	if value, ok := _c.mutation.PrevMultiplier(); ok {
+		_spec.SetField(upstreampricechange.FieldPrevMultiplier, field.TypeFloat64, value)
+		_node.PrevMultiplier = &value
+	}
+	if value, ok := _c.mutation.RevertedAt(); ok {
+		_spec.SetField(upstreampricechange.FieldRevertedAt, field.TypeTime, value)
+		_node.RevertedAt = &value
+	}
+	if value, ok := _c.mutation.RevertedBy(); ok {
+		_spec.SetField(upstreampricechange.FieldRevertedBy, field.TypeInt64, value)
+		_node.RevertedBy = &value
 	}
 	if nodes := _c.mutation.SourceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -918,6 +1026,144 @@ func (u *UpstreamPriceChangeUpsert) UpdateAppliedTargetID() *UpstreamPriceChange
 // AddAppliedTargetID adds v to the "applied_target_id" field.
 func (u *UpstreamPriceChangeUpsert) AddAppliedTargetID(v int64) *UpstreamPriceChangeUpsert {
 	u.Add(upstreampricechange.FieldAppliedTargetID, v)
+	return u
+}
+
+// SetAppliedPrevInputPrice sets the "applied_prev_input_price" field.
+func (u *UpstreamPriceChangeUpsert) SetAppliedPrevInputPrice(v float64) *UpstreamPriceChangeUpsert {
+	u.Set(upstreampricechange.FieldAppliedPrevInputPrice, v)
+	return u
+}
+
+// UpdateAppliedPrevInputPrice sets the "applied_prev_input_price" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsert) UpdateAppliedPrevInputPrice() *UpstreamPriceChangeUpsert {
+	u.SetExcluded(upstreampricechange.FieldAppliedPrevInputPrice)
+	return u
+}
+
+// AddAppliedPrevInputPrice adds v to the "applied_prev_input_price" field.
+func (u *UpstreamPriceChangeUpsert) AddAppliedPrevInputPrice(v float64) *UpstreamPriceChangeUpsert {
+	u.Add(upstreampricechange.FieldAppliedPrevInputPrice, v)
+	return u
+}
+
+// ClearAppliedPrevInputPrice clears the value of the "applied_prev_input_price" field.
+func (u *UpstreamPriceChangeUpsert) ClearAppliedPrevInputPrice() *UpstreamPriceChangeUpsert {
+	u.SetNull(upstreampricechange.FieldAppliedPrevInputPrice)
+	return u
+}
+
+// SetAppliedPrevOutputPrice sets the "applied_prev_output_price" field.
+func (u *UpstreamPriceChangeUpsert) SetAppliedPrevOutputPrice(v float64) *UpstreamPriceChangeUpsert {
+	u.Set(upstreampricechange.FieldAppliedPrevOutputPrice, v)
+	return u
+}
+
+// UpdateAppliedPrevOutputPrice sets the "applied_prev_output_price" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsert) UpdateAppliedPrevOutputPrice() *UpstreamPriceChangeUpsert {
+	u.SetExcluded(upstreampricechange.FieldAppliedPrevOutputPrice)
+	return u
+}
+
+// AddAppliedPrevOutputPrice adds v to the "applied_prev_output_price" field.
+func (u *UpstreamPriceChangeUpsert) AddAppliedPrevOutputPrice(v float64) *UpstreamPriceChangeUpsert {
+	u.Add(upstreampricechange.FieldAppliedPrevOutputPrice, v)
+	return u
+}
+
+// ClearAppliedPrevOutputPrice clears the value of the "applied_prev_output_price" field.
+func (u *UpstreamPriceChangeUpsert) ClearAppliedPrevOutputPrice() *UpstreamPriceChangeUpsert {
+	u.SetNull(upstreampricechange.FieldAppliedPrevOutputPrice)
+	return u
+}
+
+// SetAppliedChannelID sets the "applied_channel_id" field.
+func (u *UpstreamPriceChangeUpsert) SetAppliedChannelID(v int64) *UpstreamPriceChangeUpsert {
+	u.Set(upstreampricechange.FieldAppliedChannelID, v)
+	return u
+}
+
+// UpdateAppliedChannelID sets the "applied_channel_id" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsert) UpdateAppliedChannelID() *UpstreamPriceChangeUpsert {
+	u.SetExcluded(upstreampricechange.FieldAppliedChannelID)
+	return u
+}
+
+// AddAppliedChannelID adds v to the "applied_channel_id" field.
+func (u *UpstreamPriceChangeUpsert) AddAppliedChannelID(v int64) *UpstreamPriceChangeUpsert {
+	u.Add(upstreampricechange.FieldAppliedChannelID, v)
+	return u
+}
+
+// ClearAppliedChannelID clears the value of the "applied_channel_id" field.
+func (u *UpstreamPriceChangeUpsert) ClearAppliedChannelID() *UpstreamPriceChangeUpsert {
+	u.SetNull(upstreampricechange.FieldAppliedChannelID)
+	return u
+}
+
+// SetPrevMultiplier sets the "prev_multiplier" field.
+func (u *UpstreamPriceChangeUpsert) SetPrevMultiplier(v float64) *UpstreamPriceChangeUpsert {
+	u.Set(upstreampricechange.FieldPrevMultiplier, v)
+	return u
+}
+
+// UpdatePrevMultiplier sets the "prev_multiplier" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsert) UpdatePrevMultiplier() *UpstreamPriceChangeUpsert {
+	u.SetExcluded(upstreampricechange.FieldPrevMultiplier)
+	return u
+}
+
+// AddPrevMultiplier adds v to the "prev_multiplier" field.
+func (u *UpstreamPriceChangeUpsert) AddPrevMultiplier(v float64) *UpstreamPriceChangeUpsert {
+	u.Add(upstreampricechange.FieldPrevMultiplier, v)
+	return u
+}
+
+// ClearPrevMultiplier clears the value of the "prev_multiplier" field.
+func (u *UpstreamPriceChangeUpsert) ClearPrevMultiplier() *UpstreamPriceChangeUpsert {
+	u.SetNull(upstreampricechange.FieldPrevMultiplier)
+	return u
+}
+
+// SetRevertedAt sets the "reverted_at" field.
+func (u *UpstreamPriceChangeUpsert) SetRevertedAt(v time.Time) *UpstreamPriceChangeUpsert {
+	u.Set(upstreampricechange.FieldRevertedAt, v)
+	return u
+}
+
+// UpdateRevertedAt sets the "reverted_at" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsert) UpdateRevertedAt() *UpstreamPriceChangeUpsert {
+	u.SetExcluded(upstreampricechange.FieldRevertedAt)
+	return u
+}
+
+// ClearRevertedAt clears the value of the "reverted_at" field.
+func (u *UpstreamPriceChangeUpsert) ClearRevertedAt() *UpstreamPriceChangeUpsert {
+	u.SetNull(upstreampricechange.FieldRevertedAt)
+	return u
+}
+
+// SetRevertedBy sets the "reverted_by" field.
+func (u *UpstreamPriceChangeUpsert) SetRevertedBy(v int64) *UpstreamPriceChangeUpsert {
+	u.Set(upstreampricechange.FieldRevertedBy, v)
+	return u
+}
+
+// UpdateRevertedBy sets the "reverted_by" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsert) UpdateRevertedBy() *UpstreamPriceChangeUpsert {
+	u.SetExcluded(upstreampricechange.FieldRevertedBy)
+	return u
+}
+
+// AddRevertedBy adds v to the "reverted_by" field.
+func (u *UpstreamPriceChangeUpsert) AddRevertedBy(v int64) *UpstreamPriceChangeUpsert {
+	u.Add(upstreampricechange.FieldRevertedBy, v)
+	return u
+}
+
+// ClearRevertedBy clears the value of the "reverted_by" field.
+func (u *UpstreamPriceChangeUpsert) ClearRevertedBy() *UpstreamPriceChangeUpsert {
+	u.SetNull(upstreampricechange.FieldRevertedBy)
 	return u
 }
 
@@ -1364,6 +1610,167 @@ func (u *UpstreamPriceChangeUpsertOne) AddAppliedTargetID(v int64) *UpstreamPric
 func (u *UpstreamPriceChangeUpsertOne) UpdateAppliedTargetID() *UpstreamPriceChangeUpsertOne {
 	return u.Update(func(s *UpstreamPriceChangeUpsert) {
 		s.UpdateAppliedTargetID()
+	})
+}
+
+// SetAppliedPrevInputPrice sets the "applied_prev_input_price" field.
+func (u *UpstreamPriceChangeUpsertOne) SetAppliedPrevInputPrice(v float64) *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetAppliedPrevInputPrice(v)
+	})
+}
+
+// AddAppliedPrevInputPrice adds v to the "applied_prev_input_price" field.
+func (u *UpstreamPriceChangeUpsertOne) AddAppliedPrevInputPrice(v float64) *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.AddAppliedPrevInputPrice(v)
+	})
+}
+
+// UpdateAppliedPrevInputPrice sets the "applied_prev_input_price" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertOne) UpdateAppliedPrevInputPrice() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdateAppliedPrevInputPrice()
+	})
+}
+
+// ClearAppliedPrevInputPrice clears the value of the "applied_prev_input_price" field.
+func (u *UpstreamPriceChangeUpsertOne) ClearAppliedPrevInputPrice() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearAppliedPrevInputPrice()
+	})
+}
+
+// SetAppliedPrevOutputPrice sets the "applied_prev_output_price" field.
+func (u *UpstreamPriceChangeUpsertOne) SetAppliedPrevOutputPrice(v float64) *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetAppliedPrevOutputPrice(v)
+	})
+}
+
+// AddAppliedPrevOutputPrice adds v to the "applied_prev_output_price" field.
+func (u *UpstreamPriceChangeUpsertOne) AddAppliedPrevOutputPrice(v float64) *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.AddAppliedPrevOutputPrice(v)
+	})
+}
+
+// UpdateAppliedPrevOutputPrice sets the "applied_prev_output_price" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertOne) UpdateAppliedPrevOutputPrice() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdateAppliedPrevOutputPrice()
+	})
+}
+
+// ClearAppliedPrevOutputPrice clears the value of the "applied_prev_output_price" field.
+func (u *UpstreamPriceChangeUpsertOne) ClearAppliedPrevOutputPrice() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearAppliedPrevOutputPrice()
+	})
+}
+
+// SetAppliedChannelID sets the "applied_channel_id" field.
+func (u *UpstreamPriceChangeUpsertOne) SetAppliedChannelID(v int64) *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetAppliedChannelID(v)
+	})
+}
+
+// AddAppliedChannelID adds v to the "applied_channel_id" field.
+func (u *UpstreamPriceChangeUpsertOne) AddAppliedChannelID(v int64) *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.AddAppliedChannelID(v)
+	})
+}
+
+// UpdateAppliedChannelID sets the "applied_channel_id" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertOne) UpdateAppliedChannelID() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdateAppliedChannelID()
+	})
+}
+
+// ClearAppliedChannelID clears the value of the "applied_channel_id" field.
+func (u *UpstreamPriceChangeUpsertOne) ClearAppliedChannelID() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearAppliedChannelID()
+	})
+}
+
+// SetPrevMultiplier sets the "prev_multiplier" field.
+func (u *UpstreamPriceChangeUpsertOne) SetPrevMultiplier(v float64) *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetPrevMultiplier(v)
+	})
+}
+
+// AddPrevMultiplier adds v to the "prev_multiplier" field.
+func (u *UpstreamPriceChangeUpsertOne) AddPrevMultiplier(v float64) *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.AddPrevMultiplier(v)
+	})
+}
+
+// UpdatePrevMultiplier sets the "prev_multiplier" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertOne) UpdatePrevMultiplier() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdatePrevMultiplier()
+	})
+}
+
+// ClearPrevMultiplier clears the value of the "prev_multiplier" field.
+func (u *UpstreamPriceChangeUpsertOne) ClearPrevMultiplier() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearPrevMultiplier()
+	})
+}
+
+// SetRevertedAt sets the "reverted_at" field.
+func (u *UpstreamPriceChangeUpsertOne) SetRevertedAt(v time.Time) *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetRevertedAt(v)
+	})
+}
+
+// UpdateRevertedAt sets the "reverted_at" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertOne) UpdateRevertedAt() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdateRevertedAt()
+	})
+}
+
+// ClearRevertedAt clears the value of the "reverted_at" field.
+func (u *UpstreamPriceChangeUpsertOne) ClearRevertedAt() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearRevertedAt()
+	})
+}
+
+// SetRevertedBy sets the "reverted_by" field.
+func (u *UpstreamPriceChangeUpsertOne) SetRevertedBy(v int64) *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetRevertedBy(v)
+	})
+}
+
+// AddRevertedBy adds v to the "reverted_by" field.
+func (u *UpstreamPriceChangeUpsertOne) AddRevertedBy(v int64) *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.AddRevertedBy(v)
+	})
+}
+
+// UpdateRevertedBy sets the "reverted_by" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertOne) UpdateRevertedBy() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdateRevertedBy()
+	})
+}
+
+// ClearRevertedBy clears the value of the "reverted_by" field.
+func (u *UpstreamPriceChangeUpsertOne) ClearRevertedBy() *UpstreamPriceChangeUpsertOne {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearRevertedBy()
 	})
 }
 
@@ -1974,6 +2381,167 @@ func (u *UpstreamPriceChangeUpsertBulk) AddAppliedTargetID(v int64) *UpstreamPri
 func (u *UpstreamPriceChangeUpsertBulk) UpdateAppliedTargetID() *UpstreamPriceChangeUpsertBulk {
 	return u.Update(func(s *UpstreamPriceChangeUpsert) {
 		s.UpdateAppliedTargetID()
+	})
+}
+
+// SetAppliedPrevInputPrice sets the "applied_prev_input_price" field.
+func (u *UpstreamPriceChangeUpsertBulk) SetAppliedPrevInputPrice(v float64) *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetAppliedPrevInputPrice(v)
+	})
+}
+
+// AddAppliedPrevInputPrice adds v to the "applied_prev_input_price" field.
+func (u *UpstreamPriceChangeUpsertBulk) AddAppliedPrevInputPrice(v float64) *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.AddAppliedPrevInputPrice(v)
+	})
+}
+
+// UpdateAppliedPrevInputPrice sets the "applied_prev_input_price" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertBulk) UpdateAppliedPrevInputPrice() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdateAppliedPrevInputPrice()
+	})
+}
+
+// ClearAppliedPrevInputPrice clears the value of the "applied_prev_input_price" field.
+func (u *UpstreamPriceChangeUpsertBulk) ClearAppliedPrevInputPrice() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearAppliedPrevInputPrice()
+	})
+}
+
+// SetAppliedPrevOutputPrice sets the "applied_prev_output_price" field.
+func (u *UpstreamPriceChangeUpsertBulk) SetAppliedPrevOutputPrice(v float64) *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetAppliedPrevOutputPrice(v)
+	})
+}
+
+// AddAppliedPrevOutputPrice adds v to the "applied_prev_output_price" field.
+func (u *UpstreamPriceChangeUpsertBulk) AddAppliedPrevOutputPrice(v float64) *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.AddAppliedPrevOutputPrice(v)
+	})
+}
+
+// UpdateAppliedPrevOutputPrice sets the "applied_prev_output_price" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertBulk) UpdateAppliedPrevOutputPrice() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdateAppliedPrevOutputPrice()
+	})
+}
+
+// ClearAppliedPrevOutputPrice clears the value of the "applied_prev_output_price" field.
+func (u *UpstreamPriceChangeUpsertBulk) ClearAppliedPrevOutputPrice() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearAppliedPrevOutputPrice()
+	})
+}
+
+// SetAppliedChannelID sets the "applied_channel_id" field.
+func (u *UpstreamPriceChangeUpsertBulk) SetAppliedChannelID(v int64) *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetAppliedChannelID(v)
+	})
+}
+
+// AddAppliedChannelID adds v to the "applied_channel_id" field.
+func (u *UpstreamPriceChangeUpsertBulk) AddAppliedChannelID(v int64) *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.AddAppliedChannelID(v)
+	})
+}
+
+// UpdateAppliedChannelID sets the "applied_channel_id" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertBulk) UpdateAppliedChannelID() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdateAppliedChannelID()
+	})
+}
+
+// ClearAppliedChannelID clears the value of the "applied_channel_id" field.
+func (u *UpstreamPriceChangeUpsertBulk) ClearAppliedChannelID() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearAppliedChannelID()
+	})
+}
+
+// SetPrevMultiplier sets the "prev_multiplier" field.
+func (u *UpstreamPriceChangeUpsertBulk) SetPrevMultiplier(v float64) *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetPrevMultiplier(v)
+	})
+}
+
+// AddPrevMultiplier adds v to the "prev_multiplier" field.
+func (u *UpstreamPriceChangeUpsertBulk) AddPrevMultiplier(v float64) *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.AddPrevMultiplier(v)
+	})
+}
+
+// UpdatePrevMultiplier sets the "prev_multiplier" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertBulk) UpdatePrevMultiplier() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdatePrevMultiplier()
+	})
+}
+
+// ClearPrevMultiplier clears the value of the "prev_multiplier" field.
+func (u *UpstreamPriceChangeUpsertBulk) ClearPrevMultiplier() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearPrevMultiplier()
+	})
+}
+
+// SetRevertedAt sets the "reverted_at" field.
+func (u *UpstreamPriceChangeUpsertBulk) SetRevertedAt(v time.Time) *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetRevertedAt(v)
+	})
+}
+
+// UpdateRevertedAt sets the "reverted_at" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertBulk) UpdateRevertedAt() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdateRevertedAt()
+	})
+}
+
+// ClearRevertedAt clears the value of the "reverted_at" field.
+func (u *UpstreamPriceChangeUpsertBulk) ClearRevertedAt() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearRevertedAt()
+	})
+}
+
+// SetRevertedBy sets the "reverted_by" field.
+func (u *UpstreamPriceChangeUpsertBulk) SetRevertedBy(v int64) *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.SetRevertedBy(v)
+	})
+}
+
+// AddRevertedBy adds v to the "reverted_by" field.
+func (u *UpstreamPriceChangeUpsertBulk) AddRevertedBy(v int64) *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.AddRevertedBy(v)
+	})
+}
+
+// UpdateRevertedBy sets the "reverted_by" field to the value that was provided on create.
+func (u *UpstreamPriceChangeUpsertBulk) UpdateRevertedBy() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.UpdateRevertedBy()
+	})
+}
+
+// ClearRevertedBy clears the value of the "reverted_by" field.
+func (u *UpstreamPriceChangeUpsertBulk) ClearRevertedBy() *UpstreamPriceChangeUpsertBulk {
+	return u.Update(func(s *UpstreamPriceChangeUpsert) {
+		s.ClearRevertedBy()
 	})
 }
 

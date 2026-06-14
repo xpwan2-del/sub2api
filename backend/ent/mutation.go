@@ -40778,45 +40778,56 @@ func (m *UpstreamModelPriceMutation) ResetEdge(name string) error {
 // UpstreamPriceChangeMutation represents an operation that mutates the UpstreamPriceChange nodes in the graph.
 type UpstreamPriceChangeMutation struct {
 	config
-	op                        Op
-	typ                       string
-	id                        *int64
-	model_name                *string
-	local_model_name          *string
-	change_type               *string
-	prev_input_price          *float64
-	addprev_input_price       *float64
-	prev_output_price         *float64
-	addprev_output_price      *float64
-	curr_input_price          *float64
-	addcurr_input_price       *float64
-	curr_output_price         *float64
-	addcurr_output_price      *float64
-	input_delta_pct           *float64
-	addinput_delta_pct        *float64
-	output_delta_pct          *float64
-	addoutput_delta_pct       *float64
-	detected_at               *time.Time
-	notified                  *bool
-	status                    *string
-	suggested_input_price     *float64
-	addsuggested_input_price  *float64
-	suggested_output_price    *float64
-	addsuggested_output_price *float64
-	suggested_multiplier      *float64
-	addsuggested_multiplier   *float64
-	applied_at                *time.Time
-	applied_by                *int64
-	addapplied_by             *int64
-	applied_target            *string
-	applied_target_id         *int64
-	addapplied_target_id      *int64
-	clearedFields             map[string]struct{}
-	source                    *int64
-	clearedsource             bool
-	done                      bool
-	oldValue                  func(context.Context) (*UpstreamPriceChange, error)
-	predicates                []predicate.UpstreamPriceChange
+	op                           Op
+	typ                          string
+	id                           *int64
+	model_name                   *string
+	local_model_name             *string
+	change_type                  *string
+	prev_input_price             *float64
+	addprev_input_price          *float64
+	prev_output_price            *float64
+	addprev_output_price         *float64
+	curr_input_price             *float64
+	addcurr_input_price          *float64
+	curr_output_price            *float64
+	addcurr_output_price         *float64
+	input_delta_pct              *float64
+	addinput_delta_pct           *float64
+	output_delta_pct             *float64
+	addoutput_delta_pct          *float64
+	detected_at                  *time.Time
+	notified                     *bool
+	status                       *string
+	suggested_input_price        *float64
+	addsuggested_input_price     *float64
+	suggested_output_price       *float64
+	addsuggested_output_price    *float64
+	suggested_multiplier         *float64
+	addsuggested_multiplier      *float64
+	applied_at                   *time.Time
+	applied_by                   *int64
+	addapplied_by                *int64
+	applied_target               *string
+	applied_target_id            *int64
+	addapplied_target_id         *int64
+	applied_prev_input_price     *float64
+	addapplied_prev_input_price  *float64
+	applied_prev_output_price    *float64
+	addapplied_prev_output_price *float64
+	applied_channel_id           *int64
+	addapplied_channel_id        *int64
+	prev_multiplier              *float64
+	addprev_multiplier           *float64
+	reverted_at                  *time.Time
+	reverted_by                  *int64
+	addreverted_by               *int64
+	clearedFields                map[string]struct{}
+	source                       *int64
+	clearedsource                bool
+	done                         bool
+	oldValue                     func(context.Context) (*UpstreamPriceChange, error)
+	predicates                   []predicate.UpstreamPriceChange
 }
 
 var _ ent.Mutation = (*UpstreamPriceChangeMutation)(nil)
@@ -41952,6 +41963,405 @@ func (m *UpstreamPriceChangeMutation) ResetAppliedTargetID() {
 	m.addapplied_target_id = nil
 }
 
+// SetAppliedPrevInputPrice sets the "applied_prev_input_price" field.
+func (m *UpstreamPriceChangeMutation) SetAppliedPrevInputPrice(f float64) {
+	m.applied_prev_input_price = &f
+	m.addapplied_prev_input_price = nil
+}
+
+// AppliedPrevInputPrice returns the value of the "applied_prev_input_price" field in the mutation.
+func (m *UpstreamPriceChangeMutation) AppliedPrevInputPrice() (r float64, exists bool) {
+	v := m.applied_prev_input_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAppliedPrevInputPrice returns the old "applied_prev_input_price" field's value of the UpstreamPriceChange entity.
+// If the UpstreamPriceChange object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UpstreamPriceChangeMutation) OldAppliedPrevInputPrice(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAppliedPrevInputPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAppliedPrevInputPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAppliedPrevInputPrice: %w", err)
+	}
+	return oldValue.AppliedPrevInputPrice, nil
+}
+
+// AddAppliedPrevInputPrice adds f to the "applied_prev_input_price" field.
+func (m *UpstreamPriceChangeMutation) AddAppliedPrevInputPrice(f float64) {
+	if m.addapplied_prev_input_price != nil {
+		*m.addapplied_prev_input_price += f
+	} else {
+		m.addapplied_prev_input_price = &f
+	}
+}
+
+// AddedAppliedPrevInputPrice returns the value that was added to the "applied_prev_input_price" field in this mutation.
+func (m *UpstreamPriceChangeMutation) AddedAppliedPrevInputPrice() (r float64, exists bool) {
+	v := m.addapplied_prev_input_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearAppliedPrevInputPrice clears the value of the "applied_prev_input_price" field.
+func (m *UpstreamPriceChangeMutation) ClearAppliedPrevInputPrice() {
+	m.applied_prev_input_price = nil
+	m.addapplied_prev_input_price = nil
+	m.clearedFields[upstreampricechange.FieldAppliedPrevInputPrice] = struct{}{}
+}
+
+// AppliedPrevInputPriceCleared returns if the "applied_prev_input_price" field was cleared in this mutation.
+func (m *UpstreamPriceChangeMutation) AppliedPrevInputPriceCleared() bool {
+	_, ok := m.clearedFields[upstreampricechange.FieldAppliedPrevInputPrice]
+	return ok
+}
+
+// ResetAppliedPrevInputPrice resets all changes to the "applied_prev_input_price" field.
+func (m *UpstreamPriceChangeMutation) ResetAppliedPrevInputPrice() {
+	m.applied_prev_input_price = nil
+	m.addapplied_prev_input_price = nil
+	delete(m.clearedFields, upstreampricechange.FieldAppliedPrevInputPrice)
+}
+
+// SetAppliedPrevOutputPrice sets the "applied_prev_output_price" field.
+func (m *UpstreamPriceChangeMutation) SetAppliedPrevOutputPrice(f float64) {
+	m.applied_prev_output_price = &f
+	m.addapplied_prev_output_price = nil
+}
+
+// AppliedPrevOutputPrice returns the value of the "applied_prev_output_price" field in the mutation.
+func (m *UpstreamPriceChangeMutation) AppliedPrevOutputPrice() (r float64, exists bool) {
+	v := m.applied_prev_output_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAppliedPrevOutputPrice returns the old "applied_prev_output_price" field's value of the UpstreamPriceChange entity.
+// If the UpstreamPriceChange object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UpstreamPriceChangeMutation) OldAppliedPrevOutputPrice(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAppliedPrevOutputPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAppliedPrevOutputPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAppliedPrevOutputPrice: %w", err)
+	}
+	return oldValue.AppliedPrevOutputPrice, nil
+}
+
+// AddAppliedPrevOutputPrice adds f to the "applied_prev_output_price" field.
+func (m *UpstreamPriceChangeMutation) AddAppliedPrevOutputPrice(f float64) {
+	if m.addapplied_prev_output_price != nil {
+		*m.addapplied_prev_output_price += f
+	} else {
+		m.addapplied_prev_output_price = &f
+	}
+}
+
+// AddedAppliedPrevOutputPrice returns the value that was added to the "applied_prev_output_price" field in this mutation.
+func (m *UpstreamPriceChangeMutation) AddedAppliedPrevOutputPrice() (r float64, exists bool) {
+	v := m.addapplied_prev_output_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearAppliedPrevOutputPrice clears the value of the "applied_prev_output_price" field.
+func (m *UpstreamPriceChangeMutation) ClearAppliedPrevOutputPrice() {
+	m.applied_prev_output_price = nil
+	m.addapplied_prev_output_price = nil
+	m.clearedFields[upstreampricechange.FieldAppliedPrevOutputPrice] = struct{}{}
+}
+
+// AppliedPrevOutputPriceCleared returns if the "applied_prev_output_price" field was cleared in this mutation.
+func (m *UpstreamPriceChangeMutation) AppliedPrevOutputPriceCleared() bool {
+	_, ok := m.clearedFields[upstreampricechange.FieldAppliedPrevOutputPrice]
+	return ok
+}
+
+// ResetAppliedPrevOutputPrice resets all changes to the "applied_prev_output_price" field.
+func (m *UpstreamPriceChangeMutation) ResetAppliedPrevOutputPrice() {
+	m.applied_prev_output_price = nil
+	m.addapplied_prev_output_price = nil
+	delete(m.clearedFields, upstreampricechange.FieldAppliedPrevOutputPrice)
+}
+
+// SetAppliedChannelID sets the "applied_channel_id" field.
+func (m *UpstreamPriceChangeMutation) SetAppliedChannelID(i int64) {
+	m.applied_channel_id = &i
+	m.addapplied_channel_id = nil
+}
+
+// AppliedChannelID returns the value of the "applied_channel_id" field in the mutation.
+func (m *UpstreamPriceChangeMutation) AppliedChannelID() (r int64, exists bool) {
+	v := m.applied_channel_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAppliedChannelID returns the old "applied_channel_id" field's value of the UpstreamPriceChange entity.
+// If the UpstreamPriceChange object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UpstreamPriceChangeMutation) OldAppliedChannelID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAppliedChannelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAppliedChannelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAppliedChannelID: %w", err)
+	}
+	return oldValue.AppliedChannelID, nil
+}
+
+// AddAppliedChannelID adds i to the "applied_channel_id" field.
+func (m *UpstreamPriceChangeMutation) AddAppliedChannelID(i int64) {
+	if m.addapplied_channel_id != nil {
+		*m.addapplied_channel_id += i
+	} else {
+		m.addapplied_channel_id = &i
+	}
+}
+
+// AddedAppliedChannelID returns the value that was added to the "applied_channel_id" field in this mutation.
+func (m *UpstreamPriceChangeMutation) AddedAppliedChannelID() (r int64, exists bool) {
+	v := m.addapplied_channel_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearAppliedChannelID clears the value of the "applied_channel_id" field.
+func (m *UpstreamPriceChangeMutation) ClearAppliedChannelID() {
+	m.applied_channel_id = nil
+	m.addapplied_channel_id = nil
+	m.clearedFields[upstreampricechange.FieldAppliedChannelID] = struct{}{}
+}
+
+// AppliedChannelIDCleared returns if the "applied_channel_id" field was cleared in this mutation.
+func (m *UpstreamPriceChangeMutation) AppliedChannelIDCleared() bool {
+	_, ok := m.clearedFields[upstreampricechange.FieldAppliedChannelID]
+	return ok
+}
+
+// ResetAppliedChannelID resets all changes to the "applied_channel_id" field.
+func (m *UpstreamPriceChangeMutation) ResetAppliedChannelID() {
+	m.applied_channel_id = nil
+	m.addapplied_channel_id = nil
+	delete(m.clearedFields, upstreampricechange.FieldAppliedChannelID)
+}
+
+// SetPrevMultiplier sets the "prev_multiplier" field.
+func (m *UpstreamPriceChangeMutation) SetPrevMultiplier(f float64) {
+	m.prev_multiplier = &f
+	m.addprev_multiplier = nil
+}
+
+// PrevMultiplier returns the value of the "prev_multiplier" field in the mutation.
+func (m *UpstreamPriceChangeMutation) PrevMultiplier() (r float64, exists bool) {
+	v := m.prev_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrevMultiplier returns the old "prev_multiplier" field's value of the UpstreamPriceChange entity.
+// If the UpstreamPriceChange object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UpstreamPriceChangeMutation) OldPrevMultiplier(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrevMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrevMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrevMultiplier: %w", err)
+	}
+	return oldValue.PrevMultiplier, nil
+}
+
+// AddPrevMultiplier adds f to the "prev_multiplier" field.
+func (m *UpstreamPriceChangeMutation) AddPrevMultiplier(f float64) {
+	if m.addprev_multiplier != nil {
+		*m.addprev_multiplier += f
+	} else {
+		m.addprev_multiplier = &f
+	}
+}
+
+// AddedPrevMultiplier returns the value that was added to the "prev_multiplier" field in this mutation.
+func (m *UpstreamPriceChangeMutation) AddedPrevMultiplier() (r float64, exists bool) {
+	v := m.addprev_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearPrevMultiplier clears the value of the "prev_multiplier" field.
+func (m *UpstreamPriceChangeMutation) ClearPrevMultiplier() {
+	m.prev_multiplier = nil
+	m.addprev_multiplier = nil
+	m.clearedFields[upstreampricechange.FieldPrevMultiplier] = struct{}{}
+}
+
+// PrevMultiplierCleared returns if the "prev_multiplier" field was cleared in this mutation.
+func (m *UpstreamPriceChangeMutation) PrevMultiplierCleared() bool {
+	_, ok := m.clearedFields[upstreampricechange.FieldPrevMultiplier]
+	return ok
+}
+
+// ResetPrevMultiplier resets all changes to the "prev_multiplier" field.
+func (m *UpstreamPriceChangeMutation) ResetPrevMultiplier() {
+	m.prev_multiplier = nil
+	m.addprev_multiplier = nil
+	delete(m.clearedFields, upstreampricechange.FieldPrevMultiplier)
+}
+
+// SetRevertedAt sets the "reverted_at" field.
+func (m *UpstreamPriceChangeMutation) SetRevertedAt(t time.Time) {
+	m.reverted_at = &t
+}
+
+// RevertedAt returns the value of the "reverted_at" field in the mutation.
+func (m *UpstreamPriceChangeMutation) RevertedAt() (r time.Time, exists bool) {
+	v := m.reverted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRevertedAt returns the old "reverted_at" field's value of the UpstreamPriceChange entity.
+// If the UpstreamPriceChange object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UpstreamPriceChangeMutation) OldRevertedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRevertedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRevertedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRevertedAt: %w", err)
+	}
+	return oldValue.RevertedAt, nil
+}
+
+// ClearRevertedAt clears the value of the "reverted_at" field.
+func (m *UpstreamPriceChangeMutation) ClearRevertedAt() {
+	m.reverted_at = nil
+	m.clearedFields[upstreampricechange.FieldRevertedAt] = struct{}{}
+}
+
+// RevertedAtCleared returns if the "reverted_at" field was cleared in this mutation.
+func (m *UpstreamPriceChangeMutation) RevertedAtCleared() bool {
+	_, ok := m.clearedFields[upstreampricechange.FieldRevertedAt]
+	return ok
+}
+
+// ResetRevertedAt resets all changes to the "reverted_at" field.
+func (m *UpstreamPriceChangeMutation) ResetRevertedAt() {
+	m.reverted_at = nil
+	delete(m.clearedFields, upstreampricechange.FieldRevertedAt)
+}
+
+// SetRevertedBy sets the "reverted_by" field.
+func (m *UpstreamPriceChangeMutation) SetRevertedBy(i int64) {
+	m.reverted_by = &i
+	m.addreverted_by = nil
+}
+
+// RevertedBy returns the value of the "reverted_by" field in the mutation.
+func (m *UpstreamPriceChangeMutation) RevertedBy() (r int64, exists bool) {
+	v := m.reverted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRevertedBy returns the old "reverted_by" field's value of the UpstreamPriceChange entity.
+// If the UpstreamPriceChange object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UpstreamPriceChangeMutation) OldRevertedBy(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRevertedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRevertedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRevertedBy: %w", err)
+	}
+	return oldValue.RevertedBy, nil
+}
+
+// AddRevertedBy adds i to the "reverted_by" field.
+func (m *UpstreamPriceChangeMutation) AddRevertedBy(i int64) {
+	if m.addreverted_by != nil {
+		*m.addreverted_by += i
+	} else {
+		m.addreverted_by = &i
+	}
+}
+
+// AddedRevertedBy returns the value that was added to the "reverted_by" field in this mutation.
+func (m *UpstreamPriceChangeMutation) AddedRevertedBy() (r int64, exists bool) {
+	v := m.addreverted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRevertedBy clears the value of the "reverted_by" field.
+func (m *UpstreamPriceChangeMutation) ClearRevertedBy() {
+	m.reverted_by = nil
+	m.addreverted_by = nil
+	m.clearedFields[upstreampricechange.FieldRevertedBy] = struct{}{}
+}
+
+// RevertedByCleared returns if the "reverted_by" field was cleared in this mutation.
+func (m *UpstreamPriceChangeMutation) RevertedByCleared() bool {
+	_, ok := m.clearedFields[upstreampricechange.FieldRevertedBy]
+	return ok
+}
+
+// ResetRevertedBy resets all changes to the "reverted_by" field.
+func (m *UpstreamPriceChangeMutation) ResetRevertedBy() {
+	m.reverted_by = nil
+	m.addreverted_by = nil
+	delete(m.clearedFields, upstreampricechange.FieldRevertedBy)
+}
+
 // ClearSource clears the "source" edge to the UpstreamPriceSource entity.
 func (m *UpstreamPriceChangeMutation) ClearSource() {
 	m.clearedsource = true
@@ -42013,7 +42423,7 @@ func (m *UpstreamPriceChangeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UpstreamPriceChangeMutation) Fields() []string {
-	fields := make([]string, 0, 20)
+	fields := make([]string, 0, 26)
 	if m.source != nil {
 		fields = append(fields, upstreampricechange.FieldSourceID)
 	}
@@ -42074,6 +42484,24 @@ func (m *UpstreamPriceChangeMutation) Fields() []string {
 	if m.applied_target_id != nil {
 		fields = append(fields, upstreampricechange.FieldAppliedTargetID)
 	}
+	if m.applied_prev_input_price != nil {
+		fields = append(fields, upstreampricechange.FieldAppliedPrevInputPrice)
+	}
+	if m.applied_prev_output_price != nil {
+		fields = append(fields, upstreampricechange.FieldAppliedPrevOutputPrice)
+	}
+	if m.applied_channel_id != nil {
+		fields = append(fields, upstreampricechange.FieldAppliedChannelID)
+	}
+	if m.prev_multiplier != nil {
+		fields = append(fields, upstreampricechange.FieldPrevMultiplier)
+	}
+	if m.reverted_at != nil {
+		fields = append(fields, upstreampricechange.FieldRevertedAt)
+	}
+	if m.reverted_by != nil {
+		fields = append(fields, upstreampricechange.FieldRevertedBy)
+	}
 	return fields
 }
 
@@ -42122,6 +42550,18 @@ func (m *UpstreamPriceChangeMutation) Field(name string) (ent.Value, bool) {
 		return m.AppliedTarget()
 	case upstreampricechange.FieldAppliedTargetID:
 		return m.AppliedTargetID()
+	case upstreampricechange.FieldAppliedPrevInputPrice:
+		return m.AppliedPrevInputPrice()
+	case upstreampricechange.FieldAppliedPrevOutputPrice:
+		return m.AppliedPrevOutputPrice()
+	case upstreampricechange.FieldAppliedChannelID:
+		return m.AppliedChannelID()
+	case upstreampricechange.FieldPrevMultiplier:
+		return m.PrevMultiplier()
+	case upstreampricechange.FieldRevertedAt:
+		return m.RevertedAt()
+	case upstreampricechange.FieldRevertedBy:
+		return m.RevertedBy()
 	}
 	return nil, false
 }
@@ -42171,6 +42611,18 @@ func (m *UpstreamPriceChangeMutation) OldField(ctx context.Context, name string)
 		return m.OldAppliedTarget(ctx)
 	case upstreampricechange.FieldAppliedTargetID:
 		return m.OldAppliedTargetID(ctx)
+	case upstreampricechange.FieldAppliedPrevInputPrice:
+		return m.OldAppliedPrevInputPrice(ctx)
+	case upstreampricechange.FieldAppliedPrevOutputPrice:
+		return m.OldAppliedPrevOutputPrice(ctx)
+	case upstreampricechange.FieldAppliedChannelID:
+		return m.OldAppliedChannelID(ctx)
+	case upstreampricechange.FieldPrevMultiplier:
+		return m.OldPrevMultiplier(ctx)
+	case upstreampricechange.FieldRevertedAt:
+		return m.OldRevertedAt(ctx)
+	case upstreampricechange.FieldRevertedBy:
+		return m.OldRevertedBy(ctx)
 	}
 	return nil, fmt.Errorf("unknown UpstreamPriceChange field %s", name)
 }
@@ -42320,6 +42772,48 @@ func (m *UpstreamPriceChangeMutation) SetField(name string, value ent.Value) err
 		}
 		m.SetAppliedTargetID(v)
 		return nil
+	case upstreampricechange.FieldAppliedPrevInputPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAppliedPrevInputPrice(v)
+		return nil
+	case upstreampricechange.FieldAppliedPrevOutputPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAppliedPrevOutputPrice(v)
+		return nil
+	case upstreampricechange.FieldAppliedChannelID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAppliedChannelID(v)
+		return nil
+	case upstreampricechange.FieldPrevMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrevMultiplier(v)
+		return nil
+	case upstreampricechange.FieldRevertedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRevertedAt(v)
+		return nil
+	case upstreampricechange.FieldRevertedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRevertedBy(v)
+		return nil
 	}
 	return fmt.Errorf("unknown UpstreamPriceChange field %s", name)
 }
@@ -42361,6 +42855,21 @@ func (m *UpstreamPriceChangeMutation) AddedFields() []string {
 	if m.addapplied_target_id != nil {
 		fields = append(fields, upstreampricechange.FieldAppliedTargetID)
 	}
+	if m.addapplied_prev_input_price != nil {
+		fields = append(fields, upstreampricechange.FieldAppliedPrevInputPrice)
+	}
+	if m.addapplied_prev_output_price != nil {
+		fields = append(fields, upstreampricechange.FieldAppliedPrevOutputPrice)
+	}
+	if m.addapplied_channel_id != nil {
+		fields = append(fields, upstreampricechange.FieldAppliedChannelID)
+	}
+	if m.addprev_multiplier != nil {
+		fields = append(fields, upstreampricechange.FieldPrevMultiplier)
+	}
+	if m.addreverted_by != nil {
+		fields = append(fields, upstreampricechange.FieldRevertedBy)
+	}
 	return fields
 }
 
@@ -42391,6 +42900,16 @@ func (m *UpstreamPriceChangeMutation) AddedField(name string) (ent.Value, bool) 
 		return m.AddedAppliedBy()
 	case upstreampricechange.FieldAppliedTargetID:
 		return m.AddedAppliedTargetID()
+	case upstreampricechange.FieldAppliedPrevInputPrice:
+		return m.AddedAppliedPrevInputPrice()
+	case upstreampricechange.FieldAppliedPrevOutputPrice:
+		return m.AddedAppliedPrevOutputPrice()
+	case upstreampricechange.FieldAppliedChannelID:
+		return m.AddedAppliedChannelID()
+	case upstreampricechange.FieldPrevMultiplier:
+		return m.AddedPrevMultiplier()
+	case upstreampricechange.FieldRevertedBy:
+		return m.AddedRevertedBy()
 	}
 	return nil, false
 }
@@ -42477,6 +42996,41 @@ func (m *UpstreamPriceChangeMutation) AddField(name string, value ent.Value) err
 		}
 		m.AddAppliedTargetID(v)
 		return nil
+	case upstreampricechange.FieldAppliedPrevInputPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAppliedPrevInputPrice(v)
+		return nil
+	case upstreampricechange.FieldAppliedPrevOutputPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAppliedPrevOutputPrice(v)
+		return nil
+	case upstreampricechange.FieldAppliedChannelID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAppliedChannelID(v)
+		return nil
+	case upstreampricechange.FieldPrevMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPrevMultiplier(v)
+		return nil
+	case upstreampricechange.FieldRevertedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRevertedBy(v)
+		return nil
 	}
 	return fmt.Errorf("unknown UpstreamPriceChange numeric field %s", name)
 }
@@ -42505,6 +43059,24 @@ func (m *UpstreamPriceChangeMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(upstreampricechange.FieldAppliedTarget) {
 		fields = append(fields, upstreampricechange.FieldAppliedTarget)
+	}
+	if m.FieldCleared(upstreampricechange.FieldAppliedPrevInputPrice) {
+		fields = append(fields, upstreampricechange.FieldAppliedPrevInputPrice)
+	}
+	if m.FieldCleared(upstreampricechange.FieldAppliedPrevOutputPrice) {
+		fields = append(fields, upstreampricechange.FieldAppliedPrevOutputPrice)
+	}
+	if m.FieldCleared(upstreampricechange.FieldAppliedChannelID) {
+		fields = append(fields, upstreampricechange.FieldAppliedChannelID)
+	}
+	if m.FieldCleared(upstreampricechange.FieldPrevMultiplier) {
+		fields = append(fields, upstreampricechange.FieldPrevMultiplier)
+	}
+	if m.FieldCleared(upstreampricechange.FieldRevertedAt) {
+		fields = append(fields, upstreampricechange.FieldRevertedAt)
+	}
+	if m.FieldCleared(upstreampricechange.FieldRevertedBy) {
+		fields = append(fields, upstreampricechange.FieldRevertedBy)
 	}
 	return fields
 }
@@ -42540,6 +43112,24 @@ func (m *UpstreamPriceChangeMutation) ClearField(name string) error {
 		return nil
 	case upstreampricechange.FieldAppliedTarget:
 		m.ClearAppliedTarget()
+		return nil
+	case upstreampricechange.FieldAppliedPrevInputPrice:
+		m.ClearAppliedPrevInputPrice()
+		return nil
+	case upstreampricechange.FieldAppliedPrevOutputPrice:
+		m.ClearAppliedPrevOutputPrice()
+		return nil
+	case upstreampricechange.FieldAppliedChannelID:
+		m.ClearAppliedChannelID()
+		return nil
+	case upstreampricechange.FieldPrevMultiplier:
+		m.ClearPrevMultiplier()
+		return nil
+	case upstreampricechange.FieldRevertedAt:
+		m.ClearRevertedAt()
+		return nil
+	case upstreampricechange.FieldRevertedBy:
+		m.ClearRevertedBy()
 		return nil
 	}
 	return fmt.Errorf("unknown UpstreamPriceChange nullable field %s", name)
@@ -42608,6 +43198,24 @@ func (m *UpstreamPriceChangeMutation) ResetField(name string) error {
 		return nil
 	case upstreampricechange.FieldAppliedTargetID:
 		m.ResetAppliedTargetID()
+		return nil
+	case upstreampricechange.FieldAppliedPrevInputPrice:
+		m.ResetAppliedPrevInputPrice()
+		return nil
+	case upstreampricechange.FieldAppliedPrevOutputPrice:
+		m.ResetAppliedPrevOutputPrice()
+		return nil
+	case upstreampricechange.FieldAppliedChannelID:
+		m.ResetAppliedChannelID()
+		return nil
+	case upstreampricechange.FieldPrevMultiplier:
+		m.ResetPrevMultiplier()
+		return nil
+	case upstreampricechange.FieldRevertedAt:
+		m.ResetRevertedAt()
+		return nil
+	case upstreampricechange.FieldRevertedBy:
+		m.ResetRevertedBy()
 		return nil
 	}
 	return fmt.Errorf("unknown UpstreamPriceChange field %s", name)

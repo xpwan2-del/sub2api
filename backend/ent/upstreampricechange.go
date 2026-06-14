@@ -58,6 +58,18 @@ type UpstreamPriceChange struct {
 	AppliedTarget string `json:"applied_target,omitempty"`
 	// 应用目标记录ID
 	AppliedTargetID int64 `json:"applied_target_id,omitempty"`
+	// 应用前 channel 该模型的实际输入单价快照（用于撤销回滚）
+	AppliedPrevInputPrice *float64 `json:"applied_prev_input_price,omitempty"`
+	// 应用前 channel 该模型的实际输出单价快照（用于撤销回滚）
+	AppliedPrevOutputPrice *float64 `json:"applied_prev_output_price,omitempty"`
+	// 应用时实际写入单价的 channel_id（撤销回滚锚点）
+	AppliedChannelID *int64 `json:"applied_channel_id,omitempty"`
+	// 应用前 group 的实际倍率快照（仅 lock_price，用于撤销回滚）
+	PrevMultiplier *float64 `json:"prev_multiplier,omitempty"`
+	// 撤销应用的时间
+	RevertedAt *time.Time `json:"reverted_at,omitempty"`
+	// 执行撤销的管理员用户ID
+	RevertedBy *int64 `json:"reverted_by,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UpstreamPriceChangeQuery when eager-loading is set.
 	Edges        UpstreamPriceChangeEdges `json:"edges"`
@@ -91,13 +103,13 @@ func (*UpstreamPriceChange) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case upstreampricechange.FieldNotified:
 			values[i] = new(sql.NullBool)
-		case upstreampricechange.FieldPrevInputPrice, upstreampricechange.FieldPrevOutputPrice, upstreampricechange.FieldCurrInputPrice, upstreampricechange.FieldCurrOutputPrice, upstreampricechange.FieldInputDeltaPct, upstreampricechange.FieldOutputDeltaPct, upstreampricechange.FieldSuggestedInputPrice, upstreampricechange.FieldSuggestedOutputPrice, upstreampricechange.FieldSuggestedMultiplier:
+		case upstreampricechange.FieldPrevInputPrice, upstreampricechange.FieldPrevOutputPrice, upstreampricechange.FieldCurrInputPrice, upstreampricechange.FieldCurrOutputPrice, upstreampricechange.FieldInputDeltaPct, upstreampricechange.FieldOutputDeltaPct, upstreampricechange.FieldSuggestedInputPrice, upstreampricechange.FieldSuggestedOutputPrice, upstreampricechange.FieldSuggestedMultiplier, upstreampricechange.FieldAppliedPrevInputPrice, upstreampricechange.FieldAppliedPrevOutputPrice, upstreampricechange.FieldPrevMultiplier:
 			values[i] = new(sql.NullFloat64)
-		case upstreampricechange.FieldID, upstreampricechange.FieldSourceID, upstreampricechange.FieldAppliedBy, upstreampricechange.FieldAppliedTargetID:
+		case upstreampricechange.FieldID, upstreampricechange.FieldSourceID, upstreampricechange.FieldAppliedBy, upstreampricechange.FieldAppliedTargetID, upstreampricechange.FieldAppliedChannelID, upstreampricechange.FieldRevertedBy:
 			values[i] = new(sql.NullInt64)
 		case upstreampricechange.FieldModelName, upstreampricechange.FieldLocalModelName, upstreampricechange.FieldChangeType, upstreampricechange.FieldStatus, upstreampricechange.FieldAppliedTarget:
 			values[i] = new(sql.NullString)
-		case upstreampricechange.FieldDetectedAt, upstreampricechange.FieldAppliedAt:
+		case upstreampricechange.FieldDetectedAt, upstreampricechange.FieldAppliedAt, upstreampricechange.FieldRevertedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -245,6 +257,48 @@ func (_m *UpstreamPriceChange) assignValues(columns []string, values []any) erro
 			} else if value.Valid {
 				_m.AppliedTargetID = value.Int64
 			}
+		case upstreampricechange.FieldAppliedPrevInputPrice:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field applied_prev_input_price", values[i])
+			} else if value.Valid {
+				_m.AppliedPrevInputPrice = new(float64)
+				*_m.AppliedPrevInputPrice = value.Float64
+			}
+		case upstreampricechange.FieldAppliedPrevOutputPrice:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field applied_prev_output_price", values[i])
+			} else if value.Valid {
+				_m.AppliedPrevOutputPrice = new(float64)
+				*_m.AppliedPrevOutputPrice = value.Float64
+			}
+		case upstreampricechange.FieldAppliedChannelID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field applied_channel_id", values[i])
+			} else if value.Valid {
+				_m.AppliedChannelID = new(int64)
+				*_m.AppliedChannelID = value.Int64
+			}
+		case upstreampricechange.FieldPrevMultiplier:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field prev_multiplier", values[i])
+			} else if value.Valid {
+				_m.PrevMultiplier = new(float64)
+				*_m.PrevMultiplier = value.Float64
+			}
+		case upstreampricechange.FieldRevertedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field reverted_at", values[i])
+			} else if value.Valid {
+				_m.RevertedAt = new(time.Time)
+				*_m.RevertedAt = value.Time
+			}
+		case upstreampricechange.FieldRevertedBy:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field reverted_by", values[i])
+			} else if value.Valid {
+				_m.RevertedBy = new(int64)
+				*_m.RevertedBy = value.Int64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -355,6 +409,36 @@ func (_m *UpstreamPriceChange) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("applied_target_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AppliedTargetID))
+	builder.WriteString(", ")
+	if v := _m.AppliedPrevInputPrice; v != nil {
+		builder.WriteString("applied_prev_input_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.AppliedPrevOutputPrice; v != nil {
+		builder.WriteString("applied_prev_output_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.AppliedChannelID; v != nil {
+		builder.WriteString("applied_channel_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.PrevMultiplier; v != nil {
+		builder.WriteString("prev_multiplier=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.RevertedAt; v != nil {
+		builder.WriteString("reverted_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.RevertedBy; v != nil {
+		builder.WriteString("reverted_by=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -155,6 +155,36 @@ func AppliedTargetID(v int64) predicate.UpstreamPriceChange {
 	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldAppliedTargetID, v))
 }
 
+// AppliedPrevInputPrice applies equality check predicate on the "applied_prev_input_price" field. It's identical to AppliedPrevInputPriceEQ.
+func AppliedPrevInputPrice(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldAppliedPrevInputPrice, v))
+}
+
+// AppliedPrevOutputPrice applies equality check predicate on the "applied_prev_output_price" field. It's identical to AppliedPrevOutputPriceEQ.
+func AppliedPrevOutputPrice(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldAppliedPrevOutputPrice, v))
+}
+
+// AppliedChannelID applies equality check predicate on the "applied_channel_id" field. It's identical to AppliedChannelIDEQ.
+func AppliedChannelID(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldAppliedChannelID, v))
+}
+
+// PrevMultiplier applies equality check predicate on the "prev_multiplier" field. It's identical to PrevMultiplierEQ.
+func PrevMultiplier(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldPrevMultiplier, v))
+}
+
+// RevertedAt applies equality check predicate on the "reverted_at" field. It's identical to RevertedAtEQ.
+func RevertedAt(v time.Time) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldRevertedAt, v))
+}
+
+// RevertedBy applies equality check predicate on the "reverted_by" field. It's identical to RevertedByEQ.
+func RevertedBy(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldRevertedBy, v))
+}
+
 // SourceIDEQ applies the EQ predicate on the "source_id" field.
 func SourceIDEQ(v int64) predicate.UpstreamPriceChange {
 	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldSourceID, v))
@@ -1098,6 +1128,306 @@ func AppliedTargetIDLT(v int64) predicate.UpstreamPriceChange {
 // AppliedTargetIDLTE applies the LTE predicate on the "applied_target_id" field.
 func AppliedTargetIDLTE(v int64) predicate.UpstreamPriceChange {
 	return predicate.UpstreamPriceChange(sql.FieldLTE(FieldAppliedTargetID, v))
+}
+
+// AppliedPrevInputPriceEQ applies the EQ predicate on the "applied_prev_input_price" field.
+func AppliedPrevInputPriceEQ(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldAppliedPrevInputPrice, v))
+}
+
+// AppliedPrevInputPriceNEQ applies the NEQ predicate on the "applied_prev_input_price" field.
+func AppliedPrevInputPriceNEQ(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNEQ(FieldAppliedPrevInputPrice, v))
+}
+
+// AppliedPrevInputPriceIn applies the In predicate on the "applied_prev_input_price" field.
+func AppliedPrevInputPriceIn(vs ...float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIn(FieldAppliedPrevInputPrice, vs...))
+}
+
+// AppliedPrevInputPriceNotIn applies the NotIn predicate on the "applied_prev_input_price" field.
+func AppliedPrevInputPriceNotIn(vs ...float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotIn(FieldAppliedPrevInputPrice, vs...))
+}
+
+// AppliedPrevInputPriceGT applies the GT predicate on the "applied_prev_input_price" field.
+func AppliedPrevInputPriceGT(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGT(FieldAppliedPrevInputPrice, v))
+}
+
+// AppliedPrevInputPriceGTE applies the GTE predicate on the "applied_prev_input_price" field.
+func AppliedPrevInputPriceGTE(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGTE(FieldAppliedPrevInputPrice, v))
+}
+
+// AppliedPrevInputPriceLT applies the LT predicate on the "applied_prev_input_price" field.
+func AppliedPrevInputPriceLT(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLT(FieldAppliedPrevInputPrice, v))
+}
+
+// AppliedPrevInputPriceLTE applies the LTE predicate on the "applied_prev_input_price" field.
+func AppliedPrevInputPriceLTE(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLTE(FieldAppliedPrevInputPrice, v))
+}
+
+// AppliedPrevInputPriceIsNil applies the IsNil predicate on the "applied_prev_input_price" field.
+func AppliedPrevInputPriceIsNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIsNull(FieldAppliedPrevInputPrice))
+}
+
+// AppliedPrevInputPriceNotNil applies the NotNil predicate on the "applied_prev_input_price" field.
+func AppliedPrevInputPriceNotNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotNull(FieldAppliedPrevInputPrice))
+}
+
+// AppliedPrevOutputPriceEQ applies the EQ predicate on the "applied_prev_output_price" field.
+func AppliedPrevOutputPriceEQ(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldAppliedPrevOutputPrice, v))
+}
+
+// AppliedPrevOutputPriceNEQ applies the NEQ predicate on the "applied_prev_output_price" field.
+func AppliedPrevOutputPriceNEQ(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNEQ(FieldAppliedPrevOutputPrice, v))
+}
+
+// AppliedPrevOutputPriceIn applies the In predicate on the "applied_prev_output_price" field.
+func AppliedPrevOutputPriceIn(vs ...float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIn(FieldAppliedPrevOutputPrice, vs...))
+}
+
+// AppliedPrevOutputPriceNotIn applies the NotIn predicate on the "applied_prev_output_price" field.
+func AppliedPrevOutputPriceNotIn(vs ...float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotIn(FieldAppliedPrevOutputPrice, vs...))
+}
+
+// AppliedPrevOutputPriceGT applies the GT predicate on the "applied_prev_output_price" field.
+func AppliedPrevOutputPriceGT(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGT(FieldAppliedPrevOutputPrice, v))
+}
+
+// AppliedPrevOutputPriceGTE applies the GTE predicate on the "applied_prev_output_price" field.
+func AppliedPrevOutputPriceGTE(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGTE(FieldAppliedPrevOutputPrice, v))
+}
+
+// AppliedPrevOutputPriceLT applies the LT predicate on the "applied_prev_output_price" field.
+func AppliedPrevOutputPriceLT(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLT(FieldAppliedPrevOutputPrice, v))
+}
+
+// AppliedPrevOutputPriceLTE applies the LTE predicate on the "applied_prev_output_price" field.
+func AppliedPrevOutputPriceLTE(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLTE(FieldAppliedPrevOutputPrice, v))
+}
+
+// AppliedPrevOutputPriceIsNil applies the IsNil predicate on the "applied_prev_output_price" field.
+func AppliedPrevOutputPriceIsNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIsNull(FieldAppliedPrevOutputPrice))
+}
+
+// AppliedPrevOutputPriceNotNil applies the NotNil predicate on the "applied_prev_output_price" field.
+func AppliedPrevOutputPriceNotNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotNull(FieldAppliedPrevOutputPrice))
+}
+
+// AppliedChannelIDEQ applies the EQ predicate on the "applied_channel_id" field.
+func AppliedChannelIDEQ(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldAppliedChannelID, v))
+}
+
+// AppliedChannelIDNEQ applies the NEQ predicate on the "applied_channel_id" field.
+func AppliedChannelIDNEQ(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNEQ(FieldAppliedChannelID, v))
+}
+
+// AppliedChannelIDIn applies the In predicate on the "applied_channel_id" field.
+func AppliedChannelIDIn(vs ...int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIn(FieldAppliedChannelID, vs...))
+}
+
+// AppliedChannelIDNotIn applies the NotIn predicate on the "applied_channel_id" field.
+func AppliedChannelIDNotIn(vs ...int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotIn(FieldAppliedChannelID, vs...))
+}
+
+// AppliedChannelIDGT applies the GT predicate on the "applied_channel_id" field.
+func AppliedChannelIDGT(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGT(FieldAppliedChannelID, v))
+}
+
+// AppliedChannelIDGTE applies the GTE predicate on the "applied_channel_id" field.
+func AppliedChannelIDGTE(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGTE(FieldAppliedChannelID, v))
+}
+
+// AppliedChannelIDLT applies the LT predicate on the "applied_channel_id" field.
+func AppliedChannelIDLT(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLT(FieldAppliedChannelID, v))
+}
+
+// AppliedChannelIDLTE applies the LTE predicate on the "applied_channel_id" field.
+func AppliedChannelIDLTE(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLTE(FieldAppliedChannelID, v))
+}
+
+// AppliedChannelIDIsNil applies the IsNil predicate on the "applied_channel_id" field.
+func AppliedChannelIDIsNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIsNull(FieldAppliedChannelID))
+}
+
+// AppliedChannelIDNotNil applies the NotNil predicate on the "applied_channel_id" field.
+func AppliedChannelIDNotNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotNull(FieldAppliedChannelID))
+}
+
+// PrevMultiplierEQ applies the EQ predicate on the "prev_multiplier" field.
+func PrevMultiplierEQ(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldPrevMultiplier, v))
+}
+
+// PrevMultiplierNEQ applies the NEQ predicate on the "prev_multiplier" field.
+func PrevMultiplierNEQ(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNEQ(FieldPrevMultiplier, v))
+}
+
+// PrevMultiplierIn applies the In predicate on the "prev_multiplier" field.
+func PrevMultiplierIn(vs ...float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIn(FieldPrevMultiplier, vs...))
+}
+
+// PrevMultiplierNotIn applies the NotIn predicate on the "prev_multiplier" field.
+func PrevMultiplierNotIn(vs ...float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotIn(FieldPrevMultiplier, vs...))
+}
+
+// PrevMultiplierGT applies the GT predicate on the "prev_multiplier" field.
+func PrevMultiplierGT(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGT(FieldPrevMultiplier, v))
+}
+
+// PrevMultiplierGTE applies the GTE predicate on the "prev_multiplier" field.
+func PrevMultiplierGTE(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGTE(FieldPrevMultiplier, v))
+}
+
+// PrevMultiplierLT applies the LT predicate on the "prev_multiplier" field.
+func PrevMultiplierLT(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLT(FieldPrevMultiplier, v))
+}
+
+// PrevMultiplierLTE applies the LTE predicate on the "prev_multiplier" field.
+func PrevMultiplierLTE(v float64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLTE(FieldPrevMultiplier, v))
+}
+
+// PrevMultiplierIsNil applies the IsNil predicate on the "prev_multiplier" field.
+func PrevMultiplierIsNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIsNull(FieldPrevMultiplier))
+}
+
+// PrevMultiplierNotNil applies the NotNil predicate on the "prev_multiplier" field.
+func PrevMultiplierNotNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotNull(FieldPrevMultiplier))
+}
+
+// RevertedAtEQ applies the EQ predicate on the "reverted_at" field.
+func RevertedAtEQ(v time.Time) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldRevertedAt, v))
+}
+
+// RevertedAtNEQ applies the NEQ predicate on the "reverted_at" field.
+func RevertedAtNEQ(v time.Time) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNEQ(FieldRevertedAt, v))
+}
+
+// RevertedAtIn applies the In predicate on the "reverted_at" field.
+func RevertedAtIn(vs ...time.Time) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIn(FieldRevertedAt, vs...))
+}
+
+// RevertedAtNotIn applies the NotIn predicate on the "reverted_at" field.
+func RevertedAtNotIn(vs ...time.Time) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotIn(FieldRevertedAt, vs...))
+}
+
+// RevertedAtGT applies the GT predicate on the "reverted_at" field.
+func RevertedAtGT(v time.Time) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGT(FieldRevertedAt, v))
+}
+
+// RevertedAtGTE applies the GTE predicate on the "reverted_at" field.
+func RevertedAtGTE(v time.Time) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGTE(FieldRevertedAt, v))
+}
+
+// RevertedAtLT applies the LT predicate on the "reverted_at" field.
+func RevertedAtLT(v time.Time) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLT(FieldRevertedAt, v))
+}
+
+// RevertedAtLTE applies the LTE predicate on the "reverted_at" field.
+func RevertedAtLTE(v time.Time) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLTE(FieldRevertedAt, v))
+}
+
+// RevertedAtIsNil applies the IsNil predicate on the "reverted_at" field.
+func RevertedAtIsNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIsNull(FieldRevertedAt))
+}
+
+// RevertedAtNotNil applies the NotNil predicate on the "reverted_at" field.
+func RevertedAtNotNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotNull(FieldRevertedAt))
+}
+
+// RevertedByEQ applies the EQ predicate on the "reverted_by" field.
+func RevertedByEQ(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldEQ(FieldRevertedBy, v))
+}
+
+// RevertedByNEQ applies the NEQ predicate on the "reverted_by" field.
+func RevertedByNEQ(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNEQ(FieldRevertedBy, v))
+}
+
+// RevertedByIn applies the In predicate on the "reverted_by" field.
+func RevertedByIn(vs ...int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIn(FieldRevertedBy, vs...))
+}
+
+// RevertedByNotIn applies the NotIn predicate on the "reverted_by" field.
+func RevertedByNotIn(vs ...int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotIn(FieldRevertedBy, vs...))
+}
+
+// RevertedByGT applies the GT predicate on the "reverted_by" field.
+func RevertedByGT(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGT(FieldRevertedBy, v))
+}
+
+// RevertedByGTE applies the GTE predicate on the "reverted_by" field.
+func RevertedByGTE(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldGTE(FieldRevertedBy, v))
+}
+
+// RevertedByLT applies the LT predicate on the "reverted_by" field.
+func RevertedByLT(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLT(FieldRevertedBy, v))
+}
+
+// RevertedByLTE applies the LTE predicate on the "reverted_by" field.
+func RevertedByLTE(v int64) predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldLTE(FieldRevertedBy, v))
+}
+
+// RevertedByIsNil applies the IsNil predicate on the "reverted_by" field.
+func RevertedByIsNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldIsNull(FieldRevertedBy))
+}
+
+// RevertedByNotNil applies the NotNil predicate on the "reverted_by" field.
+func RevertedByNotNil() predicate.UpstreamPriceChange {
+	return predicate.UpstreamPriceChange(sql.FieldNotNull(FieldRevertedBy))
 }
 
 // HasSource applies the HasEdge predicate on the "source" edge.
