@@ -396,6 +396,108 @@ func (s *UpstreamPriceApplyService) BatchApply(ctx context.Context, reqs []Apply
 	return result, nil
 }
 
+// ApplyAllPendingFollowCost 对所有（或指定 source 的）pending 变动批量应用 follow_cost。
+// 每个 change 的所有命中 channel 都更新为新价，并记录 channels snapshot 供撤销遍历恢复。
+// 命中 0 channel 的 change 记入 Failed。不走单条 Apply（避免多 channel 的 status 冲突）。
+func (s *UpstreamPriceApplyService) ApplyAllPendingFollowCost(ctx context.Context, sourceID *int64, adminID int64) (*BatchApplyResult, error) {
+	filters := ChangeFilters{Status: UpstreamPriceChangeStatusPending}
+	if sourceID != nil {
+		filters.SourceID = *sourceID
+	}
+	changes, err := s.priceRepo.ListPendingChanges(ctx, filters)
+	if err != nil {
+		return nil, fmt.Errorf("list pending changes: %w", err)
+	}
+
+	result := &BatchApplyResult{
+		Succeeded: make([]int64, 0, len(changes)),
+		Failed:    make(map[int64]error, len(changes)),
+	}
+	for _, ch := range changes {
+		if err := s.applyOneChangeAllChannels(ctx, ch, adminID); err != nil {
+			result.Failed[ch.ID] = err
+			continue
+		}
+		result.Succeeded = append(result.Succeeded, ch.ID)
+	}
+	return result, nil
+}
+
+// applyOneChangeAllChannels 对单个 change 的所有命中 channel 批量 follow_cost：
+// 读每个 channel 的 prev 价 + 写新价到全部 + 记 channels snapshot + 翻 status。
+func (s *UpstreamPriceApplyService) applyOneChangeAllChannels(ctx context.Context, ch *dbent.UpstreamPriceChange, adminID int64) error {
+	modelName := ch.LocalModelName
+	if modelName == "" {
+		modelName = ch.ModelName
+	}
+
+	targets, err := s.GetApplyTargets(ctx, ch.ID)
+	if err != nil {
+		return fmt.Errorf("get apply targets: %w", err)
+	}
+	if targets == nil || len(targets.Channels) == 0 {
+		return fmt.Errorf("no channel bound for model")
+	}
+
+	// 读每个 channel 的 prev 价（构建 channels snapshot）
+	var snapshots []AppliedChannelSnapshot
+	if snapshotReader, ok := s.channelWriter.(channelPricingSnapshotReader); ok {
+		for _, c := range targets.Channels {
+			pIn, pOut, snapErr := snapshotReader.GetCurrentPriceForModel(ctx, c.ID, modelName)
+			if snapErr != nil {
+				pIn, pOut = 0, 0
+			}
+			snapshots = append(snapshots, AppliedChannelSnapshot{
+				ChannelID:       c.ID,
+				PrevInputPrice:  pIn,
+				PrevOutputPrice: pOut,
+			})
+		}
+	}
+
+	// 写新价到所有 channel
+	if s.channelWriter != nil {
+		for _, c := range targets.Channels {
+			if err := s.channelWriter.ReplaceModelPricingForModel(ctx, c.ID, modelName,
+				ch.CurrInputPrice, ch.CurrOutputPrice); err != nil {
+				return fmt.Errorf("replace channel pricing for model: %w", err)
+			}
+		}
+		s.channelWriter.InvalidateChannelCache()
+	}
+
+	// 记 channels snapshot（供撤销遍历恢复所有 channel）
+	if len(snapshots) > 0 {
+		_ = s.priceRepo.SetAppliedChannelsSnapshot(ctx, ch.ID, snapshots)
+	}
+
+	// 翻 status（applied_target=channel_pricing，target_id=第一个 channel 代表）
+	firstChannelID := targets.Channels[0].ID
+	if err := s.priceRepo.UpdateChangeApplied(ctx, ch.ID, adminID, appliedTargetChannelPricing, firstChannelID); err != nil {
+		return fmt.Errorf("mark change applied: %w", err)
+	}
+
+	// 审计
+	channelIDs := make([]int64, 0, len(targets.Channels))
+	for _, c := range targets.Channels {
+		channelIDs = append(channelIDs, c.ID)
+	}
+	s.auditLogger.Log(ctx, AuditEvent{
+		Action:  "upstream_price.apply",
+		AdminID: adminID,
+		Detail: map[string]any{
+			"change_id":      ch.ID,
+			"mode":           "follow_cost_batch",
+			"channel_ids":    channelIDs,
+			"model":          modelName,
+			"input_price":    ch.CurrInputPrice,
+			"output_price":   ch.CurrOutputPrice,
+			"applied_target": appliedTargetChannelPricing,
+		},
+	})
+	return nil
+}
+
 // ListChanges lists price changes matching the given filters. Thin pass-through
 // over the repo so handlers stay free of repository dependencies.
 func (s *UpstreamPriceApplyService) ListChanges(ctx context.Context, filters ChangeFilters) ([]*dbent.UpstreamPriceChange, error) {

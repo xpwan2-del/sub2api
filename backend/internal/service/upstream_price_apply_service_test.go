@@ -637,3 +637,51 @@ func TestRevert_BatchMultiChannel_RestoresAllChannels(t *testing.T) {
 	assert.Equal(t, 0.055, ch.calls[1].outputPrice)
 	assert.True(t, repo.reverted.called)
 }
+
+// ---- ApplyAllPendingFollowCost (multi-channel batch) ----
+
+func TestApplyAllPendingFollowCost_UpdatesAllChannelsAndRecordsSnapshot(t *testing.T) {
+	repo := newApplyFakeRepo()
+	repo.changes[1] = newPendingChange(1) // model claude-opus-4, CurrInputPrice 0.015, CurrOutputPrice 0.075
+	targets := &fakeApplyTargetReader{
+		channels:    []ChannelApplyTarget{{ID: 10, Name: "ch-a"}, {ID: 11, Name: "ch-b"}},
+		groups:      []GroupApplyTarget{},
+		modelCounts: map[int64]int{},
+	}
+	ch := &fakeChannelWriter{curInputPrice: 0.012, curOutputPrice: 0.060} // apply 前 channel 实际价
+	svc := NewUpstreamPriceApplyService(repo, ch, &fakeGroupWriter{}, targets, NewSlogAuditLogger())
+
+	res, err := svc.ApplyAllPendingFollowCost(context.Background(), nil, 99)
+	require.NoError(t, err)
+	// change 级别成功（1 change 处理完毕）
+	assert.Len(t, res.Succeeded, 1)
+	assert.Empty(t, res.Failed)
+	// 2 个 channel 都被写新价
+	require.Len(t, ch.calls, 2)
+	assert.Equal(t, int64(10), ch.calls[0].channelID)
+	assert.Equal(t, int64(11), ch.calls[1].channelID)
+	assert.Equal(t, 0.015, ch.calls[0].inputPrice) // 写的是 change 的 curr 价
+	// channels snapshot 记录了 2 个 channel 的 prev 价（供撤销）
+	require.Len(t, repo.channelsSnapshot, 2)
+	assert.Equal(t, int64(10), repo.channelsSnapshot[0].ChannelID)
+	assert.Equal(t, 0.012, repo.channelsSnapshot[0].PrevInputPrice) // prev 价
+	assert.Equal(t, int64(11), repo.channelsSnapshot[1].ChannelID)
+	// change 翻 applied
+	assert.True(t, repo.appliedChange.called)
+}
+
+func TestApplyAllPendingFollowCost_NoChannelRecordsFailed(t *testing.T) {
+	repo := newApplyFakeRepo()
+	repo.changes[1] = newPendingChange(1)
+	targets := &fakeApplyTargetReader{
+		channels:    []ChannelApplyTarget{}, // 0 channels
+		groups:      []GroupApplyTarget{},
+		modelCounts: map[int64]int{},
+	}
+	svc := NewUpstreamPriceApplyService(repo, &fakeChannelWriter{}, &fakeGroupWriter{}, targets, NewSlogAuditLogger())
+
+	res, err := svc.ApplyAllPendingFollowCost(context.Background(), nil, 99)
+	require.NoError(t, err)
+	assert.Empty(t, res.Succeeded)
+	require.Contains(t, res.Failed, int64(1))
+}
