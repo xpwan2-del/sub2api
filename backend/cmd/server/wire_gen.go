@@ -259,7 +259,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	handlerPaymentHandler := handler.NewPaymentHandler(paymentService, paymentConfigService, channelService)
 	paymentWebhookHandler := handler.NewPaymentWebhookHandler(paymentService, registry)
 	availableChannelHandler := handler.NewAvailableChannelHandler(channelService, apiKeyService, settingService)
-	publicModelCatalogHandler := handler.NewPublicModelCatalogHandler(channelService)
+	publicModelCatalogHandler := handler.NewPublicModelCatalogHandler(channelService, gatewayService)
 	bundleHandler := handler.NewBundleHandler(bundlePlanService, bundleSubscriptionService, paymentService)
 	idempotencyCoordinator := service.ProvideIdempotencyCoordinator(idempotencyRepository, configConfig)
 	idempotencyCleanupService := service.ProvideIdempotencyCleanupService(idempotencyRepository, configConfig)
