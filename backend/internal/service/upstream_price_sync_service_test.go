@@ -607,6 +607,56 @@ func TestUpstreamPriceSyncService_SyncDueSources_OnlyDueOnes(t *testing.T) {
 	require.NotNil(t, repo.sources[id2].LastSyncAt)
 }
 
+// TestUpstreamPriceSyncService_SyncSource_SmallDeltaBelowThreshold_NoAlert 验证
+// 第 2 项告警降噪：source 配了 AlertThresholdPct=0.10（10%），上游只涨 5% 时，
+// 变动仍入库（status=pending，人工审批页可见），但 emitAlert 的阈值过滤会
+// 把它从告警列表里剔除 → 不写 admin 通知、不标记 notified。
+func TestUpstreamPriceSyncService_SyncSource_SmallDeltaBelowThreshold_NoAlert(t *testing.T) {
+	repo := newSyncPriceRepo()
+	// 上游涨 5%（ratio 1 → 1.05），input_delta_pct ≈ 0.05（5%）。
+	newPayload := oneAPIPayload([3]any{"gpt-4o", 1.05, 1})
+	src := &dbent.UpstreamPriceSource{
+		Name:                "src-threshold",
+		ParserType:          "one_api",
+		Enabled:             true,
+		SyncIntervalMinutes: 60,
+		AlertThresholdPct:   0.10, // 阈值 10%，5% < 10% → 告警过滤
+	}
+	id := repo.seedSource(src)
+	// 旧价快照：ratio=1 → input = 1*2/1e6 = 2e-6
+	oldInput := 1 * 2.0 / 1e6
+	repo.modelPrices[id] = map[string]*dbent.UpstreamModelPrice{
+		"gpt-4o": {SourceID: id, ModelName: "gpt-4o", InputPrice: oldInput, OutputPrice: oldInput},
+	}
+
+	srv := upstreamTestServer(t, newPayload, 0)
+	defer srv.Close()
+	repo.sources[id].PricingEndpoint = srv.URL
+
+	notifRepo := &recordingNotifRepo{}
+	svc := NewUpstreamPriceSyncService(
+		repo,
+		NewAdminNotificationService(notifRepo),
+		nil, // emailService=nil：跳过邮件
+		&fakeGroupRateReader{mult: 1.5},
+		&fakeRecipientReader{emails: []string{"ops@example.com"}},
+		nil, nil, &upstreamPlainEncryptor{}, &noopHTTPUpstream{},
+		UpstreamPriceSyncConfig{},
+	)
+
+	err := svc.SyncSource(context.Background(), id)
+	require.NoError(t, err)
+
+	// change 仍入库（status=pending），人工审批页可见
+	require.Len(t, repo.changes, 1)
+	assert.Equal(t, UpstreamPriceChangeStatusPending, repo.changes[0].Status)
+	// delta 确实是 5%（< 10% 阈值）
+	assert.InDelta(t, 0.05, repo.changes[0].InputDeltaPct, 1e-6)
+	// 但不发告警（阈值过滤）：无 admin 通知、无 markNotified
+	assert.Empty(t, notifRepo.created, "小幅变动不应触发告警通知")
+	assert.Empty(t, repo.markNotifiedIDs, "小幅变动不应标记 notified")
+}
+
 // 编译期断言：复用同包已定义的测试 helpers。
 var _ HTTPUpstream = (*noopHTTPUpstream)(nil)
 var _ SecretEncryptor = (*upstreamPlainEncryptor)(nil)
