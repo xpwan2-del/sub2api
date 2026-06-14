@@ -273,6 +273,20 @@ func (h *UpstreamPriceHandler) DismissChange(c *gin.Context) {
 	response.Success(c, gin.H{"message": "Change dismissed successfully"})
 }
 
+// RevertChange POST /admin/upstream-price/changes/:id/revert — 撤销一次 apply
+func (h *UpstreamPriceHandler) RevertChange(c *gin.Context) {
+	id, ok := parseIDParam(c, "id")
+	if !ok {
+		return
+	}
+	adminID := adminUserID(c)
+	if err := h.applyService.Revert(c.Request.Context(), id, adminID); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"message": "Change reverted successfully"})
+}
+
 // ===== Compare =====
 
 // ComparePrices GET /admin/upstream-price/compare?source_id=

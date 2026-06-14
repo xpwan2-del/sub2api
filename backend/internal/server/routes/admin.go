@@ -718,6 +718,7 @@ func registerUpstreamPriceRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 			changes.GET("/:id/targets", h.Admin.UpstreamPrice.GetApplyTargets)
 			changes.POST("/:id/apply", h.Admin.UpstreamPrice.ApplyChange)
 			changes.POST("/:id/dismiss", h.Admin.UpstreamPrice.DismissChange)
+			changes.POST("/:id/revert", h.Admin.UpstreamPrice.RevertChange)
 		}
 
 		up.GET("/compare", h.Admin.UpstreamPrice.ComparePrices)
