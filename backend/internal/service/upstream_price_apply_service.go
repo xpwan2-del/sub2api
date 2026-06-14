@@ -185,6 +185,23 @@ func (s *UpstreamPriceApplyService) Apply(ctx context.Context, req ApplyRequest,
 		appliedTarget = appliedTargetGroupMultiplier
 	}
 
+	// 记录 apply 前实际值快照（覆盖保护 + 撤销回滚）。
+	// 通过 type assertion 从 writer 扩展读能力。必须在写单价之前抓取，否则抓到的是新值。
+	var prevMul *float64
+	if snapshotReader, ok := s.channelWriter.(channelPricingSnapshotReader); ok {
+		pIn, pOut, snapErr := snapshotReader.GetCurrentPriceForModel(ctx, channelID, modelName)
+		if snapErr == nil {
+			if req.Mode == ApplyLockPrice {
+				if mulReader, ok2 := s.groupWriter.(groupRateSnapshotReader); ok2 {
+					if m, mErr := mulReader.GetRateMultiplierByGroupID(ctx, req.TargetID); mErr == nil {
+						prevMul = &m
+					}
+				}
+			}
+			_ = s.priceRepo.SetAppliedSnapshot(ctx, req.ChangeID, channelID, pIn, pOut, prevMul)
+		}
+	}
+
 	if s.channelWriter != nil {
 		if err := s.channelWriter.ReplaceModelPricingForModel(ctx, channelID, modelName,
 			change.CurrInputPrice, change.CurrOutputPrice); err != nil {
@@ -278,6 +295,65 @@ func (s *UpstreamPriceApplyService) Dismiss(ctx context.Context, changeID, admin
 		AdminID: adminID,
 		Detail: map[string]any{
 			"change_id": changeID,
+		},
+	})
+	return nil
+}
+
+// Revert 撤销一次 apply，把计费链路恢复到 apply 前的实际值。
+// applied_target=="channel_pricing"(follow_cost)：恢复 channel 单价。
+// applied_target=="group_multiplier"(lock_price)：恢复 channel 单价 + group 倍率。
+// 幂等：已 reverted 或非 applied 返回 NOT_APPLIED / ALREADY_REVERTED。
+func (s *UpstreamPriceApplyService) Revert(ctx context.Context, changeID, adminID int64) error {
+	ch, err := s.priceRepo.GetChange(ctx, changeID)
+	if err != nil {
+		return fmt.Errorf("get price change: %w", err)
+	}
+	if ch.Status != UpstreamPriceChangeStatusApplied {
+		return errors.BadRequest("NOT_APPLIED",
+			fmt.Sprintf("change %d status is %q, only applied can be reverted", changeID, ch.Status))
+	}
+	if ch.RevertedAt != nil {
+		return errors.BadRequest("ALREADY_REVERTED",
+			fmt.Sprintf("change %d already reverted", changeID))
+	}
+	if ch.AppliedChannelID == nil || ch.AppliedPrevInputPrice == nil {
+		return errors.BadRequest("MISSING_APPLIED_SNAPSHOT",
+			fmt.Sprintf("change %d missing applied-prev snapshot, manual revert required", changeID))
+	}
+
+	modelName := ch.LocalModelName
+	if modelName == "" {
+		modelName = ch.ModelName
+	}
+
+	// 恢复 channel 单价（用 apply 时记录的 applied_channel_id 锚点，不重新 resolve）
+	if s.channelWriter != nil {
+		if err := s.channelWriter.ReplaceModelPricingForModel(ctx, *ch.AppliedChannelID, modelName,
+			*ch.AppliedPrevInputPrice, *ch.AppliedPrevOutputPrice); err != nil {
+			return fmt.Errorf("restore channel pricing on revert: %w", err)
+		}
+		s.channelWriter.InvalidateChannelCache()
+	}
+
+	// lock_price：恢复 group 倍率（applied_target_id 此时是 group_id）
+	if ch.AppliedTarget == appliedTargetGroupMultiplier && ch.PrevMultiplier != nil && s.groupWriter != nil {
+		if err := s.groupWriter.UpdateRateMultiplier(ctx, ch.AppliedTargetID, *ch.PrevMultiplier); err != nil {
+			return fmt.Errorf("restore group rate_multiplier on revert: %w", err)
+		}
+	}
+
+	if err := s.priceRepo.MarkReverted(ctx, changeID, adminID); err != nil {
+		return fmt.Errorf("mark change reverted: %w", err)
+	}
+
+	s.auditLogger.Log(ctx, AuditEvent{
+		Action:  "upstream_price.revert",
+		AdminID: adminID,
+		Detail: map[string]any{
+			"change_id":      changeID,
+			"applied_target": ch.AppliedTarget,
+			"channel_id":     ch.AppliedChannelID,
 		},
 	})
 	return nil

@@ -205,6 +205,8 @@ func (l *captureAuditLogger) Log(_ context.Context, e AuditEvent) {
 
 func ptrFloatApply(v float64) *float64 { return &v }
 
+func ptrInt64Apply(v int64) *int64 { return &v }
+
 func newPendingChange(id int64) *dbent.UpstreamPriceChange {
 	return &dbent.UpstreamPriceChange{
 		ID:              id,
@@ -426,3 +428,151 @@ func TestGetApplyTargets_SingleModelGroup_NoWarning(t *testing.T) {
 
 // 确保 UpdateSourceSyncResult 签名匹配（编译期检查）：上面 applyFakeRepo 用了
 // 任意 interface{} 占位参数；这里验证编译通过即可（已由 go build 保证）。
+
+// ---- Apply snapshot recording ----
+
+func TestApply_FollowCost_RecordsAppliedSnapshot(t *testing.T) {
+	repo := newApplyFakeRepo()
+	repo.changes[1] = newPendingChange(1)
+	ch := &fakeChannelWriter{curInputPrice: 0.012, curOutputPrice: 0.060} // apply 前 channel 实际价
+	grp := &fakeGroupWriter{}
+	svc := NewUpstreamPriceApplyService(repo, ch, grp, nil, NewSlogAuditLogger())
+
+	err := svc.Apply(context.Background(), ApplyRequest{ChangeID: 1, Mode: ApplyFollowCost, TargetID: 10}, 99)
+	require.NoError(t, err)
+
+	assert.True(t, repo.snapshot.called)
+	assert.Equal(t, int64(10), repo.snapshot.channelID)
+	assert.Equal(t, 0.012, repo.snapshot.prevIn)
+	assert.Equal(t, 0.060, repo.snapshot.prevOut)
+	assert.Nil(t, repo.snapshot.prevMul) // follow_cost 不记倍率
+}
+
+func TestApply_LockPrice_RecordsSnapshotWithMultiplier(t *testing.T) {
+	repo := newApplyFakeRepo()
+	c := newPendingChange(1)
+	c.SuggestedMultiplier = ptrFloatApply(1.25)
+	repo.changes[1] = c
+	ch := &fakeChannelWriterWithResolver{groupToChannel: map[int64]int64{7: 42}}
+	ch.curInputPrice, ch.curOutputPrice = 0.012, 0.060
+	grp := &fakeGroupWriter{curMultiplier: 1.5} // apply 前 group 实际倍率
+	svc := NewUpstreamPriceApplyService(repo, ch, grp, nil, NewSlogAuditLogger())
+
+	err := svc.Apply(context.Background(), ApplyRequest{ChangeID: 1, Mode: ApplyLockPrice, TargetID: 7}, 99)
+	require.NoError(t, err)
+
+	assert.True(t, repo.snapshot.called)
+	assert.Equal(t, int64(42), repo.snapshot.channelID) // 解析出的 channel_id
+	require.NotNil(t, repo.snapshot.prevMul)
+	assert.Equal(t, 1.5, *repo.snapshot.prevMul)
+}
+
+// ---- Revert ----
+
+func TestRevert_FollowCost_RestoresChannelPrice(t *testing.T) {
+	repo := newApplyFakeRepo()
+	c := newPendingChange(1)
+	c.Status = UpstreamPriceChangeStatusApplied
+	c.AppliedTarget = appliedTargetChannelPricing
+	c.AppliedTargetID = 10
+	c.AppliedChannelID = ptrInt64Apply(10)
+	c.AppliedPrevInputPrice = ptrFloatApply(0.012)
+	c.AppliedPrevOutputPrice = ptrFloatApply(0.060)
+	repo.changes[1] = c
+	ch := &fakeChannelWriter{}
+	grp := &fakeGroupWriter{}
+	svc := NewUpstreamPriceApplyService(repo, ch, grp, nil, NewSlogAuditLogger())
+
+	err := svc.Revert(context.Background(), 1, 99)
+	require.NoError(t, err)
+
+	assert.True(t, ch.called)
+	assert.Equal(t, int64(10), ch.lastChannelID)
+	assert.Equal(t, 0.012, ch.lastInputPrice)
+	assert.Equal(t, 0.060, ch.lastOutputPrice)
+	assert.False(t, grp.called) // follow_cost 不动倍率
+	assert.True(t, repo.reverted.called)
+}
+
+func TestRevert_LockPrice_RestoresChannelPriceAndMultiplier(t *testing.T) {
+	repo := newApplyFakeRepo()
+	c := newPendingChange(1)
+	c.Status = UpstreamPriceChangeStatusApplied
+	c.AppliedTarget = appliedTargetGroupMultiplier
+	c.AppliedTargetID = 7 // group_id
+	c.AppliedChannelID = ptrInt64Apply(42)
+	c.AppliedPrevInputPrice = ptrFloatApply(0.012)
+	c.AppliedPrevOutputPrice = ptrFloatApply(0.060)
+	m := 1.5
+	c.PrevMultiplier = &m
+	repo.changes[1] = c
+	ch := &fakeChannelWriter{}
+	grp := &fakeGroupWriter{}
+	svc := NewUpstreamPriceApplyService(repo, ch, grp, nil, NewSlogAuditLogger())
+
+	err := svc.Revert(context.Background(), 1, 99)
+	require.NoError(t, err)
+
+	assert.Equal(t, int64(42), ch.lastChannelID) // applied_channel_id 锚点
+	assert.True(t, grp.called)
+	assert.Equal(t, int64(7), grp.lastGroupID) // applied_target_id = group_id
+	assert.Equal(t, 1.5, grp.lastMultiplier)
+}
+
+func TestRevert_AlreadyReverted_ReturnsError(t *testing.T) {
+	repo := newApplyFakeRepo()
+	c := newPendingChange(1)
+	c.Status = UpstreamPriceChangeStatusApplied
+	now := time.Now()
+	c.RevertedAt = &now // 已撤销
+	repo.changes[1] = c
+	svc := NewUpstreamPriceApplyService(repo, &fakeChannelWriter{}, &fakeGroupWriter{}, nil, NewSlogAuditLogger())
+
+	err := svc.Revert(context.Background(), 1, 99)
+	require.Error(t, err)
+	var appErr *errors.ApplicationError
+	require.ErrorAs(t, err, &appErr)
+	assert.Equal(t, "ALREADY_REVERTED", appErr.Reason)
+}
+
+func TestRevert_NotApplied_ReturnsError(t *testing.T) {
+	repo := newApplyFakeRepo()
+	c := newPendingChange(1) // Status = pending (not applied)
+	repo.changes[1] = c
+	ch := &fakeChannelWriter{}
+	grp := &fakeGroupWriter{}
+	svc := NewUpstreamPriceApplyService(repo, ch, grp, nil, NewSlogAuditLogger())
+
+	err := svc.Revert(context.Background(), 1, 99)
+	require.Error(t, err)
+	var appErr *errors.ApplicationError
+	require.ErrorAs(t, err, &appErr)
+	assert.Equal(t, "NOT_APPLIED", appErr.Reason)
+	// 没有任何计费写入
+	assert.False(t, ch.called)
+	assert.False(t, grp.called)
+	assert.False(t, repo.reverted.called)
+}
+
+func TestRevert_MissingAppliedSnapshot_ReturnsError(t *testing.T) {
+	repo := newApplyFakeRepo()
+	c := newPendingChange(1)
+	c.Status = UpstreamPriceChangeStatusApplied
+	c.AppliedTarget = appliedTargetChannelPricing
+	c.AppliedTargetID = 10
+	// AppliedChannelID 留 nil（模拟 apply 时 snapshot 读取失败 / 旧数据）
+	repo.changes[1] = c
+	ch := &fakeChannelWriter{}
+	grp := &fakeGroupWriter{}
+	svc := NewUpstreamPriceApplyService(repo, ch, grp, nil, NewSlogAuditLogger())
+
+	err := svc.Revert(context.Background(), 1, 99)
+	require.Error(t, err)
+	var appErr *errors.ApplicationError
+	require.ErrorAs(t, err, &appErr)
+	assert.Equal(t, "MISSING_APPLIED_SNAPSHOT", appErr.Reason)
+	// 没有任何计费写入
+	assert.False(t, ch.called)
+	assert.False(t, grp.called)
+	assert.False(t, repo.reverted.called)
+}
