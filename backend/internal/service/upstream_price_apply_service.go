@@ -52,8 +52,18 @@ type ApplyTargetReader interface {
 
 // ApplyTargetsResponse apply 弹窗下拉数据。
 type ApplyTargetsResponse struct {
-	Channels []ChannelApplyTarget `json:"channels"` // follow_cost 用
-	Groups   []GroupApplyTarget   `json:"groups"`   // lock_price 用
+	Channels []ChannelApplyTarget `json:"channels"`       // follow_cost 用
+	Groups   []GroupApplyTarget   `json:"groups"`         // lock_price 用
+	Warnings []ApplyTargetWarning `json:"warnings,omitempty"` // lock_price 误伤软警告
+}
+
+// ApplyTargetWarning lock_price 误伤警告（软警告，不阻止 apply）。
+// 当 group 绑定多个模型时，lock_price 改 group.rate_multiplier 会连带改变其它模型的售价，
+// 前端据此展示琥珀色提示横幅。
+type ApplyTargetWarning struct {
+	GroupID   int64  `json:"group_id"`
+	GroupName string `json:"group_name"`
+	Message   string `json:"message"`
 }
 
 // AuditEvent 审计事件载荷。
@@ -386,5 +396,30 @@ func (s *UpstreamPriceApplyService) GetApplyTargets(ctx context.Context, changeI
 		return nil, fmt.Errorf("list groups by channels: %w", err)
 	}
 	resp.Groups = groups
+
+	// 误伤检测：对 ModelCount > 1 的 group 生成软警告。
+	// lock_price 改 group.rate_multiplier 会连带改变该 group 下其它模型的售价，
+	// 提示但不阻止管理员 apply。
+	if len(groups) > 0 {
+		groupIDs := make([]int64, 0, len(groups))
+		for _, g := range groups {
+			groupIDs = append(groupIDs, g.ID)
+		}
+		counts, err := s.targetReader.CountDistinctModelsByGroups(ctx, groupIDs)
+		if err != nil {
+			return nil, fmt.Errorf("count distinct models by groups: %w", err)
+		}
+		for i := range groups {
+			groups[i].ModelCount = counts[groups[i].ID]
+			if groups[i].ModelCount > 1 {
+				resp.Warnings = append(resp.Warnings, ApplyTargetWarning{
+					GroupID:   groups[i].ID,
+					GroupName: groups[i].Name,
+					Message:   fmt.Sprintf("此分组还绑定 %d 个模型，lock_price 会连带改变它们的售价", groups[i].ModelCount),
+				})
+			}
+		}
+	}
+
 	return resp, nil
 }

@@ -329,5 +329,55 @@ func TestBatchApply_MixedResults(t *testing.T) {
 	require.Contains(t, res.Failed, int64(3))
 }
 
+// fakeApplyTargetReader 内存版 ApplyTargetReader。
+type fakeApplyTargetReader struct {
+	channels    []ChannelApplyTarget
+	groups      []GroupApplyTarget
+	modelCounts map[int64]int // group_id → model count
+}
+
+func (f *fakeApplyTargetReader) ListChannelsByModel(_ context.Context, _ string) ([]ChannelApplyTarget, error) {
+	return f.channels, nil
+}
+func (f *fakeApplyTargetReader) ListGroupsByChannels(_ context.Context, _ []int64) ([]GroupApplyTarget, error) {
+	return f.groups, nil
+}
+func (f *fakeApplyTargetReader) CountDistinctModelsByGroups(_ context.Context, _ []int64) (map[int64]int, error) {
+	return f.modelCounts, nil
+}
+
+func TestGetApplyTargets_LockPriceMultiModelGroup_GeneratesWarning(t *testing.T) {
+	repo := newApplyFakeRepo()
+	repo.changes[1] = newPendingChange(1)
+	targets := &fakeApplyTargetReader{
+		channels:    []ChannelApplyTarget{{ID: 10, Name: "ch-1"}},
+		groups:      []GroupApplyTarget{{ID: 7, Name: "g-multi", RateMultiplier: 1.5}},
+		modelCounts: map[int64]int{7: 3}, // group 7 绑定 3 个模型 → 误伤
+	}
+	svc := NewUpstreamPriceApplyService(repo, nil, nil, targets, NewSlogAuditLogger())
+
+	resp, err := svc.GetApplyTargets(context.Background(), 1)
+	require.NoError(t, err)
+	require.Len(t, resp.Groups, 1)
+	assert.Equal(t, 3, resp.Groups[0].ModelCount)
+	require.Len(t, resp.Warnings, 1)
+	assert.Equal(t, int64(7), resp.Warnings[0].GroupID)
+}
+
+func TestGetApplyTargets_SingleModelGroup_NoWarning(t *testing.T) {
+	repo := newApplyFakeRepo()
+	repo.changes[1] = newPendingChange(1)
+	targets := &fakeApplyTargetReader{
+		channels:    []ChannelApplyTarget{{ID: 10, Name: "ch-1"}},
+		groups:      []GroupApplyTarget{{ID: 7, Name: "g-single", RateMultiplier: 1.5}},
+		modelCounts: map[int64]int{7: 1}, // 单模型 → 不警告
+	}
+	svc := NewUpstreamPriceApplyService(repo, nil, nil, targets, NewSlogAuditLogger())
+
+	resp, err := svc.GetApplyTargets(context.Background(), 1)
+	require.NoError(t, err)
+	assert.Empty(t, resp.Warnings)
+}
+
 // 确保 UpdateSourceSyncResult 签名匹配（编译期检查）：上面 applyFakeRepo 用了
 // 任意 interface{} 占位参数；这里验证编译通过即可（已由 go build 保证）。
