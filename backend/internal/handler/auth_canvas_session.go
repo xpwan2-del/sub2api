@@ -15,6 +15,7 @@ type CanvasSessionUser struct {
 	ID          int64   `json:"id"`
 	Email       string  `json:"email"`
 	Username    string  `json:"username"`
+	Role        string  `json:"role"`
 	AvatarURL   string  `json:"avatar_url"`
 	Balance     float64 `json:"balance"`
 	Concurrency int     `json:"concurrency"`
@@ -41,6 +42,7 @@ func (h *AuthHandler) GetCanvasSession(c *gin.Context) {
 			ID:          user.ID,
 			Email:       user.Email,
 			Username:    user.Username,
+			Role:        user.Role,
 			AvatarURL:   user.AvatarURL,
 			Balance:     user.Balance,
 			Concurrency: user.Concurrency,
