@@ -59,6 +59,7 @@ const consoleHTML = `<!doctype html>
     <button class="btn" onclick="scenario('remove')">remove 下架末位</button>
     <button class="btn" onclick="scenario('big')">big 首模型 +50%</button>
     <button class="btn" onclick="scenario('tiny')">tiny 首模型 +1%</button>
+    <button class="btn" onclick="scenario('cache')">cache 首模型缓存读×3</button>
     <p class="hint muted">典型流程：reset → 去 sub2api 同步一次建立基线 → 切场景 → 再同步 → 在 changes 页看变动。</p>
   </div>
 
@@ -85,9 +86,9 @@ const consoleHTML = `<!doctype html>
   </div>
 
   <div class="card">
-    <h2>当前模型集 <span class="pill" id="authTag"></span></h2>
+    <h2>当前模型集 <span class="pill" id="authTag"></span> <span class="muted" style="font-size:11px;margin-left:8px;">one_api sha256: <span id="hash" class="num"></span></span></h2>
     <table>
-      <thead><tr><th>模型名</th><th>价格倍率</th><th>补全比</th><th>输入价 / token</th><th>输出价 / token</th><th>操作</th></tr></thead>
+      <thead><tr><th>模型名</th><th>价格倍率</th><th>补全比</th><th>缓存读/token</th><th>缓存写/token</th><th>输入/token</th><th>输出/token</th><th>操作</th></tr></thead>
       <tbody id="models"></tbody>
     </table>
   </div>
@@ -129,8 +130,17 @@ function load(){
   fetch('/admin/state').then(function(r){return r.json();}).then(function(st){
     var rows = (st.models || []).map(function(m){
       var enc = encodeURIComponent(m.name);
+      if(m.per_call){
+        return '<tr><td>' + esc(m.name) + ' <span class="pill">按次</span></td>'
+          + '<td class="num muted">—</td><td class="num muted">—</td>'
+          + '<td class="num muted">—</td><td class="num muted">—</td>'
+          + '<td class="num" colspan="2">$' + (m.per_call_price||0).toFixed(4) + ' / 次（OneAPIParser 跳过）</td>'
+          + '<td><button class="btn danger" data-del="' + enc + '">下架</button></td></tr>';
+      }
       return '<tr><td>' + esc(m.name) + '</td><td class="num">' + m.model_ratio.toFixed(4) + '</td>'
         + '<td class="num">' + m.completion_ratio.toFixed(2) + '</td>'
+        + '<td class="num">' + sci(m.cache_read_per_token) + '</td>'
+        + '<td class="num">' + sci(m.cache_write_per_token) + '</td>'
         + '<td class="num">' + sci(m.in_per_token) + '</td>'
         + '<td class="num">' + sci(m.out_per_token) + '</td>'
         + '<td><button class="btn danger" data-del="' + enc + '">下架</button></td></tr>';
@@ -148,6 +158,10 @@ function load(){
 
     document.getElementById('authTag').textContent = st.need_auth ? '需 Bearer' : '无鉴权';
     document.getElementById('authTag').className = 'pill ' + (st.need_auth ? '' : 'on');
+
+    var h = document.getElementById('hash');
+    h.textContent = st.current_hash ? st.current_hash.slice(0,16) + '…' : '-';
+    h.title = st.current_hash || '';
 
     var c = st.counts || {};
     var total = (c['/api/pricing'] || 0) + (c['/api/pricing/litellm'] || 0) + (c['/api/pricing/custom'] || 0);

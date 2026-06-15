@@ -57,6 +57,21 @@ go run . -addr :9999 -token secret-sk-xxx -seed 5   # 启用 Bearer 校验
 | `remove` | 下架末位模型 | `removed` |
 | `big` | 首模型 `model_ratio × 1.5` | `price_up`，`+50%` 触发 **critical** 告警 |
 | `tiny` | 首模型 `model_ratio × 1.01` | `price_up`，`+1%` 测 `AlertThresholdPct` 过滤 |
+| `cache` | 首模型 `cache_ratio × 3` | 缓存读价变动；litellm 格式测 `CacheReadPrice` diff |
+
+### 数据形态与计费口径
+
+mock 的模型数据刻意贴近真实中转站（参考咕咕鸟、玖情等 `/api/pricing` 返回）：
+
+- **缓存倍率**：每个按 token 模型带 `cache_ratio=0.1` / `create_cache_ratio=1.25`（Anthropic 官方倍率）。
+  one_api 格式直接输出这两字段；litellm 格式从它们推导 per-token 缓存价（`cache_creation_input_token_cost` /
+  `cache_read_input_token_cost`），使三种格式的缓存价完全对齐，可对照 `upstream_model_prices` 表验证。
+  > 注意：`OneAPIParser` 当前**不解析** one_api 的缓存字段（仅 litellm parser 读缓存价），故 one_api 同步
+  > 不会写入缓存价——这是 sub2api 的已知行为，mock 仍保留该字段以贴近真实数据并备 parser 增强。
+- **按次计费模型**：`gpt-image-mock`（`quota_type=1`、`model_price=0.04`、`model_ratio=0`）常驻基线，
+  专测 `OneAPIParser` 对 `ratio==0` 的跳过逻辑。
+- **判变口径**：控制台标题栏显示当前 one_api 响应的 `sha256`（`current_hash`），与 sub2api `SyncSource`
+  对 raw 的判变完全一致——hash 不变 = 本次同步静默，hash 变了 = 必有 diff，可直接与 `source.last_hash` 对照预判。
 
 ## 与 sub2api 对接测试
 
@@ -90,8 +105,12 @@ curl -s -X POST http://localhost:PORT/admin/upstream-price/sources/1/test
 curl -s -X POST http://localhost:PORT/admin/upstream-price/sources/1/sync
 ```
 
-> 首次同步时 `prev` 为空，所有模型算 `new_model` 入库；之后 `last_hash` 已记录，
+> 首次同步时 `prev` 为空，所有按 token 模型算 `new_model` 入库；之后 `last_hash` 已记录，
 > 不改价再同步不会产生新变动（`sha256` 判变）。
+>
+> 注意：基线常驻的 `gpt-image-mock` 是 `quota_type=1` 按次模型（`model_ratio=0`），会被
+> `OneAPIParser` 的 `ratio==0` 分支跳过，故 one_api 同步入库 **5 个 per-token 模型**
+>（`test` 返回 `model_count:5`），按次模型不入库——这是 sub2api 的真实行为。
 
 ### 2. 制造变动并验证 diff
 

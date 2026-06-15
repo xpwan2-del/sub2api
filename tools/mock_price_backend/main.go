@@ -20,6 +20,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -36,15 +38,30 @@ const baseRatePerMillion = 2.0
 
 // model 是一个上游模型的定价定义。
 //
-// 注意：JSON tag 顺序固定（model_name → model_ratio → completion_ratio），
-// 保证 one_api 格式的响应字节稳定，从而 sha256 判变正确。
+// 字段语义对齐真实 one-api / new-api 系中转站的 /api/pricing 返回
+// （参考咕咕鸟、玖情等真实数据）：
+//   - model_ratio / completion_ratio：per-token 计价核心（OneAPIParser 读取）。
+//   - cache_ratio / create_cache_ratio：缓存读/写相对输入价的倍率。真实数据普遍存在
+//     （Anthropic 官方为 0.1 / 1.25）。OneAPIParser 当前不解析这两项，但 litellm
+//     parser 读缓存价，故三种格式需统一从模型推导，否则缓存价会对不齐。
+//   - quota_type：0=按 token（默认），1=按次固定价。按次模型 model_ratio=0，
+//     会被 OneAPIParser 的 ratio==0 跳过分支过滤——正是要测的路径。
+//
+// 注意：JSON tag 顺序固定（model_name → model_ratio → completion_ratio → cache_*），
+// 保证 one_api 格式的响应字节稳定，从而 sha256 判变正确。omitempty 的零值省略
+// 不破坏稳定性：状态确定则输出确定（0.1 恒输出，0.0 恒省略）。
 type model struct {
-	Name            string  `json:"model_name"`
-	ModelRatio      float64 `json:"model_ratio"`
-	CompletionRatio float64 `json:"completion_ratio"`
+	Name             string  `json:"model_name"`
+	ModelRatio       float64 `json:"model_ratio"`
+	CompletionRatio  float64 `json:"completion_ratio"`
+	CacheRatio       float64 `json:"cache_ratio,omitempty"`
+	CreateCacheRatio float64 `json:"create_cache_ratio,omitempty"`
+	QuotaType        int     `json:"quota_type,omitempty"`
+	ModelPrice       float64 `json:"model_price,omitempty"`
 }
 
 // perTokenIn 返回该模型的 per-token 输入价（USD），与 OneAPIParser 一致。
+// 按次计费模型（quota_type=1）model_ratio=0，故返回 0。
 func (m model) perTokenIn() float64 { return m.ModelRatio * baseRatePerMillion / 1e6 }
 
 // completion 返回 completion_ratio，空值回退为 1（与 OneAPIParser 一致）。
@@ -57,6 +74,15 @@ func (m model) completion() float64 {
 
 // perTokenOut 返回 per-token 输出价 = 输入价 × completion_ratio。
 func (m model) perTokenOut() float64 { return m.perTokenIn() * m.completion() }
+
+// perTokenCacheRead 返回缓存读 per-token 价 = 输入价 × cache_ratio（无倍率则为 0）。
+func (m model) perTokenCacheRead() float64 { return m.perTokenIn() * m.CacheRatio }
+
+// perTokenCacheWrite 返回缓存写 per-token 价 = 输入价 × create_cache_ratio。
+func (m model) perTokenCacheWrite() float64 { return m.perTokenIn() * m.CreateCacheRatio }
+
+// perCall 标识是否按次计费（quota_type=1）。OneAPIParser 会跳过此类模型。
+func (m model) perCall() bool { return m.QuotaType == 1 }
 
 // behaviour 控制定价端点的故障行为（测超时/错误码）。
 //
@@ -105,11 +131,20 @@ func (s *server) resetLocked(n int) {
 	s.models = s.models[:0]
 	for i := 0; i < n && i < len(seedNames); i++ {
 		s.models = append(s.models, model{
-			Name:            seedNames[i],
-			ModelRatio:      1.5 + float64(i)*0.5, // 1.5 / 2.0 / 2.5 ...
-			CompletionRatio: 4.0,
+			Name:             seedNames[i],
+			ModelRatio:       1.5 + float64(i)*0.5, // 1.5 / 2.0 / 2.5 ...
+			CompletionRatio:  4.0,
+			CacheRatio:       0.1,  // 缓存读 = 输入价 ×0.1（Anthropic 官方倍率）
+			CreateCacheRatio: 1.25, // 缓存写 = 输入价 ×1.25（Anthropic 官方倍率）
 		})
 	}
+	// 常驻一个按次计费模型：model_ratio=0 会被 OneAPIParser 跳过，用于验证该过滤分支。
+	// litellm/custom parser 不跳过 → 解析为 input=0 模型，这是 parser 间的真实差异。
+	s.models = append(s.models, model{
+		Name:       "gpt-image-mock",
+		QuotaType:  1,
+		ModelPrice: 0.04,
+	})
 }
 
 // Reset 是 resetLocked 的加锁版本。
@@ -158,8 +193,13 @@ func (s *server) applyScenario(name string) (string, error) {
 			s.models[0].ModelRatio *= 1.01
 		}
 		return "首模型 +1%（小幅变动，测 AlertThresholdPct 过滤）", nil
+	case "cache": // 首模型缓存读倍率 ×3 → 缓存价变动（litellm 格式可测 CacheReadPrice diff）
+		if len(s.models) > 0 {
+			s.models[0].CacheRatio *= 3
+		}
+		return "首模型缓存读倍率 ×3（缓存价变动，litellm 格式测 CacheReadPrice diff）", nil
 	default:
-		return "", fmt.Errorf("未知场景 %q（可选: reset/hike/cut/add/remove/big/tiny）", name)
+		return "", fmt.Errorf("未知场景 %q（可选: reset/hike/cut/add/remove/big/tiny/cache）", name)
 	}
 }
 
@@ -205,11 +245,15 @@ func (s *server) snapshot() stateSnapshot {
 	view := make([]modelView, len(models))
 	for i, m := range models {
 		view[i] = modelView{
-			Name:        m.Name,
-			ModelRatio:  m.ModelRatio,
-			Completion:  m.completion(),
-			InPerToken:  m.perTokenIn(),
-			OutPerToken: m.perTokenOut(),
+			Name:             m.Name,
+			ModelRatio:       m.ModelRatio,
+			Completion:       m.completion(),
+			InPerToken:       m.perTokenIn(),
+			OutPerToken:      m.perTokenOut(),
+			CacheReadPerTok:  m.perTokenCacheRead(),
+			CacheWritePerTok: m.perTokenCacheWrite(),
+			PerCall:          m.perCall(),
+			PerCallPrice:     m.ModelPrice,
 		}
 	}
 	logs := make([]reqLog, len(s.logs))
@@ -218,29 +262,42 @@ func (s *server) snapshot() stateSnapshot {
 	for k, v := range s.counts {
 		counts[k] = v
 	}
+	// one_api 响应的 sha256：与 sub2api SyncSource 对 raw 的判变口径完全一致，
+	// 控制台展示后可直接与 source.last_hash 对照，预判本次同步是否会产生变动。
+	oneAPI := struct {
+		Data []model `json:"data"`
+	}{Data: models}
+	raw, _ := json.Marshal(oneAPI)
+	sum := sha256.Sum256(raw)
 	return stateSnapshot{
-		Models:   view,
-		Logs:     logs,
-		Counts:   counts,
-		Behav:    s.behav,
-		NeedAuth: s.token != "",
+		Models:      view,
+		Logs:        logs,
+		Counts:      counts,
+		Behav:       s.behav,
+		NeedAuth:    s.token != "",
+		CurrentHash: hex.EncodeToString(sum[:]),
 	}
 }
 
 type modelView struct {
-	Name        string  `json:"name"`
-	ModelRatio  float64 `json:"model_ratio"`
-	Completion  float64 `json:"completion_ratio"`
-	InPerToken  float64 `json:"in_per_token"`
-	OutPerToken float64 `json:"out_per_token"`
+	Name             string  `json:"name"`
+	ModelRatio       float64 `json:"model_ratio"`
+	Completion       float64 `json:"completion_ratio"`
+	InPerToken       float64 `json:"in_per_token"`
+	OutPerToken      float64 `json:"out_per_token"`
+	CacheReadPerTok  float64 `json:"cache_read_per_token"`
+	CacheWritePerTok float64 `json:"cache_write_per_token"`
+	PerCall          bool    `json:"per_call"`
+	PerCallPrice     float64 `json:"per_call_price"`
 }
 
 type stateSnapshot struct {
-	Models   []modelView    `json:"models"`
-	Logs     []reqLog       `json:"logs"`
-	Counts   map[string]int `json:"counts"`
-	Behav    behaviour      `json:"behaviour"`
-	NeedAuth bool           `json:"need_auth"`
+	Models      []modelView    `json:"models"`
+	Logs        []reqLog       `json:"logs"`
+	Counts      map[string]int `json:"counts"`
+	Behav       behaviour      `json:"behaviour"`
+	NeedAuth    bool           `json:"need_auth"`
+	CurrentHash string         `json:"current_hash"` // one_api 响应 sha256，对照 sub2api last_hash
 }
 
 // note 记录一条请求日志 + 计数。调用方不持锁（内部加写锁）。
@@ -287,24 +344,31 @@ func (s *server) pricingJSON(format string) ([]byte, error) {
 
 	switch format {
 	case "one_api", "":
-		// one_api 格式：{"data":[{"model_name","model_ratio","completion_ratio"}]}
-		// struct + slice → 字节稳定。
+		// one_api 格式：{"data":[{"model_name","model_ratio","completion_ratio",
+		// "cache_ratio","create_cache_ratio","quota_type","model_price"}]}
+		// struct + slice → 字节稳定；cache/按次字段靠 omitempty 随模型形态自动出现。
 		resp := struct {
 			Data []model `json:"data"`
 		}{Data: models}
 		return json.Marshal(resp)
 
 	case "litellm":
-		// litellm 格式：{"<model>":{"input_cost_per_token",...}}
-		// per-token 价与 one_api 推导结果一致，便于对比两种 parser。
+		// litellm 格式：{"<model>":{"input_cost_per_token","output_cost_per_token",
+		// "cache_creation_input_token_cost","cache_read_input_token_cost"}}
+		// 缓存价从模型倍率推导（替代原先硬编码的 ×0.5/×0.1），与 one_api 推导对齐。
 		m := make(map[string]map[string]any, len(models))
 		for _, mm := range models {
-			m[mm.Name] = map[string]any{
-				"input_cost_per_token":            mm.perTokenIn(),
-				"output_cost_per_token":           mm.perTokenOut(),
-				"cache_creation_input_token_cost": mm.perTokenIn() * 0.5,
-				"cache_read_input_token_cost":     mm.perTokenIn() * 0.1,
+			fields := map[string]any{
+				"input_cost_per_token":  mm.perTokenIn(),
+				"output_cost_per_token": mm.perTokenOut(),
 			}
+			if mm.CreateCacheRatio > 0 {
+				fields["cache_creation_input_token_cost"] = mm.perTokenCacheWrite()
+			}
+			if mm.CacheRatio > 0 {
+				fields["cache_read_input_token_cost"] = mm.perTokenCacheRead()
+			}
+			m[mm.Name] = fields
 		}
 		return json.Marshal(m)
 
