@@ -377,7 +377,9 @@ func (s *UpstreamPriceSyncService) fetchRaw(ctx context.Context, src *dbent.Upst
 		req.Header.Set("Authorization", "Bearer "+plainKey)
 	}
 
-	resp, doErr := s.httpClient.Do(req, "", 0, 0)
+	// 与 TestConnection 一致：定价拉取回退环境变量代理（transport 默认直连，被地域封锁的上游需借代理）。
+	proxyURL := resolveProxyFromEnv()
+	resp, doErr := s.httpClient.Do(req, proxyURL, 0, 0)
 	if doErr != nil {
 		return nil, doErr
 	}

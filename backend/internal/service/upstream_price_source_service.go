@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -160,7 +162,7 @@ func (s *UpstreamPriceSourceService) TestConnection(ctx context.Context, src *db
 		return false, 0, fmt.Errorf("decrypt api key: %w", err)
 	}
 
-	body, status, reqErr := s.fetchUpstreamBody(ctx, targetURL, plainKey)
+	body, status, reqErr := s.fetchUpstreamBody(ctx, src.ID, targetURL, plainKey)
 	if reqErr != nil {
 		return false, 0, fmt.Errorf("fetch upstream pricing: %w", reqErr)
 	}
@@ -182,12 +184,18 @@ func (s *UpstreamPriceSourceService) TestConnection(ctx context.Context, src *db
 
 // fetchUpstreamBody 发起 GET 请求并返回响应 body + status。
 // 超时由 upstreamPriceTestConnTimeout 控制。
-func (s *UpstreamPriceSourceService) fetchUpstreamBody(ctx context.Context, targetURL, plainKey string) ([]byte, int, error) {
+func (s *UpstreamPriceSourceService) fetchUpstreamBody(ctx context.Context, sourceID int64, targetURL, plainKey string) ([]byte, int, error) {
 	reqCtx, cancel := context.WithTimeout(ctx, upstreamPriceTestConnTimeout)
 	defer cancel()
 
+	// 诊断路径回退环境变量代理：该网关 transport 默认直连（零值 Proxy 不读 http_proxy），
+	// 而 TestConnection 常用于探测被地域封锁的上游（如 ggniao），需借本地代理才能连通。
+	// 仅作用于 TestConnection/SyncSource 的定价拉取；网关业务请求仍按账号代理配置。
+	proxyURL := resolveProxyFromEnv()
+
 	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, targetURL, nil)
 	if err != nil {
+		slog.Warn("upstream price test: build request failed", "source_id", sourceID, "url", targetURL, "err", err)
 		return nil, 0, err
 	}
 	req.Header.Set("Accept", "application/json")
@@ -195,16 +203,56 @@ func (s *UpstreamPriceSourceService) fetchUpstreamBody(ctx context.Context, targ
 		req.Header.Set("Authorization", "Bearer "+plainKey)
 	}
 
-	resp, doErr := s.httpClient.Do(req, "", 0, 0)
+	proxyLabel := "direct"
+	if proxyURL != "" {
+		proxyLabel = proxyURL
+	}
+	slog.Info("upstream price test: sending request to upstream",
+		"source_id", sourceID, "method", req.Method, "url", targetURL,
+		"has_auth", plainKey != "", "proxy", proxyLabel)
+
+	resp, doErr := s.httpClient.Do(req, proxyURL, 0, 0)
 	if doErr != nil {
+		slog.Warn("upstream price test: upstream request failed",
+			"source_id", sourceID, "url", targetURL, "err", doErr)
 		return nil, 0, doErr
 	}
 	defer func() { _ = resp.Body.Close() }()
 	body, readErr := io.ReadAll(io.LimitReader(resp.Body, 8<<20)) // 8MB 上限，防止恶意超大响应
 	if readErr != nil {
+		slog.Warn("upstream price test: read upstream body failed",
+			"source_id", sourceID, "url", targetURL, "status", resp.StatusCode, "err", readErr)
 		return nil, resp.StatusCode, readErr
 	}
+	slog.Info("upstream price test: upstream responded",
+		"source_id", sourceID, "url", targetURL, "status", resp.StatusCode,
+		"bytes", len(body), "body_preview", previewBody(body, 4096))
 	return body, resp.StatusCode, nil
+}
+
+// previewBody 返回响应 body 的可读预览：截断到 max 字节并在末尾标记，便于在日志中
+// 定位 parser 解析失败等问题（如上游返回了非预期格式）。换行不替换——slog JSON
+// handler 会自动转义，不影响结构化解析。
+func previewBody(body []byte, max int) string {
+	if len(body) <= max {
+		return string(body)
+	}
+	return string(body[:max]) + "...(truncated)"
+}
+
+// resolveProxyFromEnv 返回环境变量配置的代理 URL，用于上游价格 TestConnection/SyncSource
+// 的定价拉取。该网关 transport 默认直连（零值 Proxy 不读 http_proxy），而部分上游
+// （如 ggniao）有地域封锁，需借本地代理才能探测/同步，故在此诊断路径回退读环境变量。
+//
+// 优先级：HTTPS_PROXY > https_proxy > HTTP_PROXY > http_proxy > ALL_PROXY > all_proxy。
+// 注意：本路径不解析 NO_PROXY——如需对某 host 直连，请直接 unset 这些变量。
+func resolveProxyFromEnv() string {
+	for _, k := range []string{"HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"} {
+		if v := strings.TrimSpace(os.Getenv(k)); v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // decryptAPIKey 把密文 api_key 解密为明文。空串返回空串（无需解密）。
