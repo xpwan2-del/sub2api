@@ -103,6 +103,21 @@ func createSecuritySecretIfAbsent(ctx context.Context, client *ent.Client, key, 
 		return "", fmt.Errorf("secret %q must be at least 32 bytes", key)
 	}
 
+	// 先查询是否已存在：若数据库缺少 unique 约束，ON CONFLICT 会直接报错。
+	// 采用 query-first 模式避免对唯一约束的硬依赖。
+	existing, err := client.SecuritySecret.Query().Where(securitysecret.KeyEQ(key)).Only(ctx)
+	if err == nil {
+		storedValue := strings.TrimSpace(existing.Value)
+		if len([]byte(storedValue)) < 32 {
+			return "", fmt.Errorf("stored secret %q must be at least 32 bytes", key)
+		}
+		return storedValue, nil
+	}
+	if !ent.IsNotFound(err) {
+		return "", err
+	}
+
+	// 不存在则尝试插入；保留 ON CONFLICT 作为并发安全防护。
 	if err := client.SecuritySecret.Create().
 		SetKey(key).
 		SetValue(value).
