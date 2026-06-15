@@ -14,6 +14,8 @@ backend/bin/
 backend/server
 backend/sub2api
 backend/main
+# 工具编译产物（独立 Go 模块，可用 go build 重新生成）
+tools/mock_price_backend/mock_price_backend
 
 # Go 测试二进制
 *.test
