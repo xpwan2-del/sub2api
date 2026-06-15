@@ -503,7 +503,6 @@ export default {
       create: 'New Source',
       edit: 'Edit Source',
       name: 'Name',
-      platform: 'Platform',
       baseUrl: 'Base URL',
       pricingEndpoint: 'Pricing Endpoint',
       parserType: 'Parser Type',

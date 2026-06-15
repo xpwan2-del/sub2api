@@ -11,7 +11,6 @@ export type UpstreamPriceParserType = 'openai' | 'anthropic' | 'gemini' | 'custo
 export interface UpstreamPriceSource {
   id: number
   name: string
-  platform: string
   base_url: string
   pricing_endpoint: string
   parser_type: UpstreamPriceParserType | string
@@ -29,7 +28,6 @@ export interface UpstreamPriceSource {
 /** 创建价格源请求（CreateSourceRequest） */
 export interface CreateUpstreamPriceSourceRequest {
   name: string
-  platform?: string
   base_url: string
   pricing_endpoint: string
   api_key?: string
@@ -43,7 +41,6 @@ export interface CreateUpstreamPriceSourceRequest {
 /** 更新价格源请求（UpdateSourceRequest，全部可选） */
 export interface UpdateUpstreamPriceSourceRequest {
   name?: string
-  platform?: string
   base_url?: string
   pricing_endpoint?: string
   api_key?: string

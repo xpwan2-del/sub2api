@@ -39,7 +39,6 @@ func (r *upstreamPriceRepository) CreateSource(ctx context.Context, s *dbent.Ups
 
 	created, err := client.UpstreamPriceSource.Create().
 		SetName(s.Name).
-		SetPlatform(s.Platform).
 		SetBaseURL(s.BaseURL).
 		SetPricingEndpoint(s.PricingEndpoint).
 		SetAPIKey(s.APIKey).
@@ -67,7 +66,6 @@ func (r *upstreamPriceRepository) UpdateSource(ctx context.Context, s *dbent.Ups
 
 	builder := client.UpstreamPriceSource.UpdateOneID(s.ID).
 		SetName(s.Name).
-		SetPlatform(s.Platform).
 		SetBaseURL(s.BaseURL).
 		SetPricingEndpoint(s.PricingEndpoint).
 		SetAPIKey(s.APIKey).

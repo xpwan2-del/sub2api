@@ -78,15 +78,9 @@
       @close="showDialog = false"
     >
       <form id="upstream-source-form" @submit.prevent="handleSave" class="space-y-4">
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="input-label">{{ t('upstreamPricing.sources.name') }} <span class="text-red-500">*</span></label>
-            <input v-model="form.name" type="text" class="input" required maxlength="100" />
-          </div>
-          <div>
-            <label class="input-label">{{ t('upstreamPricing.sources.platform') }}</label>
-            <input v-model="form.platform" type="text" class="input" placeholder="openai / anthropic / gemini" />
-          </div>
+        <div>
+          <label class="input-label">{{ t('upstreamPricing.sources.name') }} <span class="text-red-500">*</span></label>
+          <input v-model="form.name" type="text" class="input" required maxlength="100" />
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -201,7 +195,6 @@ const editing = ref<UpstreamPriceSource | null>(null)
 
 interface SourceForm {
   name: string
-  platform: string
   base_url: string
   pricing_endpoint: string
   api_key: string
@@ -212,7 +205,6 @@ interface SourceForm {
 
 const form = reactive<SourceForm>({
   name: '',
-  platform: '',
   base_url: '',
   pricing_endpoint: '',
   api_key: '',
@@ -233,7 +225,6 @@ const parserOptions = computed(() => [
 const columns = computed((): Column[] => [
   { key: 'id', label: 'ID' },
   { key: 'name', label: t('upstreamPricing.sources.name') },
-  { key: 'platform', label: t('upstreamPricing.sources.platform') },
   { key: 'parser_type', label: t('upstreamPricing.sources.parserType') },
   { key: 'enabled', label: t('upstreamPricing.sources.enabled') },
   { key: 'sync_interval_minutes', label: t('upstreamPricing.sources.syncInterval') },
@@ -287,7 +278,6 @@ function openEdit(src: UpstreamPriceSource | null) {
   if (src) {
     Object.assign(form, {
       name: src.name,
-      platform: src.platform || '',
       base_url: src.base_url,
       pricing_endpoint: src.pricing_endpoint,
       api_key: '',
@@ -303,7 +293,6 @@ function openEdit(src: UpstreamPriceSource | null) {
   } else {
     Object.assign(form, {
       name: '',
-      platform: '',
       base_url: '',
       pricing_endpoint: '',
       api_key: '',
@@ -357,7 +346,6 @@ async function handleSave() {
     if (editing.value) {
       const payload: Partial<CreateUpstreamPriceSourceRequest> = {
         name: form.name,
-        platform: form.platform || undefined,
         base_url: form.base_url,
         pricing_endpoint: form.pricing_endpoint,
         parser_type: form.parser_type,
@@ -371,7 +359,6 @@ async function handleSave() {
     } else {
       const payload: CreateUpstreamPriceSourceRequest = {
         name: form.name,
-        platform: form.platform || undefined,
         base_url: form.base_url,
         pricing_endpoint: form.pricing_endpoint,
         api_key: form.api_key.trim() || undefined,

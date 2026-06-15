@@ -39,7 +39,6 @@ func mustCreateUpstreamSource(t *testing.T, ctx context.Context, repo service.Up
 	t.Helper()
 	src := &dbent.UpstreamPriceSource{
 		Name:                name,
-		Platform:            "openai",
 		BaseURL:             "https://api.example.com",
 		PricingEndpoint:     "/v1/prices",
 		APIKey:              "secret-key",
@@ -70,7 +69,6 @@ func TestUpstreamPriceRepo_CreateAndGetSource(t *testing.T) {
 	got, err := repo.GetSource(ctx, src.ID)
 	require.NoError(t, err)
 	require.Equal(t, "src1", got.Name)
-	require.Equal(t, "openai", got.Platform)
 	require.True(t, got.Enabled)
 	require.Equal(t, 30, got.SyncIntervalMinutes)
 }

@@ -1577,7 +1577,6 @@ var (
 	UpstreamPriceSourcesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "name", Type: field.TypeString, Size: 100},
-		{Name: "platform", Type: field.TypeString, Size: 50, Default: "mixed"},
 		{Name: "base_url", Type: field.TypeString, Size: 500},
 		{Name: "pricing_endpoint", Type: field.TypeString, Size: 500, Default: "/api/pricing"},
 		{Name: "api_key", Type: field.TypeString, Nullable: true, Size: 500},
@@ -1604,12 +1603,12 @@ var (
 			{
 				Name:    "upstreampricesource_enabled",
 				Unique:  false,
-				Columns: []*schema.Column{UpstreamPriceSourcesColumns[12]},
+				Columns: []*schema.Column{UpstreamPriceSourcesColumns[11]},
 			},
 			{
 				Name:    "upstreampricesource_last_sync_at",
 				Unique:  false,
-				Columns: []*schema.Column{UpstreamPriceSourcesColumns[13]},
+				Columns: []*schema.Column{UpstreamPriceSourcesColumns[12]},
 			},
 		},
 	}

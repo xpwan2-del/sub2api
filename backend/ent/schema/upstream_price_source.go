@@ -34,10 +34,6 @@ func (UpstreamPriceSource) Fields() []ent.Field {
 			MaxLen(100).
 			NotEmpty().
 			Comment("来源名称"),
-		field.String("platform").
-			MaxLen(50).
-			Default("mixed").
-			Comment("所属平台，mixed 表示多平台混合"),
 		field.String("base_url").
 			MaxLen(500).
 			NotEmpty().

@@ -43,7 +43,6 @@ func NewUpstreamPriceHandler(
 // CreateSourceRequest mirrors UpstreamPriceSource editable fields.
 type CreateSourceRequest struct {
 	Name                string                 `json:"name" binding:"required,max=100"`
-	Platform            string                 `json:"platform"`
 	BaseURL             string                 `json:"base_url" binding:"required,url"`
 	PricingEndpoint     string                 `json:"pricing_endpoint" binding:"required"`
 	APIKey              string                 `json:"api_key"`
@@ -57,7 +56,6 @@ type CreateSourceRequest struct {
 // UpdateSourceRequest mirrors editable fields for updates (all optional).
 type UpdateSourceRequest struct {
 	Name                *string                `json:"name" binding:"omitempty,max=100"`
-	Platform            *string                `json:"platform"`
 	BaseURL             *string                `json:"base_url" binding:"omitempty,url"`
 	PricingEndpoint     *string                `json:"pricing_endpoint"`
 	APIKey              *string                `json:"api_key"`
@@ -362,7 +360,6 @@ func adminUserID(c *gin.Context) int64 {
 type sourceResponse struct {
 	ID                  int64                  `json:"id"`
 	Name                string                 `json:"name"`
-	Platform            string                 `json:"platform"`
 	BaseURL             string                 `json:"base_url"`
 	PricingEndpoint     string                 `json:"pricing_endpoint"`
 	ParserType          string                 `json:"parser_type"`
@@ -384,7 +381,6 @@ func sourceToResponse(s *dbent.UpstreamPriceSource) *sourceResponse {
 	r := &sourceResponse{
 		ID:                  s.ID,
 		Name:                s.Name,
-		Platform:            s.Platform,
 		BaseURL:             s.BaseURL,
 		PricingEndpoint:     s.PricingEndpoint,
 		ParserType:          s.ParserType,
@@ -413,7 +409,6 @@ func sourceToResponse(s *dbent.UpstreamPriceSource) *sourceResponse {
 func buildSourceFromCreate(req *CreateSourceRequest) *dbent.UpstreamPriceSource {
 	return &dbent.UpstreamPriceSource{
 		Name:                req.Name,
-		Platform:            req.Platform,
 		BaseURL:             req.BaseURL,
 		PricingEndpoint:     req.PricingEndpoint,
 		APIKey:              req.APIKey,
@@ -428,9 +423,6 @@ func buildSourceFromCreate(req *CreateSourceRequest) *dbent.UpstreamPriceSource 
 func applySourceUpdate(s *dbent.UpstreamPriceSource, req *UpdateSourceRequest) {
 	if req.Name != nil {
 		s.Name = *req.Name
-	}
-	if req.Platform != nil {
-		s.Platform = *req.Platform
 	}
 	if req.BaseURL != nil {
 		s.BaseURL = *req.BaseURL

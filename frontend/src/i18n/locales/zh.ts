@@ -503,7 +503,6 @@ export default {
       create: '新建价格源',
       edit: '编辑价格源',
       name: '名称',
-      platform: '平台',
       baseUrl: 'Base URL',
       pricingEndpoint: '价格接口路径',
       parserType: '解析器类型',

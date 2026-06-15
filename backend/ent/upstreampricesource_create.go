@@ -30,20 +30,6 @@ func (_c *UpstreamPriceSourceCreate) SetName(v string) *UpstreamPriceSourceCreat
 	return _c
 }
 
-// SetPlatform sets the "platform" field.
-func (_c *UpstreamPriceSourceCreate) SetPlatform(v string) *UpstreamPriceSourceCreate {
-	_c.mutation.SetPlatform(v)
-	return _c
-}
-
-// SetNillablePlatform sets the "platform" field if the given value is not nil.
-func (_c *UpstreamPriceSourceCreate) SetNillablePlatform(v *string) *UpstreamPriceSourceCreate {
-	if v != nil {
-		_c.SetPlatform(*v)
-	}
-	return _c
-}
-
 // SetBaseURL sets the "base_url" field.
 func (_c *UpstreamPriceSourceCreate) SetBaseURL(v string) *UpstreamPriceSourceCreate {
 	_c.mutation.SetBaseURL(v)
@@ -309,10 +295,6 @@ func (_c *UpstreamPriceSourceCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *UpstreamPriceSourceCreate) defaults() {
-	if _, ok := _c.mutation.Platform(); !ok {
-		v := upstreampricesource.DefaultPlatform
-		_c.mutation.SetPlatform(v)
-	}
 	if _, ok := _c.mutation.PricingEndpoint(); !ok {
 		v := upstreampricesource.DefaultPricingEndpoint
 		_c.mutation.SetPricingEndpoint(v)
@@ -359,14 +341,6 @@ func (_c *UpstreamPriceSourceCreate) check() error {
 	if v, ok := _c.mutation.Name(); ok {
 		if err := upstreampricesource.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "UpstreamPriceSource.name": %w`, err)}
-		}
-	}
-	if _, ok := _c.mutation.Platform(); !ok {
-		return &ValidationError{Name: "platform", err: errors.New(`ent: missing required field "UpstreamPriceSource.platform"`)}
-	}
-	if v, ok := _c.mutation.Platform(); ok {
-		if err := upstreampricesource.PlatformValidator(v); err != nil {
-			return &ValidationError{Name: "platform", err: fmt.Errorf(`ent: validator failed for field "UpstreamPriceSource.platform": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.BaseURL(); !ok {
@@ -464,10 +438,6 @@ func (_c *UpstreamPriceSourceCreate) createSpec() (*UpstreamPriceSource, *sqlgra
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(upstreampricesource.FieldName, field.TypeString, value)
 		_node.Name = value
-	}
-	if value, ok := _c.mutation.Platform(); ok {
-		_spec.SetField(upstreampricesource.FieldPlatform, field.TypeString, value)
-		_node.Platform = value
 	}
 	if value, ok := _c.mutation.BaseURL(); ok {
 		_spec.SetField(upstreampricesource.FieldBaseURL, field.TypeString, value)
@@ -626,18 +596,6 @@ func (u *UpstreamPriceSourceUpsert) SetName(v string) *UpstreamPriceSourceUpsert
 // UpdateName sets the "name" field to the value that was provided on create.
 func (u *UpstreamPriceSourceUpsert) UpdateName() *UpstreamPriceSourceUpsert {
 	u.SetExcluded(upstreampricesource.FieldName)
-	return u
-}
-
-// SetPlatform sets the "platform" field.
-func (u *UpstreamPriceSourceUpsert) SetPlatform(v string) *UpstreamPriceSourceUpsert {
-	u.Set(upstreampricesource.FieldPlatform, v)
-	return u
-}
-
-// UpdatePlatform sets the "platform" field to the value that was provided on create.
-func (u *UpstreamPriceSourceUpsert) UpdatePlatform() *UpstreamPriceSourceUpsert {
-	u.SetExcluded(upstreampricesource.FieldPlatform)
 	return u
 }
 
@@ -931,20 +889,6 @@ func (u *UpstreamPriceSourceUpsertOne) SetName(v string) *UpstreamPriceSourceUps
 func (u *UpstreamPriceSourceUpsertOne) UpdateName() *UpstreamPriceSourceUpsertOne {
 	return u.Update(func(s *UpstreamPriceSourceUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetPlatform sets the "platform" field.
-func (u *UpstreamPriceSourceUpsertOne) SetPlatform(v string) *UpstreamPriceSourceUpsertOne {
-	return u.Update(func(s *UpstreamPriceSourceUpsert) {
-		s.SetPlatform(v)
-	})
-}
-
-// UpdatePlatform sets the "platform" field to the value that was provided on create.
-func (u *UpstreamPriceSourceUpsertOne) UpdatePlatform() *UpstreamPriceSourceUpsertOne {
-	return u.Update(func(s *UpstreamPriceSourceUpsert) {
-		s.UpdatePlatform()
 	})
 }
 
@@ -1443,20 +1387,6 @@ func (u *UpstreamPriceSourceUpsertBulk) SetName(v string) *UpstreamPriceSourceUp
 func (u *UpstreamPriceSourceUpsertBulk) UpdateName() *UpstreamPriceSourceUpsertBulk {
 	return u.Update(func(s *UpstreamPriceSourceUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetPlatform sets the "platform" field.
-func (u *UpstreamPriceSourceUpsertBulk) SetPlatform(v string) *UpstreamPriceSourceUpsertBulk {
-	return u.Update(func(s *UpstreamPriceSourceUpsert) {
-		s.SetPlatform(v)
-	})
-}
-
-// UpdatePlatform sets the "platform" field to the value that was provided on create.
-func (u *UpstreamPriceSourceUpsertBulk) UpdatePlatform() *UpstreamPriceSourceUpsertBulk {
-	return u.Update(func(s *UpstreamPriceSourceUpsert) {
-		s.UpdatePlatform()
 	})
 }
 

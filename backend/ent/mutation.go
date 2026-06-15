@@ -43375,7 +43375,6 @@ type UpstreamPriceSourceMutation struct {
 	typ                      string
 	id                       *int64
 	name                     *string
-	platform                 *string
 	base_url                 *string
 	pricing_endpoint         *string
 	api_key                  *string
@@ -43539,42 +43538,6 @@ func (m *UpstreamPriceSourceMutation) OldName(ctx context.Context) (v string, er
 // ResetName resets all changes to the "name" field.
 func (m *UpstreamPriceSourceMutation) ResetName() {
 	m.name = nil
-}
-
-// SetPlatform sets the "platform" field.
-func (m *UpstreamPriceSourceMutation) SetPlatform(s string) {
-	m.platform = &s
-}
-
-// Platform returns the value of the "platform" field in the mutation.
-func (m *UpstreamPriceSourceMutation) Platform() (r string, exists bool) {
-	v := m.platform
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPlatform returns the old "platform" field's value of the UpstreamPriceSource entity.
-// If the UpstreamPriceSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UpstreamPriceSourceMutation) OldPlatform(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPlatform is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPlatform requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPlatform: %w", err)
-	}
-	return oldValue.Platform, nil
-}
-
-// ResetPlatform resets all changes to the "platform" field.
-func (m *UpstreamPriceSourceMutation) ResetPlatform() {
-	m.platform = nil
 }
 
 // SetBaseURL sets the "base_url" field.
@@ -44433,12 +44396,9 @@ func (m *UpstreamPriceSourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UpstreamPriceSourceMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 17)
 	if m.name != nil {
 		fields = append(fields, upstreampricesource.FieldName)
-	}
-	if m.platform != nil {
-		fields = append(fields, upstreampricesource.FieldPlatform)
 	}
 	if m.base_url != nil {
 		fields = append(fields, upstreampricesource.FieldBaseURL)
@@ -44498,8 +44458,6 @@ func (m *UpstreamPriceSourceMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case upstreampricesource.FieldName:
 		return m.Name()
-	case upstreampricesource.FieldPlatform:
-		return m.Platform()
 	case upstreampricesource.FieldBaseURL:
 		return m.BaseURL()
 	case upstreampricesource.FieldPricingEndpoint:
@@ -44543,8 +44501,6 @@ func (m *UpstreamPriceSourceMutation) OldField(ctx context.Context, name string)
 	switch name {
 	case upstreampricesource.FieldName:
 		return m.OldName(ctx)
-	case upstreampricesource.FieldPlatform:
-		return m.OldPlatform(ctx)
 	case upstreampricesource.FieldBaseURL:
 		return m.OldBaseURL(ctx)
 	case upstreampricesource.FieldPricingEndpoint:
@@ -44592,13 +44548,6 @@ func (m *UpstreamPriceSourceMutation) SetField(name string, value ent.Value) err
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
-		return nil
-	case upstreampricesource.FieldPlatform:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPlatform(v)
 		return nil
 	case upstreampricesource.FieldBaseURL:
 		v, ok := value.(string)
@@ -44841,9 +44790,6 @@ func (m *UpstreamPriceSourceMutation) ResetField(name string) error {
 	switch name {
 	case upstreampricesource.FieldName:
 		m.ResetName()
-		return nil
-	case upstreampricesource.FieldPlatform:
-		m.ResetPlatform()
 		return nil
 	case upstreampricesource.FieldBaseURL:
 		m.ResetBaseURL()

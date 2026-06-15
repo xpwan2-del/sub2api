@@ -16,8 +16,6 @@ const (
 	FieldID = "id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldPlatform holds the string denoting the platform field in the database.
-	FieldPlatform = "platform"
 	// FieldBaseURL holds the string denoting the base_url field in the database.
 	FieldBaseURL = "base_url"
 	// FieldPricingEndpoint holds the string denoting the pricing_endpoint field in the database.
@@ -76,7 +74,6 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldName,
-	FieldPlatform,
 	FieldBaseURL,
 	FieldPricingEndpoint,
 	FieldAPIKey,
@@ -108,10 +105,6 @@ func ValidColumn(column string) bool {
 var (
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
-	// DefaultPlatform holds the default value on creation for the "platform" field.
-	DefaultPlatform string
-	// PlatformValidator is a validator for the "platform" field. It is called by the builders before save.
-	PlatformValidator func(string) error
 	// BaseURLValidator is a validator for the "base_url" field. It is called by the builders before save.
 	BaseURLValidator func(string) error
 	// DefaultPricingEndpoint holds the default value on creation for the "pricing_endpoint" field.
@@ -159,11 +152,6 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
-}
-
-// ByPlatform orders the results by the platform field.
-func ByPlatform(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPlatform, opts...).ToFunc()
 }
 
 // ByBaseURL orders the results by the base_url field.

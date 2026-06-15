@@ -20,8 +20,6 @@ type UpstreamPriceSource struct {
 	ID int64 `json:"id,omitempty"`
 	// 来源名称
 	Name string `json:"name,omitempty"`
-	// 所属平台，mixed 表示多平台混合
-	Platform string `json:"platform,omitempty"`
 	// 上游基础地址，如 https://api.example.com
 	BaseURL string `json:"base_url,omitempty"`
 	// 价格接口路径
@@ -102,7 +100,7 @@ func (*UpstreamPriceSource) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case upstreampricesource.FieldID, upstreampricesource.FieldSyncIntervalMinutes, upstreampricesource.FieldCooldownMinutes:
 			values[i] = new(sql.NullInt64)
-		case upstreampricesource.FieldName, upstreampricesource.FieldPlatform, upstreampricesource.FieldBaseURL, upstreampricesource.FieldPricingEndpoint, upstreampricesource.FieldAPIKey, upstreampricesource.FieldParserType, upstreampricesource.FieldLastSyncStatus, upstreampricesource.FieldLastSyncError, upstreampricesource.FieldLastHash:
+		case upstreampricesource.FieldName, upstreampricesource.FieldBaseURL, upstreampricesource.FieldPricingEndpoint, upstreampricesource.FieldAPIKey, upstreampricesource.FieldParserType, upstreampricesource.FieldLastSyncStatus, upstreampricesource.FieldLastSyncError, upstreampricesource.FieldLastHash:
 			values[i] = new(sql.NullString)
 		case upstreampricesource.FieldLastSyncAt, upstreampricesource.FieldCreatedAt, upstreampricesource.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -132,12 +130,6 @@ func (_m *UpstreamPriceSource) assignValues(columns []string, values []any) erro
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				_m.Name = value.String
-			}
-		case upstreampricesource.FieldPlatform:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field platform", values[i])
-			} else if value.Valid {
-				_m.Platform = value.String
 			}
 		case upstreampricesource.FieldBaseURL:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -288,9 +280,6 @@ func (_m *UpstreamPriceSource) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
-	builder.WriteString(", ")
-	builder.WriteString("platform=")
-	builder.WriteString(_m.Platform)
 	builder.WriteString(", ")
 	builder.WriteString("base_url=")
 	builder.WriteString(_m.BaseURL)

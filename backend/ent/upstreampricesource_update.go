@@ -44,20 +44,6 @@ func (_u *UpstreamPriceSourceUpdate) SetNillableName(v *string) *UpstreamPriceSo
 	return _u
 }
 
-// SetPlatform sets the "platform" field.
-func (_u *UpstreamPriceSourceUpdate) SetPlatform(v string) *UpstreamPriceSourceUpdate {
-	_u.mutation.SetPlatform(v)
-	return _u
-}
-
-// SetNillablePlatform sets the "platform" field if the given value is not nil.
-func (_u *UpstreamPriceSourceUpdate) SetNillablePlatform(v *string) *UpstreamPriceSourceUpdate {
-	if v != nil {
-		_u.SetPlatform(*v)
-	}
-	return _u
-}
-
 // SetBaseURL sets the "base_url" field.
 func (_u *UpstreamPriceSourceUpdate) SetBaseURL(v string) *UpstreamPriceSourceUpdate {
 	_u.mutation.SetBaseURL(v)
@@ -421,11 +407,6 @@ func (_u *UpstreamPriceSourceUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "UpstreamPriceSource.name": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.Platform(); ok {
-		if err := upstreampricesource.PlatformValidator(v); err != nil {
-			return &ValidationError{Name: "platform", err: fmt.Errorf(`ent: validator failed for field "UpstreamPriceSource.platform": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.BaseURL(); ok {
 		if err := upstreampricesource.BaseURLValidator(v); err != nil {
 			return &ValidationError{Name: "base_url", err: fmt.Errorf(`ent: validator failed for field "UpstreamPriceSource.base_url": %w`, err)}
@@ -478,9 +459,6 @@ func (_u *UpstreamPriceSourceUpdate) sqlSave(ctx context.Context) (_node int, er
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(upstreampricesource.FieldName, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.Platform(); ok {
-		_spec.SetField(upstreampricesource.FieldPlatform, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.BaseURL(); ok {
 		_spec.SetField(upstreampricesource.FieldBaseURL, field.TypeString, value)
@@ -674,20 +652,6 @@ func (_u *UpstreamPriceSourceUpdateOne) SetName(v string) *UpstreamPriceSourceUp
 func (_u *UpstreamPriceSourceUpdateOne) SetNillableName(v *string) *UpstreamPriceSourceUpdateOne {
 	if v != nil {
 		_u.SetName(*v)
-	}
-	return _u
-}
-
-// SetPlatform sets the "platform" field.
-func (_u *UpstreamPriceSourceUpdateOne) SetPlatform(v string) *UpstreamPriceSourceUpdateOne {
-	_u.mutation.SetPlatform(v)
-	return _u
-}
-
-// SetNillablePlatform sets the "platform" field if the given value is not nil.
-func (_u *UpstreamPriceSourceUpdateOne) SetNillablePlatform(v *string) *UpstreamPriceSourceUpdateOne {
-	if v != nil {
-		_u.SetPlatform(*v)
 	}
 	return _u
 }
@@ -1068,11 +1032,6 @@ func (_u *UpstreamPriceSourceUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "UpstreamPriceSource.name": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.Platform(); ok {
-		if err := upstreampricesource.PlatformValidator(v); err != nil {
-			return &ValidationError{Name: "platform", err: fmt.Errorf(`ent: validator failed for field "UpstreamPriceSource.platform": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.BaseURL(); ok {
 		if err := upstreampricesource.BaseURLValidator(v); err != nil {
 			return &ValidationError{Name: "base_url", err: fmt.Errorf(`ent: validator failed for field "UpstreamPriceSource.base_url": %w`, err)}
@@ -1142,9 +1101,6 @@ func (_u *UpstreamPriceSourceUpdateOne) sqlSave(ctx context.Context) (_node *Ups
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(upstreampricesource.FieldName, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.Platform(); ok {
-		_spec.SetField(upstreampricesource.FieldPlatform, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.BaseURL(); ok {
 		_spec.SetField(upstreampricesource.FieldBaseURL, field.TypeString, value)
