@@ -162,6 +162,9 @@ func buildPublicModelCatalog(channels []service.AvailableChannel) []publicModelC
 				continue
 			}
 
+			pricing := toPublicPricing(model.Pricing)
+			scalePublicPricing(pricing, publicCatalogDisplayMultiplier(ch.Groups, model.Platform, pricing))
+
 			item := publicModelCatalogItem{
 				Name:         model.Name,
 				Provider:     providerLabel(model.Platform),
@@ -169,7 +172,7 @@ func buildPublicModelCatalog(channels []service.AvailableChannel) []publicModelC
 				Status:       "available",
 				Description:  publicModelDescription(model.Name, model.Platform, model.Pricing),
 				Capabilities: publicModelCapabilities(model.Name, model.Platform, model.Pricing),
-				Pricing:      toPublicPricing(model.Pricing),
+				Pricing:      pricing,
 			}
 
 			key := strings.ToLower(model.Platform) + "\x00" + strings.ToLower(model.Name)
@@ -196,6 +199,55 @@ func buildPublicModelCatalog(channels []service.AvailableChannel) []publicModelC
 	})
 
 	return out
+}
+
+func publicCatalogDisplayMultiplier(groups []service.AvailableGroupRef, platform string, pricing *publicModelPricing) float64 {
+	multiplier := 1.0
+	found := false
+	for _, group := range groups {
+		if group.Platform != platform {
+			continue
+		}
+		candidate := group.RateMultiplier
+		if pricing != nil && pricing.BillingMode == string(service.BillingModeImage) && group.ImageRateIndependent {
+			candidate = group.ImageRateMultiplier
+		}
+		if candidate < 0 {
+			candidate = 0
+		}
+		if !found || candidate < multiplier {
+			multiplier = candidate
+			found = true
+		}
+	}
+	return multiplier
+}
+
+func scalePublicPricing(pricing *publicModelPricing, multiplier float64) {
+	if pricing == nil || multiplier == 1 {
+		return
+	}
+	pricing.InputPrice = scaledFloatPtr(pricing.InputPrice, multiplier)
+	pricing.OutputPrice = scaledFloatPtr(pricing.OutputPrice, multiplier)
+	pricing.CacheWritePrice = scaledFloatPtr(pricing.CacheWritePrice, multiplier)
+	pricing.CacheReadPrice = scaledFloatPtr(pricing.CacheReadPrice, multiplier)
+	pricing.ImageOutputPrice = scaledFloatPtr(pricing.ImageOutputPrice, multiplier)
+	pricing.PerRequestPrice = scaledFloatPtr(pricing.PerRequestPrice, multiplier)
+	for i := range pricing.Intervals {
+		pricing.Intervals[i].InputPrice = scaledFloatPtr(pricing.Intervals[i].InputPrice, multiplier)
+		pricing.Intervals[i].OutputPrice = scaledFloatPtr(pricing.Intervals[i].OutputPrice, multiplier)
+		pricing.Intervals[i].CacheWritePrice = scaledFloatPtr(pricing.Intervals[i].CacheWritePrice, multiplier)
+		pricing.Intervals[i].CacheReadPrice = scaledFloatPtr(pricing.Intervals[i].CacheReadPrice, multiplier)
+		pricing.Intervals[i].PerRequestPrice = scaledFloatPtr(pricing.Intervals[i].PerRequestPrice, multiplier)
+	}
+}
+
+func scaledFloatPtr(value *float64, multiplier float64) *float64 {
+	if value == nil {
+		return nil
+	}
+	scaled := *value * multiplier
+	return &scaled
 }
 
 func toPublicPricing(p *service.ChannelModelPricing) *publicModelPricing {
