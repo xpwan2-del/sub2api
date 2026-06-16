@@ -3,24 +3,56 @@ package handler
 import (
 	"testing"
 
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/stretchr/testify/require"
 )
 
-func TestBuildPublicModelCatalogFromGatewayModels(t *testing.T) {
-	catalog := buildPublicModelCatalogFromGatewayModels([]string{
-		"grok-imagine-video",
-		"claude-sonnet-4",
-		"",
-		"gpt-4o-mini",
-	})
+func TestBuildPublicModelCatalogEmptyChannelsReturnEmptyCatalog(t *testing.T) {
+	catalog := buildPublicModelCatalog(nil)
+	require.Empty(t, catalog)
+}
 
-	require.Len(t, catalog, 3)
-	require.Equal(t, "claude-sonnet-4", catalog[0].Name)
-	require.Equal(t, "anthropic", catalog[0].Platform)
-	require.Contains(t, catalog[0].Capabilities, "coding")
-	require.Equal(t, "gpt-4o-mini", catalog[1].Name)
-	require.Equal(t, "openai", catalog[1].Platform)
-	require.Equal(t, "grok-imagine-video", catalog[2].Name)
-	require.Equal(t, "xai", catalog[2].Platform)
-	require.Contains(t, catalog[2].Capabilities, "multimodal")
+func TestBuildPublicModelCatalogDeduplicatesByPlatformAndModel(t *testing.T) {
+	cheap := 0.000001
+	expensive := 0.00001
+	channels := []service.AvailableChannel{
+		{
+			Status: service.StatusActive,
+			SupportedModels: []service.SupportedModel{
+				{
+					Name:     "gpt-4o-mini",
+					Platform: service.PlatformOpenAI,
+					Pricing: &service.ChannelModelPricing{
+						BillingMode: service.BillingModeToken,
+						InputPrice:  &expensive,
+					},
+				},
+				{
+					Name:     "gpt-4o-mini",
+					Platform: service.PlatformOpenAI,
+					Pricing: &service.ChannelModelPricing{
+						BillingMode: service.BillingModeToken,
+						InputPrice:  &cheap,
+					},
+				},
+			},
+		},
+		{
+			Status: "inactive",
+			SupportedModels: []service.SupportedModel{
+				{
+					Name:     "hidden-model",
+					Platform: service.PlatformOpenAI,
+				},
+			},
+		},
+	}
+
+	catalog := buildPublicModelCatalog(channels)
+
+	require.Len(t, catalog, 1)
+	require.Equal(t, "gpt-4o-mini", catalog[0].Name)
+	require.Equal(t, service.PlatformOpenAI, catalog[0].Platform)
+	require.NotNil(t, catalog[0].Pricing)
+	require.Equal(t, cheap, *catalog[0].Pricing.InputPrice)
 }

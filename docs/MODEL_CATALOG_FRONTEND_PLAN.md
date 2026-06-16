@@ -6,6 +6,22 @@ Build a model catalog page that helps users understand which models TOP-AI curre
 
 This page is not a global model encyclopedia. It is a product shelf based on models that are already available through our configured upstream channels and sellable pricing rules.
 
+## Current Status
+
+- [x] Public route `/models` exists.
+- [x] Public frontend calls `GET /api/v1/public/models/catalog`.
+- [x] Public catalog data is separated from Canvas model selection.
+- [x] Backend returns only a safe public DTO for display.
+- [x] Backend no longer falls back to TOP-AI Gateway `/v1/models` when public catalog data is empty.
+- [x] Duplicate model rows are grouped/deduplicated by platform and model name.
+- [x] Empty public catalog renders as an empty state instead of fake data.
+
+Remaining production checks:
+
+- [ ] Confirm public channel/pricing data is configured for the models TOP-AI wants to sell.
+- [ ] Confirm Cloudflare cache/rate limiting for the public catalog endpoint.
+- [ ] Verify `/models` after deployment in Chinese, English, dark mode, light mode, and mobile width.
+
 ## Current Project Structure
 
 The repository already has a documentation directory:
@@ -60,6 +76,7 @@ API placement rules:
 - `publicModels.ts` should use the existing `apiClient` pattern from `frontend/src/api/`.
 - The public catalog frontend must call only the public catalog endpoint.
 - The public catalog frontend must not call `/api/v1/channels/available` or `/api/v1/groups/rates`.
+- The public catalog frontend must not call TOP-AI Gateway `/v1/models`.
 - If backend implementation is added, create a dedicated public catalog handler/service path that returns a strict public DTO.
 - Public API DTOs must be separate from admin DTOs and must contain only fields safe for public display.
 
@@ -86,6 +103,13 @@ Preferred public endpoint:
 - `GET /api/v1/public/models/catalog`
 
 This endpoint should be backed by existing channel pricing and supported-model data, but it must return only public display fields.
+
+Important boundary:
+
+- This endpoint is for public product display only.
+- It must not be used by Infinite Canvas to decide available models.
+- It must not fallback to gateway/account `model_mapping` or TOP-AI `/v1/models`.
+- If no public sellable catalog data is configured, return an empty list.
 
 The existing authenticated data path remains useful as an implementation reference:
 
@@ -121,7 +145,7 @@ Placement:
 - Optionally add a logged-in sidebar entry later, but the primary entry is public `/models`.
 - Keep `/pricing` available as a future alias only if product naming later prefers "pricing".
 
-## Files To Add
+## Implemented Files
 
 Frontend page:
 
@@ -139,12 +163,11 @@ Feature helpers:
 
 - `frontend/src/utils/modelCatalog.ts`
 
-Optional tests:
+Tests:
 
-- `frontend/src/components/models/__tests__/ModelCard.spec.ts`
 - `frontend/src/utils/__tests__/modelCatalog.spec.ts`
 
-## Files To Modify
+## Modified Files
 
 - `frontend/src/router/index.ts`
   - Register `/models`.
@@ -155,8 +178,8 @@ Optional tests:
 - `frontend/src/i18n/locales/en.ts`
   - Add English copy for the same keys.
 
-- Existing navigation layout if the app menu is configured there.
-  - Add a menu entry only if the current project has a central nav definition.
+- Existing navigation/home layout.
+  - Add public navigation/CTA entries only through existing layout files.
 
 ## Data Source
 
@@ -187,6 +210,7 @@ Data availability rules:
 - Render only public sale price data returned by the public catalog API.
 - If the public catalog is disabled or the backend returns an empty list, show an empty state instead of fallback fake data.
 - Do not include user-exclusive groups or user-specific pricing in the public page.
+- Do not infer availability from gateway accounts, account `model_mapping`, Canvas settings, or upstream probing.
 
 Input shape:
 
@@ -488,21 +512,28 @@ The public catalog API should return only:
 
 It should not return internal routing or upstream data.
 
-## Implementation Order
+## Completed Implementation
 
-1. Add `docs/MODEL_CATALOG_FRONTEND_PLAN.md`.
-2. Add the public catalog API wrapper in `frontend/src/api/publicModels.ts`.
-3. Add transform utilities in `frontend/src/utils/modelCatalog.ts`.
-4. Add model catalog components under `frontend/src/components/models/`.
-5. Add `frontend/src/views/public/ModelCatalogView.vue`.
-6. Register `/models` in `frontend/src/router/index.ts` as a public route.
-7. Add a home-page entry to `/models`.
-8. Add i18n copy in Chinese and English.
-9. Run frontend typecheck and targeted tests.
-10. Open `/models` locally and verify card layout, filters, language switch, dark/light mode, and mobile width.
+- [x] Public catalog API wrapper exists in `frontend/src/api/publicModels.ts`.
+- [x] Transform utilities exist in `frontend/src/utils/modelCatalog.ts`.
+- [x] Model catalog components are under `frontend/src/components/models/`.
+- [x] Public page exists at `frontend/src/views/public/ModelCatalogView.vue`.
+- [x] `/models` is registered as a public route.
+- [x] Home/navigation entry exists through the project’s existing layout.
+- [x] Chinese and English copy exists in the existing i18n files.
+- [x] Frontend production build passed locally.
+- [x] Public catalog backend no-fallback behavior is covered by backend tests.
+
+Remaining verification:
+
+- [ ] Open `/models` after deployment and verify card layout, filters, language switch, dark/light mode, and mobile width.
+- [ ] Configure real public sellable model/pricing data and verify cards render expected products.
+- [ ] Confirm production cache/rate limiting for the public catalog endpoint.
 
 ## Verification Checklist
 
+- Public catalog API returns an empty list when no public catalog data is configured.
+- Public catalog API does not fallback to gateway/account models.
 - No unavailable platform appears in filters.
 - No unavailable billing mode appears in filters.
 - No unavailable capability appears in filters.

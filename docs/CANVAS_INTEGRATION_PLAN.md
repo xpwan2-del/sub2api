@@ -17,8 +17,9 @@
 - 不允许把业务逻辑塞进页面组件、路由文件或临时脚本里。
 - 不允许把两个项目的源码互相搬运、复制或混合。
 - 必须按各自项目现有代码规则、目录分层和命名风格开发。
-- 必须同时修完模型来源、模型去重、模型广场边界、画布模型选择、视频网关、R2 结果链路和验收测试。
-- 没有完成最终验收清单前，不算完成。
+- 必须同时修完模型来源、模型去重、模型广场边界、画布模型选择、视频网关和 R2 结果链路。
+- 本地验证通过后，生产环境仍必须按最终验收清单逐项确认。
+- 没有完成最终验收清单前，不算生产完成。
 
 ## Completed. Do Not Rework
 
@@ -43,7 +44,7 @@
 
 以上内容只做回归验证，不重复重构。
 
-## Current Problems To Fix
+## Current Status And Remaining Validation
 
 本地代码闭环状态：
 
@@ -54,30 +55,47 @@
 - [x] sub2api 已补 `POST /v1/videos`、`GET /v1/videos/:id`、`GET /v1/videos/:id/content`，并挂到现有网关 routes/handler/service。
 - [x] 参考素材继续走 R2 `temp/reference/`。
 - [x] 生成视频内容经过画布后端时会保存到 R2 `generated/`，前端优先使用返回的 R2 URL。
+- [x] 生成视频内容已改为临时文件中转，不再整段读入内存。
+- [x] 模型广场没有公开商品数据时返回空列表，不再 fallback 暴露网关真实模型列表。
+- [x] 模型广场已补回归测试：空数据返回空、重复模型去重、优先保留更明确/更低价格。
 - [ ] 远程环境变量和真实 10 秒视频生成需要上线后验收。
 
-### 1. Canvas Model Source Is Wrong
+本轮本地验证结果：
 
-当前错误链路：
+- [x] `sub2api` public model catalog 定向测试通过。
+- [x] `sub2api/frontend` production build 通过。
+- [x] `infinite-canvas` Go tests 通过。
+- [x] `infinite-canvas/web` format check 通过。
+- [x] `infinite-canvas/web` production build 通过。
+- [x] 两个项目 `git diff --check` 通过。
+
+仍未做的验证：
+
+- [ ] 生产环境变量配置后，登录态、模型列表、10 秒视频生成、R2 保存和余额扣费需要端到端验收。
+
+### 1. Canvas Model Source
+
+已废弃的错误链路：
 
 ```text
 Infinite Canvas -> /api/v1/public/models/catalog -> 模型广场
 ```
 
-服务器现状：
+当前状态：
 
 - TOP-AI `/v1/models` 能返回 19 个真实可用模型。
-- 模型广场 `/api/v1/public/models/catalog` 返回空。
-- 原因：`/v1/models` 读取账号 `model_mapping` 和分组能力；模型广场读取 `channels` 和 `channel_model_pricing`。现在 `channels.model_mapping={}`，`channel_model_pricing=0`。
+- 画布后端读取受保护的 TOP-AI `/v1/models`。
+- 模型广场 `/api/v1/public/models/catalog` 只展示公开商品数据。
+- 模型广场为空时返回空列表，不影响画布。
 
-必须改成：
+正确链路：
 
 ```text
 Infinite Canvas 后端 -> TOP-AI /v1/models
 Authorization: Bearer TOP_AI_GATEWAY_API_KEY
 ```
 
-画布不能再依赖模型广场接口。
+画布不能依赖模型广场接口。
 
 ### 2. Model Deduplication Is Required
 
@@ -134,11 +152,11 @@ GET /api/v1/public/models/catalog
 - `CANVAS_FORCE_TOP_AI_GATEWAY=true` 时，本地渠道配置必须隐藏或明确显示“由 TOP-AI 统一管理”。
 - TOP-AI admin 是否映射为画布 admin 要单独控制，不能影响普通客户流程。
 
-### 5. Video Gateway Is Not Complete
+### 5. Video Gateway Status
 
-当前 TOP-AI 网关 `/v1/videos` 仍不可用。画布即使拿到 `grok-imagine-video`，也无法完整生成视频。
+本地代码已接入 TOP-AI 网关 `/v1/videos` 链路。真实可用性仍取决于生产模型账号、网关配置、余额扣费和上游视频任务状态。
 
-必须补齐：
+已接入接口：
 
 ```text
 POST /v1/videos
@@ -146,7 +164,14 @@ GET /v1/videos/:id
 GET /v1/videos/:id/content
 ```
 
-这些接口必须走现有 TOP-AI 网关能力：API Key 校验、分组模型权限、账号选择、失败切换、余额扣费、usage log、`source=canvas`。
+这些接口必须继续走现有 TOP-AI 网关能力：API Key 校验、分组模型权限、账号选择、失败切换、余额扣费、usage log、`source=canvas`。
+
+生产仍需验收：
+
+- 真实 `grok-imagine-video` 或等价视频模型能创建 10 秒视频任务。
+- 查询任务状态能拿到完成结果。
+- 内容下载能保存到 R2 `generated/`。
+- TOP-AI 余额和 usage log 与 `source=canvas` 正常记录。
 
 ### 6. Video Media Must Use R2
 
@@ -176,6 +201,29 @@ TOP-AI 登录
   -> TOP-AI 扣费并记录 source=canvas
   -> 结果写入 R2 generated/
 ```
+
+## Model Packaging And DeepSeek Resolver Note
+
+模型包装能力已经存在，不属于本轮未完成项。
+
+当前已确认：
+
+- 账号级 `model_mapping` 支持把用户看到的 A 模型包装成实际上游 B 模型。
+- 渠道级 `ModelMapping` 支持按渠道/分组做模型映射。
+- 网关请求会按映射结果替换请求体里的 `model`。
+- 用量日志保留 `requested_model`、`upstream_model`、`model_mapping_chain` 等链路字段。
+
+不要把上面的包装能力和 `resolveModelPlatform` 混为一谈。
+
+`backend/internal/service/bundle_route_resolver.go` 里的 `resolveModelPlatform` 只是套餐路由的模型平台猜测逻辑。远程已有提交明确把 unknown 默认改为 `anthropic` 并移除了 `deepseek- -> openai`：
+
+```text
+d56405ea fix(resolver): default unknown model platform to anthropic, remove deepseek prefix
+```
+
+该提交存在于 `friend/dev`、`friend/plusversion-canvas-test`、`friend/sync-model-price`。
+
+因此本轮不修改 DeepSeek / unknown 的平台推断，避免和朋友正在做的套餐/模型价格同步分支冲突。后续如果要改，必须单独评审套餐路由设计，而不是夹在画布/R2/模型广场任务里顺手改。
 
 ## Code Placement Rules
 
@@ -259,11 +307,13 @@ web/src/app/(user)/canvas/
 - 只返回安全 DTO。
 - 公开接口只读、缓存、限流。
 - 不自动暴露账号 `model_mapping`。
+- 不 fallback 到 TOP-AI Gateway 可用模型。
 - 不给画布当模型权限来源。
+- 后端测试必须覆盖空目录、重复模型去重和价格优先级。
 
 ### D. Video Gateway
 
-sub2api 必须补齐视频网关，不绕过现有计费。
+sub2api 已接入视频网关，不能绕过现有计费。
 
 必须放置：
 
@@ -281,6 +331,7 @@ sub2api/backend/internal/server/routes/
 - 复用现有鉴权、分组、调度、扣费、日志机制。
 - 保留 `source=canvas`。
 - 不新增独立野接口。
+- 本地代码已接入；生产仍需要真实模型、真实余额和真实 10 秒视频生成验收。
 
 ### E. R2 Media Flow
 
@@ -292,7 +343,9 @@ sub2api/backend/internal/server/routes/
 - 生成结果走 `generated/`。
 - 失败残留走 `failed/`。
 - 不把大视频长期保存在服务器本地。
+- 不把完整生成视频读入内存；使用临时文件或流式链路。
 - R2 凭证只在服务端环境和本地私密文件，不进 Git。
+- 当前本地实现使用临时文件中转生成视频内容，并复用该临时文件完成 R2 保存和浏览器响应。
 
 ## Configuration Rules
 
@@ -344,11 +397,13 @@ R2_GENERATED_PREFIX=generated
 - [ ] 图片/文本/视频模型分类正确。
 - [x] 模型广场为空或有数据都不影响画布。
 - [x] 模型广场只展示公开商品数据，不暴露内部接口。
+- [x] 模型广场不 fallback 暴露网关真实模型列表。
 - [x] `/apps/canvas/admin/settings` 不再误导客户配置模型。
 - [x] `/v1/videos` 创建、查询、取内容链路已接入现有网关。
 - [ ] 10 秒视频生成可跑通。
 - [ ] 参考素材使用 R2 `temp/reference/`。
 - [x] 生成结果使用 R2 `generated/`。
+- [x] 视频内容代理不再整段读入内存。
 - [x] TOP-AI 后台能看到 `source=canvas` 用量。
 - [ ] TOP-AI 余额按规则扣费。
 - [x] 前端构建产物没有服务端密钥。

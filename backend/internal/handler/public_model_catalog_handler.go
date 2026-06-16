@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"math"
 	"net/http"
 	"sort"
@@ -26,7 +25,6 @@ const publicModelCatalogRateLimit = 120
 // operational metrics.
 type PublicModelCatalogHandler struct {
 	channelService *service.ChannelService
-	gatewayService *service.GatewayService
 	cacheMu        sync.RWMutex
 	cachedAt       time.Time
 	cachedCatalog  []publicModelCatalogItem
@@ -37,7 +35,6 @@ type PublicModelCatalogHandler struct {
 func NewPublicModelCatalogHandler(channelService *service.ChannelService, gatewayService *service.GatewayService) *PublicModelCatalogHandler {
 	return &PublicModelCatalogHandler{
 		channelService: channelService,
-		gatewayService: gatewayService,
 		rateBuckets:    make(map[string]publicModelCatalogRateBucket),
 	}
 }
@@ -100,46 +97,9 @@ func (h *PublicModelCatalogHandler) List(c *gin.Context) {
 	}
 
 	catalog := buildPublicModelCatalog(channels)
-	if len(catalog) == 0 {
-		catalog = h.buildGatewayModelCatalog(c.Request.Context())
-	}
 	h.storeCache(catalog)
 
 	response.Success(c, catalog)
-}
-
-func (h *PublicModelCatalogHandler) buildGatewayModelCatalog(ctx context.Context) []publicModelCatalogItem {
-	if h.gatewayService == nil {
-		return nil
-	}
-	return buildPublicModelCatalogFromGatewayModels(h.gatewayService.GetAvailableModels(ctx, nil, ""))
-}
-
-func buildPublicModelCatalogFromGatewayModels(models []string) []publicModelCatalogItem {
-	catalog := make([]publicModelCatalogItem, 0, len(models))
-	for _, model := range models {
-		name := strings.TrimSpace(model)
-		if name == "" {
-			continue
-		}
-		platform := inferPublicModelPlatform(name)
-		catalog = append(catalog, publicModelCatalogItem{
-			Name:         name,
-			Provider:     providerLabel(platform),
-			Platform:     platform,
-			Status:       "available",
-			Description:  publicModelDescription(name, platform, nil),
-			Capabilities: publicModelCapabilities(name, platform, nil),
-			Pricing:      nil,
-		})
-	}
-	sort.SliceStable(catalog, func(i, j int) bool {
-		if catalog[i].Provider != catalog[j].Provider {
-			return catalog[i].Provider < catalog[j].Provider
-		}
-		return strings.ToLower(catalog[i].Name) < strings.ToLower(catalog[j].Name)
-	})
-	return catalog
 }
 
 func (h *PublicModelCatalogHandler) allowRequest(clientIP string) bool {
