@@ -54,7 +54,7 @@
 - [x] `/apps/canvas/admin/settings` 在 TOP-AI 托管模式下不再展示本地模型、Key、余额配置入口。
 - [x] sub2api 已补 `POST /v1/videos`、`GET /v1/videos/:id`、`GET /v1/videos/:id/content`，并挂到现有网关 routes/handler/service。
 - [x] 参考素材继续走 R2 `temp/reference/`。
-- [x] 生成视频内容经过画布后端时会保存到 R2 `generated/`，前端优先使用返回的 R2 URL。
+- [x] 本地代码已实现生成视频内容经过画布后端保存到 R2 `generated/`，前端优先使用返回的 R2 URL。
 - [x] 生成视频内容已改为临时文件中转，不再整段读入内存。
 - [x] 模型广场没有公开商品数据时返回空列表，不再 fallback 暴露网关真实模型列表。
 - [x] 模型广场已补回归测试：空数据返回空、重复模型去重、优先保留更明确/更低价格。
@@ -72,6 +72,37 @@
 仍未做的验证：
 
 - [ ] 生产环境变量配置后，登录态、模型列表、10 秒视频生成、R2 保存和余额扣费需要端到端验收。
+
+### Production Reality Check - 2026-06-17
+
+生产实测结论：代码能力已经合入，但生产配置没有完全按本文档执行，所以不能算生产完成。
+
+已确认可用：
+
+- `/apps/canvas`、`/apps/canvas/image`、`/apps/canvas/video` 页面返回 200。
+- 普通用户 `xpwan1@gmail.com` 后端登录接口可用，余额正常。
+- 画布编辑页可打开，文本节点、撤销、配置弹窗、Agent 面板、素材面板可以渲染。
+- 画布配置弹窗能读取 TOP-AI 网关模型，当前可见 19 个模型。
+- 图片生成请求可通过 TOP-AI Gateway，`gpt-image-2` 返回 200。
+- 视频任务创建和轮询可通过 TOP-AI Gateway，`grok-imagine-video` 返回 200。
+- `https://media.888tech.club` 可访问 R2 旧视频文件，R2 公共域名本身可用。
+
+未通过：
+
+- 生产 `TOP_AI_SESSION_URL` 当前配置成 `http://sub2api:8080/api/v1/auth/me`，与本文档要求的专用接口不一致。
+- 正确配置必须是 `http://sub2api:8080/api/v1/app/canvas/session`。
+- 当前错误配置会导致 Canvas SSO 可能拿到 TOP-AI admin 登录态，触发 `请使用普通用户账号进入画布`，影响添加素材和会话刷新。
+- 生产未配置 `GENERATED_MEDIA_ALLOWED_HOSTS`。
+- 上游视频返回 `https://vidgen.x.ai/...mp4` 后，被画布安全策略拦截：`blocked generated media import`。
+- 因此本次真实视频没有保存到 R2 `generated/`。
+- 图片生成成功后，“添加到素材”失败，浏览器报 `TypeError: Failed to fetch`，服务器日志出现 `请使用普通用户账号进入画布`。
+- R2 对象列表未新增，说明本轮图片和视频都没有成功落到 R2。
+
+当前判断：
+
+- 这不是 R2 域名不可用，也不是视频模型完全不可用。
+- 这是生产 SSO 配置和生成媒体白名单没有按计划文件补齐。
+- 安全限制本身是正确的，但缺少生产白名单会把正常上游视频也拦掉。
 
 ### 1. Canvas Model Source
 
@@ -371,9 +402,14 @@ R2_ACCESS_KEY_ID=<server-side-only>
 R2_SECRET_ACCESS_KEY=<server-side-only>
 R2_TEMP_REFERENCE_PREFIX=temp/reference
 R2_GENERATED_PREFIX=generated
+GENERATED_MEDIA_ALLOWED_HOSTS=vidgen.x.ai
 ```
 
 `TOP_AI_MODELS_URL` 是画布模型来源，必须指向受保护的 TOP-AI `/v1/models`；模型广场 catalog 不允许作为画布权限来源。
+
+`TOP_AI_SESSION_URL` 必须指向专用的 Canvas SSO 接口 `/api/v1/app/canvas/session`，不能用通用 `/api/v1/auth/me`。通用接口可能把 TOP-AI admin 登录态带给画布，导致普通用户流程和素材保存被拒绝。
+
+`GENERATED_MEDIA_ALLOWED_HOSTS` 是生产必填项。为空时，画布会拒绝导入所有上游远程视频，防止开放代理和任意公网下载。当前 `grok-imagine-video` 返回的视频域名是 `vidgen.x.ai`，所以生产至少需要包含 `vidgen.x.ai`。新增其他视频上游后，只追加经过确认的可信媒体域名。
 
 ## Security Requirements
 
@@ -389,23 +425,28 @@ R2_GENERATED_PREFIX=generated
 ## Final Acceptance Checklist
 
 - [ ] `/apps/canvas` 未登录时跳 TOP-AI 登录。
-- [ ] 登录后进入画布，识别同一个 TOP-AI 用户。
+- [ ] 登录后进入画布，识别同一个 TOP-AI 普通用户。
+- [ ] 生产 `TOP_AI_SESSION_URL` 使用 `/api/v1/app/canvas/session`，不能使用 `/api/v1/auth/me`。
 - [x] 画布模型接口不再读 `/api/v1/public/models/catalog`。
 - [x] 画布模型接口能返回 TOP-AI `/v1/models` 的真实模型。
 - [x] 模型列表已去重。
-- [ ] 视频模型列表包含 `grok-imagine-video`。
-- [ ] 图片/文本/视频模型分类正确。
+- [x] 视频模型列表包含 `grok-imagine-video`。
+- [x] 图片/文本/视频模型分类正确。
 - [x] 模型广场为空或有数据都不影响画布。
 - [x] 模型广场只展示公开商品数据，不暴露内部接口。
 - [x] 模型广场不 fallback 暴露网关真实模型列表。
 - [x] `/apps/canvas/admin/settings` 不再误导客户配置模型。
 - [x] `/v1/videos` 创建、查询、取内容链路已接入现有网关。
 - [ ] 10 秒视频生成可跑通。
+- [ ] 生产 `GENERATED_MEDIA_ALLOWED_HOSTS` 包含真实视频上游媒体域名。
 - [ ] 参考素材使用 R2 `temp/reference/`。
-- [x] 生成结果使用 R2 `generated/`。
+- [x] 本地代码已实现生成结果使用 R2 `generated/`。
+- [ ] 生产真实生成结果已成功保存到 R2 `generated/`。
 - [x] 视频内容代理不再整段读入内存。
 - [x] TOP-AI 后台能看到 `source=canvas` 用量。
 - [ ] TOP-AI 余额按规则扣费。
+- [ ] 图片生成后可以添加到“我的素材”，并且刷新后仍可用。
+- [ ] 视频生成后可以插入画布并播放，刷新后仍可用。
 - [x] 前端构建产物没有服务端密钥。
 - [x] sub2api 和 infinite-canvas 目录结构没有被破坏。
 

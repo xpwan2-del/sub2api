@@ -22,6 +22,7 @@
 ## Audited Deployment Snapshot
 
 - Audit date: 2026-06-15
+- Production re-check: 2026-06-17
 - Public site: `https://show.top-ai.band`
 - TOP-AI backend container: `sub2api`
 - Canvas container: `top-ai-canvas`
@@ -65,11 +66,19 @@ Implemented fix:
 - TOP-AI hosted login accepts only normal TOP-AI users for Canvas.
 - Existing TOP-AI admin-derived Canvas sessions are rejected.
 
+Production finding on 2026-06-17:
+
+- The production Canvas container used `TOP_AI_SESSION_URL=http://sub2api:8080/api/v1/auth/me`.
+- The required endpoint is `http://sub2api:8080/api/v1/app/canvas/session`.
+- Using the generic `/api/v1/auth/me` endpoint can pass a TOP-AI admin session into Canvas.
+- Canvas correctly rejects that role with `请使用普通用户账号进入画布`, but this breaks normal Canvas asset-save flows when the browser session is mixed or admin-derived.
+
 Acceptance:
 
 - `POST /apps/canvas/api/admin/login` must reject the default admin credential.
 - TOP-AI normal users can still enter `/apps/canvas` through TOP-AI login.
 - TOP-AI admin access and Canvas admin access must have an explicit mapping rule.
+- Production `TOP_AI_SESSION_URL` must use `/api/v1/app/canvas/session`, not `/api/v1/auth/me`.
 
 ### 2. Exposed R2 Credentials Must Be Rotated
 
@@ -153,6 +162,14 @@ Still required:
 - Configure `GENERATED_MEDIA_ALLOWED_HOSTS` on production with trusted upstream media domains.
 - Keep per-user rate limits and storage monitoring enabled.
 - Log `user_id`, task id, source, object key, and byte size.
+
+Production finding on 2026-06-17:
+
+- Production `GENERATED_MEDIA_ALLOWED_HOSTS` was missing.
+- A real `grok-imagine-video` task returned a provider media URL under `https://vidgen.x.ai/...`.
+- Canvas correctly blocked the import because the allowlist was empty.
+- Result: video generation reached the provider, but the generated video was not saved to R2 `generated/`.
+- Current trusted host required for this provider: `vidgen.x.ai`.
 
 Acceptance:
 
