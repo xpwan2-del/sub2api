@@ -105,8 +105,8 @@ func RegisterAdminRoutes(
 		registerAffiliateRoutes(admin, h)
 	}
 
-			// 套餐管理
-			registerBundleRoutes(admin, h)
+	// 套餐管理
+	registerBundleRoutes(admin, h)
 }
 
 func registerAdminComplianceRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
@@ -146,6 +146,7 @@ func registerOpsRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		ops.GET("/user-concurrency", h.Admin.Ops.GetUserConcurrencyStats)
 		ops.GET("/account-availability", h.Admin.Ops.GetAccountAvailability)
 		ops.GET("/realtime-traffic", h.Admin.Ops.GetRealtimeTrafficSummary)
+		ops.GET("/model-status/snapshot", h.Admin.Ops.GetModelStatusSnapshot)
 
 		// Alerts (rules + events)
 		ops.GET("/alert-rules", h.Admin.Ops.ListAlertRules)

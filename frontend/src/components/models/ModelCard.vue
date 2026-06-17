@@ -28,6 +28,8 @@
       </span>
     </div>
 
+    <ModelHealthBar :health="model.health" />
+
     <ModelPriceSummary :pricing="model.pricing" />
 
     <div class="model-card-actions">
@@ -49,6 +51,7 @@ import { useI18n } from 'vue-i18n'
 import PlatformIcon from '@/components/common/PlatformIcon.vue'
 import Icon from '@/components/icons/Icon.vue'
 import ModelCapabilityTags from './ModelCapabilityTags.vue'
+import ModelHealthBar from './ModelHealthBar.vue'
 import ModelPriceSummary from './ModelPriceSummary.vue'
 import type { ModelCatalogCard } from '@/utils/modelCatalog'
 

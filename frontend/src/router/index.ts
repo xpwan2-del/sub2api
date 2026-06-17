@@ -453,6 +453,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/model-status',
+    name: 'AdminModelStatus',
+    component: () => import('@/views/admin/ops/ModelStatusDashboard.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Model Status',
+      titleKey: 'admin.ops.modelStatus.title',
+      descriptionKey: 'admin.ops.modelStatus.description'
+    }
+  },
+  {
     path: '/admin/users',
     name: 'AdminUsers',
     component: () => import('@/views/admin/UsersView.vue'),

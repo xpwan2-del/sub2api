@@ -22,6 +22,19 @@ export interface PublicModelPricing {
   intervals: PublicModelPricingInterval[]
 }
 
+export interface PublicModelHealthHistoryPoint {
+  status: string
+  request_count: number
+  success_rate?: number | null
+}
+
+export interface PublicModelHealth {
+  status: string
+  request_count: number
+  success_rate?: number | null
+  history: PublicModelHealthHistoryPoint[]
+}
+
 export interface PublicModelCatalogItem {
   name: string
   provider: string
@@ -30,6 +43,7 @@ export interface PublicModelCatalogItem {
   description?: string
   capabilities?: string[]
   pricing: PublicModelPricing | null
+  health?: PublicModelHealth | null
 }
 
 export const publicModelsAPI = {

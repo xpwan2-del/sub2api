@@ -2,6 +2,7 @@ package handler
 
 import (
 	"testing"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/stretchr/testify/require"
@@ -122,4 +123,46 @@ func TestBuildPublicModelCatalogScalesPricesByGroupMultiplier(t *testing.T) {
 	require.NotNil(t, imagePricing)
 	require.InDelta(t, 0.10, *imagePricing.ImageOutputPrice, 1e-12)
 	require.InDelta(t, 0.20, *imagePricing.PerRequestPrice, 1e-12)
+}
+
+func TestBuildPublicModelHealthUsesCompactHistory(t *testing.T) {
+	start := time.Date(2026, 6, 18, 0, 0, 0, 0, time.UTC)
+	rate := 50.0
+	buckets := map[time.Time]*service.OpsModelHealthBucket{
+		start.Add(47 * time.Hour): {
+			OpsHealthHistoryPoint: service.OpsHealthHistoryPoint{
+				BucketStart:  start.Add(47 * time.Hour),
+				RequestCount: 2,
+				SuccessCount: 1,
+				SuccessRate:  &rate,
+			},
+		},
+	}
+
+	health := buildPublicModelHealth(start, buckets)
+
+	require.NotNil(t, health)
+	require.Equal(t, string(service.OpsModelStatusFailed), health.Status)
+	require.Equal(t, int64(2), health.RequestCount)
+	require.NotNil(t, health.SuccessRate)
+	require.InDelta(t, 50, *health.SuccessRate, 1e-12)
+	require.Len(t, health.History, publicModelHealthBucketCount)
+	require.Equal(t, "idle", health.History[0].Status)
+	require.Equal(t, string(service.OpsModelStatusFailed), health.History[47].Status)
+	require.Equal(t, int64(2), health.History[47].RequestCount)
+}
+
+func TestBuildPublicModelHealthNoTraffic(t *testing.T) {
+	start := time.Date(2026, 6, 18, 0, 0, 0, 0, time.UTC)
+
+	health := buildPublicModelHealth(start, nil)
+
+	require.NotNil(t, health)
+	require.Equal(t, string(service.OpsModelStatusNoRecentTraffic), health.Status)
+	require.Equal(t, int64(0), health.RequestCount)
+	require.Nil(t, health.SuccessRate)
+	require.Len(t, health.History, publicModelHealthBucketCount)
+	for _, point := range health.History {
+		require.Equal(t, "idle", point.Status)
+	}
 }

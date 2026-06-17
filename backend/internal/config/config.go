@@ -1195,8 +1195,27 @@ type OpsConfig struct {
 	// MetricsCollectorCache controls Redis caching for expensive per-window collector queries.
 	MetricsCollectorCache OpsMetricsCollectorCacheConfig `mapstructure:"metrics_collector_cache"`
 
+	GoogleCloudMonitoring OpsGoogleCloudMonitoringConfig `mapstructure:"google_cloud_monitoring"`
+
 	// Pre-aggregation configuration.
 	Aggregation OpsAggregationConfig `mapstructure:"aggregation"`
+}
+
+type OpsGoogleCloudMonitoringConfig struct {
+	Enabled       bool                                `mapstructure:"enabled"`
+	ProjectID     string                              `mapstructure:"project_id"`
+	InstanceID    string                              `mapstructure:"instance_id"`
+	Zone          string                              `mapstructure:"zone"`
+	WindowSeconds int                                 `mapstructure:"window_seconds"`
+	Metrics       OpsGoogleCloudMonitoringMetricNames `mapstructure:"metrics"`
+}
+
+type OpsGoogleCloudMonitoringMetricNames struct {
+	CPUUtilization    string `mapstructure:"cpu_utilization"`
+	NetworkReceived   string `mapstructure:"network_received"`
+	NetworkSent       string `mapstructure:"network_sent"`
+	MemoryPercentUsed string `mapstructure:"memory_percent_used"`
+	DiskPercentUsed   string `mapstructure:"disk_percent_used"`
 }
 
 type OpsCleanupConfig struct {
@@ -1724,6 +1743,16 @@ func setDefaults() {
 	viper.SetDefault("ops.metrics_collector_cache.enabled", true)
 	// TTL should be slightly larger than collection interval (1m) to maximize cross-replica cache hits.
 	viper.SetDefault("ops.metrics_collector_cache.ttl", 65*time.Second)
+	viper.SetDefault("ops.google_cloud_monitoring.enabled", false)
+	viper.SetDefault("ops.google_cloud_monitoring.project_id", "")
+	viper.SetDefault("ops.google_cloud_monitoring.instance_id", "")
+	viper.SetDefault("ops.google_cloud_monitoring.zone", "")
+	viper.SetDefault("ops.google_cloud_monitoring.window_seconds", 300)
+	viper.SetDefault("ops.google_cloud_monitoring.metrics.cpu_utilization", "compute.googleapis.com/instance/cpu/utilization")
+	viper.SetDefault("ops.google_cloud_monitoring.metrics.network_received", "compute.googleapis.com/instance/network/received_bytes_count")
+	viper.SetDefault("ops.google_cloud_monitoring.metrics.network_sent", "compute.googleapis.com/instance/network/sent_bytes_count")
+	viper.SetDefault("ops.google_cloud_monitoring.metrics.memory_percent_used", "agent.googleapis.com/memory/percent_used")
+	viper.SetDefault("ops.google_cloud_monitoring.metrics.disk_percent_used", "agent.googleapis.com/disk/percent_used")
 
 	// JWT
 	viper.SetDefault("jwt.secret", "")

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"math"
 	"net/http"
 	"sort"
@@ -22,9 +23,10 @@ const publicModelCatalogRateLimit = 120
 //
 // The DTO below is intentionally narrow. It does not expose channel names,
 // channel IDs, account data, upstream URLs, routing weights, balances, or
-// operational metrics.
+// private operational details. Public health is a compact aggregate only.
 type PublicModelCatalogHandler struct {
 	channelService *service.ChannelService
+	opsRepo        service.OpsRepository
 	cacheMu        sync.RWMutex
 	cachedAt       time.Time
 	cachedCatalog  []publicModelCatalogItem
@@ -32,9 +34,10 @@ type PublicModelCatalogHandler struct {
 	rateBuckets    map[string]publicModelCatalogRateBucket
 }
 
-func NewPublicModelCatalogHandler(channelService *service.ChannelService, gatewayService *service.GatewayService) *PublicModelCatalogHandler {
+func NewPublicModelCatalogHandler(channelService *service.ChannelService, gatewayService *service.GatewayService, opsRepo service.OpsRepository) *PublicModelCatalogHandler {
 	return &PublicModelCatalogHandler{
 		channelService: channelService,
+		opsRepo:        opsRepo,
 		rateBuckets:    make(map[string]publicModelCatalogRateBucket),
 	}
 }
@@ -47,6 +50,7 @@ type publicModelCatalogItem struct {
 	Description  string              `json:"description"`
 	Capabilities []string            `json:"capabilities"`
 	Pricing      *publicModelPricing `json:"pricing"`
+	Health       *publicModelHealth  `json:"health,omitempty"`
 }
 
 type publicModelPricing struct {
@@ -69,6 +73,19 @@ type publicPricingIntervalDTO struct {
 	CacheWritePrice *float64 `json:"cache_write_price"`
 	CacheReadPrice  *float64 `json:"cache_read_price"`
 	PerRequestPrice *float64 `json:"per_request_price"`
+}
+
+type publicModelHealth struct {
+	Status       string                     `json:"status"`
+	RequestCount int64                      `json:"request_count"`
+	SuccessRate  *float64                   `json:"success_rate,omitempty"`
+	History      []publicModelHealthHistory `json:"history"`
+}
+
+type publicModelHealthHistory struct {
+	Status       string   `json:"status"`
+	RequestCount int64    `json:"request_count"`
+	SuccessRate  *float64 `json:"success_rate,omitempty"`
 }
 
 type publicModelCatalogRateBucket struct {
@@ -97,9 +114,34 @@ func (h *PublicModelCatalogHandler) List(c *gin.Context) {
 	}
 
 	catalog := buildPublicModelCatalog(channels)
+	h.attachModelHealth(c.Request.Context(), catalog)
 	h.storeCache(catalog)
 
 	response.Success(c, catalog)
+}
+
+func (h *PublicModelCatalogHandler) attachModelHealth(ctx context.Context, catalog []publicModelCatalogItem) {
+	if h == nil || h.opsRepo == nil || len(catalog) == 0 {
+		return
+	}
+
+	now := time.Now().UTC()
+	end := now
+	start := now.Truncate(time.Hour).Add(-(publicModelHealthBucketCount - 1) * time.Hour)
+
+	buckets, err := h.opsRepo.GetModelHealthBuckets(ctx, &service.OpsModelStatusFilter{
+		StartTime: start,
+		EndTime:   end,
+	}, int(publicModelHealthBucketDuration/time.Second))
+	if err != nil {
+		return
+	}
+
+	byModel := groupPublicModelHealthBuckets(buckets)
+	for i := range catalog {
+		key := publicModelHealthKey(catalog[i].Platform, catalog[i].Name)
+		catalog[i].Health = buildPublicModelHealth(start, byModel[key])
+	}
 }
 
 func (h *PublicModelCatalogHandler) allowRequest(clientIP string) bool {
@@ -330,8 +372,83 @@ func copyPublicCatalog(src []publicModelCatalogItem) []publicModelCatalogItem {
 	copy(out, src)
 	for i := range out {
 		out[i].Capabilities = append([]string(nil), src[i].Capabilities...)
+		if src[i].Health != nil {
+			health := *src[i].Health
+			health.History = append([]publicModelHealthHistory(nil), src[i].Health.History...)
+			out[i].Health = &health
+		}
 	}
 	return out
+}
+
+const (
+	publicModelHealthBucketDuration = time.Hour
+	publicModelHealthBucketCount    = 48
+)
+
+func groupPublicModelHealthBuckets(buckets []*service.OpsModelHealthBucket) map[string]map[time.Time]*service.OpsModelHealthBucket {
+	out := make(map[string]map[time.Time]*service.OpsModelHealthBucket)
+	for _, bucket := range buckets {
+		if bucket == nil || strings.TrimSpace(bucket.Model) == "" {
+			continue
+		}
+		key := publicModelHealthKey(bucket.Platform, bucket.Model)
+		if out[key] == nil {
+			out[key] = make(map[time.Time]*service.OpsModelHealthBucket)
+		}
+		out[key][bucket.BucketStart.UTC().Truncate(publicModelHealthBucketDuration)] = bucket
+	}
+	return out
+}
+
+func buildPublicModelHealth(start time.Time, buckets map[time.Time]*service.OpsModelHealthBucket) *publicModelHealth {
+	history := make([]publicModelHealthHistory, 0, publicModelHealthBucketCount)
+	var totalRequests int64
+	var totalSuccess int64
+
+	for i := 0; i < publicModelHealthBucketCount; i++ {
+		bucketStart := start.Add(time.Duration(i) * publicModelHealthBucketDuration)
+		point := publicModelHealthHistory{Status: "idle"}
+		if bucket := buckets[bucketStart]; bucket != nil {
+			point.RequestCount = bucket.RequestCount
+			point.SuccessRate = bucket.SuccessRate
+			point.Status = classifyPublicModelHealthPoint(bucket.RequestCount, bucket.SuccessCount)
+			totalRequests += bucket.RequestCount
+			totalSuccess += bucket.SuccessCount
+		}
+		history = append(history, point)
+	}
+
+	health := &publicModelHealth{
+		Status:       string(service.OpsModelStatusNoRecentTraffic),
+		RequestCount: totalRequests,
+		History:      history,
+	}
+	if totalRequests > 0 {
+		rate := float64(totalSuccess) * 100 / float64(totalRequests)
+		health.SuccessRate = &rate
+		health.Status = classifyPublicModelHealthPoint(totalRequests, totalSuccess)
+	}
+	return health
+}
+
+func classifyPublicModelHealthPoint(requestCount, successCount int64) string {
+	if requestCount <= 0 {
+		return "idle"
+	}
+	successRate := float64(successCount) * 100 / float64(requestCount)
+	switch {
+	case successRate >= 99:
+		return string(service.OpsModelStatusOperational)
+	case successRate >= 90:
+		return string(service.OpsModelStatusDegraded)
+	default:
+		return string(service.OpsModelStatusFailed)
+	}
+}
+
+func publicModelHealthKey(platform, model string) string {
+	return strings.ToLower(strings.TrimSpace(platform)) + "\x00" + strings.ToLower(strings.TrimSpace(model))
 }
 
 func providerLabel(platform string) string {

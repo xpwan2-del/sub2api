@@ -1,4 +1,9 @@
-import type { PublicModelCatalogItem, PublicModelPricing } from '@/api/publicModels'
+import type {
+  PublicModelCatalogItem,
+  PublicModelHealth,
+  PublicModelHealthHistoryPoint,
+  PublicModelPricing
+} from '@/api/publicModels'
 
 export type ModelCatalogSort = 'price' | 'name' | 'provider'
 
@@ -10,6 +15,7 @@ export interface ModelCatalogCard {
   platforms: string[]
   status: string
   pricing: PublicModelPricing | null
+  health: PublicModelHealth | null
   capabilities: string[]
 }
 
@@ -55,6 +61,7 @@ export function buildModelCatalog(rows: PublicModelCatalogItem[]): ModelCatalogB
         platforms: row.platform ? [row.platform] : [],
         status: row.status,
         pricing: row.pricing,
+        health: cloneModelHealth(row.health),
         capabilities
       })
       continue
@@ -70,6 +77,7 @@ export function buildModelCatalog(rows: PublicModelCatalogItem[]): ModelCatalogB
     if (preferPricing(row.pricing, current.pricing)) {
       current.pricing = row.pricing
     }
+    current.health = mergeModelHealth(current.health, row.health)
     current.capabilities = mergeSortedCapabilities(current.capabilities, capabilities)
   }
 
@@ -146,6 +154,96 @@ function preferPricing(next: PublicModelPricing | null, current: PublicModelPric
   if (!current) return !!next
   if (!next) return false
   return modelPriceScore(next) < modelPriceScore(current)
+}
+
+function cloneModelHealth(health?: PublicModelHealth | null): PublicModelHealth | null {
+  if (!health) return null
+  return {
+    ...health,
+    history: health.history.map((point) => ({ ...point }))
+  }
+}
+
+function mergeModelHealth(current: PublicModelHealth | null, next?: PublicModelHealth | null): PublicModelHealth | null {
+  if (!current) return cloneModelHealth(next)
+  if (!next) return current
+
+  const requestCount = current.request_count + next.request_count
+  const successCount = successCountFromHealth(current) + successCountFromHealth(next)
+  const history = mergeModelHealthHistory(current.history, next.history)
+  return {
+    status: worstModelHealthStatus(current.status, next.status),
+    request_count: requestCount,
+    success_rate: requestCount > 0 ? (successCount * 100) / requestCount : null,
+    history
+  }
+}
+
+function mergeModelHealthHistory(
+  current: PublicModelHealthHistoryPoint[],
+  next: PublicModelHealthHistoryPoint[]
+): PublicModelHealthHistoryPoint[] {
+  const length = Math.max(current.length, next.length)
+  const history: PublicModelHealthHistoryPoint[] = []
+
+  for (let i = 0; i < length; i++) {
+    const a = current[i]
+    const b = next[i]
+    if (!a) {
+      history.push({ ...b })
+      continue
+    }
+    if (!b) {
+      history.push({ ...a })
+      continue
+    }
+
+    const requestCount = a.request_count + b.request_count
+    const successCount = successCountFromPoint(a) + successCountFromPoint(b)
+    history.push({
+      status: worstModelHealthStatus(a.status, b.status),
+      request_count: requestCount,
+      success_rate: requestCount > 0 ? (successCount * 100) / requestCount : null
+    })
+  }
+
+  return history
+}
+
+function successCountFromHealth(health: PublicModelHealth): number {
+  if (health.request_count <= 0 || typeof health.success_rate !== 'number') return 0
+  return health.request_count * health.success_rate / 100
+}
+
+function successCountFromPoint(point: PublicModelHealthHistoryPoint): number {
+  if (point.request_count <= 0 || typeof point.success_rate !== 'number') return 0
+  return point.request_count * point.success_rate / 100
+}
+
+function worstModelHealthStatus(a: string, b: string): string {
+  return modelHealthRank(a) <= modelHealthRank(b) ? a : b
+}
+
+function modelHealthRank(status: string): number {
+  switch (status) {
+    case 'failed':
+      return 0
+    case 'rate_limited':
+      return 1
+    case 'degraded':
+      return 2
+    case 'unknown':
+    case 'orphaned_history':
+      return 3
+    case 'no_recent_traffic':
+      return 4
+    case 'idle':
+      return 5
+    case 'operational':
+      return 6
+    default:
+      return 3
+  }
 }
 
 function mergeSortedCapabilities(a: string[], b: string[]): string[] {
