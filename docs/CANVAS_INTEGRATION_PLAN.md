@@ -17,7 +17,7 @@
 - 不允许把业务逻辑塞进页面组件、路由文件或临时脚本里。
 - 不允许把两个项目的源码互相搬运、复制或混合。
 - 必须按各自项目现有代码规则、目录分层和命名风格开发。
-- 必须同时修完模型来源、模型去重、模型广场边界、画布模型选择、视频网关和 R2 结果链路。
+- 必须同时修完模型来源、模型去重、模型广场边界、画布模型选择、视频网关和生成媒体 R2 结果链路。
 - 本地验证通过后，生产环境仍必须按最终验收清单逐项确认。
 - 没有完成最终验收清单前，不算生产完成。
 
@@ -57,9 +57,10 @@
 - [x] 参考素材继续走 R2 `temp/reference/`。
 - [x] 本地代码已实现生成视频内容经过画布后端保存到 R2 `generated/`，前端优先使用返回的 R2 URL。
 - [x] 生成视频内容已改为临时文件中转，不再整段读入内存。
+- [ ] 生成图片仍需补齐 R2 真实来源和本地缓存兜底；不能只依赖浏览器 IndexedDB。
 - [x] 模型广场没有公开商品数据时返回空列表，不再 fallback 暴露网关真实模型列表。
 - [x] 模型广场已补回归测试：空数据返回空、重复模型去重、优先保留更明确/更低价格。
-- [ ] 远程环境变量和真实 10 秒视频生成需要上线后验收。
+- [x] 生产 6 秒真实视频生成、`/content` 取回和 R2 保存已通过；固定 10 秒任务如作为产品要求需另测。
 
 本轮本地验证结果：
 
@@ -72,11 +73,11 @@
 
 仍未做的验证：
 
-- [ ] 生产环境变量配置后，登录态、模型列表、10 秒视频生成、R2 保存和余额扣费需要端到端验收。
+- [ ] 图片生成结果保存到 R2 `generated/` 后，登录态、模型列表、图片/视频生成、素材恢复和余额扣费需要端到端复测。
 
 ### Production Reality Check - 2026-06-17
 
-生产实测结论：代码能力已经合入，但生产配置没有完全按本文档执行，所以不能算生产完成。
+历史实测快照：当日代码能力已经合入，但生产配置没有完全按本文档执行，所以不能算生产完成。该小节保留问题演进证据；最终判断以 `Production Reality Check - 2026-06-20` 为准。
 
 已确认可用：
 
@@ -98,12 +99,34 @@
 - 图片生成成功后，“添加到素材”失败，浏览器报 `TypeError: Failed to fetch`，服务器日志出现 `请使用普通用户账号进入画布`。
 - R2 对象列表未新增，说明本轮图片和视频都没有成功落到 R2。
 
-当前判断：
+当日判断，已被 2026-06-20 复测修正：
 
 - 这不是 R2 域名不可用，也不是视频模型完全不可用。
-- 图片添加素材问题来自生产 SSO 配置不一致。
-- 视频保存问题来自 sub2api 对“不支持 `/content` 但任务详情提供 `video.url`”的上游模型兼容不足。
+- 当日怀疑图片添加素材问题来自生产 SSO 配置不一致；2026-06-20 复测确认普通用户 SSO 已通，当前剩余问题是图片仍依赖前端本地 IndexedDB 保存，线上 `uploadImage(image.dataUrl)` 转 Blob 失败。
+- 当日视频保存问题来自 sub2api 对“不支持 `/content` 但任务详情提供 `video.url`”的上游模型兼容不足；2026-06-20 复测确认该链路已修复并能保存到 R2。
 - 生成媒体白名单只影响旧的“前端拿到上游临时 URL 后再导入”兜底路径，不应作为线上画布视频保存的主依赖。
+
+### Production Reality Check - 2026-06-20
+
+生产二次实测结论：
+
+- 普通用户 `xpwan1@gmail.com` 可登录 TOP-AI，Canvas SSO 可换取 Canvas 用户 `topai-2`。
+- Canvas 模型接口可返回 3 个图片模型和 2 个视频模型，包含 `gpt-image-2`、`grok-imagine-video`、`grok-imagine-video-1.5-preview`。
+- API 级图片生成成功，`gpt-image-2` 返回 1 张 `b64_json` 图片。
+- 页面级图片生成成功，结果区出现 `生成结果 1`、`添加到素材`、`下载`。
+- 页面级图片点击 `添加到素材` 后，`/apps/canvas/assets` 未新增图片；浏览器报 `TypeError: Failed to fetch`。
+- API 级视频生成成功，`grok-imagine-video` 6 秒 720p 任务完成，任务状态为 `done`，进度 100。
+- `GET /apps/canvas/api/v1/videos/:id/content?model=grok-imagine-video` 返回 `200`、`video/mp4`、`X-Canvas-Media-URL` 和 `X-Canvas-Media-Storage-Key`。
+- 页面级视频生成成功，结果区视频可播放，视频元素 `readyState=4`，尺寸 1280x720，源地址为 R2 签名 URL。
+- 视频点击 `添加到素材` 后，`/apps/canvas/assets` 能看到 `生成视频 / 视频 / 1280x720 / video/mp4`。
+
+当前真实问题：
+
+- 视频生成、R2 保存、素材页显示已经跑通。
+- 图片生成已经跑通。
+- 图片加入“我的素材”失败，原因不是 R2 不可用，而是图片保存仍走前端 `uploadImage(image.dataUrl)` 到浏览器本地 IndexedDB，线上转换 Blob 时 `fetch` 失败。
+- 当前代码里“我的素材”记录主要保存在浏览器本地 `localForage`；视频生成结果已具备 R2 `r2:generated/...` 兜底，图片生成结果仍主要是 `image:...` 本地缓存。
+- 生产标准不能依赖上游临时 URL 或浏览器本地缓存作为唯一来源。
 
 ### 1. Canvas Model Source
 
@@ -202,26 +225,46 @@ GET /v1/videos/:id/content
 
 生产仍需验收：
 
-- 真实 `grok-imagine-video` 或等价视频模型能创建 10 秒视频任务。
+- 真实 `grok-imagine-video` 或等价视频模型能创建视频任务；6 秒任务已通过，固定 10 秒任务如作为产品要求需另测。
 - 查询任务状态能拿到完成结果。
 - `/v1/videos/:id/content` 能返回真实视频流；即使上游 `/content` 返回 404，也能通过任务详情 `video.url` 取回视频。
 - 画布后端能把该视频流保存到 R2 `generated/`，刷新后素材仍可播放。
 - TOP-AI 余额和 usage log 与 `source=canvas` 正常记录。
 
-### 6. Video Media Must Use R2
+### 6. Generated Media Must Use R2 As Source Of Truth
 
-视频和大素材不能长期压业务服务器本地磁盘。
+图片、视频和大素材不能长期压业务服务器本地磁盘，也不能把浏览器本地 IndexedDB 当成唯一来源。
 
-生产链路：
+生产标准链路：
 
 ```text
 参考素材 -> R2 temp/reference/
-生成结果 -> R2 generated/
-画布请求只传 URL
+生成图片 -> R2 generated/
+生成视频 -> R2 generated/
+我的素材记录 -> storageKey + metadata
+本地 IndexedDB -> 只做缓存
+画布展示 -> 本地缓存命中则用本地；缓存缺失则用 storageKey 换 R2 签名 URL
 TOP-AI 记录用量和 source=canvas
 ```
 
 不能靠单纯调大 Nginx/Caddy 超时和 body size 当最终方案。
+
+生产规则：
+
+- R2 是生成媒体的真实来源；浏览器本地缓存只能用于加速和离线临时体验。
+- `storageKey` 必须代表不可变文件。文件内容变化时必须生成新的 `storageKey`，不能覆盖旧 R2 对象。
+- 我的素材可以更新标题、标签、备注和当前引用的 `storageKey`，但不能复用同一个 key 写入不同内容。
+- 老的 `image:...`、`video:...` 本地素材继续兼容；新生成的图片和视频必须优先保存为 `r2:generated/...`。
+- 本地缓存 key 必须绑定远程 `storageKey`。如果素材记录的 `storageKey` 变化，本地旧缓存不能继续作为当前素材内容。
+- 上游模型返回的临时 URL 只允许作为服务端搬运来源，不能长期写入用户素材作为最终地址。
+- 浏览器不能得到 R2 写入密钥；上传和签名 URL 生成必须在 Canvas 后端完成。
+- R2 bucket 生产环境应保持私有；浏览器只接收短期签名 URL 或受控公共 CDN URL。
+
+主流平台参考结论：
+
+- OpenAI/Sora 的完成视频应通过 `/videos/{id}/content` 下载二进制内容后保存到自有存储。
+- Runway、Replicate、Kling、部分 OpenAI 图片 URL 和其他视频模型平台的输出 URL 多为临时资源，长期使用必须由业务方自行保存。
+- 因此 TOP-AI 托管 Canvas 必须把生成媒体及时落到自己的 R2，而不是依赖上游临时 URL 或浏览器本地缓存。
 
 ## Required Final Architecture
 
@@ -366,7 +409,7 @@ sub2api/backend/internal/server/routes/
 - 复用现有鉴权、分组、调度、扣费、日志机制。
 - 保留 `source=canvas`。
 - 不新增独立野接口。
-- 本地代码已接入；生产仍需要真实模型、真实余额和真实 10 秒视频生成验收。
+- 本地代码已接入；生产 6 秒真实视频生成、`/content` 取回和 R2 保存已通过。后续如果产品要求固定 10 秒任务，需按同一链路单独复测，不影响当前视频 R2 链路结论。
 
 ### E. R2 Media Flow
 
@@ -375,12 +418,65 @@ sub2api/backend/internal/server/routes/
 要求：
 
 - 参考素材走 `temp/reference/`。
-- 生成结果走 `generated/`。
+- 生成图片和生成视频都走 `generated/`。
 - 失败残留走 `failed/`。
 - 不把大视频长期保存在服务器本地。
 - 不把完整生成视频读入内存；使用临时文件或流式链路。
+- 不把浏览器本地 IndexedDB 当成生成媒体的唯一来源。
 - R2 凭证只在服务端环境和本地私密文件，不进 Git。
 - 当前本地实现使用临时文件中转生成视频内容，并复用该临时文件完成 R2 保存和浏览器响应。
+
+### F. Generated Image R2 Source Of Truth
+
+当前图片生成结果仍主要走前端本地缓存，未达到生产标准。下一次实现必须补齐以下范围，不允许散落到临时脚本或页面杂逻辑里。
+
+文件摆放硬规则：
+
+- 默认不新增生产文件；优先在现有职责文件内补齐能力。
+- 如确需新增生产文件，必须先证明现有 `handler`、`service`、`services`、`stores` 分层无法承载，且只能放在对应职责目录内，不能新建顶层目录。
+- 后端生成媒体入口只允许在 `infinite-canvas/handler/` 和 `infinite-canvas/service/` 分层内实现。
+- 前端媒体缓存、R2 签名 URL 解析、素材 hydration 只允许放在 `infinite-canvas/web/src/services/`、`infinite-canvas/web/src/stores/` 和对应页面现有文件内。
+- 不允许把 R2 上传、签名 URL、storageKey 解析、安全校验这类业务逻辑堆进 React 页面组件。
+- 测试只补在已有同类测试文件旁边，不能为临时验证新建脚本目录。
+
+需要修改的生产文件：
+
+- `infinite-canvas/handler/media_reference.go`
+  - 将 `POST /api/v1/media/generated` 从“生成视频导入”扩展为“生成媒体保存”。
+  - 支持图片和视频的服务端保存。
+  - 保留 HTTPS、host allowlist、私网 IP 阻断、重定向限制和大小限制。
+  - 错误文案从“生成视频”泛化为“生成媒体”，但不要降低现有安全限制。
+- `infinite-canvas/service/reference_media.go`
+  - 继续复用 `SaveGeneratedMedia` 和 `r2:generated/...` key 规则。
+  - 确保生成图片和生成视频都生成新的不可变 R2 key。
+- `infinite-canvas/web/src/services/image-storage.ts`
+  - 支持识别 `r2:generated/...` 图片 key。
+  - 本地缓存命中时用本地 Blob；缓存缺失时调用 `/api/v1/media/generated?key=...` 换 R2 签名 URL。
+  - `image:...` 旧本地缓存继续兼容。
+- `infinite-canvas/web/src/app/(user)/image/page.tsx`
+  - 生图成功后先把图片保存到 R2，再写入我的素材。
+  - 我的素材保存 R2 `storageKey`、`mimeType`、`bytes`、`width`、`height` 和必要 metadata。
+  - 本地缓存失败不能导致 R2 成功结果丢失。
+- `infinite-canvas/web/src/stores/use-asset-store.ts`
+  - 我的素材 hydration 要兼容图片 `r2:generated/...`。
+  - 老 `image:...` 资产不迁移、不删除，继续可显示。
+- `infinite-canvas/web/src/app/(user)/assets/page.tsx`
+  - 图片预览和下载要兼容 R2 图片签名 URL。
+  - 视频现有 R2 行为不能回退。
+
+需要补的测试：
+
+- `infinite-canvas/handler/media_reference_test.go`
+  - 覆盖生成图片类型识别、生成视频类型识别、非法 URL 拒绝、未配置 allowlist 拒绝。
+- `infinite-canvas/service/reference_media_test.go`
+  - 覆盖 `r2:generated/...` key 解析、防路径穿越、生成媒体保存结果字段。
+
+不在本轮顺手扩大的范围：
+
+- 不重构全部画布节点、裁剪、助手面板、参考图上传等所有 `uploadImage()` 调用。
+- 不改变旧本地素材导出/导入格式，除非为兼容 R2 key 做最小改动。
+- 不把素材记录改进 sub2api 数据库；当前“我的素材”记录仍按 Canvas 现有本地 store 机制保存，媒体文件由 R2 兜底。
+- 不暴露 R2 写入凭证到浏览器。
 
 ## Configuration Rules
 
@@ -440,16 +536,20 @@ R2_GENERATED_PREFIX=generated
 - [x] 模型广场不 fallback 暴露网关真实模型列表。
 - [x] `/apps/canvas/admin/settings` 不再误导客户配置模型。
 - [x] `/v1/videos` 创建、查询、取内容链路已接入现有网关。
-- [ ] 10 秒视频生成可跑通。
-- [ ] 上游 `/content` 返回 404/405 时，sub2api 能通过任务详情 `video.url` 取回视频流。
+- [x] 真实视频生成可跑通。
+- [x] 上游 `/content` 返回 404/405 时，sub2api 能通过任务详情 `video.url` 取回视频流。
 - [ ] 参考素材使用 R2 `temp/reference/`。
-- [x] 本地代码已实现生成结果使用 R2 `generated/`。
-- [ ] 生产真实生成结果已成功保存到 R2 `generated/`。
+- [x] 视频生成结果使用 R2 `generated/`。
+- [ ] 图片生成结果使用 R2 `generated/`。
+- [x] 生产真实视频生成结果已成功保存到 R2 `generated/`。
+- [ ] 生产真实图片生成结果已成功保存到 R2 `generated/`。
+- [ ] 我的素材图片记录使用 R2 `storageKey`，本地缓存丢失后仍可从 R2 恢复。
+- [ ] 本地缓存命中时不重复下载 R2；素材 `storageKey` 变化时不复用旧缓存。
 - [x] 视频内容代理不再整段读入内存。
 - [x] TOP-AI 后台能看到 `source=canvas` 用量。
 - [ ] TOP-AI 余额按规则扣费。
-- [ ] 图片生成后可以添加到“我的素材”，并且刷新后仍可用。
-- [ ] 视频生成后可以插入画布并播放，刷新后仍可用。
+- [ ] 图片生成后可以添加到“我的素材”，刷新、清缓存或换浏览器后仍可用。
+- [x] 视频生成后可以添加到“我的素材”并播放，刷新后仍可用。
 - [x] 前端构建产物没有服务端密钥。
 - [x] sub2api 和 infinite-canvas 目录结构没有被破坏。
 
