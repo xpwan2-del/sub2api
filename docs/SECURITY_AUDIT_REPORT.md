@@ -137,7 +137,7 @@ Acceptance:
 
 ### 4. Canvas Generated Media Import Can Be Abused
 
-Status: partially fixed; production allowlist required.
+Status: fixed for the legacy URL import endpoint; not required for the primary Canvas video save path.
 
 Risk:
 
@@ -159,23 +159,23 @@ Implemented fix:
 
 Still required:
 
-- Configure `GENERATED_MEDIA_ALLOWED_HOSTS` on production with trusted upstream media domains.
+- Keep `GENERATED_MEDIA_ALLOWED_HOSTS` configured only if the legacy URL import fallback is intentionally enabled.
+- Primary hosted Canvas video saves should use `GET /v1/videos/:id/content` through TOP-AI Gateway and receive a server-returned video stream, not depend on browser-side provider URL import.
 - Keep per-user rate limits and storage monitoring enabled.
 - Log `user_id`, task id, source, object key, and byte size.
 
 Production finding on 2026-06-17:
 
-- Production `GENERATED_MEDIA_ALLOWED_HOSTS` was missing.
 - A real `grok-imagine-video` task returned a provider media URL under `https://vidgen.x.ai/...`.
-- Canvas correctly blocked the import because the allowlist was empty.
-- Result: video generation reached the provider, but the generated video was not saved to R2 `generated/`.
-- Current trusted host required for this provider: `vidgen.x.ai`.
+- The upstream `/v1/videos/:id/content` endpoint returned 404 for that task, while the task detail contained the real `video.url`.
+- Result: video generation reached the provider, but the generated video was not saved to R2 `generated/` because sub2api did not yet fall back from `/content` to the task detail media URL.
+- The correct primary fix is for sub2api to return a video stream from `/v1/videos/:id/content`; host allowlisting remains only a guarded legacy fallback for direct URL imports.
 
 Acceptance:
 
 - Arbitrary public URLs cannot be imported.
 - Private IP, localhost, metadata, and DNS rebinding attempts are rejected.
-- Valid provider-generated video/image URLs still import normally.
+- Hosted Canvas video generation can save provider output to R2 without exposing or depending on provider temporary URLs in the browser.
 
 ### 5. Generated R2 Media URLs Are Public
 
@@ -465,12 +465,13 @@ Acceptance:
 
 1. Rotate exposed R2 credentials and Canvas token secret.
 2. Fix server env file permissions.
-3. Configure `GENERATED_MEDIA_ALLOWED_HOSTS` with trusted provider media domains.
-4. Change generated media delivery from public R2 URL to signed URL before production privacy launch.
-5. Configure WebDAV proxy allowlist or disable it.
-6. Add Cloudflare cache and rate limiting for public catalog.
-7. Re-verify Canvas default admin login, security headers, internal backend port binding, home HTML sanitization, video temp-file proxying, and public catalog no-fallback after deployment.
-8. Review and replace flagged frontend dependencies when practical.
+3. Verify sub2api `/v1/videos/:id/content` falls back to task detail `video.url` and returns a video stream without forwarding API keys to provider media URLs.
+4. Configure `GENERATED_MEDIA_ALLOWED_HOSTS` only if keeping the legacy URL import fallback enabled.
+5. Change generated media delivery from public R2 URL to signed URL before production privacy launch.
+6. Configure WebDAV proxy allowlist or disable it.
+7. Add Cloudflare cache and rate limiting for public catalog.
+8. Re-verify Canvas default admin login, security headers, internal backend port binding, home HTML sanitization, video temp-file proxying, and public catalog no-fallback after deployment.
+9. Review and replace flagged frontend dependencies when practical.
 
 ## Verification Checklist
 
@@ -482,7 +483,7 @@ Acceptance:
 - [ ] Server env files are permission `600`.
 - [ ] `/apps/canvas` returns CSP, nosniff, frame, referrer, and permissions headers.
 - [ ] Arbitrary public media URLs cannot be imported.
-- [ ] Valid provider-generated video URLs can still be saved to R2.
+- [ ] Provider-generated video can be saved to R2 through TOP-AI Gateway `/v1/videos/:id/content` even when the provider's native `/content` endpoint returns 404/405.
 - [ ] Generated media access uses private or signed URLs in production.
 - [ ] WebDAV proxy rejects non-allowlisted hosts.
 - [ ] Large video fetches do not spike process memory.
