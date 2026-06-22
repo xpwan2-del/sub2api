@@ -95,7 +95,7 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const { appStore, docLink, isExternalDocUrl } = usePublicBranding()
 
-const canvasPath = '/apps/canvas'
+// const canvasPath = '/apps/canvas'
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
 const dashboardPath = computed(() => isAdmin.value ? '/admin/dashboard' : '/dashboard')
