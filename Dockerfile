@@ -34,7 +34,8 @@ RUN pnpm install --frozen-lockfile
 # Copy only that subtree to keep the build dependency minimal.
 COPY frontend/ ./
 COPY docs/legal/ /app/docs/legal/
-RUN pnpm run build
+# Suppress Node 24 DEP0169 (legacy url.parse()) warning noise emitted by vite/rollup.
+RUN NODE_OPTIONS="--disable-warning=DEP0169" pnpm run build
 
 # -----------------------------------------------------------------------------
 # Stage 2: Backend Builder
