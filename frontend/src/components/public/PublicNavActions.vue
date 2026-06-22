@@ -34,14 +34,14 @@
       <span>{{ t('home.models') }}</span>
     </router-link>
 
-    <a
+    <!-- <a
       :href="canvasPath"
       class="public-nav-button"
       :title="t('home.canvas')"
     >
       <Icon name="brain" size="md" />
       <span>{{ t('home.canvas') }}</span>
-    </a>
+    </a> -->
 
     <button
       type="button"

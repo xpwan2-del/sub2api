@@ -38,13 +38,13 @@
         <Icon name="grid" size="sm" />
         <span>{{ t('home.models') }}</span>
       </router-link>
-      <a
+      <!-- <a
         :href="canvasPath"
         class="public-topbar-nav-link"
       >
         <Icon name="brain" size="sm" />
         <span>{{ t('home.canvas') }}</span>
-      </a>
+      </a> -->
       <LocaleSwitcher />
       <button
         class="public-topbar-icon-button"
