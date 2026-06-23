@@ -2475,13 +2475,17 @@ export default {
       },
       imagePricing: {
         title: '图片生成计费',
-        description: '配置图片生成能力和图片基础单价，留空则使用默认价格',
+        description: '配置图片生成能力与生图倍率；图片单价请在渠道定价中按模型配置',
         allowImageGeneration: '允许当前分组生图',
         independentMultiplier: '生图倍率独立',
         imageMultiplier: '生图独立倍率',
         modeHint: '默认关闭独立倍率时，图片费用 = 图片价格 × 当前分组有效倍率；开启独立倍率后，图片费用 = 图片价格 × 生图独立倍率。',
+        priceMigratedHint: '图片单价已迁移至「渠道管理 → 模型定价」：计费模式选择「图片」，按 1K/2K/4K 等层级配置。此处仅保留倍率与开关，价格不再在此设置。',
+        legacyPriceNote: '该分组仍保留历史图片价格，将作为渠道未配置该模型时的兜底价格。',
         finalPricePreview: '最终单张价格预览',
-        notConfigured: '未配置'
+        notConfigured: '未配置',
+        multiplierRequired: '开启独立倍率时，请填写生图倍率',
+        multiplierInvalid: '生图倍率必须为不小于 0 的数字'
       },
       modelsList: {
         title: '自定义 /v1/models 模型列表',

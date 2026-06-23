@@ -2391,13 +2391,17 @@ export default {
       },
       imagePricing: {
         title: 'Image Generation Pricing',
-        description: 'Configure image generation access and base image prices. Leave empty to use default prices.',
+        description: 'Configure image generation access and image multiplier. Set per-model image prices in channel pricing.',
         allowImageGeneration: 'Allow image generation for this group',
         independentMultiplier: 'Use independent image multiplier',
         imageMultiplier: 'Image multiplier',
         modeHint: 'By default, image billing uses image price × current effective group multiplier. Independent mode uses image price × image multiplier.',
+        priceMigratedHint: 'Image unit prices have moved to “Channels → Model Pricing”: set billing mode to “Image” and configure tiers like 1K/2K/4K. Only multiplier and toggles remain here.',
+        legacyPriceNote: 'This group still has legacy image prices; they serve as a fallback when a channel has no pricing for the model.',
         finalPricePreview: 'Final per-image price preview',
-        notConfigured: 'Not configured'
+        notConfigured: 'Not configured',
+        multiplierRequired: 'Please enter the image multiplier when independent mode is enabled',
+        multiplierInvalid: 'Image multiplier must be a number ≥ 0'
       },
       modelsList: {
         title: 'Custom /v1/models Model List',
