@@ -109,10 +109,10 @@ func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *Act
 		return nil, fmt.Errorf("create bundle subscription: %w", err)
 	}
 
-		// Invalidate user bundle cache after activation.
-		if s.cache != nil {
-			_ = s.cache.InvalidateBundleSubscriptionCache(ctx, req.UserID)
-		}
+	// Invalidate user bundle cache after activation.
+	if s.cache != nil {
+		_ = s.cache.InvalidateBundleSubscriptionCache(ctx, req.UserID)
+	}
 
 	// 4. For each GroupQuota, create BundleSubscriptionUsage + bridge UserSubscription.
 	for _, gq := range plan.GroupQuotas {
@@ -256,7 +256,8 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 		return nil, fmt.Errorf("load user subscriptions: %w", err)
 	}
 
-	// Build a lookup for snapshotted limits + group info by groupID from bridged UserSubscriptions.
+	// Build a lookup for snapshotted USD limits + group info by groupID from bridged UserSubscriptions.
+	// USD limits stay sourced from the UserSubscription snapshot (consistency with activation time).
 	type groupMeta struct {
 		dailyLimit   float64
 		weeklyLimit  float64
@@ -282,23 +283,67 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 		}
 	}
 
+	// Build a lookup for count limits by groupID from the plan's GroupQuotas.
+	// UserSubscription has no count-limit fields, so count limits come from BundlePlanGroupQuota.
+	type countLimit struct {
+		daily   int
+		weekly  int
+		monthly int
+	}
+	countLimitMap := make(map[int64]countLimit)
+	if bundleSub.Plan == nil {
+		if plan, planErr := s.planRepo.GetByID(ctx, bundleSub.PlanID); planErr == nil && plan != nil {
+			bundleSub.Plan = plan
+		}
+	}
+	if bundleSub.Plan != nil {
+		for _, gq := range bundleSub.Plan.GroupQuotas {
+			// Match USD meta semantics: platform-level (groupID) match; last-writer wins if duplicated.
+			if existing, ok := countLimitMap[gq.GroupID]; ok {
+				if gq.DailyLimitCount > existing.daily {
+					existing.daily = gq.DailyLimitCount
+				}
+				if gq.WeeklyLimitCount > existing.weekly {
+					existing.weekly = gq.WeeklyLimitCount
+				}
+				if gq.MonthlyLimitCount > existing.monthly {
+					existing.monthly = gq.MonthlyLimitCount
+				}
+				countLimitMap[gq.GroupID] = existing
+			} else {
+				countLimitMap[gq.GroupID] = countLimit{
+					daily:   gq.DailyLimitCount,
+					weekly:  gq.WeeklyLimitCount,
+					monthly: gq.MonthlyLimitCount,
+				}
+			}
+		}
+	}
+
 	progress := make([]BundleUsageProgress, 0, len(bundleSub.Usages))
 	for _, usage := range bundleSub.Usages {
 		meta, hasMeta := metaMap[usage.GroupID]
 		if !hasMeta {
 			meta = groupMeta{} // zero limits = unlimited
 		}
+		cl := countLimitMap[usage.GroupID] // zero values = unlimited when no quota configured
 		progress = append(progress, BundleUsageProgress{
-			GroupID:         usage.GroupID,
-			GroupName:       meta.groupName,
-			Platform:        meta.platform,
-			ModelPattern:    usage.ModelPattern,
-			DailyUsageUSD:   usage.DailyUsageUSD,
-			DailyLimitUSD:   meta.dailyLimit,
-			WeeklyUsageUSD:  usage.WeeklyUsageUSD,
-			WeeklyLimitUSD:  meta.weeklyLimit,
-			MonthlyUsageUSD: usage.MonthlyUsageUSD,
-			MonthlyLimitUSD: meta.monthlyLimit,
+			GroupID:           usage.GroupID,
+			GroupName:         meta.groupName,
+			Platform:          meta.platform,
+			ModelPattern:      usage.ModelPattern,
+			DailyUsageCount:   usage.DailyUsageCount,
+			DailyUsageUSD:     usage.DailyUsageUSD,
+			DailyLimitCount:   cl.daily,
+			DailyLimitUSD:     meta.dailyLimit,
+			WeeklyUsageCount:  usage.WeeklyUsageCount,
+			WeeklyUsageUSD:    usage.WeeklyUsageUSD,
+			WeeklyLimitCount:  cl.weekly,
+			WeeklyLimitUSD:    meta.weeklyLimit,
+			MonthlyUsageCount: usage.MonthlyUsageCount,
+			MonthlyUsageUSD:   usage.MonthlyUsageUSD,
+			MonthlyLimitCount: cl.monthly,
+			MonthlyLimitUSD:   meta.monthlyLimit,
 		})
 	}
 	return progress, nil
@@ -357,10 +402,10 @@ func (s *BundleSubscriptionService) ExtendBundle(ctx context.Context, bundleSubI
 		return s.userSubRepo.ExtendExpiry(ctx, sub.ID, extendedExpiry)
 	})
 
-		// Invalidate cache after extension.
-		if s.cache != nil {
-			_ = s.cache.InvalidateBundleSubscriptionCache(ctx, bundleSub.UserID)
-		}
+	// Invalidate cache after extension.
+	if s.cache != nil {
+		_ = s.cache.InvalidateBundleSubscriptionCache(ctx, bundleSub.UserID)
+	}
 
 	return nil
 }
