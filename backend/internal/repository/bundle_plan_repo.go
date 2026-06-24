@@ -65,7 +65,10 @@ func (r *bundlePlanRepository) Create(ctx context.Context, plan *service.BundleP
 				SetModelPattern(gq.ModelPattern).
 				SetDailyLimitUsd(gq.DailyLimitUSD).
 				SetWeeklyLimitUsd(gq.WeeklyLimitUSD).
-				SetMonthlyLimitUsd(gq.MonthlyLimitUSD)
+				SetMonthlyLimitUsd(gq.MonthlyLimitUSD).
+				SetDailyLimitCount(gq.DailyLimitCount).
+				SetWeeklyLimitCount(gq.WeeklyLimitCount).
+				SetMonthlyLimitCount(gq.MonthlyLimitCount)
 			builders = append(builders, b)
 		}
 		createdQuotas, err := client.BundlePlanGroupQuota.CreateBulk(builders...).Save(ctx)
@@ -130,7 +133,10 @@ func (r *bundlePlanRepository) Update(ctx context.Context, plan *service.BundleP
 				SetModelPattern(gq.ModelPattern).
 				SetDailyLimitUsd(gq.DailyLimitUSD).
 				SetWeeklyLimitUsd(gq.WeeklyLimitUSD).
-				SetMonthlyLimitUsd(gq.MonthlyLimitUSD)
+				SetMonthlyLimitUsd(gq.MonthlyLimitUSD).
+				SetDailyLimitCount(gq.DailyLimitCount).
+				SetWeeklyLimitCount(gq.WeeklyLimitCount).
+				SetMonthlyLimitCount(gq.MonthlyLimitCount)
 			builders = append(builders, b)
 		}
 		createdQuotas, err := client.BundlePlanGroupQuota.CreateBulk(builders...).Save(ctx)
@@ -304,14 +310,17 @@ func bundlePlanToService(src *dbent.BundlePlan) *service.BundlePlan {
 // bundlePlanGroupQuotaToService converts an Ent BundlePlanGroupQuota entity to a service-layer model.
 func bundlePlanGroupQuotaToService(src *dbent.BundlePlanGroupQuota) service.BundlePlanGroupQuota {
 	return service.BundlePlanGroupQuota{
-		ID:              src.ID,
-		PlanID:          src.PlanID,
-		GroupID:         src.GroupID,
-		QuotaScope:      src.QuotaScope,
-		ModelPattern:    src.ModelPattern,
-		DailyLimitUSD:   src.DailyLimitUsd,
-		WeeklyLimitUSD:  src.WeeklyLimitUsd,
-		MonthlyLimitUSD: src.MonthlyLimitUsd,
+		ID:                src.ID,
+		PlanID:            src.PlanID,
+		GroupID:           src.GroupID,
+		QuotaScope:        src.QuotaScope,
+		ModelPattern:      src.ModelPattern,
+		DailyLimitUSD:     src.DailyLimitUsd,
+		WeeklyLimitUSD:    src.WeeklyLimitUsd,
+		MonthlyLimitUSD:   src.MonthlyLimitUsd,
+		DailyLimitCount:   src.DailyLimitCount,
+		WeeklyLimitCount:  src.WeeklyLimitCount,
+		MonthlyLimitCount: src.MonthlyLimitCount,
 	}
 }
 

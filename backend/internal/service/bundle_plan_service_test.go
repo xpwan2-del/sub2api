@@ -46,7 +46,7 @@ func (bundlePlanRepoNoop) Delete(context.Context, int64) error {
 type bundlePlanCreateStub struct {
 	bundlePlanRepoNoop
 
-	created *BundlePlan
+	created   *BundlePlan
 	createErr error
 }
 
@@ -111,8 +111,8 @@ func (s *bundlePlanListStub) ListForSale(_ context.Context) ([]BundlePlan, error
 type bundlePlanGetStub struct {
 	bundlePlanRepoNoop
 
-	plan    *BundlePlan
-	getErr  error
+	plan   *BundlePlan
+	getErr error
 }
 
 func (s *bundlePlanGetStub) GetByID(_ context.Context, id int64) (*BundlePlan, error) {
@@ -182,6 +182,36 @@ func TestBundlePlanService_CreatePlan_Success(t *testing.T) {
 	require.Len(t, plan.GroupQuotas, 1)
 	require.Equal(t, int64(10), plan.GroupQuotas[0].GroupID)
 	require.Equal(t, 1.0, plan.GroupQuotas[0].DailyLimitUSD)
+}
+
+func TestCreatePlan_PersistsCountLimits(t *testing.T) {
+	stub := &bundlePlanCreateStub{}
+	svc := newBundlePlanSvc(stub)
+
+	req := &CreateBundlePlanRequest{
+		Name:         "Count Bundle",
+		Tier:         BundleTierStarter,
+		ValidityDays: 30,
+		GroupQuotas: []CreateGroupQuotaRequest{
+			{
+				GroupID:           10,
+				QuotaScope:        QuotaScopePlatform,
+				DailyLimitCount:   50,
+				WeeklyLimitCount:  200,
+				MonthlyLimitCount: 500,
+			},
+		},
+	}
+
+	plan, err := svc.CreatePlan(context.Background(), req)
+
+	require.NoError(t, err)
+	require.NotNil(t, plan)
+	require.Len(t, plan.GroupQuotas, 1)
+	// count limits must be persisted onto the returned plan.
+	require.Equal(t, 50, plan.GroupQuotas[0].DailyLimitCount)
+	require.Equal(t, 200, plan.GroupQuotas[0].WeeklyLimitCount)
+	require.Equal(t, 500, plan.GroupQuotas[0].MonthlyLimitCount)
 }
 
 func TestBundlePlanService_CreatePlan_NilRequest(t *testing.T) {
@@ -259,6 +289,32 @@ func TestBundlePlanService_UpdatePlan_ReplaceGroupQuotas(t *testing.T) {
 	require.Equal(t, "gpt-4*", stub.updated.GroupQuotas[0].ModelPattern)
 	require.Equal(t, int64(30), stub.updated.GroupQuotas[1].GroupID)
 	require.Equal(t, 50.0, stub.updated.GroupQuotas[1].MonthlyLimitUSD)
+}
+
+func TestBundlePlanService_UpdatePlan_PersistsCountLimits(t *testing.T) {
+	existing := samplePlan()
+	stub := &bundlePlanUpdateStub{existing: existing}
+	svc := newBundlePlanSvc(stub)
+
+	newQuotas := []CreateGroupQuotaRequest{
+		{
+			GroupID:           20,
+			QuotaScope:        QuotaScopePlatform,
+			DailyLimitCount:   7,
+			WeeklyLimitCount:  35,
+			MonthlyLimitCount: 140,
+		},
+	}
+	req := &UpdateBundlePlanRequest{GroupQuotas: &newQuotas}
+
+	plan, err := svc.UpdatePlan(context.Background(), 1, req)
+
+	require.NoError(t, err)
+	require.NotNil(t, plan)
+	require.Len(t, stub.updated.GroupQuotas, 1)
+	require.Equal(t, 7, stub.updated.GroupQuotas[0].DailyLimitCount)
+	require.Equal(t, 35, stub.updated.GroupQuotas[0].WeeklyLimitCount)
+	require.Equal(t, 140, stub.updated.GroupQuotas[0].MonthlyLimitCount)
 }
 
 func TestBundlePlanService_UpdatePlan_PlanNotFound(t *testing.T) {

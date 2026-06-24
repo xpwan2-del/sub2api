@@ -5,8 +5,8 @@
 package service
 
 import (
-	"encoding/json"
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
@@ -17,7 +17,7 @@ import (
 // BundlePlanService handles CRUD operations for bundle plans.
 type BundlePlanService struct {
 	planRepo BundlePlanRepository
-	cache  BillingCache
+	cache    BillingCache
 }
 
 // NewBundlePlanService 创建套餐计划服务实例
@@ -59,12 +59,15 @@ func (s *BundlePlanService) CreatePlan(ctx context.Context, req *CreateBundlePla
 
 	for _, gq := range req.GroupQuotas {
 		plan.GroupQuotas = append(plan.GroupQuotas, BundlePlanGroupQuota{
-			GroupID:         gq.GroupID,
-			QuotaScope:      gq.QuotaScope,
-			ModelPattern:    gq.ModelPattern,
-			DailyLimitUSD:   gq.DailyLimitUSD,
-			WeeklyLimitUSD:  gq.WeeklyLimitUSD,
-			MonthlyLimitUSD: gq.MonthlyLimitUSD,
+			GroupID:           gq.GroupID,
+			QuotaScope:        gq.QuotaScope,
+			ModelPattern:      gq.ModelPattern,
+			DailyLimitUSD:     gq.DailyLimitUSD,
+			WeeklyLimitUSD:    gq.WeeklyLimitUSD,
+			MonthlyLimitUSD:   gq.MonthlyLimitUSD,
+			DailyLimitCount:   gq.DailyLimitCount,
+			WeeklyLimitCount:  gq.WeeklyLimitCount,
+			MonthlyLimitCount: gq.MonthlyLimitCount,
 		})
 	}
 
@@ -137,13 +140,16 @@ func (s *BundlePlanService) UpdatePlan(ctx context.Context, planID int64, req *U
 		quotas := make([]BundlePlanGroupQuota, 0, len(*req.GroupQuotas))
 		for _, gq := range *req.GroupQuotas {
 			quotas = append(quotas, BundlePlanGroupQuota{
-				PlanID:          planID,
-				GroupID:         gq.GroupID,
-				QuotaScope:      gq.QuotaScope,
-				ModelPattern:    gq.ModelPattern,
-				DailyLimitUSD:   gq.DailyLimitUSD,
-				WeeklyLimitUSD:  gq.WeeklyLimitUSD,
-				MonthlyLimitUSD: gq.MonthlyLimitUSD,
+				PlanID:            planID,
+				GroupID:           gq.GroupID,
+				QuotaScope:        gq.QuotaScope,
+				ModelPattern:      gq.ModelPattern,
+				DailyLimitUSD:     gq.DailyLimitUSD,
+				WeeklyLimitUSD:    gq.WeeklyLimitUSD,
+				MonthlyLimitUSD:   gq.MonthlyLimitUSD,
+				DailyLimitCount:   gq.DailyLimitCount,
+				WeeklyLimitCount:  gq.WeeklyLimitCount,
+				MonthlyLimitCount: gq.MonthlyLimitCount,
 			})
 		}
 		existing.GroupQuotas = quotas
