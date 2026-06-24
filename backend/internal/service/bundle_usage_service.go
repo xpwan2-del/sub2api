@@ -12,9 +12,9 @@ import (
 // BundleUsageService 套餐用量服务，处理用量累加和额度检查
 // BundleUsageService handles usage accumulation and quota eligibility checks.
 type BundleUsageService struct {
-	usageRepo   BundleUsageRepository
+	usageRepo     BundleUsageRepository
 	bundleSubRepo BundleSubscriptionRepository
-	planRepo    BundlePlanRepository
+	planRepo      BundlePlanRepository
 }
 
 // NewBundleUsageService 创建套餐用量服务实例
@@ -52,10 +52,13 @@ func (s *BundleUsageService) AccumulateUsage(ctx context.Context, bundleSubID, g
 // QuotaEligibilityResult 额度检查结果，包含是否可用和各周期剩余额度
 // QuotaEligibilityResult holds the result of a quota eligibility check.
 type QuotaEligibilityResult struct {
-	Eligible        bool
-	DailyRemaining  float64
-	WeeklyRemaining float64
-	MonthlyRemaining float64
+	Eligible              bool
+	DailyRemaining        float64
+	DailyRemainingCount   int
+	WeeklyRemaining       float64
+	WeeklyRemainingCount  int
+	MonthlyRemaining      float64
+	MonthlyRemainingCount int
 }
 
 // CheckQuotaEligibility 检查套餐订阅在指定渠道组上是否还有剩余额度
