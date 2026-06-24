@@ -38,6 +38,9 @@ func (BundleSubscriptionUsage) Fields() []ent.Field {
 		field.Time("weekly_window_start").Default(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)).SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).Comment("周窗口起点"),
 		field.Float("monthly_usage_usd").Default(0).Comment("当月已用"),
 		field.Time("monthly_window_start").Default(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)).SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).Comment("月窗口起点"),
+		field.Int("daily_usage_count").Default(0).Comment("当日已用次数"),
+		field.Int("weekly_usage_count").Default(0).Comment("当周已用次数"),
+		field.Int("monthly_usage_count").Default(0).Comment("当月已用次数"),
 	}
 }
 

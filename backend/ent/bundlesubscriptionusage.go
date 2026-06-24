@@ -35,7 +35,13 @@ type BundleSubscriptionUsage struct {
 	MonthlyUsageUsd float64 `json:"monthly_usage_usd,omitempty"`
 	// 月窗口起点
 	MonthlyWindowStart time.Time `json:"monthly_window_start,omitempty"`
-	selectValues       sql.SelectValues
+	// 当日已用次数
+	DailyUsageCount int `json:"daily_usage_count,omitempty"`
+	// 当周已用次数
+	WeeklyUsageCount int `json:"weekly_usage_count,omitempty"`
+	// 当月已用次数
+	MonthlyUsageCount int `json:"monthly_usage_count,omitempty"`
+	selectValues      sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -45,7 +51,7 @@ func (*BundleSubscriptionUsage) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case bundlesubscriptionusage.FieldDailyUsageUsd, bundlesubscriptionusage.FieldWeeklyUsageUsd, bundlesubscriptionusage.FieldMonthlyUsageUsd:
 			values[i] = new(sql.NullFloat64)
-		case bundlesubscriptionusage.FieldID, bundlesubscriptionusage.FieldBundleSubscriptionID, bundlesubscriptionusage.FieldGroupID:
+		case bundlesubscriptionusage.FieldID, bundlesubscriptionusage.FieldBundleSubscriptionID, bundlesubscriptionusage.FieldGroupID, bundlesubscriptionusage.FieldDailyUsageCount, bundlesubscriptionusage.FieldWeeklyUsageCount, bundlesubscriptionusage.FieldMonthlyUsageCount:
 			values[i] = new(sql.NullInt64)
 		case bundlesubscriptionusage.FieldModelPattern:
 			values[i] = new(sql.NullString)
@@ -126,6 +132,24 @@ func (_m *BundleSubscriptionUsage) assignValues(columns []string, values []any) 
 			} else if value.Valid {
 				_m.MonthlyWindowStart = value.Time
 			}
+		case bundlesubscriptionusage.FieldDailyUsageCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field daily_usage_count", values[i])
+			} else if value.Valid {
+				_m.DailyUsageCount = int(value.Int64)
+			}
+		case bundlesubscriptionusage.FieldWeeklyUsageCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field weekly_usage_count", values[i])
+			} else if value.Valid {
+				_m.WeeklyUsageCount = int(value.Int64)
+			}
+		case bundlesubscriptionusage.FieldMonthlyUsageCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field monthly_usage_count", values[i])
+			} else if value.Valid {
+				_m.MonthlyUsageCount = int(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -188,6 +212,15 @@ func (_m *BundleSubscriptionUsage) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("monthly_window_start=")
 	builder.WriteString(_m.MonthlyWindowStart.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("daily_usage_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DailyUsageCount))
+	builder.WriteString(", ")
+	builder.WriteString("weekly_usage_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WeeklyUsageCount))
+	builder.WriteString(", ")
+	builder.WriteString("monthly_usage_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyUsageCount))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -103,6 +103,48 @@ func (_c *BundlePlanGroupQuotaCreate) SetNillableMonthlyLimitUsd(v *float64) *Bu
 	return _c
 }
 
+// SetDailyLimitCount sets the "daily_limit_count" field.
+func (_c *BundlePlanGroupQuotaCreate) SetDailyLimitCount(v int) *BundlePlanGroupQuotaCreate {
+	_c.mutation.SetDailyLimitCount(v)
+	return _c
+}
+
+// SetNillableDailyLimitCount sets the "daily_limit_count" field if the given value is not nil.
+func (_c *BundlePlanGroupQuotaCreate) SetNillableDailyLimitCount(v *int) *BundlePlanGroupQuotaCreate {
+	if v != nil {
+		_c.SetDailyLimitCount(*v)
+	}
+	return _c
+}
+
+// SetWeeklyLimitCount sets the "weekly_limit_count" field.
+func (_c *BundlePlanGroupQuotaCreate) SetWeeklyLimitCount(v int) *BundlePlanGroupQuotaCreate {
+	_c.mutation.SetWeeklyLimitCount(v)
+	return _c
+}
+
+// SetNillableWeeklyLimitCount sets the "weekly_limit_count" field if the given value is not nil.
+func (_c *BundlePlanGroupQuotaCreate) SetNillableWeeklyLimitCount(v *int) *BundlePlanGroupQuotaCreate {
+	if v != nil {
+		_c.SetWeeklyLimitCount(*v)
+	}
+	return _c
+}
+
+// SetMonthlyLimitCount sets the "monthly_limit_count" field.
+func (_c *BundlePlanGroupQuotaCreate) SetMonthlyLimitCount(v int) *BundlePlanGroupQuotaCreate {
+	_c.mutation.SetMonthlyLimitCount(v)
+	return _c
+}
+
+// SetNillableMonthlyLimitCount sets the "monthly_limit_count" field if the given value is not nil.
+func (_c *BundlePlanGroupQuotaCreate) SetNillableMonthlyLimitCount(v *int) *BundlePlanGroupQuotaCreate {
+	if v != nil {
+		_c.SetMonthlyLimitCount(*v)
+	}
+	return _c
+}
+
 // Mutation returns the BundlePlanGroupQuotaMutation object of the builder.
 func (_c *BundlePlanGroupQuotaCreate) Mutation() *BundlePlanGroupQuotaMutation {
 	return _c.mutation
@@ -158,6 +200,18 @@ func (_c *BundlePlanGroupQuotaCreate) defaults() {
 		v := bundleplangroupquota.DefaultMonthlyLimitUsd
 		_c.mutation.SetMonthlyLimitUsd(v)
 	}
+	if _, ok := _c.mutation.DailyLimitCount(); !ok {
+		v := bundleplangroupquota.DefaultDailyLimitCount
+		_c.mutation.SetDailyLimitCount(v)
+	}
+	if _, ok := _c.mutation.WeeklyLimitCount(); !ok {
+		v := bundleplangroupquota.DefaultWeeklyLimitCount
+		_c.mutation.SetWeeklyLimitCount(v)
+	}
+	if _, ok := _c.mutation.MonthlyLimitCount(); !ok {
+		v := bundleplangroupquota.DefaultMonthlyLimitCount
+		_c.mutation.SetMonthlyLimitCount(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -182,6 +236,15 @@ func (_c *BundlePlanGroupQuotaCreate) check() error {
 	}
 	if _, ok := _c.mutation.MonthlyLimitUsd(); !ok {
 		return &ValidationError{Name: "monthly_limit_usd", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.monthly_limit_usd"`)}
+	}
+	if _, ok := _c.mutation.DailyLimitCount(); !ok {
+		return &ValidationError{Name: "daily_limit_count", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.daily_limit_count"`)}
+	}
+	if _, ok := _c.mutation.WeeklyLimitCount(); !ok {
+		return &ValidationError{Name: "weekly_limit_count", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.weekly_limit_count"`)}
+	}
+	if _, ok := _c.mutation.MonthlyLimitCount(); !ok {
+		return &ValidationError{Name: "monthly_limit_count", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.monthly_limit_count"`)}
 	}
 	return nil
 }
@@ -237,6 +300,18 @@ func (_c *BundlePlanGroupQuotaCreate) createSpec() (*BundlePlanGroupQuota, *sqlg
 	if value, ok := _c.mutation.MonthlyLimitUsd(); ok {
 		_spec.SetField(bundleplangroupquota.FieldMonthlyLimitUsd, field.TypeFloat64, value)
 		_node.MonthlyLimitUsd = value
+	}
+	if value, ok := _c.mutation.DailyLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldDailyLimitCount, field.TypeInt, value)
+		_node.DailyLimitCount = value
+	}
+	if value, ok := _c.mutation.WeeklyLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldWeeklyLimitCount, field.TypeInt, value)
+		_node.WeeklyLimitCount = value
+	}
+	if value, ok := _c.mutation.MonthlyLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldMonthlyLimitCount, field.TypeInt, value)
+		_node.MonthlyLimitCount = value
 	}
 	return _node, _spec
 }
@@ -401,6 +476,60 @@ func (u *BundlePlanGroupQuotaUpsert) UpdateMonthlyLimitUsd() *BundlePlanGroupQuo
 // AddMonthlyLimitUsd adds v to the "monthly_limit_usd" field.
 func (u *BundlePlanGroupQuotaUpsert) AddMonthlyLimitUsd(v float64) *BundlePlanGroupQuotaUpsert {
 	u.Add(bundleplangroupquota.FieldMonthlyLimitUsd, v)
+	return u
+}
+
+// SetDailyLimitCount sets the "daily_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) SetDailyLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Set(bundleplangroupquota.FieldDailyLimitCount, v)
+	return u
+}
+
+// UpdateDailyLimitCount sets the "daily_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsert) UpdateDailyLimitCount() *BundlePlanGroupQuotaUpsert {
+	u.SetExcluded(bundleplangroupquota.FieldDailyLimitCount)
+	return u
+}
+
+// AddDailyLimitCount adds v to the "daily_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) AddDailyLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Add(bundleplangroupquota.FieldDailyLimitCount, v)
+	return u
+}
+
+// SetWeeklyLimitCount sets the "weekly_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) SetWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Set(bundleplangroupquota.FieldWeeklyLimitCount, v)
+	return u
+}
+
+// UpdateWeeklyLimitCount sets the "weekly_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsert) UpdateWeeklyLimitCount() *BundlePlanGroupQuotaUpsert {
+	u.SetExcluded(bundleplangroupquota.FieldWeeklyLimitCount)
+	return u
+}
+
+// AddWeeklyLimitCount adds v to the "weekly_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) AddWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Add(bundleplangroupquota.FieldWeeklyLimitCount, v)
+	return u
+}
+
+// SetMonthlyLimitCount sets the "monthly_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) SetMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Set(bundleplangroupquota.FieldMonthlyLimitCount, v)
+	return u
+}
+
+// UpdateMonthlyLimitCount sets the "monthly_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsert) UpdateMonthlyLimitCount() *BundlePlanGroupQuotaUpsert {
+	u.SetExcluded(bundleplangroupquota.FieldMonthlyLimitCount)
+	return u
+}
+
+// AddMonthlyLimitCount adds v to the "monthly_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) AddMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Add(bundleplangroupquota.FieldMonthlyLimitCount, v)
 	return u
 }
 
@@ -574,6 +703,69 @@ func (u *BundlePlanGroupQuotaUpsertOne) AddMonthlyLimitUsd(v float64) *BundlePla
 func (u *BundlePlanGroupQuotaUpsertOne) UpdateMonthlyLimitUsd() *BundlePlanGroupQuotaUpsertOne {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
 		s.UpdateMonthlyLimitUsd()
+	})
+}
+
+// SetDailyLimitCount sets the "daily_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) SetDailyLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.SetDailyLimitCount(v)
+	})
+}
+
+// AddDailyLimitCount adds v to the "daily_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) AddDailyLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.AddDailyLimitCount(v)
+	})
+}
+
+// UpdateDailyLimitCount sets the "daily_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertOne) UpdateDailyLimitCount() *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.UpdateDailyLimitCount()
+	})
+}
+
+// SetWeeklyLimitCount sets the "weekly_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) SetWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.SetWeeklyLimitCount(v)
+	})
+}
+
+// AddWeeklyLimitCount adds v to the "weekly_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) AddWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.AddWeeklyLimitCount(v)
+	})
+}
+
+// UpdateWeeklyLimitCount sets the "weekly_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertOne) UpdateWeeklyLimitCount() *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.UpdateWeeklyLimitCount()
+	})
+}
+
+// SetMonthlyLimitCount sets the "monthly_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) SetMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.SetMonthlyLimitCount(v)
+	})
+}
+
+// AddMonthlyLimitCount adds v to the "monthly_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) AddMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.AddMonthlyLimitCount(v)
+	})
+}
+
+// UpdateMonthlyLimitCount sets the "monthly_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertOne) UpdateMonthlyLimitCount() *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.UpdateMonthlyLimitCount()
 	})
 }
 
@@ -911,6 +1103,69 @@ func (u *BundlePlanGroupQuotaUpsertBulk) AddMonthlyLimitUsd(v float64) *BundlePl
 func (u *BundlePlanGroupQuotaUpsertBulk) UpdateMonthlyLimitUsd() *BundlePlanGroupQuotaUpsertBulk {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
 		s.UpdateMonthlyLimitUsd()
+	})
+}
+
+// SetDailyLimitCount sets the "daily_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) SetDailyLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.SetDailyLimitCount(v)
+	})
+}
+
+// AddDailyLimitCount adds v to the "daily_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) AddDailyLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.AddDailyLimitCount(v)
+	})
+}
+
+// UpdateDailyLimitCount sets the "daily_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertBulk) UpdateDailyLimitCount() *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.UpdateDailyLimitCount()
+	})
+}
+
+// SetWeeklyLimitCount sets the "weekly_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) SetWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.SetWeeklyLimitCount(v)
+	})
+}
+
+// AddWeeklyLimitCount adds v to the "weekly_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) AddWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.AddWeeklyLimitCount(v)
+	})
+}
+
+// UpdateWeeklyLimitCount sets the "weekly_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertBulk) UpdateWeeklyLimitCount() *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.UpdateWeeklyLimitCount()
+	})
+}
+
+// SetMonthlyLimitCount sets the "monthly_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) SetMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.SetMonthlyLimitCount(v)
+	})
+}
+
+// AddMonthlyLimitCount adds v to the "monthly_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) AddMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.AddMonthlyLimitCount(v)
+	})
+}
+
+// UpdateMonthlyLimitCount sets the "monthly_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertBulk) UpdateMonthlyLimitCount() *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.UpdateMonthlyLimitCount()
 	})
 }
 

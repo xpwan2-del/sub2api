@@ -132,6 +132,48 @@ func (_c *BundleSubscriptionUsageCreate) SetNillableMonthlyWindowStart(v *time.T
 	return _c
 }
 
+// SetDailyUsageCount sets the "daily_usage_count" field.
+func (_c *BundleSubscriptionUsageCreate) SetDailyUsageCount(v int) *BundleSubscriptionUsageCreate {
+	_c.mutation.SetDailyUsageCount(v)
+	return _c
+}
+
+// SetNillableDailyUsageCount sets the "daily_usage_count" field if the given value is not nil.
+func (_c *BundleSubscriptionUsageCreate) SetNillableDailyUsageCount(v *int) *BundleSubscriptionUsageCreate {
+	if v != nil {
+		_c.SetDailyUsageCount(*v)
+	}
+	return _c
+}
+
+// SetWeeklyUsageCount sets the "weekly_usage_count" field.
+func (_c *BundleSubscriptionUsageCreate) SetWeeklyUsageCount(v int) *BundleSubscriptionUsageCreate {
+	_c.mutation.SetWeeklyUsageCount(v)
+	return _c
+}
+
+// SetNillableWeeklyUsageCount sets the "weekly_usage_count" field if the given value is not nil.
+func (_c *BundleSubscriptionUsageCreate) SetNillableWeeklyUsageCount(v *int) *BundleSubscriptionUsageCreate {
+	if v != nil {
+		_c.SetWeeklyUsageCount(*v)
+	}
+	return _c
+}
+
+// SetMonthlyUsageCount sets the "monthly_usage_count" field.
+func (_c *BundleSubscriptionUsageCreate) SetMonthlyUsageCount(v int) *BundleSubscriptionUsageCreate {
+	_c.mutation.SetMonthlyUsageCount(v)
+	return _c
+}
+
+// SetNillableMonthlyUsageCount sets the "monthly_usage_count" field if the given value is not nil.
+func (_c *BundleSubscriptionUsageCreate) SetNillableMonthlyUsageCount(v *int) *BundleSubscriptionUsageCreate {
+	if v != nil {
+		_c.SetMonthlyUsageCount(*v)
+	}
+	return _c
+}
+
 // Mutation returns the BundleSubscriptionUsageMutation object of the builder.
 func (_c *BundleSubscriptionUsageCreate) Mutation() *BundleSubscriptionUsageMutation {
 	return _c.mutation
@@ -195,6 +237,18 @@ func (_c *BundleSubscriptionUsageCreate) defaults() {
 		v := bundlesubscriptionusage.DefaultMonthlyWindowStart
 		_c.mutation.SetMonthlyWindowStart(v)
 	}
+	if _, ok := _c.mutation.DailyUsageCount(); !ok {
+		v := bundlesubscriptionusage.DefaultDailyUsageCount
+		_c.mutation.SetDailyUsageCount(v)
+	}
+	if _, ok := _c.mutation.WeeklyUsageCount(); !ok {
+		v := bundlesubscriptionusage.DefaultWeeklyUsageCount
+		_c.mutation.SetWeeklyUsageCount(v)
+	}
+	if _, ok := _c.mutation.MonthlyUsageCount(); !ok {
+		v := bundlesubscriptionusage.DefaultMonthlyUsageCount
+		_c.mutation.SetMonthlyUsageCount(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -225,6 +279,15 @@ func (_c *BundleSubscriptionUsageCreate) check() error {
 	}
 	if _, ok := _c.mutation.MonthlyWindowStart(); !ok {
 		return &ValidationError{Name: "monthly_window_start", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.monthly_window_start"`)}
+	}
+	if _, ok := _c.mutation.DailyUsageCount(); !ok {
+		return &ValidationError{Name: "daily_usage_count", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.daily_usage_count"`)}
+	}
+	if _, ok := _c.mutation.WeeklyUsageCount(); !ok {
+		return &ValidationError{Name: "weekly_usage_count", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.weekly_usage_count"`)}
+	}
+	if _, ok := _c.mutation.MonthlyUsageCount(); !ok {
+		return &ValidationError{Name: "monthly_usage_count", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.monthly_usage_count"`)}
 	}
 	return nil
 }
@@ -288,6 +351,18 @@ func (_c *BundleSubscriptionUsageCreate) createSpec() (*BundleSubscriptionUsage,
 	if value, ok := _c.mutation.MonthlyWindowStart(); ok {
 		_spec.SetField(bundlesubscriptionusage.FieldMonthlyWindowStart, field.TypeTime, value)
 		_node.MonthlyWindowStart = value
+	}
+	if value, ok := _c.mutation.DailyUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldDailyUsageCount, field.TypeInt, value)
+		_node.DailyUsageCount = value
+	}
+	if value, ok := _c.mutation.WeeklyUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldWeeklyUsageCount, field.TypeInt, value)
+		_node.WeeklyUsageCount = value
+	}
+	if value, ok := _c.mutation.MonthlyUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldMonthlyUsageCount, field.TypeInt, value)
+		_node.MonthlyUsageCount = value
 	}
 	return _node, _spec
 }
@@ -476,6 +551,60 @@ func (u *BundleSubscriptionUsageUpsert) SetMonthlyWindowStart(v time.Time) *Bund
 // UpdateMonthlyWindowStart sets the "monthly_window_start" field to the value that was provided on create.
 func (u *BundleSubscriptionUsageUpsert) UpdateMonthlyWindowStart() *BundleSubscriptionUsageUpsert {
 	u.SetExcluded(bundlesubscriptionusage.FieldMonthlyWindowStart)
+	return u
+}
+
+// SetDailyUsageCount sets the "daily_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) SetDailyUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Set(bundlesubscriptionusage.FieldDailyUsageCount, v)
+	return u
+}
+
+// UpdateDailyUsageCount sets the "daily_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsert) UpdateDailyUsageCount() *BundleSubscriptionUsageUpsert {
+	u.SetExcluded(bundlesubscriptionusage.FieldDailyUsageCount)
+	return u
+}
+
+// AddDailyUsageCount adds v to the "daily_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) AddDailyUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Add(bundlesubscriptionusage.FieldDailyUsageCount, v)
+	return u
+}
+
+// SetWeeklyUsageCount sets the "weekly_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) SetWeeklyUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Set(bundlesubscriptionusage.FieldWeeklyUsageCount, v)
+	return u
+}
+
+// UpdateWeeklyUsageCount sets the "weekly_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsert) UpdateWeeklyUsageCount() *BundleSubscriptionUsageUpsert {
+	u.SetExcluded(bundlesubscriptionusage.FieldWeeklyUsageCount)
+	return u
+}
+
+// AddWeeklyUsageCount adds v to the "weekly_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) AddWeeklyUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Add(bundlesubscriptionusage.FieldWeeklyUsageCount, v)
+	return u
+}
+
+// SetMonthlyUsageCount sets the "monthly_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) SetMonthlyUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Set(bundlesubscriptionusage.FieldMonthlyUsageCount, v)
+	return u
+}
+
+// UpdateMonthlyUsageCount sets the "monthly_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsert) UpdateMonthlyUsageCount() *BundleSubscriptionUsageUpsert {
+	u.SetExcluded(bundlesubscriptionusage.FieldMonthlyUsageCount)
+	return u
+}
+
+// AddMonthlyUsageCount adds v to the "monthly_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) AddMonthlyUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Add(bundlesubscriptionusage.FieldMonthlyUsageCount, v)
 	return u
 }
 
@@ -677,6 +806,69 @@ func (u *BundleSubscriptionUsageUpsertOne) SetMonthlyWindowStart(v time.Time) *B
 func (u *BundleSubscriptionUsageUpsertOne) UpdateMonthlyWindowStart() *BundleSubscriptionUsageUpsertOne {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
 		s.UpdateMonthlyWindowStart()
+	})
+}
+
+// SetDailyUsageCount sets the "daily_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) SetDailyUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.SetDailyUsageCount(v)
+	})
+}
+
+// AddDailyUsageCount adds v to the "daily_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) AddDailyUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.AddDailyUsageCount(v)
+	})
+}
+
+// UpdateDailyUsageCount sets the "daily_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertOne) UpdateDailyUsageCount() *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.UpdateDailyUsageCount()
+	})
+}
+
+// SetWeeklyUsageCount sets the "weekly_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) SetWeeklyUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.SetWeeklyUsageCount(v)
+	})
+}
+
+// AddWeeklyUsageCount adds v to the "weekly_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) AddWeeklyUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.AddWeeklyUsageCount(v)
+	})
+}
+
+// UpdateWeeklyUsageCount sets the "weekly_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertOne) UpdateWeeklyUsageCount() *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.UpdateWeeklyUsageCount()
+	})
+}
+
+// SetMonthlyUsageCount sets the "monthly_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) SetMonthlyUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.SetMonthlyUsageCount(v)
+	})
+}
+
+// AddMonthlyUsageCount adds v to the "monthly_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) AddMonthlyUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.AddMonthlyUsageCount(v)
+	})
+}
+
+// UpdateMonthlyUsageCount sets the "monthly_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertOne) UpdateMonthlyUsageCount() *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.UpdateMonthlyUsageCount()
 	})
 }
 
@@ -1042,6 +1234,69 @@ func (u *BundleSubscriptionUsageUpsertBulk) SetMonthlyWindowStart(v time.Time) *
 func (u *BundleSubscriptionUsageUpsertBulk) UpdateMonthlyWindowStart() *BundleSubscriptionUsageUpsertBulk {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
 		s.UpdateMonthlyWindowStart()
+	})
+}
+
+// SetDailyUsageCount sets the "daily_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) SetDailyUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.SetDailyUsageCount(v)
+	})
+}
+
+// AddDailyUsageCount adds v to the "daily_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) AddDailyUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.AddDailyUsageCount(v)
+	})
+}
+
+// UpdateDailyUsageCount sets the "daily_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertBulk) UpdateDailyUsageCount() *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.UpdateDailyUsageCount()
+	})
+}
+
+// SetWeeklyUsageCount sets the "weekly_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) SetWeeklyUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.SetWeeklyUsageCount(v)
+	})
+}
+
+// AddWeeklyUsageCount adds v to the "weekly_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) AddWeeklyUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.AddWeeklyUsageCount(v)
+	})
+}
+
+// UpdateWeeklyUsageCount sets the "weekly_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertBulk) UpdateWeeklyUsageCount() *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.UpdateWeeklyUsageCount()
+	})
+}
+
+// SetMonthlyUsageCount sets the "monthly_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) SetMonthlyUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.SetMonthlyUsageCount(v)
+	})
+}
+
+// AddMonthlyUsageCount adds v to the "monthly_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) AddMonthlyUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.AddMonthlyUsageCount(v)
+	})
+}
+
+// UpdateMonthlyUsageCount sets the "monthly_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertBulk) UpdateMonthlyUsageCount() *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.UpdateMonthlyUsageCount()
 	})
 }
 

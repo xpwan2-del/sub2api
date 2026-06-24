@@ -87,6 +87,21 @@ func MonthlyLimitUsd(v float64) predicate.BundlePlanGroupQuota {
 	return predicate.BundlePlanGroupQuota(sql.FieldEQ(FieldMonthlyLimitUsd, v))
 }
 
+// DailyLimitCount applies equality check predicate on the "daily_limit_count" field. It's identical to DailyLimitCountEQ.
+func DailyLimitCount(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldEQ(FieldDailyLimitCount, v))
+}
+
+// WeeklyLimitCount applies equality check predicate on the "weekly_limit_count" field. It's identical to WeeklyLimitCountEQ.
+func WeeklyLimitCount(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldEQ(FieldWeeklyLimitCount, v))
+}
+
+// MonthlyLimitCount applies equality check predicate on the "monthly_limit_count" field. It's identical to MonthlyLimitCountEQ.
+func MonthlyLimitCount(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldEQ(FieldMonthlyLimitCount, v))
+}
+
 // PlanIDEQ applies the EQ predicate on the "plan_id" field.
 func PlanIDEQ(v int64) predicate.BundlePlanGroupQuota {
 	return predicate.BundlePlanGroupQuota(sql.FieldEQ(FieldPlanID, v))
@@ -415,6 +430,126 @@ func MonthlyLimitUsdLT(v float64) predicate.BundlePlanGroupQuota {
 // MonthlyLimitUsdLTE applies the LTE predicate on the "monthly_limit_usd" field.
 func MonthlyLimitUsdLTE(v float64) predicate.BundlePlanGroupQuota {
 	return predicate.BundlePlanGroupQuota(sql.FieldLTE(FieldMonthlyLimitUsd, v))
+}
+
+// DailyLimitCountEQ applies the EQ predicate on the "daily_limit_count" field.
+func DailyLimitCountEQ(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldEQ(FieldDailyLimitCount, v))
+}
+
+// DailyLimitCountNEQ applies the NEQ predicate on the "daily_limit_count" field.
+func DailyLimitCountNEQ(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldNEQ(FieldDailyLimitCount, v))
+}
+
+// DailyLimitCountIn applies the In predicate on the "daily_limit_count" field.
+func DailyLimitCountIn(vs ...int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldIn(FieldDailyLimitCount, vs...))
+}
+
+// DailyLimitCountNotIn applies the NotIn predicate on the "daily_limit_count" field.
+func DailyLimitCountNotIn(vs ...int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldNotIn(FieldDailyLimitCount, vs...))
+}
+
+// DailyLimitCountGT applies the GT predicate on the "daily_limit_count" field.
+func DailyLimitCountGT(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldGT(FieldDailyLimitCount, v))
+}
+
+// DailyLimitCountGTE applies the GTE predicate on the "daily_limit_count" field.
+func DailyLimitCountGTE(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldGTE(FieldDailyLimitCount, v))
+}
+
+// DailyLimitCountLT applies the LT predicate on the "daily_limit_count" field.
+func DailyLimitCountLT(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldLT(FieldDailyLimitCount, v))
+}
+
+// DailyLimitCountLTE applies the LTE predicate on the "daily_limit_count" field.
+func DailyLimitCountLTE(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldLTE(FieldDailyLimitCount, v))
+}
+
+// WeeklyLimitCountEQ applies the EQ predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountEQ(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldEQ(FieldWeeklyLimitCount, v))
+}
+
+// WeeklyLimitCountNEQ applies the NEQ predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountNEQ(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldNEQ(FieldWeeklyLimitCount, v))
+}
+
+// WeeklyLimitCountIn applies the In predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountIn(vs ...int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldIn(FieldWeeklyLimitCount, vs...))
+}
+
+// WeeklyLimitCountNotIn applies the NotIn predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountNotIn(vs ...int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldNotIn(FieldWeeklyLimitCount, vs...))
+}
+
+// WeeklyLimitCountGT applies the GT predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountGT(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldGT(FieldWeeklyLimitCount, v))
+}
+
+// WeeklyLimitCountGTE applies the GTE predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountGTE(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldGTE(FieldWeeklyLimitCount, v))
+}
+
+// WeeklyLimitCountLT applies the LT predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountLT(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldLT(FieldWeeklyLimitCount, v))
+}
+
+// WeeklyLimitCountLTE applies the LTE predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountLTE(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldLTE(FieldWeeklyLimitCount, v))
+}
+
+// MonthlyLimitCountEQ applies the EQ predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountEQ(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldEQ(FieldMonthlyLimitCount, v))
+}
+
+// MonthlyLimitCountNEQ applies the NEQ predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountNEQ(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldNEQ(FieldMonthlyLimitCount, v))
+}
+
+// MonthlyLimitCountIn applies the In predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountIn(vs ...int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldIn(FieldMonthlyLimitCount, vs...))
+}
+
+// MonthlyLimitCountNotIn applies the NotIn predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountNotIn(vs ...int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldNotIn(FieldMonthlyLimitCount, vs...))
+}
+
+// MonthlyLimitCountGT applies the GT predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountGT(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldGT(FieldMonthlyLimitCount, v))
+}
+
+// MonthlyLimitCountGTE applies the GTE predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountGTE(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldGTE(FieldMonthlyLimitCount, v))
+}
+
+// MonthlyLimitCountLT applies the LT predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountLT(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldLT(FieldMonthlyLimitCount, v))
+}
+
+// MonthlyLimitCountLTE applies the LTE predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountLTE(v int) predicate.BundlePlanGroupQuota {
+	return predicate.BundlePlanGroupQuota(sql.FieldLTE(FieldMonthlyLimitCount, v))
 }
 
 // And groups predicates with the AND operator between them.

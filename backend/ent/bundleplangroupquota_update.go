@@ -160,6 +160,69 @@ func (_u *BundlePlanGroupQuotaUpdate) AddMonthlyLimitUsd(v float64) *BundlePlanG
 	return _u
 }
 
+// SetDailyLimitCount sets the "daily_limit_count" field.
+func (_u *BundlePlanGroupQuotaUpdate) SetDailyLimitCount(v int) *BundlePlanGroupQuotaUpdate {
+	_u.mutation.ResetDailyLimitCount()
+	_u.mutation.SetDailyLimitCount(v)
+	return _u
+}
+
+// SetNillableDailyLimitCount sets the "daily_limit_count" field if the given value is not nil.
+func (_u *BundlePlanGroupQuotaUpdate) SetNillableDailyLimitCount(v *int) *BundlePlanGroupQuotaUpdate {
+	if v != nil {
+		_u.SetDailyLimitCount(*v)
+	}
+	return _u
+}
+
+// AddDailyLimitCount adds value to the "daily_limit_count" field.
+func (_u *BundlePlanGroupQuotaUpdate) AddDailyLimitCount(v int) *BundlePlanGroupQuotaUpdate {
+	_u.mutation.AddDailyLimitCount(v)
+	return _u
+}
+
+// SetWeeklyLimitCount sets the "weekly_limit_count" field.
+func (_u *BundlePlanGroupQuotaUpdate) SetWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpdate {
+	_u.mutation.ResetWeeklyLimitCount()
+	_u.mutation.SetWeeklyLimitCount(v)
+	return _u
+}
+
+// SetNillableWeeklyLimitCount sets the "weekly_limit_count" field if the given value is not nil.
+func (_u *BundlePlanGroupQuotaUpdate) SetNillableWeeklyLimitCount(v *int) *BundlePlanGroupQuotaUpdate {
+	if v != nil {
+		_u.SetWeeklyLimitCount(*v)
+	}
+	return _u
+}
+
+// AddWeeklyLimitCount adds value to the "weekly_limit_count" field.
+func (_u *BundlePlanGroupQuotaUpdate) AddWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpdate {
+	_u.mutation.AddWeeklyLimitCount(v)
+	return _u
+}
+
+// SetMonthlyLimitCount sets the "monthly_limit_count" field.
+func (_u *BundlePlanGroupQuotaUpdate) SetMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpdate {
+	_u.mutation.ResetMonthlyLimitCount()
+	_u.mutation.SetMonthlyLimitCount(v)
+	return _u
+}
+
+// SetNillableMonthlyLimitCount sets the "monthly_limit_count" field if the given value is not nil.
+func (_u *BundlePlanGroupQuotaUpdate) SetNillableMonthlyLimitCount(v *int) *BundlePlanGroupQuotaUpdate {
+	if v != nil {
+		_u.SetMonthlyLimitCount(*v)
+	}
+	return _u
+}
+
+// AddMonthlyLimitCount adds value to the "monthly_limit_count" field.
+func (_u *BundlePlanGroupQuotaUpdate) AddMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpdate {
+	_u.mutation.AddMonthlyLimitCount(v)
+	return _u
+}
+
 // Mutation returns the BundlePlanGroupQuotaMutation object of the builder.
 func (_u *BundlePlanGroupQuotaUpdate) Mutation() *BundlePlanGroupQuotaMutation {
 	return _u.mutation
@@ -236,6 +299,24 @@ func (_u *BundlePlanGroupQuotaUpdate) sqlSave(ctx context.Context) (_node int, e
 	}
 	if value, ok := _u.mutation.AddedMonthlyLimitUsd(); ok {
 		_spec.AddField(bundleplangroupquota.FieldMonthlyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.DailyLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldDailyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyLimitCount(); ok {
+		_spec.AddField(bundleplangroupquota.FieldDailyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.WeeklyLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldWeeklyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyLimitCount(); ok {
+		_spec.AddField(bundleplangroupquota.FieldWeeklyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MonthlyLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldMonthlyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyLimitCount(); ok {
+		_spec.AddField(bundleplangroupquota.FieldMonthlyLimitCount, field.TypeInt, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -390,6 +471,69 @@ func (_u *BundlePlanGroupQuotaUpdateOne) AddMonthlyLimitUsd(v float64) *BundlePl
 	return _u
 }
 
+// SetDailyLimitCount sets the "daily_limit_count" field.
+func (_u *BundlePlanGroupQuotaUpdateOne) SetDailyLimitCount(v int) *BundlePlanGroupQuotaUpdateOne {
+	_u.mutation.ResetDailyLimitCount()
+	_u.mutation.SetDailyLimitCount(v)
+	return _u
+}
+
+// SetNillableDailyLimitCount sets the "daily_limit_count" field if the given value is not nil.
+func (_u *BundlePlanGroupQuotaUpdateOne) SetNillableDailyLimitCount(v *int) *BundlePlanGroupQuotaUpdateOne {
+	if v != nil {
+		_u.SetDailyLimitCount(*v)
+	}
+	return _u
+}
+
+// AddDailyLimitCount adds value to the "daily_limit_count" field.
+func (_u *BundlePlanGroupQuotaUpdateOne) AddDailyLimitCount(v int) *BundlePlanGroupQuotaUpdateOne {
+	_u.mutation.AddDailyLimitCount(v)
+	return _u
+}
+
+// SetWeeklyLimitCount sets the "weekly_limit_count" field.
+func (_u *BundlePlanGroupQuotaUpdateOne) SetWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpdateOne {
+	_u.mutation.ResetWeeklyLimitCount()
+	_u.mutation.SetWeeklyLimitCount(v)
+	return _u
+}
+
+// SetNillableWeeklyLimitCount sets the "weekly_limit_count" field if the given value is not nil.
+func (_u *BundlePlanGroupQuotaUpdateOne) SetNillableWeeklyLimitCount(v *int) *BundlePlanGroupQuotaUpdateOne {
+	if v != nil {
+		_u.SetWeeklyLimitCount(*v)
+	}
+	return _u
+}
+
+// AddWeeklyLimitCount adds value to the "weekly_limit_count" field.
+func (_u *BundlePlanGroupQuotaUpdateOne) AddWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpdateOne {
+	_u.mutation.AddWeeklyLimitCount(v)
+	return _u
+}
+
+// SetMonthlyLimitCount sets the "monthly_limit_count" field.
+func (_u *BundlePlanGroupQuotaUpdateOne) SetMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpdateOne {
+	_u.mutation.ResetMonthlyLimitCount()
+	_u.mutation.SetMonthlyLimitCount(v)
+	return _u
+}
+
+// SetNillableMonthlyLimitCount sets the "monthly_limit_count" field if the given value is not nil.
+func (_u *BundlePlanGroupQuotaUpdateOne) SetNillableMonthlyLimitCount(v *int) *BundlePlanGroupQuotaUpdateOne {
+	if v != nil {
+		_u.SetMonthlyLimitCount(*v)
+	}
+	return _u
+}
+
+// AddMonthlyLimitCount adds value to the "monthly_limit_count" field.
+func (_u *BundlePlanGroupQuotaUpdateOne) AddMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpdateOne {
+	_u.mutation.AddMonthlyLimitCount(v)
+	return _u
+}
+
 // Mutation returns the BundlePlanGroupQuotaMutation object of the builder.
 func (_u *BundlePlanGroupQuotaUpdateOne) Mutation() *BundlePlanGroupQuotaMutation {
 	return _u.mutation
@@ -496,6 +640,24 @@ func (_u *BundlePlanGroupQuotaUpdateOne) sqlSave(ctx context.Context) (_node *Bu
 	}
 	if value, ok := _u.mutation.AddedMonthlyLimitUsd(); ok {
 		_spec.AddField(bundleplangroupquota.FieldMonthlyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.DailyLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldDailyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyLimitCount(); ok {
+		_spec.AddField(bundleplangroupquota.FieldDailyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.WeeklyLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldWeeklyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyLimitCount(); ok {
+		_spec.AddField(bundleplangroupquota.FieldWeeklyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MonthlyLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldMonthlyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyLimitCount(); ok {
+		_spec.AddField(bundleplangroupquota.FieldMonthlyLimitCount, field.TypeInt, value)
 	}
 	_node = &BundlePlanGroupQuota{config: _u.config}
 	_spec.Assign = _node.assignValues

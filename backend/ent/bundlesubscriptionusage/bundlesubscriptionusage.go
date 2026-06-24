@@ -31,6 +31,12 @@ const (
 	FieldMonthlyUsageUsd = "monthly_usage_usd"
 	// FieldMonthlyWindowStart holds the string denoting the monthly_window_start field in the database.
 	FieldMonthlyWindowStart = "monthly_window_start"
+	// FieldDailyUsageCount holds the string denoting the daily_usage_count field in the database.
+	FieldDailyUsageCount = "daily_usage_count"
+	// FieldWeeklyUsageCount holds the string denoting the weekly_usage_count field in the database.
+	FieldWeeklyUsageCount = "weekly_usage_count"
+	// FieldMonthlyUsageCount holds the string denoting the monthly_usage_count field in the database.
+	FieldMonthlyUsageCount = "monthly_usage_count"
 	// Table holds the table name of the bundlesubscriptionusage in the database.
 	Table = "bundle_subscription_usages"
 )
@@ -47,6 +53,9 @@ var Columns = []string{
 	FieldWeeklyWindowStart,
 	FieldMonthlyUsageUsd,
 	FieldMonthlyWindowStart,
+	FieldDailyUsageCount,
+	FieldWeeklyUsageCount,
+	FieldMonthlyUsageCount,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -74,6 +83,12 @@ var (
 	DefaultMonthlyUsageUsd float64
 	// DefaultMonthlyWindowStart holds the default value on creation for the "monthly_window_start" field.
 	DefaultMonthlyWindowStart time.Time
+	// DefaultDailyUsageCount holds the default value on creation for the "daily_usage_count" field.
+	DefaultDailyUsageCount int
+	// DefaultWeeklyUsageCount holds the default value on creation for the "weekly_usage_count" field.
+	DefaultWeeklyUsageCount int
+	// DefaultMonthlyUsageCount holds the default value on creation for the "monthly_usage_count" field.
+	DefaultMonthlyUsageCount int
 )
 
 // OrderOption defines the ordering options for the BundleSubscriptionUsage queries.
@@ -127,4 +142,19 @@ func ByMonthlyUsageUsd(opts ...sql.OrderTermOption) OrderOption {
 // ByMonthlyWindowStart orders the results by the monthly_window_start field.
 func ByMonthlyWindowStart(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMonthlyWindowStart, opts...).ToFunc()
+}
+
+// ByDailyUsageCount orders the results by the daily_usage_count field.
+func ByDailyUsageCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDailyUsageCount, opts...).ToFunc()
+}
+
+// ByWeeklyUsageCount orders the results by the weekly_usage_count field.
+func ByWeeklyUsageCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeeklyUsageCount, opts...).ToFunc()
+}
+
+// ByMonthlyUsageCount orders the results by the monthly_usage_count field.
+func ByMonthlyUsageCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMonthlyUsageCount, opts...).ToFunc()
 }

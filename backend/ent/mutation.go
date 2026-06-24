@@ -10291,25 +10291,31 @@ func (m *BundlePlanMutation) ResetEdge(name string) error {
 // BundlePlanGroupQuotaMutation represents an operation that mutates the BundlePlanGroupQuota nodes in the graph.
 type BundlePlanGroupQuotaMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *int64
-	plan_id              *int64
-	addplan_id           *int64
-	group_id             *int64
-	addgroup_id          *int64
-	quota_scope          *string
-	model_pattern        *string
-	daily_limit_usd      *float64
-	adddaily_limit_usd   *float64
-	weekly_limit_usd     *float64
-	addweekly_limit_usd  *float64
-	monthly_limit_usd    *float64
-	addmonthly_limit_usd *float64
-	clearedFields        map[string]struct{}
-	done                 bool
-	oldValue             func(context.Context) (*BundlePlanGroupQuota, error)
-	predicates           []predicate.BundlePlanGroupQuota
+	op                     Op
+	typ                    string
+	id                     *int64
+	plan_id                *int64
+	addplan_id             *int64
+	group_id               *int64
+	addgroup_id            *int64
+	quota_scope            *string
+	model_pattern          *string
+	daily_limit_usd        *float64
+	adddaily_limit_usd     *float64
+	weekly_limit_usd       *float64
+	addweekly_limit_usd    *float64
+	monthly_limit_usd      *float64
+	addmonthly_limit_usd   *float64
+	daily_limit_count      *int
+	adddaily_limit_count   *int
+	weekly_limit_count     *int
+	addweekly_limit_count  *int
+	monthly_limit_count    *int
+	addmonthly_limit_count *int
+	clearedFields          map[string]struct{}
+	done                   bool
+	oldValue               func(context.Context) (*BundlePlanGroupQuota, error)
+	predicates             []predicate.BundlePlanGroupQuota
 }
 
 var _ ent.Mutation = (*BundlePlanGroupQuotaMutation)(nil)
@@ -10762,6 +10768,174 @@ func (m *BundlePlanGroupQuotaMutation) ResetMonthlyLimitUsd() {
 	m.addmonthly_limit_usd = nil
 }
 
+// SetDailyLimitCount sets the "daily_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) SetDailyLimitCount(i int) {
+	m.daily_limit_count = &i
+	m.adddaily_limit_count = nil
+}
+
+// DailyLimitCount returns the value of the "daily_limit_count" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) DailyLimitCount() (r int, exists bool) {
+	v := m.daily_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDailyLimitCount returns the old "daily_limit_count" field's value of the BundlePlanGroupQuota entity.
+// If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanGroupQuotaMutation) OldDailyLimitCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDailyLimitCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDailyLimitCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDailyLimitCount: %w", err)
+	}
+	return oldValue.DailyLimitCount, nil
+}
+
+// AddDailyLimitCount adds i to the "daily_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) AddDailyLimitCount(i int) {
+	if m.adddaily_limit_count != nil {
+		*m.adddaily_limit_count += i
+	} else {
+		m.adddaily_limit_count = &i
+	}
+}
+
+// AddedDailyLimitCount returns the value that was added to the "daily_limit_count" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedDailyLimitCount() (r int, exists bool) {
+	v := m.adddaily_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDailyLimitCount resets all changes to the "daily_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) ResetDailyLimitCount() {
+	m.daily_limit_count = nil
+	m.adddaily_limit_count = nil
+}
+
+// SetWeeklyLimitCount sets the "weekly_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) SetWeeklyLimitCount(i int) {
+	m.weekly_limit_count = &i
+	m.addweekly_limit_count = nil
+}
+
+// WeeklyLimitCount returns the value of the "weekly_limit_count" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) WeeklyLimitCount() (r int, exists bool) {
+	v := m.weekly_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeeklyLimitCount returns the old "weekly_limit_count" field's value of the BundlePlanGroupQuota entity.
+// If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanGroupQuotaMutation) OldWeeklyLimitCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeeklyLimitCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeeklyLimitCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeeklyLimitCount: %w", err)
+	}
+	return oldValue.WeeklyLimitCount, nil
+}
+
+// AddWeeklyLimitCount adds i to the "weekly_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) AddWeeklyLimitCount(i int) {
+	if m.addweekly_limit_count != nil {
+		*m.addweekly_limit_count += i
+	} else {
+		m.addweekly_limit_count = &i
+	}
+}
+
+// AddedWeeklyLimitCount returns the value that was added to the "weekly_limit_count" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedWeeklyLimitCount() (r int, exists bool) {
+	v := m.addweekly_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeeklyLimitCount resets all changes to the "weekly_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) ResetWeeklyLimitCount() {
+	m.weekly_limit_count = nil
+	m.addweekly_limit_count = nil
+}
+
+// SetMonthlyLimitCount sets the "monthly_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) SetMonthlyLimitCount(i int) {
+	m.monthly_limit_count = &i
+	m.addmonthly_limit_count = nil
+}
+
+// MonthlyLimitCount returns the value of the "monthly_limit_count" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) MonthlyLimitCount() (r int, exists bool) {
+	v := m.monthly_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMonthlyLimitCount returns the old "monthly_limit_count" field's value of the BundlePlanGroupQuota entity.
+// If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanGroupQuotaMutation) OldMonthlyLimitCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMonthlyLimitCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMonthlyLimitCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMonthlyLimitCount: %w", err)
+	}
+	return oldValue.MonthlyLimitCount, nil
+}
+
+// AddMonthlyLimitCount adds i to the "monthly_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) AddMonthlyLimitCount(i int) {
+	if m.addmonthly_limit_count != nil {
+		*m.addmonthly_limit_count += i
+	} else {
+		m.addmonthly_limit_count = &i
+	}
+}
+
+// AddedMonthlyLimitCount returns the value that was added to the "monthly_limit_count" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedMonthlyLimitCount() (r int, exists bool) {
+	v := m.addmonthly_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMonthlyLimitCount resets all changes to the "monthly_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) ResetMonthlyLimitCount() {
+	m.monthly_limit_count = nil
+	m.addmonthly_limit_count = nil
+}
+
 // Where appends a list predicates to the BundlePlanGroupQuotaMutation builder.
 func (m *BundlePlanGroupQuotaMutation) Where(ps ...predicate.BundlePlanGroupQuota) {
 	m.predicates = append(m.predicates, ps...)
@@ -10796,7 +10970,7 @@ func (m *BundlePlanGroupQuotaMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BundlePlanGroupQuotaMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 10)
 	if m.plan_id != nil {
 		fields = append(fields, bundleplangroupquota.FieldPlanID)
 	}
@@ -10817,6 +10991,15 @@ func (m *BundlePlanGroupQuotaMutation) Fields() []string {
 	}
 	if m.monthly_limit_usd != nil {
 		fields = append(fields, bundleplangroupquota.FieldMonthlyLimitUsd)
+	}
+	if m.daily_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldDailyLimitCount)
+	}
+	if m.weekly_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldWeeklyLimitCount)
+	}
+	if m.monthly_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldMonthlyLimitCount)
 	}
 	return fields
 }
@@ -10840,6 +11023,12 @@ func (m *BundlePlanGroupQuotaMutation) Field(name string) (ent.Value, bool) {
 		return m.WeeklyLimitUsd()
 	case bundleplangroupquota.FieldMonthlyLimitUsd:
 		return m.MonthlyLimitUsd()
+	case bundleplangroupquota.FieldDailyLimitCount:
+		return m.DailyLimitCount()
+	case bundleplangroupquota.FieldWeeklyLimitCount:
+		return m.WeeklyLimitCount()
+	case bundleplangroupquota.FieldMonthlyLimitCount:
+		return m.MonthlyLimitCount()
 	}
 	return nil, false
 }
@@ -10863,6 +11052,12 @@ func (m *BundlePlanGroupQuotaMutation) OldField(ctx context.Context, name string
 		return m.OldWeeklyLimitUsd(ctx)
 	case bundleplangroupquota.FieldMonthlyLimitUsd:
 		return m.OldMonthlyLimitUsd(ctx)
+	case bundleplangroupquota.FieldDailyLimitCount:
+		return m.OldDailyLimitCount(ctx)
+	case bundleplangroupquota.FieldWeeklyLimitCount:
+		return m.OldWeeklyLimitCount(ctx)
+	case bundleplangroupquota.FieldMonthlyLimitCount:
+		return m.OldMonthlyLimitCount(ctx)
 	}
 	return nil, fmt.Errorf("unknown BundlePlanGroupQuota field %s", name)
 }
@@ -10921,6 +11116,27 @@ func (m *BundlePlanGroupQuotaMutation) SetField(name string, value ent.Value) er
 		}
 		m.SetMonthlyLimitUsd(v)
 		return nil
+	case bundleplangroupquota.FieldDailyLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDailyLimitCount(v)
+		return nil
+	case bundleplangroupquota.FieldWeeklyLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeeklyLimitCount(v)
+		return nil
+	case bundleplangroupquota.FieldMonthlyLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMonthlyLimitCount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BundlePlanGroupQuota field %s", name)
 }
@@ -10944,6 +11160,15 @@ func (m *BundlePlanGroupQuotaMutation) AddedFields() []string {
 	if m.addmonthly_limit_usd != nil {
 		fields = append(fields, bundleplangroupquota.FieldMonthlyLimitUsd)
 	}
+	if m.adddaily_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldDailyLimitCount)
+	}
+	if m.addweekly_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldWeeklyLimitCount)
+	}
+	if m.addmonthly_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldMonthlyLimitCount)
+	}
 	return fields
 }
 
@@ -10962,6 +11187,12 @@ func (m *BundlePlanGroupQuotaMutation) AddedField(name string) (ent.Value, bool)
 		return m.AddedWeeklyLimitUsd()
 	case bundleplangroupquota.FieldMonthlyLimitUsd:
 		return m.AddedMonthlyLimitUsd()
+	case bundleplangroupquota.FieldDailyLimitCount:
+		return m.AddedDailyLimitCount()
+	case bundleplangroupquota.FieldWeeklyLimitCount:
+		return m.AddedWeeklyLimitCount()
+	case bundleplangroupquota.FieldMonthlyLimitCount:
+		return m.AddedMonthlyLimitCount()
 	}
 	return nil, false
 }
@@ -11005,6 +11236,27 @@ func (m *BundlePlanGroupQuotaMutation) AddField(name string, value ent.Value) er
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddMonthlyLimitUsd(v)
+		return nil
+	case bundleplangroupquota.FieldDailyLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDailyLimitCount(v)
+		return nil
+	case bundleplangroupquota.FieldWeeklyLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeeklyLimitCount(v)
+		return nil
+	case bundleplangroupquota.FieldMonthlyLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMonthlyLimitCount(v)
 		return nil
 	}
 	return fmt.Errorf("unknown BundlePlanGroupQuota numeric field %s", name)
@@ -11053,6 +11305,15 @@ func (m *BundlePlanGroupQuotaMutation) ResetField(name string) error {
 		return nil
 	case bundleplangroupquota.FieldMonthlyLimitUsd:
 		m.ResetMonthlyLimitUsd()
+		return nil
+	case bundleplangroupquota.FieldDailyLimitCount:
+		m.ResetDailyLimitCount()
+		return nil
+	case bundleplangroupquota.FieldWeeklyLimitCount:
+		m.ResetWeeklyLimitCount()
+		return nil
+	case bundleplangroupquota.FieldMonthlyLimitCount:
+		m.ResetMonthlyLimitCount()
 		return nil
 	}
 	return fmt.Errorf("unknown BundlePlanGroupQuota field %s", name)
@@ -12149,6 +12410,12 @@ type BundleSubscriptionUsageMutation struct {
 	monthly_usage_usd         *float64
 	addmonthly_usage_usd      *float64
 	monthly_window_start      *time.Time
+	daily_usage_count         *int
+	adddaily_usage_count      *int
+	weekly_usage_count        *int
+	addweekly_usage_count     *int
+	monthly_usage_count       *int
+	addmonthly_usage_count    *int
 	clearedFields             map[string]struct{}
 	done                      bool
 	oldValue                  func(context.Context) (*BundleSubscriptionUsage, error)
@@ -12677,6 +12944,174 @@ func (m *BundleSubscriptionUsageMutation) ResetMonthlyWindowStart() {
 	m.monthly_window_start = nil
 }
 
+// SetDailyUsageCount sets the "daily_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) SetDailyUsageCount(i int) {
+	m.daily_usage_count = &i
+	m.adddaily_usage_count = nil
+}
+
+// DailyUsageCount returns the value of the "daily_usage_count" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) DailyUsageCount() (r int, exists bool) {
+	v := m.daily_usage_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDailyUsageCount returns the old "daily_usage_count" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldDailyUsageCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDailyUsageCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDailyUsageCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDailyUsageCount: %w", err)
+	}
+	return oldValue.DailyUsageCount, nil
+}
+
+// AddDailyUsageCount adds i to the "daily_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) AddDailyUsageCount(i int) {
+	if m.adddaily_usage_count != nil {
+		*m.adddaily_usage_count += i
+	} else {
+		m.adddaily_usage_count = &i
+	}
+}
+
+// AddedDailyUsageCount returns the value that was added to the "daily_usage_count" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedDailyUsageCount() (r int, exists bool) {
+	v := m.adddaily_usage_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDailyUsageCount resets all changes to the "daily_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) ResetDailyUsageCount() {
+	m.daily_usage_count = nil
+	m.adddaily_usage_count = nil
+}
+
+// SetWeeklyUsageCount sets the "weekly_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) SetWeeklyUsageCount(i int) {
+	m.weekly_usage_count = &i
+	m.addweekly_usage_count = nil
+}
+
+// WeeklyUsageCount returns the value of the "weekly_usage_count" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) WeeklyUsageCount() (r int, exists bool) {
+	v := m.weekly_usage_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeeklyUsageCount returns the old "weekly_usage_count" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldWeeklyUsageCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeeklyUsageCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeeklyUsageCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeeklyUsageCount: %w", err)
+	}
+	return oldValue.WeeklyUsageCount, nil
+}
+
+// AddWeeklyUsageCount adds i to the "weekly_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) AddWeeklyUsageCount(i int) {
+	if m.addweekly_usage_count != nil {
+		*m.addweekly_usage_count += i
+	} else {
+		m.addweekly_usage_count = &i
+	}
+}
+
+// AddedWeeklyUsageCount returns the value that was added to the "weekly_usage_count" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedWeeklyUsageCount() (r int, exists bool) {
+	v := m.addweekly_usage_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeeklyUsageCount resets all changes to the "weekly_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) ResetWeeklyUsageCount() {
+	m.weekly_usage_count = nil
+	m.addweekly_usage_count = nil
+}
+
+// SetMonthlyUsageCount sets the "monthly_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) SetMonthlyUsageCount(i int) {
+	m.monthly_usage_count = &i
+	m.addmonthly_usage_count = nil
+}
+
+// MonthlyUsageCount returns the value of the "monthly_usage_count" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) MonthlyUsageCount() (r int, exists bool) {
+	v := m.monthly_usage_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMonthlyUsageCount returns the old "monthly_usage_count" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldMonthlyUsageCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMonthlyUsageCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMonthlyUsageCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMonthlyUsageCount: %w", err)
+	}
+	return oldValue.MonthlyUsageCount, nil
+}
+
+// AddMonthlyUsageCount adds i to the "monthly_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) AddMonthlyUsageCount(i int) {
+	if m.addmonthly_usage_count != nil {
+		*m.addmonthly_usage_count += i
+	} else {
+		m.addmonthly_usage_count = &i
+	}
+}
+
+// AddedMonthlyUsageCount returns the value that was added to the "monthly_usage_count" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedMonthlyUsageCount() (r int, exists bool) {
+	v := m.addmonthly_usage_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMonthlyUsageCount resets all changes to the "monthly_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) ResetMonthlyUsageCount() {
+	m.monthly_usage_count = nil
+	m.addmonthly_usage_count = nil
+}
+
 // Where appends a list predicates to the BundleSubscriptionUsageMutation builder.
 func (m *BundleSubscriptionUsageMutation) Where(ps ...predicate.BundleSubscriptionUsage) {
 	m.predicates = append(m.predicates, ps...)
@@ -12711,7 +13146,7 @@ func (m *BundleSubscriptionUsageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BundleSubscriptionUsageMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 12)
 	if m.bundle_subscription_id != nil {
 		fields = append(fields, bundlesubscriptionusage.FieldBundleSubscriptionID)
 	}
@@ -12739,6 +13174,15 @@ func (m *BundleSubscriptionUsageMutation) Fields() []string {
 	if m.monthly_window_start != nil {
 		fields = append(fields, bundlesubscriptionusage.FieldMonthlyWindowStart)
 	}
+	if m.daily_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldDailyUsageCount)
+	}
+	if m.weekly_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldWeeklyUsageCount)
+	}
+	if m.monthly_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldMonthlyUsageCount)
+	}
 	return fields
 }
 
@@ -12765,6 +13209,12 @@ func (m *BundleSubscriptionUsageMutation) Field(name string) (ent.Value, bool) {
 		return m.MonthlyUsageUsd()
 	case bundlesubscriptionusage.FieldMonthlyWindowStart:
 		return m.MonthlyWindowStart()
+	case bundlesubscriptionusage.FieldDailyUsageCount:
+		return m.DailyUsageCount()
+	case bundlesubscriptionusage.FieldWeeklyUsageCount:
+		return m.WeeklyUsageCount()
+	case bundlesubscriptionusage.FieldMonthlyUsageCount:
+		return m.MonthlyUsageCount()
 	}
 	return nil, false
 }
@@ -12792,6 +13242,12 @@ func (m *BundleSubscriptionUsageMutation) OldField(ctx context.Context, name str
 		return m.OldMonthlyUsageUsd(ctx)
 	case bundlesubscriptionusage.FieldMonthlyWindowStart:
 		return m.OldMonthlyWindowStart(ctx)
+	case bundlesubscriptionusage.FieldDailyUsageCount:
+		return m.OldDailyUsageCount(ctx)
+	case bundlesubscriptionusage.FieldWeeklyUsageCount:
+		return m.OldWeeklyUsageCount(ctx)
+	case bundlesubscriptionusage.FieldMonthlyUsageCount:
+		return m.OldMonthlyUsageCount(ctx)
 	}
 	return nil, fmt.Errorf("unknown BundleSubscriptionUsage field %s", name)
 }
@@ -12864,6 +13320,27 @@ func (m *BundleSubscriptionUsageMutation) SetField(name string, value ent.Value)
 		}
 		m.SetMonthlyWindowStart(v)
 		return nil
+	case bundlesubscriptionusage.FieldDailyUsageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDailyUsageCount(v)
+		return nil
+	case bundlesubscriptionusage.FieldWeeklyUsageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeeklyUsageCount(v)
+		return nil
+	case bundlesubscriptionusage.FieldMonthlyUsageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMonthlyUsageCount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BundleSubscriptionUsage field %s", name)
 }
@@ -12887,6 +13364,15 @@ func (m *BundleSubscriptionUsageMutation) AddedFields() []string {
 	if m.addmonthly_usage_usd != nil {
 		fields = append(fields, bundlesubscriptionusage.FieldMonthlyUsageUsd)
 	}
+	if m.adddaily_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldDailyUsageCount)
+	}
+	if m.addweekly_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldWeeklyUsageCount)
+	}
+	if m.addmonthly_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldMonthlyUsageCount)
+	}
 	return fields
 }
 
@@ -12905,6 +13391,12 @@ func (m *BundleSubscriptionUsageMutation) AddedField(name string) (ent.Value, bo
 		return m.AddedWeeklyUsageUsd()
 	case bundlesubscriptionusage.FieldMonthlyUsageUsd:
 		return m.AddedMonthlyUsageUsd()
+	case bundlesubscriptionusage.FieldDailyUsageCount:
+		return m.AddedDailyUsageCount()
+	case bundlesubscriptionusage.FieldWeeklyUsageCount:
+		return m.AddedWeeklyUsageCount()
+	case bundlesubscriptionusage.FieldMonthlyUsageCount:
+		return m.AddedMonthlyUsageCount()
 	}
 	return nil, false
 }
@@ -12948,6 +13440,27 @@ func (m *BundleSubscriptionUsageMutation) AddField(name string, value ent.Value)
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddMonthlyUsageUsd(v)
+		return nil
+	case bundlesubscriptionusage.FieldDailyUsageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDailyUsageCount(v)
+		return nil
+	case bundlesubscriptionusage.FieldWeeklyUsageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeeklyUsageCount(v)
+		return nil
+	case bundlesubscriptionusage.FieldMonthlyUsageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMonthlyUsageCount(v)
 		return nil
 	}
 	return fmt.Errorf("unknown BundleSubscriptionUsage numeric field %s", name)
@@ -13002,6 +13515,15 @@ func (m *BundleSubscriptionUsageMutation) ResetField(name string) error {
 		return nil
 	case bundlesubscriptionusage.FieldMonthlyWindowStart:
 		m.ResetMonthlyWindowStart()
+		return nil
+	case bundlesubscriptionusage.FieldDailyUsageCount:
+		m.ResetDailyUsageCount()
+		return nil
+	case bundlesubscriptionusage.FieldWeeklyUsageCount:
+		m.ResetWeeklyUsageCount()
+		return nil
+	case bundlesubscriptionusage.FieldMonthlyUsageCount:
+		m.ResetMonthlyUsageCount()
 		return nil
 	}
 	return fmt.Errorf("unknown BundleSubscriptionUsage field %s", name)

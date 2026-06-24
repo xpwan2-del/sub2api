@@ -25,6 +25,12 @@ const (
 	FieldWeeklyLimitUsd = "weekly_limit_usd"
 	// FieldMonthlyLimitUsd holds the string denoting the monthly_limit_usd field in the database.
 	FieldMonthlyLimitUsd = "monthly_limit_usd"
+	// FieldDailyLimitCount holds the string denoting the daily_limit_count field in the database.
+	FieldDailyLimitCount = "daily_limit_count"
+	// FieldWeeklyLimitCount holds the string denoting the weekly_limit_count field in the database.
+	FieldWeeklyLimitCount = "weekly_limit_count"
+	// FieldMonthlyLimitCount holds the string denoting the monthly_limit_count field in the database.
+	FieldMonthlyLimitCount = "monthly_limit_count"
 	// Table holds the table name of the bundleplangroupquota in the database.
 	Table = "bundle_plan_group_quotas"
 )
@@ -39,6 +45,9 @@ var Columns = []string{
 	FieldDailyLimitUsd,
 	FieldWeeklyLimitUsd,
 	FieldMonthlyLimitUsd,
+	FieldDailyLimitCount,
+	FieldWeeklyLimitCount,
+	FieldMonthlyLimitCount,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -62,6 +71,12 @@ var (
 	DefaultWeeklyLimitUsd float64
 	// DefaultMonthlyLimitUsd holds the default value on creation for the "monthly_limit_usd" field.
 	DefaultMonthlyLimitUsd float64
+	// DefaultDailyLimitCount holds the default value on creation for the "daily_limit_count" field.
+	DefaultDailyLimitCount int
+	// DefaultWeeklyLimitCount holds the default value on creation for the "weekly_limit_count" field.
+	DefaultWeeklyLimitCount int
+	// DefaultMonthlyLimitCount holds the default value on creation for the "monthly_limit_count" field.
+	DefaultMonthlyLimitCount int
 )
 
 // OrderOption defines the ordering options for the BundlePlanGroupQuota queries.
@@ -105,4 +120,19 @@ func ByWeeklyLimitUsd(opts ...sql.OrderTermOption) OrderOption {
 // ByMonthlyLimitUsd orders the results by the monthly_limit_usd field.
 func ByMonthlyLimitUsd(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMonthlyLimitUsd, opts...).ToFunc()
+}
+
+// ByDailyLimitCount orders the results by the daily_limit_count field.
+func ByDailyLimitCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDailyLimitCount, opts...).ToFunc()
+}
+
+// ByWeeklyLimitCount orders the results by the weekly_limit_count field.
+func ByWeeklyLimitCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeeklyLimitCount, opts...).ToFunc()
+}
+
+// ByMonthlyLimitCount orders the results by the monthly_limit_count field.
+func ByMonthlyLimitCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMonthlyLimitCount, opts...).ToFunc()
 }

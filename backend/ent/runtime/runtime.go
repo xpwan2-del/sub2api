@@ -526,6 +526,18 @@ func init() {
 	bundleplangroupquotaDescMonthlyLimitUsd := bundleplangroupquotaFields[6].Descriptor()
 	// bundleplangroupquota.DefaultMonthlyLimitUsd holds the default value on creation for the monthly_limit_usd field.
 	bundleplangroupquota.DefaultMonthlyLimitUsd = bundleplangroupquotaDescMonthlyLimitUsd.Default.(float64)
+	// bundleplangroupquotaDescDailyLimitCount is the schema descriptor for daily_limit_count field.
+	bundleplangroupquotaDescDailyLimitCount := bundleplangroupquotaFields[7].Descriptor()
+	// bundleplangroupquota.DefaultDailyLimitCount holds the default value on creation for the daily_limit_count field.
+	bundleplangroupquota.DefaultDailyLimitCount = bundleplangroupquotaDescDailyLimitCount.Default.(int)
+	// bundleplangroupquotaDescWeeklyLimitCount is the schema descriptor for weekly_limit_count field.
+	bundleplangroupquotaDescWeeklyLimitCount := bundleplangroupquotaFields[8].Descriptor()
+	// bundleplangroupquota.DefaultWeeklyLimitCount holds the default value on creation for the weekly_limit_count field.
+	bundleplangroupquota.DefaultWeeklyLimitCount = bundleplangroupquotaDescWeeklyLimitCount.Default.(int)
+	// bundleplangroupquotaDescMonthlyLimitCount is the schema descriptor for monthly_limit_count field.
+	bundleplangroupquotaDescMonthlyLimitCount := bundleplangroupquotaFields[9].Descriptor()
+	// bundleplangroupquota.DefaultMonthlyLimitCount holds the default value on creation for the monthly_limit_count field.
+	bundleplangroupquota.DefaultMonthlyLimitCount = bundleplangroupquotaDescMonthlyLimitCount.Default.(int)
 	bundlesubscriptionMixin := schema.BundleSubscription{}.Mixin()
 	bundlesubscriptionMixinHooks1 := bundlesubscriptionMixin[1].Hooks()
 	bundlesubscription.Hooks[0] = bundlesubscriptionMixinHooks1[0]
@@ -595,6 +607,18 @@ func init() {
 	bundlesubscriptionusageDescMonthlyWindowStart := bundlesubscriptionusageFields[8].Descriptor()
 	// bundlesubscriptionusage.DefaultMonthlyWindowStart holds the default value on creation for the monthly_window_start field.
 	bundlesubscriptionusage.DefaultMonthlyWindowStart = bundlesubscriptionusageDescMonthlyWindowStart.Default.(time.Time)
+	// bundlesubscriptionusageDescDailyUsageCount is the schema descriptor for daily_usage_count field.
+	bundlesubscriptionusageDescDailyUsageCount := bundlesubscriptionusageFields[9].Descriptor()
+	// bundlesubscriptionusage.DefaultDailyUsageCount holds the default value on creation for the daily_usage_count field.
+	bundlesubscriptionusage.DefaultDailyUsageCount = bundlesubscriptionusageDescDailyUsageCount.Default.(int)
+	// bundlesubscriptionusageDescWeeklyUsageCount is the schema descriptor for weekly_usage_count field.
+	bundlesubscriptionusageDescWeeklyUsageCount := bundlesubscriptionusageFields[10].Descriptor()
+	// bundlesubscriptionusage.DefaultWeeklyUsageCount holds the default value on creation for the weekly_usage_count field.
+	bundlesubscriptionusage.DefaultWeeklyUsageCount = bundlesubscriptionusageDescWeeklyUsageCount.Default.(int)
+	// bundlesubscriptionusageDescMonthlyUsageCount is the schema descriptor for monthly_usage_count field.
+	bundlesubscriptionusageDescMonthlyUsageCount := bundlesubscriptionusageFields[11].Descriptor()
+	// bundlesubscriptionusage.DefaultMonthlyUsageCount holds the default value on creation for the monthly_usage_count field.
+	bundlesubscriptionusage.DefaultMonthlyUsageCount = bundlesubscriptionusageDescMonthlyUsageCount.Default.(int)
 	channelmonitorMixin := schema.ChannelMonitor{}.Mixin()
 	channelmonitorMixinFields0 := channelmonitorMixin[0].Fields()
 	_ = channelmonitorMixinFields0

@@ -189,6 +189,69 @@ func (_u *BundleSubscriptionUsageUpdate) SetNillableMonthlyWindowStart(v *time.T
 	return _u
 }
 
+// SetDailyUsageCount sets the "daily_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) SetDailyUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.ResetDailyUsageCount()
+	_u.mutation.SetDailyUsageCount(v)
+	return _u
+}
+
+// SetNillableDailyUsageCount sets the "daily_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdate) SetNillableDailyUsageCount(v *int) *BundleSubscriptionUsageUpdate {
+	if v != nil {
+		_u.SetDailyUsageCount(*v)
+	}
+	return _u
+}
+
+// AddDailyUsageCount adds value to the "daily_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) AddDailyUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.AddDailyUsageCount(v)
+	return _u
+}
+
+// SetWeeklyUsageCount sets the "weekly_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) SetWeeklyUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.ResetWeeklyUsageCount()
+	_u.mutation.SetWeeklyUsageCount(v)
+	return _u
+}
+
+// SetNillableWeeklyUsageCount sets the "weekly_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdate) SetNillableWeeklyUsageCount(v *int) *BundleSubscriptionUsageUpdate {
+	if v != nil {
+		_u.SetWeeklyUsageCount(*v)
+	}
+	return _u
+}
+
+// AddWeeklyUsageCount adds value to the "weekly_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) AddWeeklyUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.AddWeeklyUsageCount(v)
+	return _u
+}
+
+// SetMonthlyUsageCount sets the "monthly_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) SetMonthlyUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.ResetMonthlyUsageCount()
+	_u.mutation.SetMonthlyUsageCount(v)
+	return _u
+}
+
+// SetNillableMonthlyUsageCount sets the "monthly_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdate) SetNillableMonthlyUsageCount(v *int) *BundleSubscriptionUsageUpdate {
+	if v != nil {
+		_u.SetMonthlyUsageCount(*v)
+	}
+	return _u
+}
+
+// AddMonthlyUsageCount adds value to the "monthly_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) AddMonthlyUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.AddMonthlyUsageCount(v)
+	return _u
+}
+
 // Mutation returns the BundleSubscriptionUsageMutation object of the builder.
 func (_u *BundleSubscriptionUsageUpdate) Mutation() *BundleSubscriptionUsageMutation {
 	return _u.mutation
@@ -271,6 +334,24 @@ func (_u *BundleSubscriptionUsageUpdate) sqlSave(ctx context.Context) (_node int
 	}
 	if value, ok := _u.mutation.MonthlyWindowStart(); ok {
 		_spec.SetField(bundlesubscriptionusage.FieldMonthlyWindowStart, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.DailyUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldDailyUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldDailyUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.WeeklyUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldWeeklyUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldWeeklyUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MonthlyUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldMonthlyUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldMonthlyUsageCount, field.TypeInt, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -453,6 +534,69 @@ func (_u *BundleSubscriptionUsageUpdateOne) SetNillableMonthlyWindowStart(v *tim
 	return _u
 }
 
+// SetDailyUsageCount sets the "daily_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) SetDailyUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.ResetDailyUsageCount()
+	_u.mutation.SetDailyUsageCount(v)
+	return _u
+}
+
+// SetNillableDailyUsageCount sets the "daily_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdateOne) SetNillableDailyUsageCount(v *int) *BundleSubscriptionUsageUpdateOne {
+	if v != nil {
+		_u.SetDailyUsageCount(*v)
+	}
+	return _u
+}
+
+// AddDailyUsageCount adds value to the "daily_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) AddDailyUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.AddDailyUsageCount(v)
+	return _u
+}
+
+// SetWeeklyUsageCount sets the "weekly_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) SetWeeklyUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.ResetWeeklyUsageCount()
+	_u.mutation.SetWeeklyUsageCount(v)
+	return _u
+}
+
+// SetNillableWeeklyUsageCount sets the "weekly_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdateOne) SetNillableWeeklyUsageCount(v *int) *BundleSubscriptionUsageUpdateOne {
+	if v != nil {
+		_u.SetWeeklyUsageCount(*v)
+	}
+	return _u
+}
+
+// AddWeeklyUsageCount adds value to the "weekly_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) AddWeeklyUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.AddWeeklyUsageCount(v)
+	return _u
+}
+
+// SetMonthlyUsageCount sets the "monthly_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) SetMonthlyUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.ResetMonthlyUsageCount()
+	_u.mutation.SetMonthlyUsageCount(v)
+	return _u
+}
+
+// SetNillableMonthlyUsageCount sets the "monthly_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdateOne) SetNillableMonthlyUsageCount(v *int) *BundleSubscriptionUsageUpdateOne {
+	if v != nil {
+		_u.SetMonthlyUsageCount(*v)
+	}
+	return _u
+}
+
+// AddMonthlyUsageCount adds value to the "monthly_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) AddMonthlyUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.AddMonthlyUsageCount(v)
+	return _u
+}
+
 // Mutation returns the BundleSubscriptionUsageMutation object of the builder.
 func (_u *BundleSubscriptionUsageUpdateOne) Mutation() *BundleSubscriptionUsageMutation {
 	return _u.mutation
@@ -565,6 +709,24 @@ func (_u *BundleSubscriptionUsageUpdateOne) sqlSave(ctx context.Context) (_node 
 	}
 	if value, ok := _u.mutation.MonthlyWindowStart(); ok {
 		_spec.SetField(bundlesubscriptionusage.FieldMonthlyWindowStart, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.DailyUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldDailyUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldDailyUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.WeeklyUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldWeeklyUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldWeeklyUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MonthlyUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldMonthlyUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldMonthlyUsageCount, field.TypeInt, value)
 	}
 	_node = &BundleSubscriptionUsage{config: _u.config}
 	_spec.Assign = _node.assignValues

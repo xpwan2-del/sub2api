@@ -470,6 +470,9 @@ var (
 		{Name: "daily_limit_usd", Type: field.TypeFloat64, Default: 0},
 		{Name: "weekly_limit_usd", Type: field.TypeFloat64, Default: 0},
 		{Name: "monthly_limit_usd", Type: field.TypeFloat64, Default: 0},
+		{Name: "daily_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "weekly_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "monthly_limit_count", Type: field.TypeInt, Default: 0},
 	}
 	// BundlePlanGroupQuotasTable holds the schema information for the "bundle_plan_group_quotas" table.
 	BundlePlanGroupQuotasTable = &schema.Table{
@@ -529,6 +532,9 @@ var (
 		{Name: "weekly_window_start", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "monthly_usage_usd", Type: field.TypeFloat64, Default: 0},
 		{Name: "monthly_window_start", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "daily_usage_count", Type: field.TypeInt, Default: 0},
+		{Name: "weekly_usage_count", Type: field.TypeInt, Default: 0},
+		{Name: "monthly_usage_count", Type: field.TypeInt, Default: 0},
 	}
 	// BundleSubscriptionUsagesTable holds the schema information for the "bundle_subscription_usages" table.
 	BundleSubscriptionUsagesTable = &schema.Table{
