@@ -28,6 +28,7 @@ type BundleRouteResolverMiddleware struct {
 	rpmCache         service.BundleRPMCache
 	concurrencyCache service.BundleConcurrencyCache
 	subscriptionSvc  *service.SubscriptionService
+	usageSvc         *service.BundleUsageService
 }
 
 // NewBundleRouteResolverMiddleware 创建套餐路由解析中间件
@@ -37,12 +38,14 @@ func NewBundleRouteResolverMiddleware(
 	rpmCache service.BundleRPMCache,
 	concurrencyCache service.BundleConcurrencyCache,
 	subscriptionSvc *service.SubscriptionService,
+	usageSvc *service.BundleUsageService,
 ) *BundleRouteResolverMiddleware {
 	return &BundleRouteResolverMiddleware{
 		resolver:         resolver,
 		rpmCache:         rpmCache,
 		concurrencyCache: concurrencyCache,
 		subscriptionSvc:  subscriptionSvc,
+		usageSvc:         usageSvc,
 	}
 }
 
@@ -165,6 +168,28 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 					"error": gin.H{
 						"type":    "bundle_rpm_exceeded",
 						"message": "请求频率已达套餐上限",
+					},
+				})
+				c.Abort()
+				return
+			}
+		}
+
+		// --- Bundle-level quota precheck (USD + count) ---
+		// Fail-open by design (consistent with RPM above): quota is a soft
+		// read-only check of "used vs limit"; transient usageSvc errors must
+		// not block requests. Concurrent over-issuance is acceptable here
+		// (see spec 10.1) — strictness is enforced post-billing.
+		if m.usageSvc != nil {
+			elig, qErr := m.usageSvc.CheckQuotaEligibility(c.Request.Context(), resolved.BundleSubID, resolved.GroupID)
+			if qErr != nil {
+				slog.Warn("bundle quota check failed, allowing (fail-open)",
+					"bundle_sub_id", resolved.BundleSubID, "error", qErr)
+			} else if elig != nil && !elig.Eligible {
+				c.JSON(http.StatusTooManyRequests, gin.H{
+					"error": gin.H{
+						"type":    "BUNDLE_GROUP_QUOTA_EXCEEDED",
+						"message": "套餐额度已达上限",
 					},
 				})
 				c.Abort()

@@ -109,6 +109,10 @@ func (s *BundleUsageService) CheckQuotaEligibility(ctx context.Context, bundleSu
 		result.WeeklyRemaining = matchingQuota.WeeklyLimitUSD - usage.WeeklyUsageUSD
 		result.MonthlyRemaining = matchingQuota.MonthlyLimitUSD - usage.MonthlyUsageUSD
 
+		result.DailyRemainingCount = matchingQuota.DailyLimitCount - usage.DailyUsageCount
+		result.WeeklyRemainingCount = matchingQuota.WeeklyLimitCount - usage.WeeklyUsageCount
+		result.MonthlyRemainingCount = matchingQuota.MonthlyLimitCount - usage.MonthlyUsageCount
+
 		// 0 means unlimited — only enforce limits that are explicitly set (>0).
 		if matchingQuota.DailyLimitUSD > 0 && result.DailyRemaining <= 0 {
 			result.Eligible = false
@@ -119,11 +123,24 @@ func (s *BundleUsageService) CheckQuotaEligibility(ctx context.Context, bundleSu
 		if matchingQuota.MonthlyLimitUSD > 0 && result.MonthlyRemaining <= 0 {
 			result.Eligible = false
 		}
+		if matchingQuota.DailyLimitCount > 0 && result.DailyRemainingCount <= 0 {
+			result.Eligible = false
+		}
+		if matchingQuota.WeeklyLimitCount > 0 && result.WeeklyRemainingCount <= 0 {
+			result.Eligible = false
+		}
+		if matchingQuota.MonthlyLimitCount > 0 && result.MonthlyRemainingCount <= 0 {
+			result.Eligible = false
+		}
 	} else {
 		// No usage record yet means full quota is available.
 		result.DailyRemaining = matchingQuota.DailyLimitUSD
 		result.WeeklyRemaining = matchingQuota.WeeklyLimitUSD
 		result.MonthlyRemaining = matchingQuota.MonthlyLimitUSD
+
+		result.DailyRemainingCount = matchingQuota.DailyLimitCount
+		result.WeeklyRemainingCount = matchingQuota.WeeklyLimitCount
+		result.MonthlyRemainingCount = matchingQuota.MonthlyLimitCount
 	}
 
 	return result, nil
