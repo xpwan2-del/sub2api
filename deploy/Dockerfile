@@ -42,7 +42,11 @@ RUN pnpm run build
 FROM ${GOLANG_IMAGE} AS backend-builder
 
 # Build arguments for version info (set by CI)
-ARG VERSION=docker
+# Version 优先级：build arg VERSION > cmd/server/VERSION 文件
+ARG VERSION=
+# BUILD 自研发布版本号（CalVer，如 2026.06.24-abc12345），由调用方算好后传入；
+# 未传则为空 → main.Build 经 init 兜底为 "dev"（.git 被 .dockerignore 排除，无法容器内推导）。
+ARG BUILD=
 ARG COMMIT=docker
 ARG DATE
 ARG GOPROXY
@@ -67,9 +71,13 @@ COPY backend/ ./
 COPY --from=frontend-builder /app/backend/internal/web/dist ./internal/web/dist
 
 # Build the binary (BuildType=release for CI builds, embed frontend)
-RUN CGO_ENABLED=0 GOOS=linux go build \
+RUN VERSION_VALUE="${VERSION}" && \
+    if [ -z "${VERSION_VALUE}" ]; then VERSION_VALUE="$(tr -d '\r\n' < ./cmd/server/VERSION)"; fi && \
+    DATE_VALUE="${DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}" && \
+    CGO_ENABLED=0 GOOS=linux go build \
     -tags embed \
-    -ldflags="-s -w -X main.Commit=${COMMIT} -X main.Date=${DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)} -X main.BuildType=release" \
+    -ldflags="-s -w -X main.Version=${VERSION_VALUE} -X main.Build=${BUILD} -X main.Commit=${COMMIT} -X main.Date=${DATE_VALUE} -X main.BuildType=release" \
+    -trimpath \
     -o /app/sub2api \
     ./cmd/server
 

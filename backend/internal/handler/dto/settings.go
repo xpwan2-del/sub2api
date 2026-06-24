@@ -313,6 +313,7 @@ type PublicSettings struct {
 	BackendModeEnabled               bool                     `json:"backend_mode_enabled"`
 	PaymentEnabled                   bool                     `json:"payment_enabled"`
 	Version                          string                   `json:"version"`
+	BaseVersion                      string                   `json:"base_version"`
 	BalanceLowNotifyEnabled          bool                     `json:"balance_low_notify_enabled"`
 	AccountQuotaNotifyEnabled        bool                     `json:"account_quota_notify_enabled"`
 	BalanceLowNotifyThreshold        float64                  `json:"balance_low_notify_threshold"`

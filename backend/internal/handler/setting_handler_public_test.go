@@ -61,7 +61,7 @@ func TestSettingHandler_GetPublicSettings_ExposesForceEmailOnThirdPartySignup(t 
 			service.SettingKeyForceEmailOnThirdPartySignup: "true",
 		},
 	}
-	h := NewSettingHandler(service.NewSettingService(repo, &config.Config{}), "test-version")
+	h := NewSettingHandler(service.NewSettingService(repo, &config.Config{}), "test-version", "0.1.138-test")
 
 	recorder := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(recorder)
@@ -96,7 +96,7 @@ func TestSettingHandler_GetPublicSettings_ExposesWeChatOAuthModeCapabilities(t *
 			service.SettingKeyWeChatConnectRedirectURL:         "https://api.example.com/api/v1/auth/oauth/wechat/callback",
 			service.SettingKeyWeChatConnectFrontendRedirectURL: "/auth/wechat/callback",
 		},
-	}, &config.Config{}), "test-version")
+	}, &config.Config{}), "test-version", "0.1.138-test")
 
 	recorder := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(recorder)

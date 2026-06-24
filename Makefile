@@ -1,4 +1,4 @@
-.PHONY: build build-backend build-frontend build-datamanagementd test test-backend test-frontend test-frontend-critical test-datamanagementd secret-scan dev-backend dev-frontend
+.PHONY: build build-backend build-frontend build-datamanagementd docker-build test test-backend test-frontend test-frontend-critical test-datamanagementd secret-scan dev-backend dev-frontend
 
 FRONTEND_CRITICAL_VITEST := \
 	src/views/auth/__tests__/LinuxDoCallbackView.spec.ts \
@@ -18,6 +18,18 @@ build-backend:
 # 编译前端（需要已安装依赖）
 build-frontend:
 	@pnpm --dir frontend run build
+
+# 自研发布版本号（CalVer: YYYY.MM.DD-shortsha），与 backend/Makefile 推导逻辑一致，
+# 同一 commit 在任何机器构建结果一致（可复现）。
+GIT_DATE  := $(shell git log -1 --format=%cd --date=format:'%Y.%m.%d')
+GIT_SHORT := $(shell git rev-parse --short=8 HEAD)
+BUILD     ?= $(GIT_DATE)-$(GIT_SHORT)
+
+# 构建本地 Docker 镜像。自动把自研版本号 BUILD 通过 --build-arg 注入根目录 Dockerfile，
+# 镜像内 main.Build 即为 CalVer（不再为空/dev）。
+# 注意：.git 被 .dockerignore 排除，Dockerfile 无法容器内推导，必须在此算好后传入。
+docker-build:
+	docker build --build-arg BUILD=$(BUILD) -t sub2api:local .
 
 # 编译 datamanagementd（宿主机数据管理进程）
 build-datamanagementd:

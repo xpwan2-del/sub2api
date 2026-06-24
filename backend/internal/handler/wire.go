@@ -85,7 +85,8 @@ func ProvideSystemHandler(updateService *service.UpdateService, lockService *ser
 
 // ProvideSettingHandler creates SettingHandler with version from BuildInfo
 func ProvideSettingHandler(settingService *service.SettingService, buildInfo BuildInfo, notificationEmailService *service.NotificationEmailService) *SettingHandler {
-	h := NewSettingHandler(settingService, buildInfo.Version)
+	// version（主显示）= 自研发布号 Build；baseVersion（副显示）= 上游基线 Version
+	h := NewSettingHandler(settingService, buildInfo.Build, buildInfo.Version)
 	h.SetNotificationEmailService(notificationEmailService)
 	return h
 }

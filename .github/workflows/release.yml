@@ -172,6 +172,14 @@ jobs:
         id: lowercase
         run: echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
+      # 计算自研发布版本号 Build（CalVer: YYYY.MM.DD-shortsha），供 goreleaser 通过
+      # AUTO_BUILD 环境变量注入 main.Build。推导逻辑与 backend/Makefile 一致，可复现。
+      - name: Compute AUTO_BUILD (CalVer)
+        run: |
+          GIT_DATE=$(git log -1 --format=%cd --date=format:'%Y.%m.%d')
+          GIT_SHORT=$(git rev-parse --short=8 HEAD)
+          echo "AUTO_BUILD=${GIT_DATE}-${GIT_SHORT}" >> $GITHUB_ENV
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -184,6 +192,8 @@ jobs:
           GITHUB_REPO_OWNER_LOWER: ${{ steps.lowercase.outputs.owner }}
           GITHUB_REPO_NAME: ${{ github.event.repository.name }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME || 'skip' }}
+          # 自研发布版本号（CalVer），由上一步 Compute AUTO_BUILD 写入 GITHUB_ENV
+          AUTO_BUILD: ${{ env.AUTO_BUILD }}
 
       # Update DockerHub description
       - name: Update DockerHub description

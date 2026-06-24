@@ -44,6 +44,11 @@ FROM ${GOLANG_IMAGE} AS backend-builder
 
 # Build arguments for version info (set by CI)
 ARG VERSION=
+# BUILD 自研发布版本号（CalVer，如 2026.06.24-abc12345），由调用方（CI 或
+# `make docker-build`）从 git commit date + short SHA 算好后传入。
+# 未传入时为空 → main.Build 经 init 兜底为 "dev"。
+# 注意：.dockerignore 排除了 .git，无法在容器内 git 推导，必须外部传入。
+ARG BUILD=
 ARG COMMIT=docker
 ARG DATE
 ARG GOPROXY
@@ -74,7 +79,7 @@ RUN VERSION_VALUE="${VERSION}" && \
     DATE_VALUE="${DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}" && \
     CGO_ENABLED=0 GOOS=linux go build \
     -tags embed \
-    -ldflags="-s -w -X main.Version=${VERSION_VALUE} -X main.Commit=${COMMIT} -X main.Date=${DATE_VALUE} -X main.BuildType=release" \
+    -ldflags="-s -w -X main.Version=${VERSION_VALUE} -X main.Build=${BUILD} -X main.Commit=${COMMIT} -X main.Date=${DATE_VALUE} -X main.BuildType=release" \
     -trimpath \
     -o /app/sub2api \
     ./cmd/server
