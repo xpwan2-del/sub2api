@@ -246,6 +246,8 @@ type OpenAIForwardResult struct {
 	FirstTokenMs       *int
 	ClientDisconnect   bool
 	ImageCount         int
+	// VideoCount 视频产出段数（当前 1 请求=1 段）
+	VideoCount         int
 	ImageSize          string
 	ImageInputSize     string
 	ImageOutputSize    string

@@ -129,6 +129,7 @@ func (s *OpenAIGatewayService) ForwardVideos(
 					ResponseHeaders: mediaResp.Header.Clone(),
 					Stream:          false,
 					Duration:        time.Since(startTime),
+					VideoCount:      1,
 				}, nil
 			}
 			if !c.Writer.Written() {
@@ -150,6 +151,7 @@ func (s *OpenAIGatewayService) ForwardVideos(
 			ResponseHeaders: resp.Header.Clone(),
 			Stream:          false,
 			Duration:        time.Since(startTime),
+			VideoCount:      1,
 		}, nil
 	}
 
@@ -170,6 +172,7 @@ func (s *OpenAIGatewayService) ForwardVideos(
 		ResponseHeaders: resp.Header.Clone(),
 		Stream:          false,
 		Duration:        time.Since(startTime),
+		VideoCount:      1,
 	}, nil
 }
 

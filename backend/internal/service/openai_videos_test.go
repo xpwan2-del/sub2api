@@ -30,6 +30,7 @@ func TestOpenAIGatewayService_ForwardVideosContentStreamsDirectResponse(t *testi
 	require.Equal(t, "direct-video", rec.Body.String())
 	require.Len(t, upstream.requests, 1)
 	require.Equal(t, "https://upstream.example.com/v1/videos/task_123/content", upstream.requests[0].URL.String())
+	require.Equal(t, 1, result.VideoCount)
 }
 
 func TestOpenAIGatewayService_ForwardVideosContentFallsBackToTaskVideoURL(t *testing.T) {
@@ -56,6 +57,7 @@ func TestOpenAIGatewayService_ForwardVideosContentFallsBackToTaskVideoURL(t *tes
 	require.Equal(t, "Bearer sk-test", upstream.requests[1].Header.Get("Authorization"))
 	require.Empty(t, upstream.requests[2].Header.Get("Authorization"))
 	require.Equal(t, HTTPUpstreamProfileOpenAI, HTTPUpstreamProfileFromContext(upstream.requests[2].Context()))
+	require.Equal(t, 1, result.VideoCount)
 }
 
 func TestOpenAIGatewayService_ForwardVideosContentDoesNotFallbackForAuthErrors(t *testing.T) {
