@@ -4,6 +4,8 @@ export default {
     viewOnGithub: '在 GitHub 上查看',
     viewDocs: '查看文档',
     docs: '文档',
+    models: '模型广场',
+    canvas: 'AI 画布',
     switchToLight: '切换到浅色模式',
     switchToDark: '切换到深色模式',
     dashboard: '控制台',
@@ -316,6 +318,76 @@ export default {
     }
   },
 
+  modelCatalog: {
+    navLabel: '模型广场',
+    kicker: 'Public Model Catalog',
+    title: '模型广场',
+    subtitle: '',
+    available: '可用',
+    loading: '正在同步模型列表...',
+    loadFailed: '模型列表加载失败',
+    retry: '重试',
+    empty: '当前没有符合条件的模型，或管理员尚未接入可售模型。',
+    searchPlaceholder: '搜索模型名或平台',
+    copyName: '复制模型名',
+    copied: '模型名已复制',
+    startUsing: '开始使用',
+    stats: {
+      models: '模型',
+      platforms: '平台',
+      currency: '结算'
+    },
+    filters: {
+      allPlatforms: '全部平台',
+      allCapabilities: '全部能力',
+      allBilling: '全部计费'
+    },
+    capabilities: {
+      reasoning: '推理',
+      coding: '编程',
+      longContext: '长上下文',
+      lowCost: '低价',
+      multimodal: '多模态',
+      fast: '高速'
+    },
+    billingModes: {
+      token: 'Token 计费',
+      image: '图片计费',
+      per_request: '按次计费',
+      unknown: '价格待配置'
+    },
+    price: {
+      input: '输入 / 1M',
+      output: '输出 / 1M',
+      image: '图片输出',
+      request: '单次请求',
+      unavailable: '价格待配置'
+    },
+    health: {
+      title: '健康度',
+      window: '近48小时',
+      requests: '请求',
+      successRate: '成功率',
+      statusLabel: '状态',
+      bucket: '第 {index} 个小时桶',
+      status: {
+        operational: '正常',
+        degraded: '降级',
+        rate_limited: '限流',
+        failed: '异常',
+        no_recent_traffic: '暂无流量',
+        orphaned_history: '历史流量',
+        idle: '无请求',
+        unknown: '未知'
+      }
+    },
+    sort: {
+      price: '价格优先',
+      name: '按名称',
+      provider: '按平台'
+    }
+  },
+
   // Common
   common: {
     loading: '加载中...',
@@ -444,6 +516,7 @@ export default {
   // Navigation
   nav: {
     dashboard: '仪表盘',
+    canvas: 'AI 画布',
     announcements: '公告',
     apiKeys: 'API 密钥',
     usage: '使用记录',
@@ -463,6 +536,7 @@ export default {
     proxies: 'IP管理',
     redeemCodes: '兑换码',
     ops: '运维监控',
+    modelStatus: '模型状态',
     promoCodes: '优惠码',
     settings: '系统设置',
     myAccount: '我的账户',
@@ -2401,13 +2475,17 @@ export default {
       },
       imagePricing: {
         title: '图片生成计费',
-        description: '配置图片生成能力和图片基础单价，留空则使用默认价格',
+        description: '配置图片生成能力与生图倍率；图片单价请在渠道定价中按模型配置',
         allowImageGeneration: '允许当前分组生图',
         independentMultiplier: '生图倍率独立',
         imageMultiplier: '生图独立倍率',
         modeHint: '默认关闭独立倍率时，图片费用 = 图片价格 × 当前分组有效倍率；开启独立倍率后，图片费用 = 图片价格 × 生图独立倍率。',
+        priceMigratedHint: '图片单价已迁移至「渠道管理 → 模型定价」：计费模式选择「图片」，按 1K/2K/4K 等层级配置。此处仅保留倍率与开关，价格不再在此设置。',
+        legacyPriceNote: '该分组仍保留历史图片价格，将作为渠道未配置该模型时的兜底价格。',
         finalPricePreview: '最终单张价格预览',
-        notConfigured: '未配置'
+        notConfigured: '未配置',
+        multiplierRequired: '开启独立倍率时，请填写生图倍率',
+        multiplierInvalid: '生图倍率必须为不小于 0 的数字'
       },
       modelsList: {
         title: '自定义 /v1/models 模型列表',
@@ -4903,6 +4981,80 @@ export default {
     ops: {
       title: '运维监控',
       description: '运维监控与排障',
+      modelStatus: {
+        title: '模型状态',
+        description: '服务器、网关、Provider 与模型健康状态',
+        refresh: '刷新',
+        refreshing: '刷新中',
+        failedToLoad: '加载模型状态失败',
+        timeRange: '时间范围',
+        provider: 'Provider',
+        statusLabel: '状态',
+        search: '搜索',
+        searchPlaceholder: '搜索模型名称',
+        cloudTitle: '服务器',
+        gatewayTitle: '网关健康',
+        cpu: 'CPU',
+        memory: '内存',
+        disk: '磁盘',
+        network: '网络',
+        db: '数据库',
+        online: '在线',
+        offline: '离线',
+        localMetrics: '本机采集',
+        requests: '请求数',
+        errors: '错误',
+        sla: 'SLA',
+        healthHistory: '健康度',
+        routes: '路由',
+        emptyRoutes: '暂无近期路由请求',
+        totalModels: '模型总数',
+        accountAvailability: '账号可用性',
+        availableAccounts: '可用',
+        totalAccounts: '总数',
+        rateLimitedAccounts: '限流',
+        errorAccounts: '错误',
+        providers: 'Provider 汇总',
+        emptyProviders: '暂无 Provider',
+        providerCards: 'Provider 状态',
+        modelDistribution: '模型状态分布',
+        models: '模型列表',
+        modelCards: '模型状态卡片',
+        modelCardsHint: '灰色代表无近期流量，不会主动请求模型检测。',
+        cardView: '卡片视图',
+        tableView: '表格视图',
+        viewModeHint: '卡片适合快速判断状态，表格适合排查明细。',
+        model: '模型',
+        successRate: '成功率',
+        latency: '平均 / P95',
+        accounts: '账号',
+        lastSeen: '最近出现',
+        emptyModels: '暂无模型',
+        previous: '上一页',
+        next: '下一页',
+        status: {
+          operational: '正常',
+          degraded: '降级',
+          rate_limited: '限流',
+          failed: '失败',
+          no_recent_traffic: '无近期流量',
+          unknown: '未知',
+          orphaned_history: '孤儿历史'
+        },
+        cloudStatus: {
+          disabled: '未启用',
+          not_configured: '未配置',
+          ok: '正常',
+          partial: '部分可用',
+          error: '错误'
+        },
+        source: {
+          account_mapping: '账号',
+          group_models_list: '分组',
+          group_model_routing: '路由',
+          real_traffic: '流量'
+        }
+      },
       // Dashboard
       systemHealth: '系统健康',
       overview: '概览',
@@ -6898,6 +7050,7 @@ export default {
     currentVersion: '当前版本',
     latestVersion: '最新版本',
     upToDate: '已是最新版本',
+    basedOn: '基于 sub2api {version}',
     updateAvailable: '有新版本可用！',
     releaseNotes: '更新日志',
     noReleaseNotes: '暂无更新日志',

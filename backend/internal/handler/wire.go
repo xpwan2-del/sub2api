@@ -85,7 +85,8 @@ func ProvideSystemHandler(updateService *service.UpdateService, lockService *ser
 
 // ProvideSettingHandler creates SettingHandler with version from BuildInfo
 func ProvideSettingHandler(settingService *service.SettingService, buildInfo BuildInfo, notificationEmailService *service.NotificationEmailService) *SettingHandler {
-	h := NewSettingHandler(settingService, buildInfo.Version)
+	// version（主显示）= 自研发布号 Build；baseVersion（副显示）= 上游基线 Version
+	h := NewSettingHandler(settingService, buildInfo.Build, buildInfo.Version)
 	h.SetNotificationEmailService(notificationEmailService)
 	return h
 }
@@ -115,28 +116,30 @@ func ProvideHandlers(
 	paymentHandler *PaymentHandler,
 	paymentWebhookHandler *PaymentWebhookHandler,
 	availableChannelHandler *AvailableChannelHandler,
+	publicModelCatalogHandler *PublicModelCatalogHandler,
 	bundleHandler *BundleHandler,
 	_ *service.IdempotencyCoordinator,
 	_ *service.IdempotencyCleanupService,
 ) *Handlers {
 	return &Handlers{
-		Auth:             authHandler,
-		User:             userHandler,
-		APIKey:           apiKeyHandler,
-		Usage:            usageHandler,
-		Redeem:           redeemHandler,
-		Subscription:     subscriptionHandler,
-		Announcement:     announcementHandler,
-		ChannelMonitor:   channelMonitorUserHandler,
-		Admin:            adminHandlers,
-		Gateway:          gatewayHandler,
-		OpenAIGateway:    openaiGatewayHandler,
-		Setting:          settingHandler,
-		Totp:             totpHandler,
-		Payment:          paymentHandler,
-		PaymentWebhook:   paymentWebhookHandler,
-		AvailableChannel: availableChannelHandler,
-		Bundle:           bundleHandler,
+		Auth:               authHandler,
+		User:               userHandler,
+		APIKey:             apiKeyHandler,
+		Usage:              usageHandler,
+		Redeem:             redeemHandler,
+		Subscription:       subscriptionHandler,
+		Announcement:       announcementHandler,
+		ChannelMonitor:     channelMonitorUserHandler,
+		Admin:              adminHandlers,
+		Gateway:            gatewayHandler,
+		OpenAIGateway:      openaiGatewayHandler,
+		Setting:            settingHandler,
+		Totp:               totpHandler,
+		Payment:            paymentHandler,
+		PaymentWebhook:     paymentWebhookHandler,
+		AvailableChannel:   availableChannelHandler,
+		PublicModelCatalog: publicModelCatalogHandler,
+		Bundle:             bundleHandler,
 	}
 }
 
@@ -158,6 +161,7 @@ var ProviderSet = wire.NewSet(
 	NewPaymentHandler,
 	NewPaymentWebhookHandler,
 	NewAvailableChannelHandler,
+	NewPublicModelCatalogHandler,
 	NewBundleHandler,
 
 	// Admin handlers

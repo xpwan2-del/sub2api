@@ -73,7 +73,9 @@ run_mode: "standard"
 cors:
   # Allowed origins list. Leave empty to disable cross-origin requests.
   # 允许的来源列表。留空则禁用跨域请求。
-  allowed_origins: []
+  allowed_origins: [
+    "canvas.best"
+  ]
   # Allow credentials (cookies/authorization headers). Cannot be used with "*".
   # 允许携带凭证（cookies/授权头）。不能与 "*" 通配符同时使用。
   allow_credentials: true
@@ -848,6 +850,23 @@ ops:
   # Other detailed settings (cleanup, aggregation, etc.) are configured in ops settings dialog
   # 其他详细设置（数据清理、预聚合等）在运维监控设置对话框中配置
   enabled: true
+
+  # Google Cloud Monitoring metrics for the admin model status page.
+  # 管理端模型状态页的 Google Cloud Monitoring 服务器指标。
+  # Requires the VM service account to have Monitoring Viewer permission.
+  # 需要 VM 的 Service Account 具备 Monitoring Viewer 读取权限。
+  google_cloud_monitoring:
+    enabled: false
+    project_id: ""
+    instance_id: ""
+    zone: ""
+    window_seconds: 300
+    metrics:
+      cpu_utilization: "compute.googleapis.com/instance/cpu/utilization"
+      network_received: "compute.googleapis.com/instance/network/received_bytes_count"
+      network_sent: "compute.googleapis.com/instance/network/sent_bytes_count"
+      memory_percent_used: "agent.googleapis.com/memory/percent_used"
+      disk_percent_used: "agent.googleapis.com/disk/percent_used"
 
 # =============================================================================
 # JWT Configuration

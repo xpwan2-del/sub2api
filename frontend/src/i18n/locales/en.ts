@@ -4,6 +4,8 @@ export default {
     viewOnGithub: 'View on GitHub',
     viewDocs: 'View Documentation',
     docs: 'Docs',
+    models: 'Models',
+    canvas: 'AI Canvas',
     switchToLight: 'Switch to Light Mode',
     switchToDark: 'Switch to Dark Mode',
     dashboard: 'Dashboard',
@@ -316,6 +318,76 @@ export default {
     }
   },
 
+  modelCatalog: {
+    navLabel: 'Models',
+    kicker: 'Public Model Catalog',
+    title: 'Model Catalog',
+    subtitle: '',
+    available: 'Available',
+    loading: 'Syncing model catalog...',
+    loadFailed: 'Failed to load model catalog',
+    retry: 'Retry',
+    empty: 'No matching models are available, or no sellable models have been connected yet.',
+    searchPlaceholder: 'Search model or platform',
+    copyName: 'Copy model',
+    copied: 'Model name copied',
+    startUsing: 'Start using',
+    stats: {
+      models: 'Models',
+      platforms: 'Platforms',
+      currency: 'Billing'
+    },
+    filters: {
+      allPlatforms: 'All platforms',
+      allCapabilities: 'All capabilities',
+      allBilling: 'All billing'
+    },
+    capabilities: {
+      reasoning: 'Reasoning',
+      coding: 'Coding',
+      longContext: 'Long context',
+      lowCost: 'Low cost',
+      multimodal: 'Multimodal',
+      fast: 'Fast'
+    },
+    billingModes: {
+      token: 'Token',
+      image: 'Image',
+      per_request: 'Per request',
+      unknown: 'Price pending'
+    },
+    price: {
+      input: 'Input / 1M',
+      output: 'Output / 1M',
+      image: 'Image output',
+      request: 'Per request',
+      unavailable: 'Price pending'
+    },
+    health: {
+      title: 'Health',
+      window: 'Last 48h',
+      requests: 'Requests',
+      successRate: 'Success',
+      statusLabel: 'Status',
+      bucket: 'Hour bucket {index}',
+      status: {
+        operational: 'Operational',
+        degraded: 'Degraded',
+        rate_limited: 'Rate limited',
+        failed: 'Incident',
+        no_recent_traffic: 'No traffic',
+        orphaned_history: 'Historic traffic',
+        idle: 'No requests',
+        unknown: 'Unknown'
+      }
+    },
+    sort: {
+      price: 'Lowest price',
+      name: 'Name',
+      provider: 'Platform'
+    }
+  },
+
   // Common
   common: {
     loading: 'Loading...',
@@ -444,6 +516,7 @@ export default {
   // Navigation
   nav: {
     dashboard: 'Dashboard',
+    canvas: 'AI Canvas',
     announcements: 'Announcements',
     apiKeys: 'API Keys',
     usage: 'Usage',
@@ -463,6 +536,7 @@ export default {
     proxies: 'Proxies',
     redeemCodes: 'Redeem Codes',
     ops: 'Ops',
+    modelStatus: 'Model Status',
     promoCodes: 'Promo Codes',
     settings: 'Settings',
     myAccount: 'My Account',
@@ -2317,13 +2391,17 @@ export default {
       },
       imagePricing: {
         title: 'Image Generation Pricing',
-        description: 'Configure image generation access and base image prices. Leave empty to use default prices.',
+        description: 'Configure image generation access and image multiplier. Set per-model image prices in channel pricing.',
         allowImageGeneration: 'Allow image generation for this group',
         independentMultiplier: 'Use independent image multiplier',
         imageMultiplier: 'Image multiplier',
         modeHint: 'By default, image billing uses image price × current effective group multiplier. Independent mode uses image price × image multiplier.',
+        priceMigratedHint: 'Image unit prices have moved to “Channels → Model Pricing”: set billing mode to “Image” and configure tiers like 1K/2K/4K. Only multiplier and toggles remain here.',
+        legacyPriceNote: 'This group still has legacy image prices; they serve as a fallback when a channel has no pricing for the model.',
         finalPricePreview: 'Final per-image price preview',
-        notConfigured: 'Not configured'
+        notConfigured: 'Not configured',
+        multiplierRequired: 'Please enter the image multiplier when independent mode is enabled',
+        multiplierInvalid: 'Image multiplier must be a number ≥ 0'
       },
       modelsList: {
         title: 'Custom /v1/models Model List',
@@ -4749,6 +4827,80 @@ export default {
     ops: {
       title: 'Ops Monitoring',
       description: 'Operational monitoring and troubleshooting',
+      modelStatus: {
+        title: 'Model Status',
+        description: 'Realtime server, gateway, provider, and model health',
+        refresh: 'Refresh',
+        refreshing: 'Refreshing',
+        failedToLoad: 'Failed to load model status',
+        timeRange: 'Time Range',
+        provider: 'Provider',
+        statusLabel: 'Status',
+        search: 'Search',
+        searchPlaceholder: 'Search model name',
+        cloudTitle: 'Server',
+        gatewayTitle: 'Gateway Health',
+        cpu: 'CPU',
+        memory: 'Memory',
+        disk: 'Disk',
+        network: 'Network',
+        db: 'Database',
+        online: 'Online',
+        offline: 'Offline',
+        localMetrics: 'Local metrics',
+        requests: 'Requests',
+        errors: 'Errors',
+        sla: 'SLA',
+        healthHistory: 'Health',
+        routes: 'Routes',
+        emptyRoutes: 'No recent route requests',
+        totalModels: 'Total Models',
+        accountAvailability: 'Account Availability',
+        availableAccounts: 'Available',
+        totalAccounts: 'Total',
+        rateLimitedAccounts: 'Limited',
+        errorAccounts: 'Error',
+        providers: 'Providers',
+        emptyProviders: 'No providers',
+        providerCards: 'Provider Status',
+        modelDistribution: 'Model Status Distribution',
+        models: 'Models',
+        modelCards: 'Model Status Cards',
+        modelCardsHint: 'Gray means no recent traffic. The page does not call models for checks.',
+        cardView: 'Cards',
+        tableView: 'Table',
+        viewModeHint: 'Cards are for fast status reads. Table is for detailed investigation.',
+        model: 'Model',
+        successRate: 'Success',
+        latency: 'Avg / P95',
+        accounts: 'Accounts',
+        lastSeen: 'Last Seen',
+        emptyModels: 'No models found',
+        previous: 'Previous',
+        next: 'Next',
+        status: {
+          operational: 'Operational',
+          degraded: 'Degraded',
+          rate_limited: 'Rate Limited',
+          failed: 'Failed',
+          no_recent_traffic: 'No Recent Traffic',
+          unknown: 'Unknown',
+          orphaned_history: 'Orphaned History'
+        },
+        cloudStatus: {
+          disabled: 'Disabled',
+          not_configured: 'Not Configured',
+          ok: 'OK',
+          partial: 'Partial',
+          error: 'Error'
+        },
+        source: {
+          account_mapping: 'Account',
+          group_models_list: 'Group',
+          group_model_routing: 'Routing',
+          real_traffic: 'Traffic'
+        }
+      },
       // Dashboard
       systemHealth: 'System Health',
       overview: 'Overview',
@@ -6742,6 +6894,7 @@ export default {
     currentVersion: 'Current Version',
     latestVersion: 'Latest Version',
     upToDate: "You're running the latest version.",
+    basedOn: 'Based on sub2api {version}',
     updateAvailable: 'A new version is available!',
     releaseNotes: 'Release Notes',
     noReleaseNotes: 'No release notes',

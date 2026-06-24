@@ -347,6 +347,7 @@ sub2api-bmai/
 ## 七、参考资源
 
 - [上游仓库](https://github.com/Wei-Shaw/sub2api)
+- [模型状态与运维监控方案](docs/OPS_MODEL_STATUS_PLAN.md)
 - [Ent 文档](https://entgo.io/docs/getting-started)
 - [Vue3 文档](https://vuejs.org/)
 - [pnpm 文档](https://pnpm.io/)

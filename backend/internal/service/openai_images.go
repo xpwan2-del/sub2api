@@ -454,8 +454,28 @@ func applyOpenAIImagesDefaults(req *OpenAIImagesRequest) {
 	req.Model = "gpt-image-2"
 }
 
+// openAIImageGenerationModelPrefixes 列出 images 端点接受的图片生成模型名前缀。
+// 除 OpenAI 原生 gpt-image-* 家族外，还包含经 OpenAI 兼容渠道暴露的第三方图片模型
+// （如 xAI 的 grok-imagine-image*）。前缀必须精确到 grok-imagine-image，
+// 否则会把同系列的 grok-imagine-video（视频模型）误归入图片端点。
+var openAIImageGenerationModelPrefixes = []string{
+	"gpt-image-",         // OpenAI 原生图片生成
+	"grok-imagine-image", // xAI Grok 图片生成（grok-imagine-image / -2 / ...）
+}
+
+// isOpenAIImageGenerationModel 判定 model 是否为 images 端点支持的图片生成模型。
+// 模型名大小写不敏感，并去除首尾空白后再做前缀匹配。
 func isOpenAIImageGenerationModel(model string) bool {
-	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(model)), "gpt-image-")
+	model = strings.ToLower(strings.TrimSpace(model))
+	if model == "" {
+		return false
+	}
+	for _, prefix := range openAIImageGenerationModelPrefixes {
+		if strings.HasPrefix(model, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func validateOpenAIImagesModel(model string) error {

@@ -53,6 +53,7 @@ func TestUpdateServicePerformUpdateNoUpdateReturnsSentinel(t *testing.T) {
 			},
 		},
 		"0.1.132",
+		"2026.06.24-test",
 		"release",
 	)
 

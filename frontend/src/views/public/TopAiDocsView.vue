@@ -1,33 +1,6 @@
 <template>
   <div class="topai-docs-page" :class="{ 'is-dark': isDark }">
-    <header class="topai-docs-header">
-      <router-link to="/home" class="topai-docs-brand">
-        <span class="topai-docs-logo-wrap">
-          <img :src="siteLogo || '/top-ai-logo.png'" :alt="siteName" class="topai-docs-logo" />
-        </span>
-        <span class="topai-docs-brand-copy">
-          <span class="topai-docs-brand-name">{{ siteName }}</span>
-          <span class="topai-docs-brand-subtitle">{{ siteSubtitle }}</span>
-        </span>
-      </router-link>
-
-      <div class="topai-docs-actions">
-        <LocaleSwitcher />
-        <button
-          class="topai-docs-icon-button"
-          :title="isDark ? copy.switchToLight : copy.switchToDark"
-          @click="toggleTheme"
-        >
-          <Icon v-if="isDark" name="sun" size="md" />
-          <Icon v-else name="moon" size="md" />
-        </button>
-        <router-link :to="isAuthenticated ? dashboardPath : '/login'" class="topai-docs-primary-link">
-          <span v-if="isAuthenticated" class="topai-docs-user-mark">{{ userInitial }}</span>
-          <span>{{ isAuthenticated ? copy.dashboard : copy.login }}</span>
-          <Icon name="arrowRight" size="xs" />
-        </router-link>
-      </div>
-    </header>
+    <PublicTopBar :is-dark="isDark" @toggle-theme="toggleTheme" />
 
     <main class="topai-docs-main">
       <section class="topai-docs-hero">
@@ -117,11 +90,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore, useAuthStore } from '@/stores'
 import Icon from '@/components/icons/Icon.vue'
-import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
+import PublicTopBar from '@/components/public/PublicTopBar.vue'
+import { usePublicBranding } from '@/composables/usePublicBranding'
+import { useThemeMode } from '@/composables/useThemeMode'
 
 type GuideIcon =
   | 'login'
@@ -190,20 +165,13 @@ type GuideCopy = {
 const { locale } = useI18n()
 const appStore = useAppStore()
 const authStore = useAuthStore()
+const { isDark, toggleTheme } = useThemeMode()
+const { siteName } = usePublicBranding()
 
-const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'TOP-AI')
-const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'Pioneers of AI')
-const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
 const dashboardPath = computed(() => isAdmin.value ? '/admin/dashboard' : '/dashboard')
-const userInitial = computed(() => {
-  const user = authStore.user
-  if (!user?.email) return ''
-  return user.email.charAt(0).toUpperCase()
-})
 const currentYear = new Date().getFullYear()
-const isDark = ref(document.documentElement.classList.contains('dark'))
 
 const copy = computed<GuideCopy>(() => {
   if (locale.value.startsWith('zh')) {
@@ -429,25 +397,7 @@ const copy = computed<GuideCopy>(() => {
   }
 })
 
-function toggleTheme() {
-  isDark.value = !isDark.value
-  document.documentElement.classList.toggle('dark', isDark.value)
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
-}
-
-function initTheme() {
-  const savedTheme = localStorage.getItem('theme')
-  if (
-    savedTheme === 'dark' ||
-    (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
-  ) {
-    isDark.value = true
-    document.documentElement.classList.add('dark')
-  }
-}
-
 onMounted(() => {
-  initTheme()
   authStore.checkAuth()
   if (!appStore.publicSettingsLoaded) {
     appStore.fetchPublicSettings()
@@ -477,91 +427,6 @@ onMounted(() => {
   background-size: auto, 64px 64px, 64px 64px, auto;
 }
 
-.topai-docs-header {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 18px 28px;
-  border-bottom: 1px solid rgba(37, 99, 235, 0.12);
-  background: rgba(247, 247, 245, 0.76);
-  backdrop-filter: blur(18px);
-}
-
-.topai-docs-page.is-dark .topai-docs-header {
-  border-bottom-color: rgba(92, 255, 236, 0.14);
-  background: rgba(7, 17, 31, 0.78);
-}
-
-.topai-docs-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  color: inherit;
-  text-decoration: none;
-}
-
-.topai-docs-logo-wrap {
-  display: inline-flex;
-  width: 44px;
-  height: 44px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(37, 99, 235, 0.24);
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(240, 253, 250, 0.9), rgba(219, 234, 254, 0.72));
-  box-shadow: 0 0 26px rgba(45, 212, 191, 0.14);
-}
-
-.topai-docs-page.is-dark .topai-docs-logo-wrap {
-  border-color: rgba(92, 255, 236, 0.28);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.topai-docs-logo {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-}
-
-.topai-docs-brand-copy {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  line-height: 1.15;
-}
-
-.topai-docs-brand-name {
-  font-size: 16px;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-}
-
-.topai-docs-brand-subtitle {
-  max-width: 260px;
-  overflow: hidden;
-  color: rgba(71, 85, 105, 0.9);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.topai-docs-page.is-dark .topai-docs-brand-subtitle {
-  color: rgba(204, 251, 241, 0.66);
-}
-
-.topai-docs-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.topai-docs-icon-button,
-.topai-docs-primary-link,
 .topai-docs-cta,
 .topai-docs-secondary-link {
   display: inline-flex;
@@ -577,43 +442,16 @@ onMounted(() => {
   transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
 }
 
-.topai-docs-icon-button {
-  width: 36px;
-  height: 36px;
-  background: rgba(255, 255, 255, 0.54);
-}
-
-.topai-docs-primary-link {
-  height: 36px;
-  padding: 0 13px;
-  background: rgba(45, 212, 191, 0.14);
-  text-transform: uppercase;
-}
-
-.topai-docs-page.is-dark .topai-docs-icon-button,
-.topai-docs-page.is-dark .topai-docs-primary-link,
 .topai-docs-page.is-dark .topai-docs-cta,
 .topai-docs-page.is-dark .topai-docs-secondary-link {
   border-color: rgba(92, 255, 236, 0.28);
   background: rgba(255, 255, 255, 0.07);
 }
 
-.topai-docs-icon-button:hover,
-.topai-docs-primary-link:hover,
 .topai-docs-cta:hover,
 .topai-docs-secondary-link:hover {
   border-color: rgba(37, 99, 235, 0.46);
   transform: translateY(-1px);
-}
-
-.topai-docs-user-mark {
-  display: inline-flex;
-  width: 20px;
-  height: 20px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: rgba(37, 99, 235, 0.16);
 }
 
 .topai-docs-main {
@@ -883,21 +721,6 @@ onMounted(() => {
 }
 
 @media (max-width: 700px) {
-  .topai-docs-header {
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 14px;
-  }
-
-  .topai-docs-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .topai-docs-brand-subtitle {
-    max-width: calc(100vw - 110px);
-  }
-
   .topai-docs-main {
     width: min(100% - 28px, 1120px);
     padding: 44px 0 68px;

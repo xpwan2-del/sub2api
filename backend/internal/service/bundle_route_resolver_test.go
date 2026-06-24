@@ -25,9 +25,9 @@ func TestResolveModelPlatform(t *testing.T) {
 		{"claude-3-5-haiku-20241022", domain.PlatformAnthropic},
 		{"gemini-2.5-pro", domain.PlatformGemini},
 		{"gemini-2.0-flash", domain.PlatformGemini},
-		{"deepseek-chat", domain.PlatformOpenAI},
-		{"deepseek-reasoner", domain.PlatformOpenAI},
-		{"unknown-model", domain.PlatformOpenAI}, // default fallback
+		{"deepseek-chat", domain.PlatformAnthropic},
+		{"deepseek-reasoner", domain.PlatformAnthropic},
+		{"unknown-model", domain.PlatformAnthropic}, // default fallback
 		{"GPT-4O", domain.PlatformOpenAI},         // case insensitive
 		{"Claude-Opus-4", domain.PlatformAnthropic},
 	}

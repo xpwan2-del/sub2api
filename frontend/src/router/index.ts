@@ -58,6 +58,16 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/models',
+    name: 'ModelCatalog',
+    component: () => import('@/views/public/ModelCatalogView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Model Catalog',
+      titleKey: 'modelCatalog.title'
+    }
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/auth/LoginView.vue'),
@@ -440,6 +450,18 @@ const routes: RouteRecordRaw[] = [
       title: 'Ops Monitoring',
       titleKey: 'admin.ops.title',
       descriptionKey: 'admin.ops.description'
+    }
+  },
+  {
+    path: '/admin/model-status',
+    name: 'AdminModelStatus',
+    component: () => import('@/views/admin/ops/ModelStatusDashboard.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Model Status',
+      titleKey: 'admin.ops.modelStatus.title',
+      descriptionKey: 'admin.ops.modelStatus.description'
     }
   },
   {

@@ -210,6 +210,181 @@ export interface OpsDashboardSnapshotV2Response {
   error_trend: OpsErrorTrendResponse
 }
 
+export type OpsModelStatus =
+  | 'operational'
+  | 'degraded'
+  | 'rate_limited'
+  | 'failed'
+  | 'no_recent_traffic'
+  | 'unknown'
+  | 'orphaned_history'
+
+export interface OpsModelStatusSnapshotParams {
+  time_range?: '5m' | '30m' | '1h' | '6h' | '24h' | '7d' | '30d'
+  start_time?: string
+  end_time?: string
+  provider?: string
+  platform?: string
+  status?: OpsModelStatus | ''
+  q?: string
+  page?: number
+  page_size?: number
+}
+
+export interface OpsGoogleCloudMetricsResult {
+  enabled: boolean
+  status: 'disabled' | 'not_configured' | 'ok' | 'partial' | 'error' | string
+  source: string
+  project_id?: string
+  instance_id?: string
+  zone?: string
+  collected_at?: string | null
+  window_seconds: number
+  error?: string
+  metrics: {
+    cpu_percent?: number | null
+    memory_percent?: number | null
+    disk_percent?: number | null
+    network_rx_bytes_sec?: number | null
+    network_tx_bytes_sec?: number | null
+    db_ok?: boolean | null
+    redis_ok?: boolean | null
+    db_conn_active?: number | null
+    db_conn_idle?: number | null
+    redis_conn_total?: number | null
+    redis_conn_idle?: number | null
+    goroutine_count?: number | null
+  }
+}
+
+export interface OpsModelGatewaySummary {
+  request_count_total: number
+  request_count_sla: number
+  success_count: number
+  error_count_total: number
+  token_consumed: number
+  sla: number
+  error_rate: number
+  qps: OpsRateSummary
+  tps: OpsRateSummary
+  history: OpsHealthHistoryPoint[]
+  routes: OpsGatewayRouteHealth[]
+}
+
+export interface OpsModelSummary {
+  total_models: number
+  operational: number
+  degraded: number
+  rate_limited: number
+  failed: number
+  no_recent_traffic: number
+  unknown: number
+  orphaned_history: number
+}
+
+export interface OpsProviderStatusItem {
+  platform: string
+  status: OpsModelStatus
+  total_models: number
+  operational_models: number
+  degraded_models: number
+  failed_models: number
+  available_accounts: number
+  total_accounts: number
+  request_count: number
+  error_count: number
+  success_rate: number
+  history: OpsHealthHistoryPoint[]
+  avg_latency_ms?: number | null
+  p95_latency_ms?: number | null
+}
+
+export interface OpsHealthHistoryPoint {
+  bucket_start: string
+  bucket_end: string
+  status: 'operational' | 'degraded' | 'failed' | 'idle' | 'unknown' | string
+  request_count: number
+  success_count: number
+  error_count: number
+  success_rate?: number | null
+  token_consumed: number
+  avg_latency_ms?: number | null
+  p50_latency_ms?: number | null
+  p95_latency_ms?: number | null
+  p99_latency_ms?: number | null
+}
+
+export interface OpsGatewayRouteHealth {
+  endpoint: string
+  status: string
+  request_count: number
+  success_count: number
+  error_count: number
+  success_rate?: number | null
+  token_consumed: number
+  avg_latency_ms?: number | null
+  p50_latency_ms?: number | null
+  p95_latency_ms?: number | null
+  p99_latency_ms?: number | null
+}
+
+export interface OpsModelStatusItem {
+  platform: string
+  model: string
+  status: OpsModelStatus
+  source_flags: string[]
+  request_count: number
+  success_count: number
+  error_count: number
+  success_rate: number
+  token_consumed: number
+  avg_latency_ms?: number | null
+  p95_latency_ms?: number | null
+  available_accounts: number
+  total_accounts: number
+  last_seen_at?: string | null
+  last_error_at?: string | null
+  last_error_type?: string
+  last_error_status_code?: number | null
+  history: OpsHealthHistoryPoint[]
+}
+
+export interface OpsModelAccountAvailability {
+  total_accounts: number
+  available_accounts: number
+  rate_limited_accounts: number
+  error_accounts: number
+}
+
+export interface OpsModelRecentError {
+  platform: string
+  model: string
+  error_type: string
+  status_code?: number | null
+  at?: string | null
+}
+
+export interface OpsModelStatusSnapshotResponse {
+  generated_at: string
+  window: {
+    start_time: string
+    end_time: string
+    seconds: number
+  }
+  cloud_metrics: OpsGoogleCloudMetricsResult
+  gateway_summary: OpsModelGatewaySummary
+  model_summary: OpsModelSummary
+  providers: OpsProviderStatusItem[]
+  models: OpsModelStatusItem[]
+  account_availability: OpsModelAccountAvailability
+  recent_errors: OpsModelRecentError[]
+  pagination: {
+    page: number
+    page_size: number
+    total: number
+  }
+}
+
 export type OpsOpenAITokenStatsTimeRange = '30m' | '1h' | '1d' | '15d' | '30d'
 
 export interface OpsOpenAITokenStatsItem {
@@ -994,6 +1169,17 @@ export async function getDashboardSnapshotV2(
   return data
 }
 
+export async function getModelStatusSnapshot(
+  params: OpsModelStatusSnapshotParams = {},
+  options: OpsRequestOptions = {}
+): Promise<OpsModelStatusSnapshotResponse> {
+  const { data } = await apiClient.get<OpsModelStatusSnapshotResponse>('/admin/ops/model-status/snapshot', {
+    params,
+    signal: options.signal
+  })
+  return data
+}
+
 export async function getThroughputTrend(
   params: {
   time_range?: '5m' | '30m' | '1h' | '6h' | '24h'
@@ -1300,6 +1486,7 @@ async function updateMetricThresholds(thresholds: OpsMetricThresholds): Promise<
 export const opsAPI = {
   getDashboardSnapshotV2,
   getDashboardOverview,
+  getModelStatusSnapshot,
   getThroughputTrend,
   getLatencyHistogram,
   getErrorTrend,
