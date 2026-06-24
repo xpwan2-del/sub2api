@@ -238,14 +238,14 @@ type OpenAIForwardResult struct {
 	ServiceTier *string
 	// ReasoningEffort is extracted from request body (reasoning.effort) or derived from model suffix.
 	// Stored for usage records display; nil means not provided / not applicable.
-	ReasoningEffort    *string
-	Stream             bool
-	OpenAIWSMode       bool
-	ResponseHeaders    http.Header
-	Duration           time.Duration
-	FirstTokenMs       *int
-	ClientDisconnect   bool
-	ImageCount         int
+	ReasoningEffort  *string
+	Stream           bool
+	OpenAIWSMode     bool
+	ResponseHeaders  http.Header
+	Duration         time.Duration
+	FirstTokenMs     *int
+	ClientDisconnect bool
+	ImageCount       int
 	// VideoCount 视频产出段数（当前 1 请求=1 段）
 	VideoCount         int
 	ImageSize          string
@@ -6111,6 +6111,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 			AccountRateMultiplier: accountRateMultiplier,
 			APIKeyService:         input.APIKeyService,
 			Platform:              PlatformFromAPIKey(apiKey),
+			OutputCount:           result.ImageCount + result.VideoCount,
 		}, s.billingDeps(), s.usageBillingRepo)
 		return err
 	}()

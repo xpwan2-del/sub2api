@@ -8857,6 +8857,8 @@ type postUsageBillingParams struct {
 	AccountRateMultiplier float64
 	APIKeyService         APIKeyQuotaUpdater
 	Platform              string // 来自 APIKey 关联 Group 的平台标识
+	// OutputCount 媒体产出数（图片张数+视频段数），用于套餐按次累加。
+	OutputCount int
 }
 
 // PlatformFromAPIKey 从 APIKey 关联的 Group 推导 platform 名称。
@@ -9514,6 +9516,8 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 		AccountRateMultiplier: accountRateMultiplier,
 		APIKeyService:         input.APIKeyService,
 		Platform:              quotaPlatform,
+		// 网关 ForwardResult 不承载视频产出（视频仅经 OpenAI 网关），故此处仅图片张数。
+		OutputCount: result.ImageCount,
 	}, s.billingDeps(), s.usageBillingRepo)
 
 	if billingErr != nil {

@@ -68,6 +68,7 @@ func TestBuildUsageBillingCommand_SubscriptionAppliesRateMultiplier(t *testing.T
 				Account:            &Account{ID: 3},
 				Subscription:       &UserSubscription{ID: subID},
 				IsSubscriptionBill: tt.isSubscription,
+				OutputCount:        0,
 			}
 
 			cmd := buildUsageBillingCommand("req-1", nil, p)
