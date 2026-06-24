@@ -194,7 +194,8 @@ type SettingService struct {
 	proxyRepo                   ProxyRepository // for resolving websearch provider proxy URLs
 	cfg                         *config.Config
 	onUpdate                    func() // Callback when settings are updated (for cache invalidation)
-	version                     string // Application version
+	version                     string // Application version (custom CalVer build)
+	baseVersion                 string // Upstream baseline version (sub2api base)
 	webSearchManagerBuilder     WebSearchManagerBuilder
 	antigravityUAVersionCache   atomic.Value // *cachedAntigravityUserAgentVersion
 	antigravityUAVersionSF      singleflight.Group
@@ -1195,6 +1196,11 @@ func (s *SettingService) SetVersion(version string) {
 	s.version = version
 }
 
+// SetBaseVersion sets the upstream baseline version for injection into public settings.
+func (s *SettingService) SetBaseVersion(baseVersion string) {
+	s.baseVersion = baseVersion
+}
+
 // PublicSettingsInjectionPayload is the JSON shape embedded into HTML as
 // `window.__APP_CONFIG__` so the frontend can hydrate feature flags & site
 // config before the first XHR finishes.
@@ -1250,6 +1256,7 @@ type PublicSettingsInjectionPayload struct {
 	BackendModeEnabled               bool                     `json:"backend_mode_enabled"`
 	PaymentEnabled                   bool                     `json:"payment_enabled"`
 	Version                          string                   `json:"version"`
+	BaseVersion                      string                   `json:"base_version"`
 	BalanceLowNotifyEnabled          bool                     `json:"balance_low_notify_enabled"`
 	AccountQuotaNotifyEnabled        bool                     `json:"account_quota_notify_enabled"`
 	BalanceLowNotifyThreshold        float64                  `json:"balance_low_notify_threshold"`
@@ -1316,6 +1323,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		BackendModeEnabled:               settings.BackendModeEnabled,
 		PaymentEnabled:                   settings.PaymentEnabled,
 		Version:                          s.version,
+		BaseVersion:                      s.baseVersion,
 		BalanceLowNotifyEnabled:          settings.BalanceLowNotifyEnabled,
 		AccountQuotaNotifyEnabled:        settings.AccountQuotaNotifyEnabled,
 		BalanceLowNotifyThreshold:        settings.BalanceLowNotifyThreshold,

@@ -38,6 +38,14 @@ func (s *systemHandlerUpdateServiceStub) Rollback() error {
 	return nil
 }
 
+func (s *systemHandlerUpdateServiceStub) CurrentVersion() string {
+	return ""
+}
+
+func (s *systemHandlerUpdateServiceStub) CurrentBuild() string {
+	return ""
+}
+
 type systemUpdateResponseEnvelope struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
