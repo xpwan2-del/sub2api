@@ -26,6 +26,8 @@ type systemUpdateService interface {
 	CheckUpdate(ctx context.Context, force bool) (*service.UpdateInfo, error)
 	PerformUpdate(ctx context.Context) error
 	Rollback() error
+	CurrentVersion() string
+	CurrentBuild() string
 }
 
 // NewSystemHandler creates a new SystemHandler
@@ -39,9 +41,11 @@ func NewSystemHandler(updateSvc systemUpdateService, lockSvc *service.SystemOper
 // GetVersion returns the current version
 // GET /api/v1/admin/system/version
 func (h *SystemHandler) GetVersion(c *gin.Context) {
-	info, _ := h.updateSvc.CheckUpdate(c.Request.Context(), false)
+	build := h.updateSvc.CurrentBuild()
 	response.Success(c, gin.H{
-		"version": info.CurrentVersion,
+		"build":        build,                        // 自研发布版本号（CalVer）
+		"base_version": h.updateSvc.CurrentVersion(), // 上游 sub2api 基线版本号
+		"version":      build,                        // 兼容旧字段，指向自研号
 	})
 }
 

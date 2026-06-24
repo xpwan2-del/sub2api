@@ -6890,6 +6890,7 @@ export default {
     currentVersion: 'Current Version',
     latestVersion: 'Latest Version',
     upToDate: "You're running the latest version.",
+    basedOn: 'Based on sub2api {version}',
     updateAvailable: 'A new version is available!',
     releaseNotes: 'Release Notes',
     noReleaseNotes: 'No release notes',

@@ -55,18 +55,30 @@ type GitHubReleaseClient interface {
 type UpdateService struct {
 	cache          UpdateCache
 	githubClient   GitHubReleaseClient
-	currentVersion string
+	currentVersion string // 上游基线版本号
+	currentBuild   string // 自研发布版本号（CalVer）
 	buildType      string // "source" for manual builds, "release" for CI builds
 }
 
 // NewUpdateService creates a new UpdateService
-func NewUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, version, buildType string) *UpdateService {
+func NewUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, version, build, buildType string) *UpdateService {
 	return &UpdateService{
 		cache:          cache,
 		githubClient:   githubClient,
 		currentVersion: version,
+		currentBuild:   build,
 		buildType:      buildType,
 	}
+}
+
+// CurrentVersion 返回当前上游基线版本号（base）。
+func (s *UpdateService) CurrentVersion() string {
+	return s.currentVersion
+}
+
+// CurrentBuild 返回当前自研发布版本号（CalVer）。
+func (s *UpdateService) CurrentBuild() string {
+	return s.currentBuild
 }
 
 // UpdateInfo contains update information

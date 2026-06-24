@@ -30,6 +30,10 @@ builds:
       - -X main.Commit={{.Commit}}
       - -X main.Date={{.Date}}
       - -X main.BuildType=release
+      # Version（上游基线）不注入：由 //go:embed VERSION 文件在 init 中提供。
+      # Build（自研 CalVer）由运行 goreleaser 的 CI 在环境变量 AUTO_BUILD 中算好
+      # （git commit date + short SHA），未提供时留空 → init 置为 "dev"。
+      - -X main.Build={{ default "" .Env.AUTO_BUILD }}
 
 archives:
   - id: default

@@ -16,7 +16,8 @@ import (
 
 // BuildInfo contains build information
 type BuildInfo struct {
-	Version   string
+	Version   string // 上游基线版本号
+	Build     string // 自研发布版本号（CalVer）
 	BuildType string
 }
 
@@ -32,7 +33,7 @@ func ProvidePricingService(cfg *config.Config, remoteClient PricingRemoteClient)
 
 // ProvideUpdateService creates UpdateService with BuildInfo
 func ProvideUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, buildInfo BuildInfo) *UpdateService {
-	return NewUpdateService(cache, githubClient, buildInfo.Version, buildInfo.BuildType)
+	return NewUpdateService(cache, githubClient, buildInfo.Version, buildInfo.Build, buildInfo.BuildType)
 }
 
 // ProvideEmailQueueService creates EmailQueueService with default worker count

@@ -64,6 +64,7 @@ type Handlers struct {
 
 // BuildInfo contains build-time information
 type BuildInfo struct {
-	Version   string
+	Version   string // 上游基线版本号
+	Build     string // 自研发布版本号（CalVer，如 2026.06.24-abc12345）
 	BuildType string // "source" for manual builds, "release" for CI builds
 }

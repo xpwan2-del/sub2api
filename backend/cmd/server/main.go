@@ -31,13 +31,23 @@ var embeddedVersion string
 
 // Build-time variables (can be set by ldflags)
 var (
-	Version   = ""
+	// Version 上游基线版本号（来自 VERSION 文件或 ldflags -X main.Version）。
+	Version = ""
+	// Build 自研发布版本号（CalVer，如 2026.06.24-abc12345），由构建时从
+	// git commit date + short SHA 推导，经 ldflags -X main.Build 注入。
+	// 本地 go run 未注入时为空 → init 中置为 "dev"。
+	Build = ""
 	Commit    = "unknown"
 	Date      = "unknown"
 	BuildType = "source" // "source" for manual builds, "release" for CI builds (set by ldflags)
 )
 
 func init() {
+	// Build 自研号默认 "dev"（仅 release 构建经 ldflags 注入真实 CalVer 值）。
+	if strings.TrimSpace(Build) == "" {
+		Build = "dev"
+	}
+
 	// 如果 Version 已通过 ldflags 注入（例如 -X main.Version=...），则不要覆盖。
 	if strings.TrimSpace(Version) != "" {
 		return
@@ -62,7 +72,7 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		log.Printf("Sub2API %s (commit: %s, built: %s)\n", Version, Commit, Date)
+		log.Printf("Sub2API %s (base: sub2api %s, commit: %s, built: %s, type: %s)\n", Build, Version, Commit, Date, BuildType)
 		return
 	}
 
@@ -145,6 +155,7 @@ func runMainServer() {
 
 	buildInfo := handler.BuildInfo{
 		Version:   Version,
+		Build:     Build,
 		BuildType: BuildType,
 	}
 
