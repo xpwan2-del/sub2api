@@ -85,6 +85,9 @@ func (UserSubscription) Fields() []ent.Field {
 		field.Float("daily_limit_usd").Default(0).Comment("独立日限额（0=fallback到Group配置）"),
 		field.Float("weekly_limit_usd").Default(0).Comment("独立周限额"),
 		field.Float("monthly_limit_usd").Default(0).Comment("独立月限额"),
+		field.Int("daily_limit_count").Default(0).Comment("独立日次数限额快照（0=不限）"),
+		field.Int("weekly_limit_count").Default(0).Comment("独立周次数限额快照"),
+		field.Int("monthly_limit_count").Default(0).Comment("独立月次数限额快照"),
 	}
 }
 

@@ -160,6 +160,21 @@ func MonthlyLimitUsd(v float64) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldEQ(FieldMonthlyLimitUsd, v))
 }
 
+// DailyLimitCount applies equality check predicate on the "daily_limit_count" field. It's identical to DailyLimitCountEQ.
+func DailyLimitCount(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldDailyLimitCount, v))
+}
+
+// WeeklyLimitCount applies equality check predicate on the "weekly_limit_count" field. It's identical to WeeklyLimitCountEQ.
+func WeeklyLimitCount(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldWeeklyLimitCount, v))
+}
+
+// MonthlyLimitCount applies equality check predicate on the "monthly_limit_count" field. It's identical to MonthlyLimitCountEQ.
+func MonthlyLimitCount(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldMonthlyLimitCount, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldEQ(FieldCreatedAt, v))
@@ -1058,6 +1073,126 @@ func MonthlyLimitUsdLT(v float64) predicate.UserSubscription {
 // MonthlyLimitUsdLTE applies the LTE predicate on the "monthly_limit_usd" field.
 func MonthlyLimitUsdLTE(v float64) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldLTE(FieldMonthlyLimitUsd, v))
+}
+
+// DailyLimitCountEQ applies the EQ predicate on the "daily_limit_count" field.
+func DailyLimitCountEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldDailyLimitCount, v))
+}
+
+// DailyLimitCountNEQ applies the NEQ predicate on the "daily_limit_count" field.
+func DailyLimitCountNEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldDailyLimitCount, v))
+}
+
+// DailyLimitCountIn applies the In predicate on the "daily_limit_count" field.
+func DailyLimitCountIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldDailyLimitCount, vs...))
+}
+
+// DailyLimitCountNotIn applies the NotIn predicate on the "daily_limit_count" field.
+func DailyLimitCountNotIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldDailyLimitCount, vs...))
+}
+
+// DailyLimitCountGT applies the GT predicate on the "daily_limit_count" field.
+func DailyLimitCountGT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldDailyLimitCount, v))
+}
+
+// DailyLimitCountGTE applies the GTE predicate on the "daily_limit_count" field.
+func DailyLimitCountGTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldDailyLimitCount, v))
+}
+
+// DailyLimitCountLT applies the LT predicate on the "daily_limit_count" field.
+func DailyLimitCountLT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldDailyLimitCount, v))
+}
+
+// DailyLimitCountLTE applies the LTE predicate on the "daily_limit_count" field.
+func DailyLimitCountLTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldDailyLimitCount, v))
+}
+
+// WeeklyLimitCountEQ applies the EQ predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldWeeklyLimitCount, v))
+}
+
+// WeeklyLimitCountNEQ applies the NEQ predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountNEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldWeeklyLimitCount, v))
+}
+
+// WeeklyLimitCountIn applies the In predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldWeeklyLimitCount, vs...))
+}
+
+// WeeklyLimitCountNotIn applies the NotIn predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountNotIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldWeeklyLimitCount, vs...))
+}
+
+// WeeklyLimitCountGT applies the GT predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountGT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldWeeklyLimitCount, v))
+}
+
+// WeeklyLimitCountGTE applies the GTE predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountGTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldWeeklyLimitCount, v))
+}
+
+// WeeklyLimitCountLT applies the LT predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountLT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldWeeklyLimitCount, v))
+}
+
+// WeeklyLimitCountLTE applies the LTE predicate on the "weekly_limit_count" field.
+func WeeklyLimitCountLTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldWeeklyLimitCount, v))
+}
+
+// MonthlyLimitCountEQ applies the EQ predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldMonthlyLimitCount, v))
+}
+
+// MonthlyLimitCountNEQ applies the NEQ predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountNEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldMonthlyLimitCount, v))
+}
+
+// MonthlyLimitCountIn applies the In predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldMonthlyLimitCount, vs...))
+}
+
+// MonthlyLimitCountNotIn applies the NotIn predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountNotIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldMonthlyLimitCount, vs...))
+}
+
+// MonthlyLimitCountGT applies the GT predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountGT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldMonthlyLimitCount, v))
+}
+
+// MonthlyLimitCountGTE applies the GTE predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountGTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldMonthlyLimitCount, v))
+}
+
+// MonthlyLimitCountLT applies the LT predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountLT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldMonthlyLimitCount, v))
+}
+
+// MonthlyLimitCountLTE applies the LTE predicate on the "monthly_limit_count" field.
+func MonthlyLimitCountLTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldMonthlyLimitCount, v))
 }
 
 // HasUser applies the HasEdge predicate on the "user" edge.

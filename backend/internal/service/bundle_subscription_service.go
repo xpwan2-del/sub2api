@@ -145,6 +145,9 @@ func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *Act
 			DailyLimitUSD:        gq.DailyLimitUSD,
 			WeeklyLimitUSD:       gq.WeeklyLimitUSD,
 			MonthlyLimitUSD:      gq.MonthlyLimitUSD,
+			DailyLimitCount:      gq.DailyLimitCount,
+			WeeklyLimitCount:     gq.WeeklyLimitCount,
+			MonthlyLimitCount:    gq.MonthlyLimitCount,
 			Notes:                fmt.Sprintf("Bridged from bundle plan %q (ID:%d)", plan.Name, plan.ID),
 		}
 		if err := s.userSubRepo.Create(ctx, userSub); err != nil {
@@ -256,14 +259,18 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 		return nil, fmt.Errorf("load user subscriptions: %w", err)
 	}
 
-	// Build a lookup for snapshotted USD limits + group info by groupID from bridged UserSubscriptions.
-	// USD limits stay sourced from the UserSubscription snapshot (consistency with activation time).
+	// Build a lookup for snapshotted limits (USD + count) + group info by groupID from bridged UserSubscriptions.
+	// Both USD and count limits are read from the UserSubscription snapshot (consistency with activation time);
+	// changing the plan after subscription does not affect already-subscribed users.
 	type groupMeta struct {
-		dailyLimit   float64
-		weeklyLimit  float64
-		monthlyLimit float64
-		groupName    string
-		platform     string
+		dailyLimit        float64
+		weeklyLimit       float64
+		monthlyLimit      float64
+		dailyLimitCount   int
+		weeklyLimitCount  int
+		monthlyLimitCount int
+		groupName         string
+		platform          string
 	}
 	metaMap := make(map[int64]groupMeta)
 	for _, sub := range userSubs {
@@ -274,48 +281,14 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 				platform = sub.Group.Platform
 			}
 			metaMap[sub.GroupID] = groupMeta{
-				dailyLimit:   sub.DailyLimitUSD,
-				weeklyLimit:  sub.WeeklyLimitUSD,
-				monthlyLimit: sub.MonthlyLimitUSD,
-				groupName:    name,
-				platform:     platform,
-			}
-		}
-	}
-
-	// Build a lookup for count limits by groupID from the plan's GroupQuotas.
-	// UserSubscription has no count-limit fields, so count limits come from BundlePlanGroupQuota.
-	type countLimit struct {
-		daily   int
-		weekly  int
-		monthly int
-	}
-	countLimitMap := make(map[int64]countLimit)
-	if bundleSub.Plan == nil {
-		if plan, planErr := s.planRepo.GetByID(ctx, bundleSub.PlanID); planErr == nil && plan != nil {
-			bundleSub.Plan = plan
-		}
-	}
-	if bundleSub.Plan != nil {
-		for _, gq := range bundleSub.Plan.GroupQuotas {
-			// Match USD meta semantics: platform-level (groupID) match; last-writer wins if duplicated.
-			if existing, ok := countLimitMap[gq.GroupID]; ok {
-				if gq.DailyLimitCount > existing.daily {
-					existing.daily = gq.DailyLimitCount
-				}
-				if gq.WeeklyLimitCount > existing.weekly {
-					existing.weekly = gq.WeeklyLimitCount
-				}
-				if gq.MonthlyLimitCount > existing.monthly {
-					existing.monthly = gq.MonthlyLimitCount
-				}
-				countLimitMap[gq.GroupID] = existing
-			} else {
-				countLimitMap[gq.GroupID] = countLimit{
-					daily:   gq.DailyLimitCount,
-					weekly:  gq.WeeklyLimitCount,
-					monthly: gq.MonthlyLimitCount,
-				}
+				dailyLimit:        sub.DailyLimitUSD,
+				weeklyLimit:       sub.WeeklyLimitUSD,
+				monthlyLimit:      sub.MonthlyLimitUSD,
+				dailyLimitCount:   sub.DailyLimitCount,
+				weeklyLimitCount:  sub.WeeklyLimitCount,
+				monthlyLimitCount: sub.MonthlyLimitCount,
+				groupName:         name,
+				platform:          platform,
 			}
 		}
 	}
@@ -326,7 +299,6 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 		if !hasMeta {
 			meta = groupMeta{} // zero limits = unlimited
 		}
-		cl := countLimitMap[usage.GroupID] // zero values = unlimited when no quota configured
 		progress = append(progress, BundleUsageProgress{
 			GroupID:           usage.GroupID,
 			GroupName:         meta.groupName,
@@ -334,15 +306,15 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 			ModelPattern:      usage.ModelPattern,
 			DailyUsageCount:   usage.DailyUsageCount,
 			DailyUsageUSD:     usage.DailyUsageUSD,
-			DailyLimitCount:   cl.daily,
+			DailyLimitCount:   meta.dailyLimitCount,
 			DailyLimitUSD:     meta.dailyLimit,
 			WeeklyUsageCount:  usage.WeeklyUsageCount,
 			WeeklyUsageUSD:    usage.WeeklyUsageUSD,
-			WeeklyLimitCount:  cl.weekly,
+			WeeklyLimitCount:  meta.weeklyLimitCount,
 			WeeklyLimitUSD:    meta.weeklyLimit,
 			MonthlyUsageCount: usage.MonthlyUsageCount,
 			MonthlyUsageUSD:   usage.MonthlyUsageUSD,
-			MonthlyLimitCount: cl.monthly,
+			MonthlyLimitCount: meta.monthlyLimitCount,
 			MonthlyLimitUSD:   meta.monthlyLimit,
 		})
 	}

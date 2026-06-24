@@ -394,6 +394,69 @@ func (_u *UserSubscriptionUpdate) AddMonthlyLimitUsd(v float64) *UserSubscriptio
 	return _u
 }
 
+// SetDailyLimitCount sets the "daily_limit_count" field.
+func (_u *UserSubscriptionUpdate) SetDailyLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetDailyLimitCount()
+	_u.mutation.SetDailyLimitCount(v)
+	return _u
+}
+
+// SetNillableDailyLimitCount sets the "daily_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableDailyLimitCount(v *int) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetDailyLimitCount(*v)
+	}
+	return _u
+}
+
+// AddDailyLimitCount adds value to the "daily_limit_count" field.
+func (_u *UserSubscriptionUpdate) AddDailyLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddDailyLimitCount(v)
+	return _u
+}
+
+// SetWeeklyLimitCount sets the "weekly_limit_count" field.
+func (_u *UserSubscriptionUpdate) SetWeeklyLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetWeeklyLimitCount()
+	_u.mutation.SetWeeklyLimitCount(v)
+	return _u
+}
+
+// SetNillableWeeklyLimitCount sets the "weekly_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableWeeklyLimitCount(v *int) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetWeeklyLimitCount(*v)
+	}
+	return _u
+}
+
+// AddWeeklyLimitCount adds value to the "weekly_limit_count" field.
+func (_u *UserSubscriptionUpdate) AddWeeklyLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddWeeklyLimitCount(v)
+	return _u
+}
+
+// SetMonthlyLimitCount sets the "monthly_limit_count" field.
+func (_u *UserSubscriptionUpdate) SetMonthlyLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetMonthlyLimitCount()
+	_u.mutation.SetMonthlyLimitCount(v)
+	return _u
+}
+
+// SetNillableMonthlyLimitCount sets the "monthly_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableMonthlyLimitCount(v *int) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetMonthlyLimitCount(*v)
+	}
+	return _u
+}
+
+// AddMonthlyLimitCount adds value to the "monthly_limit_count" field.
+func (_u *UserSubscriptionUpdate) AddMonthlyLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddMonthlyLimitCount(v)
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *UserSubscriptionUpdate) SetUser(v *User) *UserSubscriptionUpdate {
 	return _u.SetUserID(v.ID)
@@ -641,6 +704,24 @@ func (_u *UserSubscriptionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.AddedMonthlyLimitUsd(); ok {
 		_spec.AddField(usersubscription.FieldMonthlyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.DailyLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldDailyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldDailyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.WeeklyLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldWeeklyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MonthlyLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldMonthlyLimitCount, field.TypeInt, value)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1157,6 +1238,69 @@ func (_u *UserSubscriptionUpdateOne) AddMonthlyLimitUsd(v float64) *UserSubscrip
 	return _u
 }
 
+// SetDailyLimitCount sets the "daily_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) SetDailyLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetDailyLimitCount()
+	_u.mutation.SetDailyLimitCount(v)
+	return _u
+}
+
+// SetNillableDailyLimitCount sets the "daily_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableDailyLimitCount(v *int) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetDailyLimitCount(*v)
+	}
+	return _u
+}
+
+// AddDailyLimitCount adds value to the "daily_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) AddDailyLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddDailyLimitCount(v)
+	return _u
+}
+
+// SetWeeklyLimitCount sets the "weekly_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) SetWeeklyLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetWeeklyLimitCount()
+	_u.mutation.SetWeeklyLimitCount(v)
+	return _u
+}
+
+// SetNillableWeeklyLimitCount sets the "weekly_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableWeeklyLimitCount(v *int) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetWeeklyLimitCount(*v)
+	}
+	return _u
+}
+
+// AddWeeklyLimitCount adds value to the "weekly_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) AddWeeklyLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddWeeklyLimitCount(v)
+	return _u
+}
+
+// SetMonthlyLimitCount sets the "monthly_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) SetMonthlyLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetMonthlyLimitCount()
+	_u.mutation.SetMonthlyLimitCount(v)
+	return _u
+}
+
+// SetNillableMonthlyLimitCount sets the "monthly_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableMonthlyLimitCount(v *int) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetMonthlyLimitCount(*v)
+	}
+	return _u
+}
+
+// AddMonthlyLimitCount adds value to the "monthly_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) AddMonthlyLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddMonthlyLimitCount(v)
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *UserSubscriptionUpdateOne) SetUser(v *User) *UserSubscriptionUpdateOne {
 	return _u.SetUserID(v.ID)
@@ -1434,6 +1578,24 @@ func (_u *UserSubscriptionUpdateOne) sqlSave(ctx context.Context) (_node *UserSu
 	}
 	if value, ok := _u.mutation.AddedMonthlyLimitUsd(); ok {
 		_spec.AddField(usersubscription.FieldMonthlyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.DailyLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldDailyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldDailyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.WeeklyLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldWeeklyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MonthlyLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldMonthlyLimitCount, field.TypeInt, value)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{

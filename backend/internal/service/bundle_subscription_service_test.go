@@ -223,8 +223,8 @@ func sampleActivePlan() *BundlePlan {
 		ForSale:          true,
 		Status:           domain.StatusActive,
 		GroupQuotas: []BundlePlanGroupQuota{
-			{GroupID: 10, QuotaScope: QuotaScopePlatform, DailyLimitUSD: 5.0, WeeklyLimitUSD: 25.0, MonthlyLimitUSD: 100.0},
-			{GroupID: 20, QuotaScope: QuotaScopeModel, ModelPattern: "gpt-4*", DailyLimitUSD: 3.0, WeeklyLimitUSD: 15.0, MonthlyLimitUSD: 60.0},
+			{GroupID: 10, QuotaScope: QuotaScopePlatform, DailyLimitUSD: 5.0, WeeklyLimitUSD: 25.0, MonthlyLimitUSD: 100.0, DailyLimitCount: 50, WeeklyLimitCount: 250, MonthlyLimitCount: 1000},
+			{GroupID: 20, QuotaScope: QuotaScopeModel, ModelPattern: "gpt-4*", DailyLimitUSD: 3.0, WeeklyLimitUSD: 15.0, MonthlyLimitUSD: 60.0, DailyLimitCount: 30, WeeklyLimitCount: 150, MonthlyLimitCount: 600},
 		},
 	}
 }
@@ -326,6 +326,11 @@ func TestBundleSubscriptionService_ActivateBundle_Success(t *testing.T) {
 	require.Equal(t, int64(100), *userSubRepo.createdSubs[0].BundleSubscriptionID)
 	require.Equal(t, 5.0, userSubRepo.createdSubs[0].DailyLimitUSD)
 	require.Equal(t, domain.SubscriptionStatusActive, userSubRepo.createdSubs[0].Status)
+	// count limit snapshotted symmetrically with USD limit.
+	require.Equal(t, 50, userSubRepo.createdSubs[0].DailyLimitCount, "daily count limit must be snapshotted from plan quota")
+	require.Equal(t, 250, userSubRepo.createdSubs[0].WeeklyLimitCount)
+	require.Equal(t, 1000, userSubRepo.createdSubs[0].MonthlyLimitCount)
+	require.Equal(t, 30, userSubRepo.createdSubs[1].DailyLimitCount)
 }
 
 func TestBundleSubscriptionService_ActivateBundle_ConflictExistingBundle(t *testing.T) {
@@ -538,11 +543,20 @@ func TestBundleSubscriptionService_GetBundleUsageProgress_Success(t *testing.T) 
 	// Bridged UserSubscriptions with snapshotted limits.
 	userSubRepo := &activateUserSubRepoStub{}
 	userSubRepo.existingSubs = []UserSubscription{
-		{ID: 200, UserID: 42, GroupID: 10, BundleSubscriptionID: &bundleSubID, DailyLimitUSD: 5.0, WeeklyLimitUSD: 25.0, MonthlyLimitUSD: 100.0},
-		{ID: 201, UserID: 42, GroupID: 20, BundleSubscriptionID: &bundleSubID, DailyLimitUSD: 3.0, WeeklyLimitUSD: 15.0, MonthlyLimitUSD: 60.0},
+		{ID: 200, UserID: 42, GroupID: 10, BundleSubscriptionID: &bundleSubID, DailyLimitUSD: 5.0, WeeklyLimitUSD: 25.0, MonthlyLimitUSD: 100.0, DailyLimitCount: 50, WeeklyLimitCount: 250, MonthlyLimitCount: 1000},
+		{ID: 201, UserID: 42, GroupID: 20, BundleSubscriptionID: &bundleSubID, DailyLimitUSD: 3.0, WeeklyLimitUSD: 15.0, MonthlyLimitUSD: 60.0, DailyLimitCount: 30, WeeklyLimitCount: 150, MonthlyLimitCount: 600},
 	}
 
-	svc := newBundleSubSvc(subRepo, &activateBundlePlanRepoStub{}, &activateBundleUsageRepoStub{}, userSubRepo)
+	// Plan repo returns a plan whose count quotas DIFFER from the snapshot — proves
+	// count limit is read from the snapshot, not the live plan.
+	planRepo := &activateBundlePlanRepoStub{plan: &BundlePlan{
+		ID: 1, GroupQuotas: []BundlePlanGroupQuota{
+			{GroupID: 10, DailyLimitCount: 9999},
+			{GroupID: 20, DailyLimitCount: 9999},
+		},
+	}}
+
+	svc := newBundleSubSvc(subRepo, planRepo, &activateBundleUsageRepoStub{}, userSubRepo)
 
 	progress, err := svc.GetBundleUsageProgress(context.Background(), 100)
 
@@ -555,12 +569,17 @@ func TestBundleSubscriptionService_GetBundleUsageProgress_Success(t *testing.T) 
 	require.Equal(t, 5.0, progress[0].DailyLimitUSD)
 	require.Equal(t, 10.0, progress[0].WeeklyUsageUSD)
 	require.Equal(t, 25.0, progress[0].WeeklyLimitUSD)
+	// count limit from snapshot, NOT live plan (9999).
+	require.Equal(t, 50, progress[0].DailyLimitCount, "daily count limit must come from snapshot, not live plan")
+	require.Equal(t, 250, progress[0].WeeklyLimitCount)
+	require.Equal(t, 1000, progress[0].MonthlyLimitCount)
 
 	// Second quota: group 20 - model-level.
 	require.Equal(t, int64(20), progress[1].GroupID)
 	require.Equal(t, "gpt-4*", progress[1].ModelPattern)
 	require.Equal(t, 1.0, progress[1].DailyUsageUSD)
 	require.Equal(t, 3.0, progress[1].DailyLimitUSD)
+	require.Equal(t, 30, progress[1].DailyLimitCount, "model-level count limit from snapshot")
 }
 
 func TestBundleSubscriptionService_GetBundleUsageProgress_SubscriptionNotFound(t *testing.T) {

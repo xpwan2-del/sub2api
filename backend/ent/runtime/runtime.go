@@ -2312,6 +2312,18 @@ func init() {
 	usersubscriptionDescMonthlyLimitUsd := usersubscriptionFields[17].Descriptor()
 	// usersubscription.DefaultMonthlyLimitUsd holds the default value on creation for the monthly_limit_usd field.
 	usersubscription.DefaultMonthlyLimitUsd = usersubscriptionDescMonthlyLimitUsd.Default.(float64)
+	// usersubscriptionDescDailyLimitCount is the schema descriptor for daily_limit_count field.
+	usersubscriptionDescDailyLimitCount := usersubscriptionFields[18].Descriptor()
+	// usersubscription.DefaultDailyLimitCount holds the default value on creation for the daily_limit_count field.
+	usersubscription.DefaultDailyLimitCount = usersubscriptionDescDailyLimitCount.Default.(int)
+	// usersubscriptionDescWeeklyLimitCount is the schema descriptor for weekly_limit_count field.
+	usersubscriptionDescWeeklyLimitCount := usersubscriptionFields[19].Descriptor()
+	// usersubscription.DefaultWeeklyLimitCount holds the default value on creation for the weekly_limit_count field.
+	usersubscription.DefaultWeeklyLimitCount = usersubscriptionDescWeeklyLimitCount.Default.(int)
+	// usersubscriptionDescMonthlyLimitCount is the schema descriptor for monthly_limit_count field.
+	usersubscriptionDescMonthlyLimitCount := usersubscriptionFields[20].Descriptor()
+	// usersubscription.DefaultMonthlyLimitCount holds the default value on creation for the monthly_limit_count field.
+	usersubscription.DefaultMonthlyLimitCount = usersubscriptionDescMonthlyLimitCount.Default.(int)
 }
 
 const (

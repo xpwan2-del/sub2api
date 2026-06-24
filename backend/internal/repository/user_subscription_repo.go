@@ -5,8 +5,8 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
-	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/bundlesubscription"
+	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -59,6 +59,9 @@ func (r *userSubscriptionRepository) Create(ctx context.Context, sub *service.Us
 	builder.SetDailyLimitUsd(sub.DailyLimitUSD)
 	builder.SetWeeklyLimitUsd(sub.WeeklyLimitUSD)
 	builder.SetMonthlyLimitUsd(sub.MonthlyLimitUSD)
+	builder.SetDailyLimitCount(sub.DailyLimitCount)
+	builder.SetWeeklyLimitCount(sub.WeeklyLimitCount)
+	builder.SetMonthlyLimitCount(sub.MonthlyLimitCount)
 
 	created, err := builder.Save(ctx)
 	if err == nil {
@@ -470,6 +473,9 @@ func userSubscriptionEntityToService(m *dbent.UserSubscription) *service.UserSub
 	out.DailyLimitUSD = m.DailyLimitUsd
 	out.WeeklyLimitUSD = m.WeeklyLimitUsd
 	out.MonthlyLimitUSD = m.MonthlyLimitUsd
+	out.DailyLimitCount = m.DailyLimitCount
+	out.WeeklyLimitCount = m.WeeklyLimitCount
+	out.MonthlyLimitCount = m.MonthlyLimitCount
 	return out
 }
 
@@ -494,6 +500,9 @@ func applyUserSubscriptionEntityToService(dst *service.UserSubscription, src *db
 	dst.DailyLimitUSD = src.DailyLimitUsd
 	dst.WeeklyLimitUSD = src.WeeklyLimitUsd
 	dst.MonthlyLimitUSD = src.MonthlyLimitUsd
+	dst.DailyLimitCount = src.DailyLimitCount
+	dst.WeeklyLimitCount = src.WeeklyLimitCount
+	dst.MonthlyLimitCount = src.MonthlyLimitCount
 }
 
 // ExpireBridgedSubscriptionsForExpiredBundles expires UserSubscriptions that are

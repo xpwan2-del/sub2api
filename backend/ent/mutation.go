@@ -50043,6 +50043,12 @@ type UserSubscriptionMutation struct {
 	addweekly_limit_usd       *float64
 	monthly_limit_usd         *float64
 	addmonthly_limit_usd      *float64
+	daily_limit_count         *int
+	adddaily_limit_count      *int
+	weekly_limit_count        *int
+	addweekly_limit_count     *int
+	monthly_limit_count       *int
+	addmonthly_limit_count    *int
 	clearedFields             map[string]struct{}
 	user                      *int64
 	cleareduser               bool
@@ -51144,6 +51150,174 @@ func (m *UserSubscriptionMutation) ResetMonthlyLimitUsd() {
 	m.addmonthly_limit_usd = nil
 }
 
+// SetDailyLimitCount sets the "daily_limit_count" field.
+func (m *UserSubscriptionMutation) SetDailyLimitCount(i int) {
+	m.daily_limit_count = &i
+	m.adddaily_limit_count = nil
+}
+
+// DailyLimitCount returns the value of the "daily_limit_count" field in the mutation.
+func (m *UserSubscriptionMutation) DailyLimitCount() (r int, exists bool) {
+	v := m.daily_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDailyLimitCount returns the old "daily_limit_count" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldDailyLimitCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDailyLimitCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDailyLimitCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDailyLimitCount: %w", err)
+	}
+	return oldValue.DailyLimitCount, nil
+}
+
+// AddDailyLimitCount adds i to the "daily_limit_count" field.
+func (m *UserSubscriptionMutation) AddDailyLimitCount(i int) {
+	if m.adddaily_limit_count != nil {
+		*m.adddaily_limit_count += i
+	} else {
+		m.adddaily_limit_count = &i
+	}
+}
+
+// AddedDailyLimitCount returns the value that was added to the "daily_limit_count" field in this mutation.
+func (m *UserSubscriptionMutation) AddedDailyLimitCount() (r int, exists bool) {
+	v := m.adddaily_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDailyLimitCount resets all changes to the "daily_limit_count" field.
+func (m *UserSubscriptionMutation) ResetDailyLimitCount() {
+	m.daily_limit_count = nil
+	m.adddaily_limit_count = nil
+}
+
+// SetWeeklyLimitCount sets the "weekly_limit_count" field.
+func (m *UserSubscriptionMutation) SetWeeklyLimitCount(i int) {
+	m.weekly_limit_count = &i
+	m.addweekly_limit_count = nil
+}
+
+// WeeklyLimitCount returns the value of the "weekly_limit_count" field in the mutation.
+func (m *UserSubscriptionMutation) WeeklyLimitCount() (r int, exists bool) {
+	v := m.weekly_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeeklyLimitCount returns the old "weekly_limit_count" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldWeeklyLimitCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeeklyLimitCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeeklyLimitCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeeklyLimitCount: %w", err)
+	}
+	return oldValue.WeeklyLimitCount, nil
+}
+
+// AddWeeklyLimitCount adds i to the "weekly_limit_count" field.
+func (m *UserSubscriptionMutation) AddWeeklyLimitCount(i int) {
+	if m.addweekly_limit_count != nil {
+		*m.addweekly_limit_count += i
+	} else {
+		m.addweekly_limit_count = &i
+	}
+}
+
+// AddedWeeklyLimitCount returns the value that was added to the "weekly_limit_count" field in this mutation.
+func (m *UserSubscriptionMutation) AddedWeeklyLimitCount() (r int, exists bool) {
+	v := m.addweekly_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeeklyLimitCount resets all changes to the "weekly_limit_count" field.
+func (m *UserSubscriptionMutation) ResetWeeklyLimitCount() {
+	m.weekly_limit_count = nil
+	m.addweekly_limit_count = nil
+}
+
+// SetMonthlyLimitCount sets the "monthly_limit_count" field.
+func (m *UserSubscriptionMutation) SetMonthlyLimitCount(i int) {
+	m.monthly_limit_count = &i
+	m.addmonthly_limit_count = nil
+}
+
+// MonthlyLimitCount returns the value of the "monthly_limit_count" field in the mutation.
+func (m *UserSubscriptionMutation) MonthlyLimitCount() (r int, exists bool) {
+	v := m.monthly_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMonthlyLimitCount returns the old "monthly_limit_count" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldMonthlyLimitCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMonthlyLimitCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMonthlyLimitCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMonthlyLimitCount: %w", err)
+	}
+	return oldValue.MonthlyLimitCount, nil
+}
+
+// AddMonthlyLimitCount adds i to the "monthly_limit_count" field.
+func (m *UserSubscriptionMutation) AddMonthlyLimitCount(i int) {
+	if m.addmonthly_limit_count != nil {
+		*m.addmonthly_limit_count += i
+	} else {
+		m.addmonthly_limit_count = &i
+	}
+}
+
+// AddedMonthlyLimitCount returns the value that was added to the "monthly_limit_count" field in this mutation.
+func (m *UserSubscriptionMutation) AddedMonthlyLimitCount() (r int, exists bool) {
+	v := m.addmonthly_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMonthlyLimitCount resets all changes to the "monthly_limit_count" field.
+func (m *UserSubscriptionMutation) ResetMonthlyLimitCount() {
+	m.monthly_limit_count = nil
+	m.addmonthly_limit_count = nil
+}
+
 // ClearUser clears the "user" edge to the User entity.
 func (m *UserSubscriptionMutation) ClearUser() {
 	m.cleareduser = true
@@ -51326,7 +51500,7 @@ func (m *UserSubscriptionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserSubscriptionMutation) Fields() []string {
-	fields := make([]string, 0, 21)
+	fields := make([]string, 0, 24)
 	if m.created_at != nil {
 		fields = append(fields, usersubscription.FieldCreatedAt)
 	}
@@ -51390,6 +51564,15 @@ func (m *UserSubscriptionMutation) Fields() []string {
 	if m.monthly_limit_usd != nil {
 		fields = append(fields, usersubscription.FieldMonthlyLimitUsd)
 	}
+	if m.daily_limit_count != nil {
+		fields = append(fields, usersubscription.FieldDailyLimitCount)
+	}
+	if m.weekly_limit_count != nil {
+		fields = append(fields, usersubscription.FieldWeeklyLimitCount)
+	}
+	if m.monthly_limit_count != nil {
+		fields = append(fields, usersubscription.FieldMonthlyLimitCount)
+	}
 	return fields
 }
 
@@ -51440,6 +51623,12 @@ func (m *UserSubscriptionMutation) Field(name string) (ent.Value, bool) {
 		return m.WeeklyLimitUsd()
 	case usersubscription.FieldMonthlyLimitUsd:
 		return m.MonthlyLimitUsd()
+	case usersubscription.FieldDailyLimitCount:
+		return m.DailyLimitCount()
+	case usersubscription.FieldWeeklyLimitCount:
+		return m.WeeklyLimitCount()
+	case usersubscription.FieldMonthlyLimitCount:
+		return m.MonthlyLimitCount()
 	}
 	return nil, false
 }
@@ -51491,6 +51680,12 @@ func (m *UserSubscriptionMutation) OldField(ctx context.Context, name string) (e
 		return m.OldWeeklyLimitUsd(ctx)
 	case usersubscription.FieldMonthlyLimitUsd:
 		return m.OldMonthlyLimitUsd(ctx)
+	case usersubscription.FieldDailyLimitCount:
+		return m.OldDailyLimitCount(ctx)
+	case usersubscription.FieldWeeklyLimitCount:
+		return m.OldWeeklyLimitCount(ctx)
+	case usersubscription.FieldMonthlyLimitCount:
+		return m.OldMonthlyLimitCount(ctx)
 	}
 	return nil, fmt.Errorf("unknown UserSubscription field %s", name)
 }
@@ -51647,6 +51842,27 @@ func (m *UserSubscriptionMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetMonthlyLimitUsd(v)
 		return nil
+	case usersubscription.FieldDailyLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDailyLimitCount(v)
+		return nil
+	case usersubscription.FieldWeeklyLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeeklyLimitCount(v)
+		return nil
+	case usersubscription.FieldMonthlyLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMonthlyLimitCount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription field %s", name)
 }
@@ -51676,6 +51892,15 @@ func (m *UserSubscriptionMutation) AddedFields() []string {
 	if m.addmonthly_limit_usd != nil {
 		fields = append(fields, usersubscription.FieldMonthlyLimitUsd)
 	}
+	if m.adddaily_limit_count != nil {
+		fields = append(fields, usersubscription.FieldDailyLimitCount)
+	}
+	if m.addweekly_limit_count != nil {
+		fields = append(fields, usersubscription.FieldWeeklyLimitCount)
+	}
+	if m.addmonthly_limit_count != nil {
+		fields = append(fields, usersubscription.FieldMonthlyLimitCount)
+	}
 	return fields
 }
 
@@ -51698,6 +51923,12 @@ func (m *UserSubscriptionMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedWeeklyLimitUsd()
 	case usersubscription.FieldMonthlyLimitUsd:
 		return m.AddedMonthlyLimitUsd()
+	case usersubscription.FieldDailyLimitCount:
+		return m.AddedDailyLimitCount()
+	case usersubscription.FieldWeeklyLimitCount:
+		return m.AddedWeeklyLimitCount()
+	case usersubscription.FieldMonthlyLimitCount:
+		return m.AddedMonthlyLimitCount()
 	}
 	return nil, false
 }
@@ -51755,6 +51986,27 @@ func (m *UserSubscriptionMutation) AddField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddMonthlyLimitUsd(v)
+		return nil
+	case usersubscription.FieldDailyLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDailyLimitCount(v)
+		return nil
+	case usersubscription.FieldWeeklyLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeeklyLimitCount(v)
+		return nil
+	case usersubscription.FieldMonthlyLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMonthlyLimitCount(v)
 		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription numeric field %s", name)
@@ -51890,6 +52142,15 @@ func (m *UserSubscriptionMutation) ResetField(name string) error {
 		return nil
 	case usersubscription.FieldMonthlyLimitUsd:
 		m.ResetMonthlyLimitUsd()
+		return nil
+	case usersubscription.FieldDailyLimitCount:
+		m.ResetDailyLimitCount()
+		return nil
+	case usersubscription.FieldWeeklyLimitCount:
+		m.ResetWeeklyLimitCount()
+		return nil
+	case usersubscription.FieldMonthlyLimitCount:
+		m.ResetMonthlyLimitCount()
 		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription field %s", name)

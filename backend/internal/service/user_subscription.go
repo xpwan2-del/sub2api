@@ -28,6 +28,9 @@ type UserSubscription struct {
 	DailyLimitUSD        float64
 	WeeklyLimitUSD       float64
 	MonthlyLimitUSD      float64
+	DailyLimitCount      int `json:"daily_limit_count"`
+	WeeklyLimitCount     int `json:"weekly_limit_count"`
+	MonthlyLimitCount    int `json:"monthly_limit_count"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
