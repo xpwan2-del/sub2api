@@ -188,6 +188,48 @@
                       ${{ item.monthly_usage_usd.toFixed(2) }} / ${{ item.monthly_limit_usd.toFixed(2) }}
                     </span>
                   </div>
+                  <!-- Daily Count -->
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="w-12 text-gray-500 dark:text-gray-400">{{ t('bundles.admin.dailyCount') }}</span>
+                    <div class="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-dark-600">
+                      <div
+                        class="h-1.5 rounded-full transition-all"
+                        :class="getProgressClass(item.daily_usage_count, item.daily_limit_count)"
+                        :style="{ width: getProgressWidth(item.daily_usage_count, item.daily_limit_count) }"
+                      ></div>
+                    </div>
+                    <span class="w-28 text-right text-gray-600 dark:text-gray-300">
+                      {{ item.daily_usage_count }} / {{ item.daily_limit_count || '∞' }}
+                    </span>
+                  </div>
+                  <!-- Weekly Count -->
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="w-12 text-gray-500 dark:text-gray-400">{{ t('bundles.admin.weeklyCount') }}</span>
+                    <div class="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-dark-600">
+                      <div
+                        class="h-1.5 rounded-full transition-all"
+                        :class="getProgressClass(item.weekly_usage_count, item.weekly_limit_count)"
+                        :style="{ width: getProgressWidth(item.weekly_usage_count, item.weekly_limit_count) }"
+                      ></div>
+                    </div>
+                    <span class="w-28 text-right text-gray-600 dark:text-gray-300">
+                      {{ item.weekly_usage_count }} / {{ item.weekly_limit_count || '∞' }}
+                    </span>
+                  </div>
+                  <!-- Monthly Count -->
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="w-12 text-gray-500 dark:text-gray-400">{{ t('bundles.admin.monthlyCount') }}</span>
+                    <div class="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-dark-600">
+                      <div
+                        class="h-1.5 rounded-full transition-all"
+                        :class="getProgressClass(item.monthly_usage_count, item.monthly_limit_count)"
+                        :style="{ width: getProgressWidth(item.monthly_usage_count, item.monthly_limit_count) }"
+                      ></div>
+                    </div>
+                    <span class="w-28 text-right text-gray-600 dark:text-gray-300">
+                      {{ item.monthly_usage_count }} / {{ item.monthly_limit_count || '∞' }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

@@ -39,6 +39,9 @@ export interface BundlePlanGroupQuota {
   daily_limit_usd: number
   weekly_limit_usd: number
   monthly_limit_usd: number
+  daily_limit_count: number
+  weekly_limit_count: number
+  monthly_limit_count: number
 }
 
 /** 套餐订阅 — 用户购买的套餐实例 */
@@ -74,6 +77,12 @@ export interface BundleSubscriptionUsage {
   daily_limit_usd: number
   weekly_limit_usd: number
   monthly_limit_usd: number
+  daily_usage_count: number
+  weekly_usage_count: number
+  monthly_usage_count: number
+  daily_limit_count: number
+  weekly_limit_count: number
+  monthly_limit_count: number
 }
 
 /** 套餐用量进度 — 单个渠道组的用量与限额对比 */
@@ -88,6 +97,12 @@ export interface BundleUsageProgress {
   weekly_limit_usd: number
   monthly_usage_usd: number
   monthly_limit_usd: number
+  daily_usage_count: number
+  daily_limit_count: number
+  weekly_usage_count: number
+  weekly_limit_count: number
+  monthly_usage_count: number
+  monthly_limit_count: number
 }
 
 /** 创建套餐计划请求 DTO */
@@ -114,4 +129,7 @@ export interface CreateGroupQuotaRequest {
   daily_limit_usd?: number
   weekly_limit_usd?: number
   monthly_limit_usd?: number
+  daily_limit_count?: number
+  weekly_limit_count?: number
+  monthly_limit_count?: number
 }

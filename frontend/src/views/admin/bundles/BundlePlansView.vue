@@ -189,17 +189,17 @@
                   :placeholder="quota.quota_scope === 'model' ? 'gpt-4*' : '-'"
                 />
               </div>
-              <!-- Daily / Weekly / Monthly Limits -->
+              <!-- Daily / Weekly / Monthly USD Limits -->
               <div class="col-span-1">
-                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.daily') }}</label>
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.daily') }} ($)</label>
                 <input v-model.number="quota.daily_limit_usd" type="number" step="0.01" min="0" class="input mt-1" />
               </div>
               <div class="col-span-1">
-                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.weekly') }}</label>
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.weekly') }} ($)</label>
                 <input v-model.number="quota.weekly_limit_usd" type="number" step="0.01" min="0" class="input mt-1" />
               </div>
               <div class="col-span-1">
-                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.monthly') }}</label>
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.monthly') }} ($)</label>
                 <input v-model.number="quota.monthly_limit_usd" type="number" step="0.01" min="0" class="input mt-1" />
               </div>
               <!-- Delete -->
@@ -208,6 +208,26 @@
                   <Icon name="trash" size="sm" />
                 </button>
               </div>
+            </div>
+            <!-- Daily / Weekly / Monthly Count Limits (次) -->
+            <div class="mt-2 grid grid-cols-12 gap-3 border-t border-gray-100 pt-2 dark:border-dark-700">
+              <div class="col-span-3 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('bundles.admin.countLimitHint') }}
+              </div>
+              <div class="col-span-4"></div>
+              <div class="col-span-1">
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.daily') }} ({{ t('bundles.admin.countUnit') }})</label>
+                <input v-model.number="quota.daily_limit_count" type="number" step="1" min="0" class="input mt-1" :placeholder="t('bundles.admin.countPlaceholder')" />
+              </div>
+              <div class="col-span-1">
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.weekly') }} ({{ t('bundles.admin.countUnit') }})</label>
+                <input v-model.number="quota.weekly_limit_count" type="number" step="1" min="0" class="input mt-1" :placeholder="t('bundles.admin.countPlaceholder')" />
+              </div>
+              <div class="col-span-1">
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.monthly') }} ({{ t('bundles.admin.countUnit') }})</label>
+                <input v-model.number="quota.monthly_limit_count" type="number" step="1" min="0" class="input mt-1" :placeholder="t('bundles.admin.countPlaceholder')" />
+              </div>
+              <div class="col-span-2"></div>
             </div>
           </div>
         </div>
@@ -420,6 +440,9 @@ function openPlanEdit(plan: BundlePlan | null) {
         daily_limit_usd: q.daily_limit_usd || 0,
         weekly_limit_usd: q.weekly_limit_usd || 0,
         monthly_limit_usd: q.monthly_limit_usd || 0,
+        daily_limit_count: q.daily_limit_count || 0,
+        weekly_limit_count: q.weekly_limit_count || 0,
+        monthly_limit_count: q.monthly_limit_count || 0,
       })),
     })
     featuresText.value = (plan.features || []).join('\n')
@@ -462,6 +485,9 @@ function confirmAddGroupQuota() {
     daily_limit_usd: 0,
     weekly_limit_usd: 0,
     monthly_limit_usd: 0,
+    daily_limit_count: 0,
+    weekly_limit_count: 0,
+    monthly_limit_count: 0,
   })
   showGroupSelector.value = false
   selectedNewGroupId.value = null
