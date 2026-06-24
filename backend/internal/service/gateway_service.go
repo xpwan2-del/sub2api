@@ -8919,7 +8919,7 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 		if deps.bundleUsageService != nil && p.Subscription != nil &&
 			p.Subscription.BundleSubscriptionID != nil && *p.Subscription.BundleSubscriptionID > 0 &&
 			p.Subscription.GroupID > 0 && cost.ActualCost > 0 {
-			if err := deps.bundleUsageService.AccumulateUsage(billingCtx, *p.Subscription.BundleSubscriptionID, p.Subscription.GroupID, cost.ActualCost); err != nil {
+			if err := deps.bundleUsageService.AccumulateUsage(billingCtx, *p.Subscription.BundleSubscriptionID, p.Subscription.GroupID, cost.ActualCost, p.OutputCount); err != nil {
 				slog.Error("accumulate bundle usage failed", "bundle_subscription_id", *p.Subscription.BundleSubscriptionID, "group_id", p.Subscription.GroupID, "error", err)
 			}
 		}
@@ -9113,7 +9113,7 @@ func finalizePostUsageBilling(ctx context.Context, p *postUsageBillingParams, de
 		if deps.bundleUsageService != nil && p.Subscription != nil &&
 			p.Subscription.BundleSubscriptionID != nil && *p.Subscription.BundleSubscriptionID > 0 &&
 			p.Subscription.GroupID > 0 && p.Cost.ActualCost > 0 {
-			if err := deps.bundleUsageService.AccumulateUsage(ctx, *p.Subscription.BundleSubscriptionID, p.Subscription.GroupID, p.Cost.ActualCost); err != nil {
+			if err := deps.bundleUsageService.AccumulateUsage(ctx, *p.Subscription.BundleSubscriptionID, p.Subscription.GroupID, p.Cost.ActualCost, p.OutputCount); err != nil {
 				slog.Error("accumulate bundle usage failed (finalize)", "bundle_subscription_id", *p.Subscription.BundleSubscriptionID, "group_id", p.Subscription.GroupID, "error", err)
 			}
 		}

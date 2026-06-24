@@ -50,7 +50,7 @@ func (bundleUsageRepoNoop) GetBySubscriptionAndGroup(context.Context, int64, int
 func (bundleUsageRepoNoop) Create(context.Context, *BundleSubscriptionUsage) error {
 	panic("unexpected Create call")
 }
-func (bundleUsageRepoNoop) IncrementUsage(context.Context, int64, float64) error {
+func (bundleUsageRepoNoop) IncrementUsage(context.Context, int64, float64, int) error {
 	panic("unexpected IncrementUsage call")
 }
 func (bundleUsageRepoNoop) ResetDailyWindow(context.Context, int64, time.Time) error {
@@ -77,9 +77,9 @@ func (bundleUsageRepoNoop) BatchUpdateExpiredStatus(context.Context) (int64, err
 type activateBundleSubRepoStub struct {
 	bundleSubRepoNoop
 
-	activeBundles []BundleSubscription
-	created       *BundleSubscription
-	createErr     error
+	activeBundles   []BundleSubscription
+	created         *BundleSubscription
+	createErr       error
 	updateStatusErr error
 	updateExpiryErr error
 }
@@ -128,8 +128,8 @@ func (s *activateBundleSubRepoStub) UpdateExpiry(_ context.Context, _ int64, _ t
 type activateBundlePlanRepoStub struct {
 	bundlePlanRepoNoop
 
-	plan    *BundlePlan
-	getErr  error
+	plan   *BundlePlan
+	getErr error
 }
 
 func (s *activateBundlePlanRepoStub) GetByID(_ context.Context, _ int64) (*BundlePlan, error) {
@@ -227,6 +227,62 @@ func sampleActivePlan() *BundlePlan {
 			{GroupID: 20, QuotaScope: QuotaScopeModel, ModelPattern: "gpt-4*", DailyLimitUSD: 3.0, WeeklyLimitUSD: 15.0, MonthlyLimitUSD: 60.0},
 		},
 	}
+}
+
+// ──────────────────────────────────────────────────────
+// Tests: AccumulateUsage (count dimension)
+// ──────────────────────────────────────────────────────
+
+// accumulateUsageRepoStub supports GetBySubscriptionAndGroup + IncrementUsage and
+// records the count argument passed to IncrementUsage so tests can assert on it.
+type accumulateUsageRepoStub struct {
+	bundleUsageRepoNoop
+
+	existing     *BundleSubscriptionUsage // returned by GetBySubscriptionAndGroup
+	getErr       error
+	incrementErr error
+
+	lastIncrementID    int64
+	lastIncrementCost  float64
+	lastIncrementCount int
+	incrementCalls     int
+}
+
+func (s *accumulateUsageRepoStub) GetBySubscriptionAndGroup(_ context.Context, _, _ int64, _ string) (*BundleSubscriptionUsage, error) {
+	if s.getErr != nil {
+		return nil, s.getErr
+	}
+	if s.existing == nil {
+		return nil, ErrBundleNotFound
+	}
+	cp := *s.existing
+	return &cp, nil
+}
+
+func (s *accumulateUsageRepoStub) IncrementUsage(_ context.Context, id int64, costUSD float64, count int) error {
+	if s.incrementErr != nil {
+		return s.incrementErr
+	}
+	s.lastIncrementID = id
+	s.lastIncrementCost = costUSD
+	s.lastIncrementCount = count
+	s.incrementCalls++
+	return nil
+}
+
+func TestAccumulateUsage_IncrementsCount(t *testing.T) {
+	// Arrange: a pre-existing usage record that GetBySubscriptionAndGroup will hit.
+	usageRepo := &accumulateUsageRepoStub{existing: &BundleSubscriptionUsage{ID: 777, GroupID: 10}}
+	svc := NewBundleUsageService(usageRepo, nil, nil)
+
+	// Act: accumulate with costUSD=0 and count=3.
+	err := svc.AccumulateUsage(context.Background(), 1 /*subID*/, 10 /*groupID*/, 0.0, 3)
+	require.NoError(t, err)
+
+	// Assert: IncrementUsage was called once with count==3.
+	require.Equal(t, 1, usageRepo.incrementCalls, "IncrementUsage should be called exactly once")
+	require.Equal(t, 3, usageRepo.lastIncrementCount, "IncrementUsage count argument must equal 3")
+	require.Equal(t, int64(777), usageRepo.lastIncrementID, "IncrementUsage id argument must match the pre-existing record ID")
 }
 
 // ──────────────────────────────────────────────────────
@@ -574,4 +630,6 @@ func TestBundleSubscriptionService_ExtendBundle_SyncsBridgedUserSubs(t *testing.
 	require.Contains(t, userSubRepo.extendedIDs, int64(200))
 	require.Contains(t, userSubRepo.extendedIDs, int64(201))
 }
-func (s *activateUserSubRepoStub) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) { return 0, nil }
+func (s *activateUserSubRepoStub) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) {
+	return 0, nil
+}

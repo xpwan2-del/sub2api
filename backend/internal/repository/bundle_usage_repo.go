@@ -61,6 +61,9 @@ func (r *bundleUsageRepository) Create(ctx context.Context, usage *service.Bundl
 		SetWeeklyWindowStart(usage.WeeklyWindowStart).
 		SetMonthlyUsageUsd(usage.MonthlyUsageUSD).
 		SetMonthlyWindowStart(usage.MonthlyWindowStart).
+		SetDailyUsageCount(usage.DailyUsageCount).
+		SetWeeklyUsageCount(usage.WeeklyUsageCount).
+		SetMonthlyUsageCount(usage.MonthlyUsageCount).
 		Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, nil, nil)
@@ -70,14 +73,19 @@ func (r *bundleUsageRepository) Create(ctx context.Context, usage *service.Bundl
 	return nil
 }
 
-// IncrementUsage 累加日/周/月用量（原子操作）
-func (r *bundleUsageRepository) IncrementUsage(ctx context.Context, id int64, costUSD float64) error {
+// IncrementUsage 累加日/周/月用量（USD + 次数，原子操作）
+// IncrementUsage atomically adds costUSD to the daily/weekly/monthly USD counters
+// and count to the daily/weekly/monthly request-count counters.
+func (r *bundleUsageRepository) IncrementUsage(ctx context.Context, id int64, costUSD float64, count int) error {
 	client := clientFromContext(ctx, r.client)
 
 	_, err := client.BundleSubscriptionUsage.UpdateOneID(id).
 		AddDailyUsageUsd(costUSD).
 		AddWeeklyUsageUsd(costUSD).
 		AddMonthlyUsageUsd(costUSD).
+		AddDailyUsageCount(count).
+		AddWeeklyUsageCount(count).
+		AddMonthlyUsageCount(count).
 		Save(ctx)
 	return translatePersistenceError(err, nil, nil)
 }

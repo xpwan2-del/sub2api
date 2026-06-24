@@ -31,9 +31,11 @@ func NewBundleUsageService(
 	}
 }
 
-// AccumulateUsage 累加套餐订阅在指定渠道组上的用量（USD）
-// AccumulateUsage increments the usage counters for a bundle subscription + group.
-func (s *BundleUsageService) AccumulateUsage(ctx context.Context, bundleSubID, groupID int64, costUSD float64) error {
+// AccumulateUsage 累加套餐订阅在指定渠道组上的用量（USD + 次数）
+// AccumulateUsage increments the usage counters (USD and request count) for a
+// bundle subscription + group. count is the number of billable media outputs
+// (e.g. generated images / video segments) produced by this request.
+func (s *BundleUsageService) AccumulateUsage(ctx context.Context, bundleSubID, groupID int64, costUSD float64, count int) error {
 	// Find the usage record for this subscription + group.
 	usage, err := s.usageRepo.GetBySubscriptionAndGroup(ctx, bundleSubID, groupID, "")
 	if err != nil {
@@ -43,7 +45,7 @@ func (s *BundleUsageService) AccumulateUsage(ctx context.Context, bundleSubID, g
 		return ErrBundleNotFound
 	}
 
-	if err := s.usageRepo.IncrementUsage(ctx, usage.ID, costUSD); err != nil {
+	if err := s.usageRepo.IncrementUsage(ctx, usage.ID, costUSD, count); err != nil {
 		return fmt.Errorf("increment bundle usage: %w", err)
 	}
 	return nil

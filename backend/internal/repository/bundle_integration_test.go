@@ -31,14 +31,14 @@ type BundleSubscriptionLifecycleSuite struct {
 	ctx    context.Context
 	client *dbent.Client
 
-	planSvc      *service.BundlePlanService
-	subSvc       *service.BundleSubscriptionService
-	usageSvc     *service.BundleUsageService
-	planRepo     service.BundlePlanRepository
-	subRepo      service.BundleSubscriptionRepository
-	usageRepo    service.BundleUsageRepository
-	userSubRepo  service.UserSubscriptionRepository
-	groupRepo    service.GroupRepository
+	planSvc     *service.BundlePlanService
+	subSvc      *service.BundleSubscriptionService
+	usageSvc    *service.BundleUsageService
+	planRepo    service.BundlePlanRepository
+	subRepo     service.BundleSubscriptionRepository
+	usageRepo   service.BundleUsageRepository
+	userSubRepo service.UserSubscriptionRepository
+	groupRepo   service.GroupRepository
 }
 
 func (s *BundleSubscriptionLifecycleSuite) SetupTest() {
@@ -234,8 +234,8 @@ func (s *BundleSubscriptionLifecycleSuite) TestIncrementUsage_AccumulatesCorrect
 	// Accumulate usage incrementally
 	cost1 := 0.5
 	cost2 := 1.25
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, cost1))
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, cost2))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, cost1, 1))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, cost2, 1))
 
 	// Verify accumulated correctly
 	usage, err = s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, group.ID, "")
@@ -264,7 +264,7 @@ func (s *BundleSubscriptionLifecycleSuite) TestCheckQuotaEligibility_WithinLimit
 	s.Require().NoError(err)
 
 	// Stay under the daily limit
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 5.0))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 5.0, 1))
 
 	result, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, group.ID)
 	s.Require().NoError(err, "should pass when under limits")
@@ -290,7 +290,7 @@ func (s *BundleSubscriptionLifecycleSuite) TestCheckQuotaEligibility_ExceedsDail
 	s.Require().NoError(err)
 
 	// Exceed daily limit
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 5.01))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 5.01, 1))
 
 	result, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, group.ID)
 	s.Require().NoError(err)
@@ -314,7 +314,7 @@ func (s *BundleSubscriptionLifecycleSuite) TestCheckQuotaEligibility_ExceedsWeek
 
 	usage, err := s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, group.ID, "")
 	s.Require().NoError(err)
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 10.01))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 10.01, 1))
 
 	result, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, group.ID)
 	s.Require().NoError(err)
@@ -341,7 +341,7 @@ func (s *BundleSubscriptionLifecycleSuite) TestGetBundleUsageProgress_ReturnsAll
 	// Add some usage to openai group
 	usage, err := s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, openaiGroup.ID, "")
 	s.Require().NoError(err)
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 1.5))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 1.5, 1))
 
 	progress, err := s.subSvc.GetBundleUsageProgress(s.ctx, bundleSub.ID)
 	s.Require().NoError(err)
@@ -371,15 +371,15 @@ type BundleRouteResolverSuite struct {
 	ctx    context.Context
 	client *dbent.Client
 
-	planSvc    *service.BundlePlanService
-	subSvc     *service.BundleSubscriptionService
-	usageSvc   *service.BundleUsageService
-	resolver   *service.BundleRouteResolver
-	planRepo   service.BundlePlanRepository
-	subRepo    service.BundleSubscriptionRepository
-	usageRepo  service.BundleUsageRepository
+	planSvc     *service.BundlePlanService
+	subSvc      *service.BundleSubscriptionService
+	usageSvc    *service.BundleUsageService
+	resolver    *service.BundleRouteResolver
+	planRepo    service.BundlePlanRepository
+	subRepo     service.BundleSubscriptionRepository
+	usageRepo   service.BundleUsageRepository
 	userSubRepo service.UserSubscriptionRepository
-	groupRepo  service.GroupRepository
+	groupRepo   service.GroupRepository
 }
 
 func (s *BundleRouteResolverSuite) SetupTest() {
@@ -597,7 +597,7 @@ func (s *BundleRouteResolverSuite) TestResolveGroup_IndependentQuotaPerGroup() {
 
 	openaiUsage, err := s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, openaiGroup.ID, "")
 	s.Require().NoError(err)
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, openaiUsage.ID, 8.0))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, openaiUsage.ID, 8.0, 1))
 
 	// Anthropic group usage should be unaffected
 	anthroUsage, err := s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, anthroGroup.ID, "")
@@ -627,14 +627,14 @@ type BundleExpiryIntegrationSuite struct {
 	ctx    context.Context
 	client *dbent.Client
 
-	planSvc    *service.BundlePlanService
-	subSvc     *service.BundleSubscriptionService
-	resolver   *service.BundleRouteResolver
-	planRepo   service.BundlePlanRepository
-	subRepo    service.BundleSubscriptionRepository
-	usageRepo  service.BundleUsageRepository
+	planSvc     *service.BundlePlanService
+	subSvc      *service.BundleSubscriptionService
+	resolver    *service.BundleRouteResolver
+	planRepo    service.BundlePlanRepository
+	subRepo     service.BundleSubscriptionRepository
+	usageRepo   service.BundleUsageRepository
 	userSubRepo service.UserSubscriptionRepository
-	groupRepo  service.GroupRepository
+	groupRepo   service.GroupRepository
 }
 
 func (s *BundleExpiryIntegrationSuite) SetupTest() {
