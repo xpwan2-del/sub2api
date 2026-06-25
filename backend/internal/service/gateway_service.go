@@ -8897,6 +8897,17 @@ func (p *postUsageBillingParams) shouldUpdateAccountQuota() bool {
 	return p.Cost.TotalCost > 0 && p.Account.IsAPIKeyOrBedrock() && p.Account.HasAnyQuotaLimit()
 }
 
+// shouldAccumulateBundleUsage 判断是否需要累加套餐用量（bundle subsystem）。
+// 按次计费与成本解耦：只要有成本（ActualCost>0）或媒体产出（OutputCount>0）即累加，
+// 否则 ActualCost=0 的免费/低价媒体（如 0 定价图片/视频）不会计数 → 次数限额失效。
+func (p *postUsageBillingParams) shouldAccumulateBundleUsage() bool {
+	if p.Cost == nil || p.Subscription == nil {
+		return false
+	}
+	return p.Subscription.BundleSubscriptionID != nil && *p.Subscription.BundleSubscriptionID > 0 &&
+		p.Subscription.GroupID > 0 && (p.Cost.ActualCost > 0 || p.OutputCount > 0)
+}
+
 // postUsageBilling is the legacy fallback billing path used when the unified
 // billing repo is unavailable (nil). Production uses applyUsageBilling → repo.Apply
 // for atomic billing. This path only runs in tests or degraded mode.
@@ -8916,9 +8927,7 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 		}
 		// Bundle usage accumulation: also track usage in the bundle subsystem
 		// when this subscription is bridged from a bundle plan.
-		if deps.bundleUsageService != nil && p.Subscription != nil &&
-			p.Subscription.BundleSubscriptionID != nil && *p.Subscription.BundleSubscriptionID > 0 &&
-			p.Subscription.GroupID > 0 && cost.ActualCost > 0 {
+		if deps.bundleUsageService != nil && p.shouldAccumulateBundleUsage() {
 			if err := deps.bundleUsageService.AccumulateUsage(billingCtx, *p.Subscription.BundleSubscriptionID, p.Subscription.GroupID, cost.ActualCost, p.OutputCount); err != nil {
 				slog.Error("accumulate bundle usage failed", "bundle_subscription_id", *p.Subscription.BundleSubscriptionID, "group_id", p.Subscription.GroupID, "error", err)
 			}
@@ -9110,9 +9119,7 @@ func finalizePostUsageBilling(ctx context.Context, p *postUsageBillingParams, de
 		// when this subscription is bridged from a bundle plan.
 		// Mirrors the logic in postUsageBilling (legacy path) so that the
 		// production repo.Apply() path also accumulates bundle usage.
-		if deps.bundleUsageService != nil && p.Subscription != nil &&
-			p.Subscription.BundleSubscriptionID != nil && *p.Subscription.BundleSubscriptionID > 0 &&
-			p.Subscription.GroupID > 0 && p.Cost.ActualCost > 0 {
+		if deps.bundleUsageService != nil && p.shouldAccumulateBundleUsage() {
 			if err := deps.bundleUsageService.AccumulateUsage(ctx, *p.Subscription.BundleSubscriptionID, p.Subscription.GroupID, p.Cost.ActualCost, p.OutputCount); err != nil {
 				slog.Error("accumulate bundle usage failed (finalize)", "bundle_subscription_id", *p.Subscription.BundleSubscriptionID, "group_id", p.Subscription.GroupID, "error", err)
 			}
