@@ -565,6 +565,7 @@ type ForwardResult struct {
 
 	// 图片生成计费字段（图片生成模型使用）
 	ImageCount         int    // 生成的图片数量
+	VideoCount         int    // 视频产出段数（通用网关视频生成，如 Veo；由转发层填充，默认 0）
 	ImageSize          string // 最终计费尺寸 "1K", "2K", "4K"
 	ImageInputSize     string // 请求中的原始图片尺寸
 	ImageOutputSize    string // 上游响应中的图片尺寸
@@ -9523,8 +9524,9 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 		AccountRateMultiplier: accountRateMultiplier,
 		APIKeyService:         input.APIKeyService,
 		Platform:              quotaPlatform,
-		// 网关 ForwardResult 不承载视频产出（视频仅经 OpenAI 网关），故此处仅图片张数。
-		OutputCount: result.ImageCount,
+		// 媒体产出数 = 图片张数 + 视频段数。视频通常经 OpenAI 网关（/videos → ForwardVideos），
+		// 通用网关亦支持：视频转发层（Veo 等走 Gemini 路径时）负责填充 ForwardResult.VideoCount。
+		OutputCount: result.ImageCount + result.VideoCount,
 	}, s.billingDeps(), s.usageBillingRepo)
 
 	if billingErr != nil {
