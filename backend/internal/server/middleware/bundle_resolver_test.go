@@ -29,7 +29,7 @@ func (f *mwFakeUsageRepo) GetBySubscriptionAndGroup(_ context.Context, _, _ int6
 func (f *mwFakeUsageRepo) Create(_ context.Context, _ *service.BundleSubscriptionUsage) error {
 	return nil
 }
-func (f *mwFakeUsageRepo) IncrementUsage(_ context.Context, _ int64, _ float64, _ int) error {
+func (f *mwFakeUsageRepo) IncrementUsage(_ context.Context, _ int64, _ float64, _ int, _ service.WindowRoll) error {
 	return nil
 }
 func (f *mwFakeUsageRepo) ResetDailyWindow(_ context.Context, _ int64, _ time.Time) error { return nil }

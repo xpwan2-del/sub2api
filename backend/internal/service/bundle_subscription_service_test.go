@@ -50,7 +50,7 @@ func (bundleUsageRepoNoop) GetBySubscriptionAndGroup(context.Context, int64, int
 func (bundleUsageRepoNoop) Create(context.Context, *BundleSubscriptionUsage) error {
 	panic("unexpected Create call")
 }
-func (bundleUsageRepoNoop) IncrementUsage(context.Context, int64, float64, int) error {
+func (bundleUsageRepoNoop) IncrementUsage(context.Context, int64, float64, int, WindowRoll) error {
 	panic("unexpected IncrementUsage call")
 }
 func (bundleUsageRepoNoop) ResetDailyWindow(context.Context, int64, time.Time) error {
@@ -259,7 +259,7 @@ func (s *accumulateUsageRepoStub) GetBySubscriptionAndGroup(_ context.Context, _
 	return &cp, nil
 }
 
-func (s *accumulateUsageRepoStub) IncrementUsage(_ context.Context, id int64, costUSD float64, count int) error {
+func (s *accumulateUsageRepoStub) IncrementUsage(_ context.Context, id int64, costUSD float64, count int, _ WindowRoll) error {
 	if s.incrementErr != nil {
 		return s.incrementErr
 	}
@@ -273,7 +273,10 @@ func (s *accumulateUsageRepoStub) IncrementUsage(_ context.Context, id int64, co
 func TestAccumulateUsage_IncrementsCount(t *testing.T) {
 	// Arrange: a pre-existing usage record that GetBySubscriptionAndGroup will hit.
 	usageRepo := &accumulateUsageRepoStub{existing: &BundleSubscriptionUsage{ID: 777, GroupID: 10}}
-	svc := NewBundleUsageService(usageRepo, nil, nil)
+	// AccumulateUsage 现经 resolveMatchingQuota 解析额度（取 ModelPattern），需注入 sub/plan repo。
+	plan := &BundlePlan{GroupQuotas: []BundlePlanGroupQuota{{GroupID: 10}}}
+	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
+	svc := NewBundleUsageService(usageRepo, &fakeSubRepo{sub: sub}, &fakePlanRepo{plan: plan})
 
 	// Act: accumulate with costUSD=0 and count=3.
 	err := svc.AccumulateUsage(context.Background(), 1 /*subID*/, 10 /*groupID*/, 0.0, 3)

@@ -7,12 +7,14 @@
 package middleware
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
 	"strings"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 )
@@ -114,6 +116,10 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
+		// 把路由解析的 quota 注入请求 ctx，供计费层 AccumulateUsage 复用其 ModelPattern，
+		// 避免累加用量时重复 load bundleSub + plan。detachedBillingContext 用 WithoutCancel 保留 values，计费 worker 可读。
+		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), ctxkey.BundleResolvedQuota, &resolved.Quota))
 
 		// --- Bundle-level concurrency check ---
 		// Fail-closed: concurrency limits protect backend resources from overload.

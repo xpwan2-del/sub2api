@@ -56,3 +56,11 @@ const (
 	BundleSubCacheTTL     = 3 * time.Minute
 	BundleUsageCacheTTL   = 1 * time.Minute
 )
+
+// 用量统计窗口时长：日/周/月。与 subscription_service 的 24h / 7d / 30d 口径对齐。
+// window_start 距 now 超过该时长即视为窗口过期，累加前清零（USD + count）并更新窗口起点。
+const (
+	BundleDailyWindow   = 24 * time.Hour
+	BundleWeeklyWindow  = 7 * 24 * time.Hour
+	BundleMonthlyWindow = 30 * 24 * time.Hour
+)

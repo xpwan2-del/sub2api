@@ -73,20 +73,32 @@ func (r *bundleUsageRepository) Create(ctx context.Context, usage *service.Bundl
 	return nil
 }
 
-// IncrementUsage 累加日/周/月用量（USD + 次数，原子操作）
-// IncrementUsage atomically adds costUSD to the daily/weekly/monthly USD counters
-// and count to the daily/weekly/monthly request-count counters.
-func (r *bundleUsageRepository) IncrementUsage(ctx context.Context, id int64, costUSD float64, count int) error {
+// IncrementUsage 累加日/周/月用量（USD + 次数），并在过期窗口上滚动重置。
+// 对每个窗口：若 roll 标记为过期，则把该窗口的 USD/count 直接置为本次值（等价于
+// 清零后累加）并更新 window_start；否则在原值上 Add。三条窗口独立判断，单次往返。
+// IncrementUsage applies costUSD/count to each window, rolling (resetting) any window
+// flagged expired in roll and accumulating (Add) the rest, in a single update.
+func (r *bundleUsageRepository) IncrementUsage(ctx context.Context, id int64, costUSD float64, count int, roll service.WindowRoll) error {
 	client := clientFromContext(ctx, r.client)
 
-	_, err := client.BundleSubscriptionUsage.UpdateOneID(id).
-		AddDailyUsageUsd(costUSD).
-		AddWeeklyUsageUsd(costUSD).
-		AddMonthlyUsageUsd(costUSD).
-		AddDailyUsageCount(count).
-		AddWeeklyUsageCount(count).
-		AddMonthlyUsageCount(count).
-		Save(ctx)
+	update := client.BundleSubscriptionUsage.UpdateOneID(id)
+	if roll.Daily {
+		update.SetDailyUsageUsd(costUSD).SetDailyUsageCount(count).SetDailyWindowStart(roll.NewDailyStart)
+	} else {
+		update.AddDailyUsageUsd(costUSD).AddDailyUsageCount(count)
+	}
+	if roll.Weekly {
+		update.SetWeeklyUsageUsd(costUSD).SetWeeklyUsageCount(count).SetWeeklyWindowStart(roll.NewWeeklyStart)
+	} else {
+		update.AddWeeklyUsageUsd(costUSD).AddWeeklyUsageCount(count)
+	}
+	if roll.Monthly {
+		update.SetMonthlyUsageUsd(costUSD).SetMonthlyUsageCount(count).SetMonthlyWindowStart(roll.NewMonthlyStart)
+	} else {
+		update.AddMonthlyUsageUsd(costUSD).AddMonthlyUsageCount(count)
+	}
+
+	_, err := update.Save(ctx)
 	return translatePersistenceError(err, nil, nil)
 }
 
@@ -96,6 +108,7 @@ func (r *bundleUsageRepository) ResetDailyWindow(ctx context.Context, id int64, 
 
 	_, err := client.BundleSubscriptionUsage.UpdateOneID(id).
 		SetDailyUsageUsd(0).
+		SetDailyUsageCount(0).
 		SetDailyWindowStart(newWindowStart).
 		Save(ctx)
 	return translatePersistenceError(err, nil, nil)
@@ -107,6 +120,7 @@ func (r *bundleUsageRepository) ResetWeeklyWindow(ctx context.Context, id int64,
 
 	_, err := client.BundleSubscriptionUsage.UpdateOneID(id).
 		SetWeeklyUsageUsd(0).
+		SetWeeklyUsageCount(0).
 		SetWeeklyWindowStart(newWindowStart).
 		Save(ctx)
 	return translatePersistenceError(err, nil, nil)
@@ -118,6 +132,7 @@ func (r *bundleUsageRepository) ResetMonthlyWindow(ctx context.Context, id int64
 
 	_, err := client.BundleSubscriptionUsage.UpdateOneID(id).
 		SetMonthlyUsageUsd(0).
+		SetMonthlyUsageCount(0).
 		SetMonthlyWindowStart(newWindowStart).
 		Save(ctx)
 	return translatePersistenceError(err, nil, nil)

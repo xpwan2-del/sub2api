@@ -57,6 +57,10 @@ const (
 	// Service 层仅在分组匹配时复用 PrefetchedStickyAccountID，避免分组切换重试误用旧 sticky。
 	PrefetchedStickyGroupID Key = "ctx_prefetched_sticky_group_id"
 
+	// BundleResolvedQuota 套餐路由中间件已解析的分组额度（*service.BundlePlanGroupQuota）。
+	// 计费层（AccumulateUsage）复用以取 ModelPattern，避免累加用量时重复 load bundleSub + plan。
+	BundleResolvedQuota Key = "ctx_bundle_resolved_quota"
+
 	// ClaudeCodeVersion stores the extracted Claude Code version from User-Agent (e.g. "2.1.22")
 	ClaudeCodeVersion Key = "ctx_claude_code_version"
 )
