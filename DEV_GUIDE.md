@@ -9,7 +9,7 @@
 | **上游仓库** | Wei-Shaw/sub2api |
 | **Fork 仓库** | bayma888/sub2api-bmai |
 | **技术栈** | Go 后端 (Ent ORM + Gin) + Vue3 前端 (pnpm) |
-| **数据库** | PostgreSQL 16 + Redis |
+| **数据库** | PostgreSQL 15+ / Redis 7+ |
 | **包管理** | 后端: go modules, 前端: **pnpm**（不是 npm） |
 
 ## 二、本地环境配置
@@ -34,8 +34,8 @@
 ### 开发工具
 
 ```bash
-# golangci-lint v2.7
-go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.7
+# golangci-lint v2.9
+go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.9
 
 # pnpm (前端包管理)
 npm install -g pnpm
@@ -47,13 +47,13 @@ npm install -g pnpm
 
 | Workflow | 触发条件 | 检查内容 |
 |----------|----------|----------|
-| **backend-ci.yml** | push, pull_request | 单元测试 + 集成测试 + golangci-lint v2.7 |
-| **security-scan.yml** | push, pull_request, 每周一 | govulncheck + gosec + pnpm audit |
-| **release.yml** | tag `v*` | 构建发布（PR 不触发） |
+| **backend-ci.yml** | push, pull_request | 单元测试 + 集成测试 + golangci-lint v2.9 |
+| **security-scan.yml** | push, pull_request, 每周一 | govulncheck + pnpm audit |
+| **release.yml** | tag `v*` / workflow_dispatch | 构建发布（PR 不触发） |
 
 ### CI 要求
 
-- Go 版本必须是 **1.25.7**
+- Go 版本必须是 **1.26.4**（与 go.mod 保持一致）
 - 前端使用 `pnpm install --frozen-lockfile`，必须提交 `pnpm-lock.yaml`
 
 ### 本地测试命令
@@ -64,6 +64,12 @@ cd backend && go test -tags=unit ./...
 
 # 后端集成测试
 cd backend && go test -tags=integration ./...
+
+# 后端 E2E 测试
+cd backend && make test-e2e-local
+
+# 一键生成（Ent + Wire）
+cd backend && make generate
 
 # 代码质量检查
 cd backend && golangci-lint run ./...
@@ -334,8 +340,8 @@ sub2api-bmai/
 │   │   └── i18n/            # 国际化
 │   ├── package.json         # 依赖配置
 │   └── pnpm-lock.yaml       # pnpm 锁文件（必须提交）
-└── .claude/
-    └── CLAUDE.md            # 本文档
+└── CLAUDE.md                # Claude Code 指导文件
+└── DEV_GUIDE.md             # 开发指南（本文档）
 ```
 
 ## 七、参考资源

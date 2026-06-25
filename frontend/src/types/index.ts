@@ -590,11 +590,13 @@ export interface ApiKey {
   reset_5h_at: string | null
   reset_1d_at: string | null
   reset_7d_at: string | null
+  bundle_subscription_id?: number | null // Bundle subscription ID (universal/dedicated key)
 }
 
 export interface CreateApiKeyRequest {
   name: string
   group_id?: number | null
+  bundle_subscription_id?: number | null // Bundle subscription ID for universal key mode
   custom_key?: string // Optional custom API Key
   ip_whitelist?: string[]
   ip_blacklist?: string[]
@@ -618,6 +620,8 @@ export interface UpdateApiKeyRequest {
   rate_limit_1d?: number
   rate_limit_7d?: number
   reset_rate_limit_usage?: boolean
+  bundle_subscription_id?: number | null // Bundle subscription ID for universal/dedicated key (null = clear to standard)
+  key_mode?: 'universal' | 'dedicated' | 'normal' | '' // Explicit key mode for edit
 }
 
 export interface CreateGroupRequest {
@@ -1568,6 +1572,10 @@ export interface UserSubscription {
   expires_at: string | null
   user?: User
   group?: Group
+  // Bundle subscription info (present when subscription originated from a bundle plan)
+  bundle_subscription_id?: number | null
+  bundle_plan_tier?: string | null
+  bundle_plan_name?: string | null
 }
 
 export interface SubscriptionProgress {

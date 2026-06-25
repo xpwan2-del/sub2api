@@ -96,6 +96,13 @@ func (b *billingCacheWorkerStub) BatchGetUserPlatformQuotaCache(ctx context.Cont
 	return nil, nil
 }
 
+func (m *billingCacheWorkerStub) GetBundleSubscriptionCache(context.Context, int64) (*BundleSubscriptionCacheData, error) { return nil, nil }
+func (m *billingCacheWorkerStub) SetBundleSubscriptionCache(context.Context, int64, *BundleSubscriptionCacheData, time.Duration) error { return nil }
+func (m *billingCacheWorkerStub) InvalidateBundleSubscriptionCache(context.Context, int64) error { return nil }
+func (m *billingCacheWorkerStub) GetBundlePlansForSaleCache(context.Context) ([]byte, error) { return nil, nil }
+func (m *billingCacheWorkerStub) SetBundlePlansForSaleCache(context.Context, []byte, time.Duration) error { return nil }
+func (m *billingCacheWorkerStub) InvalidateBundlePlansForSaleCache(context.Context) error { return nil }
+
 func TestBillingCacheServiceQueueHighLoad(t *testing.T) {
 	cache := &billingCacheWorkerStub{}
 	svc := NewBillingCacheService(cache, nil, nil, nil, nil, nil, &config.Config{}, nil)

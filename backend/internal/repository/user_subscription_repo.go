@@ -6,6 +6,7 @@ import (
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/bundlesubscription"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -50,6 +51,14 @@ func (r *userSubscriptionRepository) Create(ctx context.Context, sub *service.Us
 	}
 	// Keep compatibility with historical behavior: always store notes as a string value.
 	builder.SetNotes(sub.Notes)
+
+	// Bundle-related fields
+	if sub.BundleSubscriptionID != nil {
+		builder.SetBundleSubscriptionID(*sub.BundleSubscriptionID)
+	}
+	builder.SetDailyLimitUsd(sub.DailyLimitUSD)
+	builder.SetWeeklyLimitUsd(sub.WeeklyLimitUSD)
+	builder.SetMonthlyLimitUsd(sub.MonthlyLimitUSD)
 
 	created, err := builder.Save(ctx)
 	if err == nil {
@@ -457,6 +466,10 @@ func userSubscriptionEntityToService(m *dbent.UserSubscription) *service.UserSub
 	if m.Edges.AssignedByUser != nil {
 		out.AssignedByUser = userEntityToService(m.Edges.AssignedByUser)
 	}
+	out.BundleSubscriptionID = m.BundleSubscriptionID
+	out.DailyLimitUSD = m.DailyLimitUsd
+	out.WeeklyLimitUSD = m.WeeklyLimitUsd
+	out.MonthlyLimitUSD = m.MonthlyLimitUsd
 	return out
 }
 
@@ -477,4 +490,38 @@ func applyUserSubscriptionEntityToService(dst *service.UserSubscription, src *db
 	dst.ID = src.ID
 	dst.CreatedAt = src.CreatedAt
 	dst.UpdatedAt = src.UpdatedAt
+	dst.BundleSubscriptionID = src.BundleSubscriptionID
+	dst.DailyLimitUSD = src.DailyLimitUsd
+	dst.WeeklyLimitUSD = src.WeeklyLimitUsd
+	dst.MonthlyLimitUSD = src.MonthlyLimitUsd
+}
+
+// ExpireBridgedSubscriptionsForExpiredBundles expires UserSubscriptions that are
+// bridged from expired bundle subscriptions.
+func (r *userSubscriptionRepository) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) {
+	client := clientFromContext(ctx, r.client)
+
+	// Find bundle subscriptions that are expired
+	expiredBundleIDs, err := client.BundleSubscription.Query().
+		Where(bundlesubscription.Status("expired")).
+		IDs(ctx)
+	if err != nil {
+		return 0, translatePersistenceError(err, service.ErrBundleNotFound, nil)
+	}
+	if len(expiredBundleIDs) == 0 {
+		return 0, nil
+	}
+
+	// Expire UserSubscriptions bridged from these expired bundles
+	affected, err := client.UserSubscription.Update().
+		Where(
+			usersubscription.BundleSubscriptionIDIn(expiredBundleIDs...),
+			usersubscription.Status("active"),
+		).
+		SetStatus("expired").
+		Save(ctx)
+	if err != nil {
+		return 0, translatePersistenceError(err, service.ErrBundleNotFound, nil)
+	}
+	return int64(affected), nil
 }

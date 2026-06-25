@@ -97,8 +97,15 @@
             </div>
           </template>
 
+          <template #cell-key_mode="{ row }">
+            <span :class="['badge', getKeyModeBadgeClass(getKeyMode(row))]">
+              {{ keyModeLabels[getKeyMode(row)] }}
+            </span>
+          </template>
+
           <template #cell-group="{ row }">
-            <div class="group/dropdown relative">
+            <!-- Normal key: allow inline group change -->
+            <div v-if="getKeyMode(row) === 'normal'" class="group/dropdown relative">
               <button
                 :ref="(el) => setGroupButtonRef(row.id, el)"
                 @click="openGroupSelector(row)"
@@ -131,6 +138,20 @@
                   />
                 </svg>
               </button>
+            </div>
+            <!-- Universal / Dedicated key: read-only display -->
+            <div v-else class="flex items-center gap-2">
+              <GroupBadge
+                v-if="row.group"
+                :name="row.group.name"
+                :platform="row.group.platform"
+                :subscription-type="row.group.subscription_type"
+                :rate-multiplier="row.group.rate_multiplier"
+                :user-rate-multiplier="userGroupRates[row.group.id]"
+              />
+              <span v-else class="text-sm text-gray-400 dark:text-dark-500">{{
+                getKeyMode(row) === 'universal' ? t('bundles.keyModeUniversal') : t('keys.noGroup')
+              }}</span>
             </div>
           </template>
 
@@ -405,38 +426,120 @@
         </div>
 
         <div>
-          <label class="input-label">{{ t('keys.groupLabel') }}</label>
-          <Select
-            v-model="formData.group_id"
-            :options="groupOptions"
-            :placeholder="t('keys.selectGroup')"
-            :searchable="true"
-            :search-placeholder="t('keys.searchGroup')"
-            data-tour="key-form-group"
-          >
-            <template #selected="{ option }">
-              <GroupBadge
-                v-if="option"
-                :name="(option as unknown as GroupOption).label"
-                :platform="(option as unknown as GroupOption).platform"
-                :subscription-type="(option as unknown as GroupOption).subscriptionType"
-                :rate-multiplier="(option as unknown as GroupOption).rate"
-                :user-rate-multiplier="(option as unknown as GroupOption).userRate"
-              />
-              <span v-else class="text-gray-400">{{ t('keys.selectGroup') }}</span>
-            </template>
-            <template #option="{ option, selected }">
-              <GroupOptionItem
-                :name="(option as unknown as GroupOption).label"
-                :platform="(option as unknown as GroupOption).platform"
-                :subscription-type="(option as unknown as GroupOption).subscriptionType"
-                :rate-multiplier="(option as unknown as GroupOption).rate"
-                :user-rate-multiplier="(option as unknown as GroupOption).userRate"
-                :description="(option as unknown as GroupOption).description"
-                :selected="selected"
-              />
-            </template>
-          </Select>
+          <!-- Key Mode Selector (when user has active bundle, both create and edit) -->
+          <div v-if="hasActiveBundle" class="mb-4">
+            <label class="input-label">{{ t('bundles.keyMode') }}</label>
+            <div class="mt-2 space-y-2">
+              <!-- Universal Key -->
+              <label
+                class="flex cursor-pointer items-start gap-3 rounded-lg border-2 p-3 transition-colors"
+                :class="keyMode === 'universal'
+                  ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-900/20'
+                  : 'border-gray-200 hover:border-gray-300 dark:border-dark-600 dark:hover:border-dark-500'"
+              >
+                <input
+                  type="radio"
+                  v-model="keyMode"
+                  value="universal"
+                  class="mt-0.5"
+                />
+                <div class="flex-1">
+                  <div class="text-sm font-medium text-gray-900 dark:text-white">
+                    {{ t('bundles.keyModeUniversal') }}
+                  </div>
+                  <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('bundles.keyModeUniversalDesc') }}
+                  </div>
+                </div>
+              </label>
+              <!-- Dedicated Key -->
+              <label
+                class="flex cursor-pointer items-start gap-3 rounded-lg border-2 p-3 transition-colors"
+                :class="keyMode === 'dedicated'
+                  ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-900/20'
+                  : 'border-gray-200 hover:border-gray-300 dark:border-dark-600 dark:hover:border-dark-500'"
+              >
+                <input
+                  type="radio"
+                  v-model="keyMode"
+                  value="dedicated"
+                  class="mt-0.5"
+                />
+                <div class="flex-1">
+                  <div class="text-sm font-medium text-gray-900 dark:text-white">
+                    {{ t('bundles.keyModeDedicated') }}
+                  </div>
+                  <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('bundles.keyModeDedicatedDesc') }}
+                  </div>
+                </div>
+              </label>
+              <!-- Normal Key -->
+              <label
+                class="flex cursor-pointer items-start gap-3 rounded-lg border-2 p-3 transition-colors"
+                :class="keyMode === 'normal'
+                  ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-900/20'
+                  : 'border-gray-200 hover:border-gray-300 dark:border-dark-600 dark:hover:border-dark-500'"
+              >
+                <input
+                  type="radio"
+                  v-model="keyMode"
+                  value="normal"
+                  class="mt-0.5"
+                />
+                <div class="flex-1">
+                  <div class="text-sm font-medium text-gray-900 dark:text-white">
+                    {{ t('bundles.keyModeNormal') }}
+                  </div>
+                  <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('bundles.keyModeNormalDesc') }}
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Group Selector (hidden for universal mode) -->
+          <div v-if="!(hasActiveBundle && keyMode === 'universal')">
+            <label class="input-label">
+              {{ hasActiveBundle && keyMode === 'dedicated'
+                ? t('bundles.selectBundleGroup')
+                : t('keys.groupLabel') }}
+            </label>
+            <Select
+              v-model="formData.group_id"
+              :options="effectiveGroupOptions"
+              :placeholder="hasActiveBundle && !showEditModal && keyMode === 'dedicated'
+                ? t('bundles.selectBundleGroup')
+                : t('keys.selectGroup')"
+              :searchable="true"
+              :search-placeholder="t('keys.searchGroup')"
+              data-tour="key-form-group"
+            >
+              <template #selected="{ option }">
+                <GroupBadge
+                  v-if="option"
+                  :name="(option as unknown as GroupOption).label"
+                  :platform="(option as unknown as GroupOption).platform"
+                  :subscription-type="(option as unknown as GroupOption).subscriptionType"
+                  :rate-multiplier="(option as unknown as GroupOption).rate"
+                  :user-rate-multiplier="(option as unknown as GroupOption).userRate"
+                />
+                <span v-else class="text-gray-400">{{ t('keys.selectGroup') }}</span>
+              </template>
+              <template #option="{ option, selected }">
+                <GroupOptionItem
+                  :name="(option as unknown as GroupOption).label"
+                  :platform="(option as unknown as GroupOption).platform"
+                  :subscription-type="(option as unknown as GroupOption).subscriptionType"
+                  :rate-multiplier="(option as unknown as GroupOption).rate"
+                  :user-rate-multiplier="(option as unknown as GroupOption).userRate"
+                  :description="(option as unknown as GroupOption).description"
+                  :selected="selected"
+                />
+              </template>
+            </Select>
+          </div>
         </div>
 
         <!-- Custom Key Section (only for create) -->
@@ -927,6 +1030,7 @@
       :base-url="publicSettings?.api_base_url || ''"
       :platform="selectedKey?.group?.platform || null"
       :allow-messages-dispatch="selectedKey?.group?.allow_messages_dispatch || false"
+      :is-universal-key="!!selectedKey?.bundle_subscription_id && !selectedKey?.group_id"
       @close="closeUseKeyModal"
     />
 
@@ -1045,7 +1149,7 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, computed, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
+	import { ref, computed, watch, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useAppStore } from '@/stores/app'
 	import { useOnboardingStore } from '@/stores/onboarding'
@@ -1054,6 +1158,8 @@ import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 
 const { t } = useI18n()
 import { keysAPI, authAPI, usageAPI, userGroupsAPI } from '@/api'
+import bundlesAPI from '@/api/bundles'
+import type { BundleSubscription } from '@/types/bundle'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 	import DataTable from '@/components/common/DataTable.vue'
@@ -1099,9 +1205,31 @@ const appStore = useAppStore()
 const onboardingStore = useOnboardingStore()
 const { copyToClipboard: clipboardCopy } = useClipboard()
 
+// Derive key mode from bundle_subscription_id + group_id
+const getKeyMode = (row: { bundle_subscription_id?: number | null; group_id: number | null }): 'universal' | 'dedicated' | 'normal' => {
+  if (row.bundle_subscription_id && !row.group_id) return 'universal'
+  if (row.bundle_subscription_id && row.group_id) return 'dedicated'
+  return 'normal'
+}
+
+const getKeyModeBadgeClass = (mode: 'universal' | 'dedicated' | 'normal'): string => {
+  switch (mode) {
+    case 'universal': return 'badge-primary'
+    case 'dedicated': return 'badge-warning'
+    default: return 'badge-gray'
+  }
+}
+
+const keyModeLabels: Record<'universal' | 'dedicated' | 'normal', string> = {
+  universal: t('bundles.keyModeUniversal'),
+  dedicated: t('bundles.keyModeDedicated'),
+  normal: t('bundles.keyModeNormal')
+}
+
 const columns = computed<Column[]>(() => [
   { key: 'name', label: t('common.name'), sortable: true },
   { key: 'key', label: t('keys.apiKey'), sortable: false },
+  { key: 'key_mode', label: t('bundles.keyMode'), sortable: false },
   { key: 'group', label: t('keys.group'), sortable: false },
   { key: 'usage', label: t('keys.usage'), sortable: false },
   { key: 'rate_limit', label: t('keys.rateLimitColumn'), sortable: false },
@@ -1150,6 +1278,12 @@ const copiedKeyId = ref<number | null>(null)
 const groupSelectorKeyId = ref<number | null>(null)
 const publicSettings = ref<PublicSettings | null>(null)
 const dropdownRef = ref<HTMLElement | null>(null)
+
+// Bundle dual-mode state
+const activeBundle = ref<BundleSubscription | null>(null)
+const hasActiveBundle = ref(false)
+const keyMode = ref<'normal' | 'universal' | 'dedicated'>('normal')
+
 const dropdownPosition = ref<{ top?: number; bottom?: number; left: number } | null>(null)
 const groupButtonRefs = ref<Map<number, HTMLElement>>(new Map())
 let abortController: AbortController | null = null
@@ -1359,6 +1493,56 @@ const loadPublicSettings = async () => {
   }
 }
 
+const loadActiveBundle = async () => {
+  try {
+    const bundles = await bundlesAPI.getMyBundle()
+    const bundle = bundles.find(b => b.status === 'active') ?? null
+    if (bundle) {
+      activeBundle.value = bundle
+      hasActiveBundle.value = true
+    } else {
+      activeBundle.value = null
+      hasActiveBundle.value = false
+    }
+  } catch (error) {
+    // Silently ignore - bundle feature may not be available
+    activeBundle.value = null
+    hasActiveBundle.value = false
+  }
+}
+
+// Bundle group options: groups included in the active bundle plan
+const bundleGroupOptions = computed(() => {
+  if (!activeBundle.value?.plan?.group_quotas) return []
+  return activeBundle.value.plan.group_quotas
+    .filter(gq => gq.group_name)
+    .map(gq => {
+      const matchedGroup = groups.value.find(g => g.id === gq.group_id)
+      return {
+        value: gq.group_id,
+        label: gq.group_name!,
+        description: matchedGroup?.description || null,
+        rate: matchedGroup?.rate_multiplier || 1,
+        userRate: matchedGroup ? (userGroupRates.value[matchedGroup.id] ?? null) : null,
+        subscriptionType: matchedGroup?.subscription_type || ('standard' as SubscriptionType),
+        platform: (gq.group_platform || 'openai') as GroupPlatform
+      }
+    })
+})
+
+// Effective group options based on key mode
+const effectiveGroupOptions = computed(() => {
+  if (hasActiveBundle.value && keyMode.value === 'dedicated') {
+    return bundleGroupOptions.value
+  }
+  return groupOptions.value
+})
+
+// Reset group_id when switching key modes
+watch(keyMode, () => {
+  formData.value.group_id = null
+})
+
 const openUseKeyModal = (key: ApiKey) => {
   selectedKey.value = key
   showUseKeyModal.value = true
@@ -1389,6 +1573,8 @@ const handleSort = (key: string, order: 'asc' | 'desc') => {
 
 const editKey = (key: ApiKey) => {
   selectedKey.value = key
+  // Derive key mode from bundle_subscription_id + group_id
+  keyMode.value = getKeyMode(key)
   const hasIPRestriction = (key.ip_whitelist?.length > 0) || (key.ip_blacklist?.length > 0)
   const hasExpiration = !!key.expires_at
   formData.value = {
@@ -1486,8 +1672,9 @@ const confirmDelete = (key: ApiKey) => {
 }
 
 const handleSubmit = async () => {
-  // Validate group_id is required
-  if (formData.value.group_id === null) {
+  // Validate group_id is required (unless universal bundle mode)
+  const isUniversalBundle = hasActiveBundle.value && keyMode.value === 'universal'
+  if (formData.value.group_id === null && !isUniversalBundle) {
     appStore.showError(t('keys.groupRequired'))
     return
   }
@@ -1542,9 +1729,22 @@ const handleSubmit = async () => {
   submitting.value = true
   try {
     if (showEditModal.value && selectedKey.value) {
+      // Determine group_id and bundle_subscription_id based on key mode for edit
+      let editGroupId: number | null = formData.value.group_id
+      let editBundleSubscriptionId: number | null | undefined = undefined
+      if (hasActiveBundle.value && keyMode.value === 'universal') {
+        editGroupId = null
+        editBundleSubscriptionId = activeBundle.value!.id
+      } else if (hasActiveBundle.value && keyMode.value === 'dedicated') {
+        editBundleSubscriptionId = activeBundle.value!.id
+      } else {
+        // Normal mode: clear bundle_subscription_id
+        editBundleSubscriptionId = null
+      }
+
       await keysAPI.update(selectedKey.value.id, {
         name: formData.value.name,
-        group_id: formData.value.group_id,
+        group_id: editGroupId,
         status: formData.value.status,
         ip_whitelist: ipWhitelist,
         ip_blacklist: ipBlacklist,
@@ -1553,19 +1753,35 @@ const handleSubmit = async () => {
         rate_limit_5h: rateLimitData.rate_limit_5h,
         rate_limit_1d: rateLimitData.rate_limit_1d,
         rate_limit_7d: rateLimitData.rate_limit_7d,
+        bundle_subscription_id: editBundleSubscriptionId,
+        key_mode: hasActiveBundle.value ? keyMode.value : '',
       })
       appStore.showSuccess(t('keys.keyUpdatedSuccess'))
     } else {
       const customKey = formData.value.use_custom_key ? formData.value.custom_key : undefined
+      // Determine group_id and bundle_subscription_id based on key mode
+      let createGroupId: number | null = formData.value.group_id
+      let bundleSubscriptionId: number | null = null
+      if (hasActiveBundle.value && keyMode.value === 'universal') {
+        // Universal key: no group_id, pass bundle_subscription_id
+        createGroupId = null
+        bundleSubscriptionId = activeBundle.value!.id
+      } else if (hasActiveBundle.value && keyMode.value === 'dedicated') {
+        // Dedicated key: group_id from bundle groups, also pass bundle_subscription_id
+        bundleSubscriptionId = activeBundle.value!.id
+      }
+      // else: normal mode - use formData.group_id as-is, no bundle_subscription_id
+
       await keysAPI.create(
         formData.value.name,
-        formData.value.group_id,
+        createGroupId,
         customKey,
         ipWhitelist,
         ipBlacklist,
         quota,
         expiresInDays,
-        rateLimitData
+        rateLimitData,
+        bundleSubscriptionId
       )
       appStore.showSuccess(t('keys.keyCreatedSuccess'))
       // Only advance tour if active, on submit step, and creation succeeded
@@ -1627,6 +1843,8 @@ const closeModals = () => {
     expiration_preset: '30',
     expiration_date: ''
   }
+  // Reset bundle key mode
+  keyMode.value = 'normal'
 }
 
 // Show reset quota confirmation dialog
@@ -1779,6 +1997,7 @@ onMounted(() => {
   loadGroups()
   loadUserGroupRates()
   loadPublicSettings()
+  loadActiveBundle()
   document.addEventListener('click', closeGroupSelector)
   resetTimer = setInterval(() => { now.value = new Date() }, 60000)
 })

@@ -158,6 +158,9 @@ type CreateAPIKeyRequest struct {
 	IPWhitelist []string `json:"ip_whitelist"` // IP 白名单
 	IPBlacklist []string `json:"ip_blacklist"` // IP 黑名单
 
+
+		// Bundle subscription ID for universal bundle keys (no group_id).
+		BundleSubscriptionID *int64 `json:"bundle_subscription_id"`
 	// Quota fields
 	Quota         float64 `json:"quota"`           // Quota limit in USD (0 = unlimited)
 	ExpiresInDays *int    `json:"expires_in_days"` // Days until expiry (nil = never expires)
@@ -175,6 +178,11 @@ type UpdateAPIKeyRequest struct {
 	Status      *string  `json:"status"`
 	IPWhitelist []string `json:"ip_whitelist"` // IP 白名单（空数组清空）
 	IPBlacklist []string `json:"ip_blacklist"` // IP 黑名单（空数组清空）
+
+	// Key mode: "universal" (auto-route), "dedicated" (bundle+group), "normal" (standard). Empty = no change.
+	KeyMode string `json:"key_mode"`
+	// Bundle subscription ID for universal/dedicated modes
+	BundleSubscriptionID *int64 `json:"bundle_subscription_id"`
 
 	// Quota fields
 	Quota           *float64   `json:"quota"`       // Quota limit in USD (nil = no change, 0 = unlimited)
@@ -404,6 +412,7 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 		Key:         key,
 		Name:        html.EscapeString(req.Name),
 		GroupID:     req.GroupID,
+			BundleSubscriptionID: req.BundleSubscriptionID,
 		Status:      StatusActive,
 		IPWhitelist: req.IPWhitelist,
 		IPBlacklist: req.IPBlacklist,
@@ -561,6 +570,20 @@ func (s *APIKeyService) Update(ctx context.Context, id int64, userID int64, req 
 		}
 
 		apiKey.GroupID = req.GroupID
+	}
+
+	// Handle key mode switch based on explicit KeyMode field
+	switch req.KeyMode {
+	case "universal":
+		// Universal mode: set bundle, clear group
+		apiKey.BundleSubscriptionID = req.BundleSubscriptionID
+		apiKey.GroupID = nil
+	case "dedicated":
+		// Dedicated mode: set bundle, keep/set group (handled by GroupID above)
+		apiKey.BundleSubscriptionID = req.BundleSubscriptionID
+	case "normal":
+		// Standard mode: clear bundle, keep/set group (handled by GroupID above)
+		apiKey.BundleSubscriptionID = nil
 	}
 
 	if req.Status != nil {

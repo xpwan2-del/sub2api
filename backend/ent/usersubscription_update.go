@@ -304,6 +304,96 @@ func (_u *UserSubscriptionUpdate) ClearNotes() *UserSubscriptionUpdate {
 	return _u
 }
 
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (_u *UserSubscriptionUpdate) SetBundleSubscriptionID(v int64) *UserSubscriptionUpdate {
+	_u.mutation.ResetBundleSubscriptionID()
+	_u.mutation.SetBundleSubscriptionID(v)
+	return _u
+}
+
+// SetNillableBundleSubscriptionID sets the "bundle_subscription_id" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableBundleSubscriptionID(v *int64) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetBundleSubscriptionID(*v)
+	}
+	return _u
+}
+
+// AddBundleSubscriptionID adds value to the "bundle_subscription_id" field.
+func (_u *UserSubscriptionUpdate) AddBundleSubscriptionID(v int64) *UserSubscriptionUpdate {
+	_u.mutation.AddBundleSubscriptionID(v)
+	return _u
+}
+
+// ClearBundleSubscriptionID clears the value of the "bundle_subscription_id" field.
+func (_u *UserSubscriptionUpdate) ClearBundleSubscriptionID() *UserSubscriptionUpdate {
+	_u.mutation.ClearBundleSubscriptionID()
+	return _u
+}
+
+// SetDailyLimitUsd sets the "daily_limit_usd" field.
+func (_u *UserSubscriptionUpdate) SetDailyLimitUsd(v float64) *UserSubscriptionUpdate {
+	_u.mutation.ResetDailyLimitUsd()
+	_u.mutation.SetDailyLimitUsd(v)
+	return _u
+}
+
+// SetNillableDailyLimitUsd sets the "daily_limit_usd" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableDailyLimitUsd(v *float64) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetDailyLimitUsd(*v)
+	}
+	return _u
+}
+
+// AddDailyLimitUsd adds value to the "daily_limit_usd" field.
+func (_u *UserSubscriptionUpdate) AddDailyLimitUsd(v float64) *UserSubscriptionUpdate {
+	_u.mutation.AddDailyLimitUsd(v)
+	return _u
+}
+
+// SetWeeklyLimitUsd sets the "weekly_limit_usd" field.
+func (_u *UserSubscriptionUpdate) SetWeeklyLimitUsd(v float64) *UserSubscriptionUpdate {
+	_u.mutation.ResetWeeklyLimitUsd()
+	_u.mutation.SetWeeklyLimitUsd(v)
+	return _u
+}
+
+// SetNillableWeeklyLimitUsd sets the "weekly_limit_usd" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableWeeklyLimitUsd(v *float64) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetWeeklyLimitUsd(*v)
+	}
+	return _u
+}
+
+// AddWeeklyLimitUsd adds value to the "weekly_limit_usd" field.
+func (_u *UserSubscriptionUpdate) AddWeeklyLimitUsd(v float64) *UserSubscriptionUpdate {
+	_u.mutation.AddWeeklyLimitUsd(v)
+	return _u
+}
+
+// SetMonthlyLimitUsd sets the "monthly_limit_usd" field.
+func (_u *UserSubscriptionUpdate) SetMonthlyLimitUsd(v float64) *UserSubscriptionUpdate {
+	_u.mutation.ResetMonthlyLimitUsd()
+	_u.mutation.SetMonthlyLimitUsd(v)
+	return _u
+}
+
+// SetNillableMonthlyLimitUsd sets the "monthly_limit_usd" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableMonthlyLimitUsd(v *float64) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetMonthlyLimitUsd(*v)
+	}
+	return _u
+}
+
+// AddMonthlyLimitUsd adds value to the "monthly_limit_usd" field.
+func (_u *UserSubscriptionUpdate) AddMonthlyLimitUsd(v float64) *UserSubscriptionUpdate {
+	_u.mutation.AddMonthlyLimitUsd(v)
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *UserSubscriptionUpdate) SetUser(v *User) *UserSubscriptionUpdate {
 	return _u.SetUserID(v.ID)
@@ -524,6 +614,33 @@ func (_u *UserSubscriptionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if _u.mutation.NotesCleared() {
 		_spec.ClearField(usersubscription.FieldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.BundleSubscriptionID(); ok {
+		_spec.SetField(usersubscription.FieldBundleSubscriptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedBundleSubscriptionID(); ok {
+		_spec.AddField(usersubscription.FieldBundleSubscriptionID, field.TypeInt64, value)
+	}
+	if _u.mutation.BundleSubscriptionIDCleared() {
+		_spec.ClearField(usersubscription.FieldBundleSubscriptionID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.DailyLimitUsd(); ok {
+		_spec.SetField(usersubscription.FieldDailyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedDailyLimitUsd(); ok {
+		_spec.AddField(usersubscription.FieldDailyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.WeeklyLimitUsd(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyLimitUsd(); ok {
+		_spec.AddField(usersubscription.FieldWeeklyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.MonthlyLimitUsd(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyLimitUsd(); ok {
+		_spec.AddField(usersubscription.FieldMonthlyLimitUsd, field.TypeFloat64, value)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -950,6 +1067,96 @@ func (_u *UserSubscriptionUpdateOne) ClearNotes() *UserSubscriptionUpdateOne {
 	return _u
 }
 
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (_u *UserSubscriptionUpdateOne) SetBundleSubscriptionID(v int64) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetBundleSubscriptionID()
+	_u.mutation.SetBundleSubscriptionID(v)
+	return _u
+}
+
+// SetNillableBundleSubscriptionID sets the "bundle_subscription_id" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableBundleSubscriptionID(v *int64) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetBundleSubscriptionID(*v)
+	}
+	return _u
+}
+
+// AddBundleSubscriptionID adds value to the "bundle_subscription_id" field.
+func (_u *UserSubscriptionUpdateOne) AddBundleSubscriptionID(v int64) *UserSubscriptionUpdateOne {
+	_u.mutation.AddBundleSubscriptionID(v)
+	return _u
+}
+
+// ClearBundleSubscriptionID clears the value of the "bundle_subscription_id" field.
+func (_u *UserSubscriptionUpdateOne) ClearBundleSubscriptionID() *UserSubscriptionUpdateOne {
+	_u.mutation.ClearBundleSubscriptionID()
+	return _u
+}
+
+// SetDailyLimitUsd sets the "daily_limit_usd" field.
+func (_u *UserSubscriptionUpdateOne) SetDailyLimitUsd(v float64) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetDailyLimitUsd()
+	_u.mutation.SetDailyLimitUsd(v)
+	return _u
+}
+
+// SetNillableDailyLimitUsd sets the "daily_limit_usd" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableDailyLimitUsd(v *float64) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetDailyLimitUsd(*v)
+	}
+	return _u
+}
+
+// AddDailyLimitUsd adds value to the "daily_limit_usd" field.
+func (_u *UserSubscriptionUpdateOne) AddDailyLimitUsd(v float64) *UserSubscriptionUpdateOne {
+	_u.mutation.AddDailyLimitUsd(v)
+	return _u
+}
+
+// SetWeeklyLimitUsd sets the "weekly_limit_usd" field.
+func (_u *UserSubscriptionUpdateOne) SetWeeklyLimitUsd(v float64) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetWeeklyLimitUsd()
+	_u.mutation.SetWeeklyLimitUsd(v)
+	return _u
+}
+
+// SetNillableWeeklyLimitUsd sets the "weekly_limit_usd" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableWeeklyLimitUsd(v *float64) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetWeeklyLimitUsd(*v)
+	}
+	return _u
+}
+
+// AddWeeklyLimitUsd adds value to the "weekly_limit_usd" field.
+func (_u *UserSubscriptionUpdateOne) AddWeeklyLimitUsd(v float64) *UserSubscriptionUpdateOne {
+	_u.mutation.AddWeeklyLimitUsd(v)
+	return _u
+}
+
+// SetMonthlyLimitUsd sets the "monthly_limit_usd" field.
+func (_u *UserSubscriptionUpdateOne) SetMonthlyLimitUsd(v float64) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetMonthlyLimitUsd()
+	_u.mutation.SetMonthlyLimitUsd(v)
+	return _u
+}
+
+// SetNillableMonthlyLimitUsd sets the "monthly_limit_usd" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableMonthlyLimitUsd(v *float64) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetMonthlyLimitUsd(*v)
+	}
+	return _u
+}
+
+// AddMonthlyLimitUsd adds value to the "monthly_limit_usd" field.
+func (_u *UserSubscriptionUpdateOne) AddMonthlyLimitUsd(v float64) *UserSubscriptionUpdateOne {
+	_u.mutation.AddMonthlyLimitUsd(v)
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *UserSubscriptionUpdateOne) SetUser(v *User) *UserSubscriptionUpdateOne {
 	return _u.SetUserID(v.ID)
@@ -1200,6 +1407,33 @@ func (_u *UserSubscriptionUpdateOne) sqlSave(ctx context.Context) (_node *UserSu
 	}
 	if _u.mutation.NotesCleared() {
 		_spec.ClearField(usersubscription.FieldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.BundleSubscriptionID(); ok {
+		_spec.SetField(usersubscription.FieldBundleSubscriptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedBundleSubscriptionID(); ok {
+		_spec.AddField(usersubscription.FieldBundleSubscriptionID, field.TypeInt64, value)
+	}
+	if _u.mutation.BundleSubscriptionIDCleared() {
+		_spec.ClearField(usersubscription.FieldBundleSubscriptionID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.DailyLimitUsd(); ok {
+		_spec.SetField(usersubscription.FieldDailyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedDailyLimitUsd(); ok {
+		_spec.AddField(usersubscription.FieldDailyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.WeeklyLimitUsd(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyLimitUsd(); ok {
+		_spec.AddField(usersubscription.FieldWeeklyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.MonthlyLimitUsd(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyLimitUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyLimitUsd(); ok {
+		_spec.AddField(usersubscription.FieldMonthlyLimitUsd, field.TypeFloat64, value)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{

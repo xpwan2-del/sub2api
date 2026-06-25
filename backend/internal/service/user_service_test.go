@@ -347,6 +347,27 @@ func (m *mockBillingCache) BatchGetUserPlatformQuotaCache(context.Context, []Use
 	return nil, nil
 }
 
+func (m *mockBillingCache) GetBundleSubscriptionCache(context.Context, int64) (*BundleSubscriptionCacheData, error) {
+	return nil, nil
+}
+func (m *mockBillingCache) SetBundleSubscriptionCache(context.Context, int64, *BundleSubscriptionCacheData, time.Duration) error {
+	return nil
+}
+func (m *mockBillingCache) InvalidateBundleSubscriptionCache(context.Context, int64) error {
+	return nil
+}
+func (m *mockBillingCache) GetBundlePlansForSaleCache(context.Context) ([]byte, error) {
+	return nil, nil
+}
+func (m *mockBillingCache) SetBundlePlansForSaleCache(context.Context, []byte, time.Duration) error {
+	return nil
+}
+func (m *mockBillingCache) InvalidateBundlePlansForSaleCache(context.Context) error {
+	return nil
+}
+// Bundle cache methods (added for BillingCache interface extension)
+
+
 // --- 测试 ---
 
 func TestUpdateBalance_Success(t *testing.T) {

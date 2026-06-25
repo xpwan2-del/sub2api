@@ -45,6 +45,7 @@ func (r *apiKeyRepository) Create(ctx context.Context, key *service.APIKey) erro
 		SetName(key.Name).
 		SetStatus(key.Status).
 		SetNillableGroupID(key.GroupID).
+		SetNillableBundleSubscriptionID(key.BundleSubscriptionID).
 		SetNillableLastUsedAt(key.LastUsedAt).
 		SetQuota(key.Quota).
 		SetQuotaUsed(key.QuotaUsed).
@@ -130,6 +131,7 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 			apikey.FieldID,
 			apikey.FieldUserID,
 			apikey.FieldGroupID,
+			apikey.FieldBundleSubscriptionID,
 			apikey.FieldName,
 			apikey.FieldStatus,
 			apikey.FieldIPWhitelist,
@@ -231,6 +233,13 @@ func (r *apiKeyRepository) Update(ctx context.Context, key *service.APIKey) erro
 		builder.SetGroupID(*key.GroupID)
 	} else {
 		builder.ClearGroupID()
+	}
+
+	// Bundle subscription ID (key mode)
+	if key.BundleSubscriptionID != nil {
+		builder.SetBundleSubscriptionID(*key.BundleSubscriptionID)
+	} else {
+		builder.ClearBundleSubscriptionID()
 	}
 
 	// Expiration time
@@ -708,8 +717,9 @@ func apiKeyEntityToService(m *dbent.APIKey) *service.APIKey {
 		LastUsedAt:    m.LastUsedAt,
 		CreatedAt:     m.CreatedAt,
 		UpdatedAt:     m.UpdatedAt,
-		GroupID:       m.GroupID,
-		Quota:         m.Quota,
+		GroupID:               m.GroupID,
+		BundleSubscriptionID:  m.BundleSubscriptionID,
+		Quota:                 m.Quota,
 		QuotaUsed:     m.QuotaUsed,
 		ExpiresAt:     m.ExpiresAt,
 		RateLimit5h:   m.RateLimit5h,

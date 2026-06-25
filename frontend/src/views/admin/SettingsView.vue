@@ -8784,9 +8784,11 @@ async function saveSettings() {
         return false;
       }
     };
+    const isValidInternalPath = (url: string): boolean =>
+      url.startsWith("/") && !url.startsWith("//");
     // Optional URL fields: auto-clear invalid values so they don't cause backend 400 errors
     if (!isValidHttpUrl(form.frontend_url)) form.frontend_url = "";
-    if (!isValidHttpUrl(form.doc_url)) form.doc_url = "";
+    if (!isValidHttpUrl(form.doc_url) && !isValidInternalPath(form.doc_url)) form.doc_url = "";
     syncWeChatConnectMode();
     const wechatStoredMode = deriveWeChatConnectStoredMode(
       form.wechat_connect_open_enabled,

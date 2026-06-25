@@ -601,3 +601,100 @@ func (c *billingCache) BatchGetUserPlatformQuotaCache(ctx context.Context, keys 
 	}
 	return results, nil
 }
+
+// ==================== Bundle Cache Methods ====================
+
+const (
+	bundleSubKeyPrefix     = "bundle:sub:"
+	bundlePlansForSaleKey  = "bundle:plan:for_sale"
+)
+
+const (
+	bundleSubFieldID               = "id"
+	bundleSubFieldPlanID           = "plan_id"
+	bundleSubFieldPlanName         = "plan_name"
+	bundleSubFieldTier             = "tier"
+	bundleSubFieldStatus           = "status"
+	bundleSubFieldExpiresAt        = "expires_at"
+	bundleSubFieldConcurrencyLimit = "concurrency_limit"
+	bundleSubFieldRPMLimit         = "rpm_limit"
+	bundleSubFieldSource           = "source"
+)
+
+func bundleSubCacheKey(userID int64) string {
+	return fmt.Sprintf("%s%d", bundleSubKeyPrefix, userID)
+}
+
+func (c *billingCache) GetBundleSubscriptionCache(ctx context.Context, userID int64) (*service.BundleSubscriptionCacheData, error) {
+	key := bundleSubCacheKey(userID)
+	result, err := c.rdb.HGetAll(ctx, key).Result()
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		return nil, redis.Nil
+	}
+	return parseBundleSubscriptionCache(result)
+}
+
+func parseBundleSubscriptionCache(data map[string]string) (*service.BundleSubscriptionCacheData, error) {
+	result := &service.BundleSubscriptionCacheData{}
+	result.ID, _ = strconv.ParseInt(data[bundleSubFieldID], 10, 64)
+	result.PlanID, _ = strconv.ParseInt(data[bundleSubFieldPlanID], 10, 64)
+	result.PlanName = data[bundleSubFieldPlanName]
+	result.Tier = data[bundleSubFieldTier]
+	result.Status = data[bundleSubFieldStatus]
+	result.ExpiresAt, _ = strconv.ParseInt(data[bundleSubFieldExpiresAt], 10, 64)
+	result.ConcurrencyLimit, _ = strconv.Atoi(data[bundleSubFieldConcurrencyLimit])
+	result.RPMLimit, _ = strconv.Atoi(data[bundleSubFieldRPMLimit])
+	result.Source = data[bundleSubFieldSource]
+
+	if result.Status == "" {
+		return nil, errors.New("invalid bundle cache: missing status")
+	}
+	return result, nil
+}
+
+func (c *billingCache) SetBundleSubscriptionCache(ctx context.Context, userID int64, data *service.BundleSubscriptionCacheData, ttl time.Duration) error {
+	if data == nil {
+		return nil
+	}
+	key := bundleSubCacheKey(userID)
+	fields := map[string]any{
+		bundleSubFieldID:               data.ID,
+		bundleSubFieldPlanID:           data.PlanID,
+		bundleSubFieldPlanName:         data.PlanName,
+		bundleSubFieldTier:             data.Tier,
+		bundleSubFieldStatus:           data.Status,
+		bundleSubFieldExpiresAt:        data.ExpiresAt,
+		bundleSubFieldConcurrencyLimit: data.ConcurrencyLimit,
+		bundleSubFieldRPMLimit:         data.RPMLimit,
+		bundleSubFieldSource:           data.Source,
+	}
+	pipe := c.rdb.Pipeline()
+	pipe.HSet(ctx, key, fields)
+	pipe.Expire(ctx, key, ttl)
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
+func (c *billingCache) InvalidateBundleSubscriptionCache(ctx context.Context, userID int64) error {
+	key := bundleSubCacheKey(userID)
+	return c.rdb.Del(ctx, key).Err()
+}
+
+func (c *billingCache) GetBundlePlansForSaleCache(ctx context.Context) ([]byte, error) {
+	val, err := c.rdb.Get(ctx, bundlePlansForSaleKey).Bytes()
+	if err != nil {
+		return nil, err
+	}
+	return val, nil
+}
+
+func (c *billingCache) SetBundlePlansForSaleCache(ctx context.Context, data []byte, ttl time.Duration) error {
+	return c.rdb.Set(ctx, bundlePlansForSaleKey, data, ttl).Err()
+}
+
+func (c *billingCache) InvalidateBundlePlansForSaleCache(ctx context.Context) error {
+	return c.rdb.Del(ctx, bundlePlansForSaleKey).Err()
+}

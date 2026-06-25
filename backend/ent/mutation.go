@@ -19,6 +19,10 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/bundleplan"
+	"github.com/Wei-Shaw/sub2api/ent/bundleplangroupquota"
+	"github.com/Wei-Shaw/sub2api/ent/bundlesubscription"
+	"github.com/Wei-Shaw/sub2api/ent/bundlesubscriptionusage"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
@@ -67,6 +71,10 @@ const (
 	TypeAnnouncementRead              = "AnnouncementRead"
 	TypeAuthIdentity                  = "AuthIdentity"
 	TypeAuthIdentityChannel           = "AuthIdentityChannel"
+	TypeBundlePlan                    = "BundlePlan"
+	TypeBundlePlanGroupQuota          = "BundlePlanGroupQuota"
+	TypeBundleSubscription            = "BundleSubscription"
+	TypeBundleSubscriptionUsage       = "BundleSubscriptionUsage"
 	TypeChannelMonitor                = "ChannelMonitor"
 	TypeChannelMonitorDailyRollup     = "ChannelMonitorDailyRollup"
 	TypeChannelMonitorHistory         = "ChannelMonitorHistory"
@@ -100,51 +108,53 @@ const (
 // APIKeyMutation represents an operation that mutates the APIKey nodes in the graph.
 type APIKeyMutation struct {
 	config
-	op                 Op
-	typ                string
-	id                 *int64
-	created_at         *time.Time
-	updated_at         *time.Time
-	deleted_at         *time.Time
-	key                *string
-	name               *string
-	status             *string
-	last_used_at       *time.Time
-	ip_whitelist       *[]string
-	appendip_whitelist []string
-	ip_blacklist       *[]string
-	appendip_blacklist []string
-	quota              *float64
-	addquota           *float64
-	quota_used         *float64
-	addquota_used      *float64
-	expires_at         *time.Time
-	rate_limit_5h      *float64
-	addrate_limit_5h   *float64
-	rate_limit_1d      *float64
-	addrate_limit_1d   *float64
-	rate_limit_7d      *float64
-	addrate_limit_7d   *float64
-	usage_5h           *float64
-	addusage_5h        *float64
-	usage_1d           *float64
-	addusage_1d        *float64
-	usage_7d           *float64
-	addusage_7d        *float64
-	window_5h_start    *time.Time
-	window_1d_start    *time.Time
-	window_7d_start    *time.Time
-	clearedFields      map[string]struct{}
-	user               *int64
-	cleareduser        bool
-	group              *int64
-	clearedgroup       bool
-	usage_logs         map[int64]struct{}
-	removedusage_logs  map[int64]struct{}
-	clearedusage_logs  bool
-	done               bool
-	oldValue           func(context.Context) (*APIKey, error)
-	predicates         []predicate.APIKey
+	op                        Op
+	typ                       string
+	id                        *int64
+	created_at                *time.Time
+	updated_at                *time.Time
+	deleted_at                *time.Time
+	key                       *string
+	name                      *string
+	bundle_subscription_id    *int64
+	addbundle_subscription_id *int64
+	status                    *string
+	last_used_at              *time.Time
+	ip_whitelist              *[]string
+	appendip_whitelist        []string
+	ip_blacklist              *[]string
+	appendip_blacklist        []string
+	quota                     *float64
+	addquota                  *float64
+	quota_used                *float64
+	addquota_used             *float64
+	expires_at                *time.Time
+	rate_limit_5h             *float64
+	addrate_limit_5h          *float64
+	rate_limit_1d             *float64
+	addrate_limit_1d          *float64
+	rate_limit_7d             *float64
+	addrate_limit_7d          *float64
+	usage_5h                  *float64
+	addusage_5h               *float64
+	usage_1d                  *float64
+	addusage_1d               *float64
+	usage_7d                  *float64
+	addusage_7d               *float64
+	window_5h_start           *time.Time
+	window_1d_start           *time.Time
+	window_7d_start           *time.Time
+	clearedFields             map[string]struct{}
+	user                      *int64
+	cleareduser               bool
+	group                     *int64
+	clearedgroup              bool
+	usage_logs                map[int64]struct{}
+	removedusage_logs         map[int64]struct{}
+	clearedusage_logs         bool
+	done                      bool
+	oldValue                  func(context.Context) (*APIKey, error)
+	predicates                []predicate.APIKey
 }
 
 var _ ent.Mutation = (*APIKeyMutation)(nil)
@@ -521,6 +531,76 @@ func (m *APIKeyMutation) GroupIDCleared() bool {
 func (m *APIKeyMutation) ResetGroupID() {
 	m.group = nil
 	delete(m.clearedFields, apikey.FieldGroupID)
+}
+
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (m *APIKeyMutation) SetBundleSubscriptionID(i int64) {
+	m.bundle_subscription_id = &i
+	m.addbundle_subscription_id = nil
+}
+
+// BundleSubscriptionID returns the value of the "bundle_subscription_id" field in the mutation.
+func (m *APIKeyMutation) BundleSubscriptionID() (r int64, exists bool) {
+	v := m.bundle_subscription_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBundleSubscriptionID returns the old "bundle_subscription_id" field's value of the APIKey entity.
+// If the APIKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *APIKeyMutation) OldBundleSubscriptionID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBundleSubscriptionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBundleSubscriptionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBundleSubscriptionID: %w", err)
+	}
+	return oldValue.BundleSubscriptionID, nil
+}
+
+// AddBundleSubscriptionID adds i to the "bundle_subscription_id" field.
+func (m *APIKeyMutation) AddBundleSubscriptionID(i int64) {
+	if m.addbundle_subscription_id != nil {
+		*m.addbundle_subscription_id += i
+	} else {
+		m.addbundle_subscription_id = &i
+	}
+}
+
+// AddedBundleSubscriptionID returns the value that was added to the "bundle_subscription_id" field in this mutation.
+func (m *APIKeyMutation) AddedBundleSubscriptionID() (r int64, exists bool) {
+	v := m.addbundle_subscription_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearBundleSubscriptionID clears the value of the "bundle_subscription_id" field.
+func (m *APIKeyMutation) ClearBundleSubscriptionID() {
+	m.bundle_subscription_id = nil
+	m.addbundle_subscription_id = nil
+	m.clearedFields[apikey.FieldBundleSubscriptionID] = struct{}{}
+}
+
+// BundleSubscriptionIDCleared returns if the "bundle_subscription_id" field was cleared in this mutation.
+func (m *APIKeyMutation) BundleSubscriptionIDCleared() bool {
+	_, ok := m.clearedFields[apikey.FieldBundleSubscriptionID]
+	return ok
+}
+
+// ResetBundleSubscriptionID resets all changes to the "bundle_subscription_id" field.
+func (m *APIKeyMutation) ResetBundleSubscriptionID() {
+	m.bundle_subscription_id = nil
+	m.addbundle_subscription_id = nil
+	delete(m.clearedFields, apikey.FieldBundleSubscriptionID)
 }
 
 // SetStatus sets the "status" field.
@@ -1524,7 +1604,7 @@ func (m *APIKeyMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *APIKeyMutation) Fields() []string {
-	fields := make([]string, 0, 23)
+	fields := make([]string, 0, 24)
 	if m.created_at != nil {
 		fields = append(fields, apikey.FieldCreatedAt)
 	}
@@ -1545,6 +1625,9 @@ func (m *APIKeyMutation) Fields() []string {
 	}
 	if m.group != nil {
 		fields = append(fields, apikey.FieldGroupID)
+	}
+	if m.bundle_subscription_id != nil {
+		fields = append(fields, apikey.FieldBundleSubscriptionID)
 	}
 	if m.status != nil {
 		fields = append(fields, apikey.FieldStatus)
@@ -1616,6 +1699,8 @@ func (m *APIKeyMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case apikey.FieldGroupID:
 		return m.GroupID()
+	case apikey.FieldBundleSubscriptionID:
+		return m.BundleSubscriptionID()
 	case apikey.FieldStatus:
 		return m.Status()
 	case apikey.FieldLastUsedAt:
@@ -1671,6 +1756,8 @@ func (m *APIKeyMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldName(ctx)
 	case apikey.FieldGroupID:
 		return m.OldGroupID(ctx)
+	case apikey.FieldBundleSubscriptionID:
+		return m.OldBundleSubscriptionID(ctx)
 	case apikey.FieldStatus:
 		return m.OldStatus(ctx)
 	case apikey.FieldLastUsedAt:
@@ -1760,6 +1847,13 @@ func (m *APIKeyMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetGroupID(v)
+		return nil
+	case apikey.FieldBundleSubscriptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBundleSubscriptionID(v)
 		return nil
 	case apikey.FieldStatus:
 		v, ok := value.(string)
@@ -1881,6 +1975,9 @@ func (m *APIKeyMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *APIKeyMutation) AddedFields() []string {
 	var fields []string
+	if m.addbundle_subscription_id != nil {
+		fields = append(fields, apikey.FieldBundleSubscriptionID)
+	}
 	if m.addquota != nil {
 		fields = append(fields, apikey.FieldQuota)
 	}
@@ -1913,6 +2010,8 @@ func (m *APIKeyMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *APIKeyMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case apikey.FieldBundleSubscriptionID:
+		return m.AddedBundleSubscriptionID()
 	case apikey.FieldQuota:
 		return m.AddedQuota()
 	case apikey.FieldQuotaUsed:
@@ -1938,6 +2037,13 @@ func (m *APIKeyMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *APIKeyMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case apikey.FieldBundleSubscriptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBundleSubscriptionID(v)
+		return nil
 	case apikey.FieldQuota:
 		v, ok := value.(float64)
 		if !ok {
@@ -2008,6 +2114,9 @@ func (m *APIKeyMutation) ClearedFields() []string {
 	if m.FieldCleared(apikey.FieldGroupID) {
 		fields = append(fields, apikey.FieldGroupID)
 	}
+	if m.FieldCleared(apikey.FieldBundleSubscriptionID) {
+		fields = append(fields, apikey.FieldBundleSubscriptionID)
+	}
 	if m.FieldCleared(apikey.FieldLastUsedAt) {
 		fields = append(fields, apikey.FieldLastUsedAt)
 	}
@@ -2048,6 +2157,9 @@ func (m *APIKeyMutation) ClearField(name string) error {
 		return nil
 	case apikey.FieldGroupID:
 		m.ClearGroupID()
+		return nil
+	case apikey.FieldBundleSubscriptionID:
+		m.ClearBundleSubscriptionID()
 		return nil
 	case apikey.FieldLastUsedAt:
 		m.ClearLastUsedAt()
@@ -2098,6 +2210,9 @@ func (m *APIKeyMutation) ResetField(name string) error {
 		return nil
 	case apikey.FieldGroupID:
 		m.ResetGroupID()
+		return nil
+	case apikey.FieldBundleSubscriptionID:
+		m.ResetBundleSubscriptionID()
 		return nil
 	case apikey.FieldStatus:
 		m.ResetStatus()
@@ -8849,6 +8964,4095 @@ func (m *AuthIdentityChannelMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown AuthIdentityChannel edge %s", name)
+}
+
+// BundlePlanMutation represents an operation that mutates the BundlePlan nodes in the graph.
+type BundlePlanMutation struct {
+	config
+	op                   Op
+	typ                  string
+	id                   *int64
+	name                 *string
+	description          *string
+	tier                 *string
+	price                *float64
+	addprice             *float64
+	original_price       *float64
+	addoriginal_price    *float64
+	currency             *string
+	validity_days        *int
+	addvalidity_days     *int
+	concurrency_limit    *int
+	addconcurrency_limit *int
+	rpm_limit            *int
+	addrpm_limit         *int
+	features             *[]string
+	appendfeatures       []string
+	for_sale             *bool
+	sort_order           *int
+	addsort_order        *int
+	status               *string
+	created_at           *time.Time
+	updated_at           *time.Time
+	clearedFields        map[string]struct{}
+	done                 bool
+	oldValue             func(context.Context) (*BundlePlan, error)
+	predicates           []predicate.BundlePlan
+}
+
+var _ ent.Mutation = (*BundlePlanMutation)(nil)
+
+// bundleplanOption allows management of the mutation configuration using functional options.
+type bundleplanOption func(*BundlePlanMutation)
+
+// newBundlePlanMutation creates new mutation for the BundlePlan entity.
+func newBundlePlanMutation(c config, op Op, opts ...bundleplanOption) *BundlePlanMutation {
+	m := &BundlePlanMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBundlePlan,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBundlePlanID sets the ID field of the mutation.
+func withBundlePlanID(id int64) bundleplanOption {
+	return func(m *BundlePlanMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *BundlePlan
+		)
+		m.oldValue = func(ctx context.Context) (*BundlePlan, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().BundlePlan.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBundlePlan sets the old BundlePlan of the mutation.
+func withBundlePlan(node *BundlePlan) bundleplanOption {
+	return func(m *BundlePlanMutation) {
+		m.oldValue = func(context.Context) (*BundlePlan, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BundlePlanMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BundlePlanMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *BundlePlanMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *BundlePlanMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().BundlePlan.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetName sets the "name" field.
+func (m *BundlePlanMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *BundlePlanMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *BundlePlanMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *BundlePlanMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *BundlePlanMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *BundlePlanMutation) ResetDescription() {
+	m.description = nil
+}
+
+// SetTier sets the "tier" field.
+func (m *BundlePlanMutation) SetTier(s string) {
+	m.tier = &s
+}
+
+// Tier returns the value of the "tier" field in the mutation.
+func (m *BundlePlanMutation) Tier() (r string, exists bool) {
+	v := m.tier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTier returns the old "tier" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldTier(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTier: %w", err)
+	}
+	return oldValue.Tier, nil
+}
+
+// ResetTier resets all changes to the "tier" field.
+func (m *BundlePlanMutation) ResetTier() {
+	m.tier = nil
+}
+
+// SetPrice sets the "price" field.
+func (m *BundlePlanMutation) SetPrice(f float64) {
+	m.price = &f
+	m.addprice = nil
+}
+
+// Price returns the value of the "price" field in the mutation.
+func (m *BundlePlanMutation) Price() (r float64, exists bool) {
+	v := m.price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrice returns the old "price" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldPrice(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrice: %w", err)
+	}
+	return oldValue.Price, nil
+}
+
+// AddPrice adds f to the "price" field.
+func (m *BundlePlanMutation) AddPrice(f float64) {
+	if m.addprice != nil {
+		*m.addprice += f
+	} else {
+		m.addprice = &f
+	}
+}
+
+// AddedPrice returns the value that was added to the "price" field in this mutation.
+func (m *BundlePlanMutation) AddedPrice() (r float64, exists bool) {
+	v := m.addprice
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPrice resets all changes to the "price" field.
+func (m *BundlePlanMutation) ResetPrice() {
+	m.price = nil
+	m.addprice = nil
+}
+
+// SetOriginalPrice sets the "original_price" field.
+func (m *BundlePlanMutation) SetOriginalPrice(f float64) {
+	m.original_price = &f
+	m.addoriginal_price = nil
+}
+
+// OriginalPrice returns the value of the "original_price" field in the mutation.
+func (m *BundlePlanMutation) OriginalPrice() (r float64, exists bool) {
+	v := m.original_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOriginalPrice returns the old "original_price" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldOriginalPrice(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOriginalPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOriginalPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOriginalPrice: %w", err)
+	}
+	return oldValue.OriginalPrice, nil
+}
+
+// AddOriginalPrice adds f to the "original_price" field.
+func (m *BundlePlanMutation) AddOriginalPrice(f float64) {
+	if m.addoriginal_price != nil {
+		*m.addoriginal_price += f
+	} else {
+		m.addoriginal_price = &f
+	}
+}
+
+// AddedOriginalPrice returns the value that was added to the "original_price" field in this mutation.
+func (m *BundlePlanMutation) AddedOriginalPrice() (r float64, exists bool) {
+	v := m.addoriginal_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetOriginalPrice resets all changes to the "original_price" field.
+func (m *BundlePlanMutation) ResetOriginalPrice() {
+	m.original_price = nil
+	m.addoriginal_price = nil
+}
+
+// SetCurrency sets the "currency" field.
+func (m *BundlePlanMutation) SetCurrency(s string) {
+	m.currency = &s
+}
+
+// Currency returns the value of the "currency" field in the mutation.
+func (m *BundlePlanMutation) Currency() (r string, exists bool) {
+	v := m.currency
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCurrency returns the old "currency" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldCurrency(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCurrency is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCurrency requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCurrency: %w", err)
+	}
+	return oldValue.Currency, nil
+}
+
+// ResetCurrency resets all changes to the "currency" field.
+func (m *BundlePlanMutation) ResetCurrency() {
+	m.currency = nil
+}
+
+// SetValidityDays sets the "validity_days" field.
+func (m *BundlePlanMutation) SetValidityDays(i int) {
+	m.validity_days = &i
+	m.addvalidity_days = nil
+}
+
+// ValidityDays returns the value of the "validity_days" field in the mutation.
+func (m *BundlePlanMutation) ValidityDays() (r int, exists bool) {
+	v := m.validity_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValidityDays returns the old "validity_days" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldValidityDays(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValidityDays is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValidityDays requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValidityDays: %w", err)
+	}
+	return oldValue.ValidityDays, nil
+}
+
+// AddValidityDays adds i to the "validity_days" field.
+func (m *BundlePlanMutation) AddValidityDays(i int) {
+	if m.addvalidity_days != nil {
+		*m.addvalidity_days += i
+	} else {
+		m.addvalidity_days = &i
+	}
+}
+
+// AddedValidityDays returns the value that was added to the "validity_days" field in this mutation.
+func (m *BundlePlanMutation) AddedValidityDays() (r int, exists bool) {
+	v := m.addvalidity_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetValidityDays resets all changes to the "validity_days" field.
+func (m *BundlePlanMutation) ResetValidityDays() {
+	m.validity_days = nil
+	m.addvalidity_days = nil
+}
+
+// SetConcurrencyLimit sets the "concurrency_limit" field.
+func (m *BundlePlanMutation) SetConcurrencyLimit(i int) {
+	m.concurrency_limit = &i
+	m.addconcurrency_limit = nil
+}
+
+// ConcurrencyLimit returns the value of the "concurrency_limit" field in the mutation.
+func (m *BundlePlanMutation) ConcurrencyLimit() (r int, exists bool) {
+	v := m.concurrency_limit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConcurrencyLimit returns the old "concurrency_limit" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldConcurrencyLimit(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConcurrencyLimit is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConcurrencyLimit requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConcurrencyLimit: %w", err)
+	}
+	return oldValue.ConcurrencyLimit, nil
+}
+
+// AddConcurrencyLimit adds i to the "concurrency_limit" field.
+func (m *BundlePlanMutation) AddConcurrencyLimit(i int) {
+	if m.addconcurrency_limit != nil {
+		*m.addconcurrency_limit += i
+	} else {
+		m.addconcurrency_limit = &i
+	}
+}
+
+// AddedConcurrencyLimit returns the value that was added to the "concurrency_limit" field in this mutation.
+func (m *BundlePlanMutation) AddedConcurrencyLimit() (r int, exists bool) {
+	v := m.addconcurrency_limit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetConcurrencyLimit resets all changes to the "concurrency_limit" field.
+func (m *BundlePlanMutation) ResetConcurrencyLimit() {
+	m.concurrency_limit = nil
+	m.addconcurrency_limit = nil
+}
+
+// SetRpmLimit sets the "rpm_limit" field.
+func (m *BundlePlanMutation) SetRpmLimit(i int) {
+	m.rpm_limit = &i
+	m.addrpm_limit = nil
+}
+
+// RpmLimit returns the value of the "rpm_limit" field in the mutation.
+func (m *BundlePlanMutation) RpmLimit() (r int, exists bool) {
+	v := m.rpm_limit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRpmLimit returns the old "rpm_limit" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldRpmLimit(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRpmLimit is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRpmLimit requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRpmLimit: %w", err)
+	}
+	return oldValue.RpmLimit, nil
+}
+
+// AddRpmLimit adds i to the "rpm_limit" field.
+func (m *BundlePlanMutation) AddRpmLimit(i int) {
+	if m.addrpm_limit != nil {
+		*m.addrpm_limit += i
+	} else {
+		m.addrpm_limit = &i
+	}
+}
+
+// AddedRpmLimit returns the value that was added to the "rpm_limit" field in this mutation.
+func (m *BundlePlanMutation) AddedRpmLimit() (r int, exists bool) {
+	v := m.addrpm_limit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRpmLimit resets all changes to the "rpm_limit" field.
+func (m *BundlePlanMutation) ResetRpmLimit() {
+	m.rpm_limit = nil
+	m.addrpm_limit = nil
+}
+
+// SetFeatures sets the "features" field.
+func (m *BundlePlanMutation) SetFeatures(s []string) {
+	m.features = &s
+	m.appendfeatures = nil
+}
+
+// Features returns the value of the "features" field in the mutation.
+func (m *BundlePlanMutation) Features() (r []string, exists bool) {
+	v := m.features
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFeatures returns the old "features" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldFeatures(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFeatures is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFeatures requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFeatures: %w", err)
+	}
+	return oldValue.Features, nil
+}
+
+// AppendFeatures adds s to the "features" field.
+func (m *BundlePlanMutation) AppendFeatures(s []string) {
+	m.appendfeatures = append(m.appendfeatures, s...)
+}
+
+// AppendedFeatures returns the list of values that were appended to the "features" field in this mutation.
+func (m *BundlePlanMutation) AppendedFeatures() ([]string, bool) {
+	if len(m.appendfeatures) == 0 {
+		return nil, false
+	}
+	return m.appendfeatures, true
+}
+
+// ClearFeatures clears the value of the "features" field.
+func (m *BundlePlanMutation) ClearFeatures() {
+	m.features = nil
+	m.appendfeatures = nil
+	m.clearedFields[bundleplan.FieldFeatures] = struct{}{}
+}
+
+// FeaturesCleared returns if the "features" field was cleared in this mutation.
+func (m *BundlePlanMutation) FeaturesCleared() bool {
+	_, ok := m.clearedFields[bundleplan.FieldFeatures]
+	return ok
+}
+
+// ResetFeatures resets all changes to the "features" field.
+func (m *BundlePlanMutation) ResetFeatures() {
+	m.features = nil
+	m.appendfeatures = nil
+	delete(m.clearedFields, bundleplan.FieldFeatures)
+}
+
+// SetForSale sets the "for_sale" field.
+func (m *BundlePlanMutation) SetForSale(b bool) {
+	m.for_sale = &b
+}
+
+// ForSale returns the value of the "for_sale" field in the mutation.
+func (m *BundlePlanMutation) ForSale() (r bool, exists bool) {
+	v := m.for_sale
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldForSale returns the old "for_sale" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldForSale(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldForSale is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldForSale requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldForSale: %w", err)
+	}
+	return oldValue.ForSale, nil
+}
+
+// ResetForSale resets all changes to the "for_sale" field.
+func (m *BundlePlanMutation) ResetForSale() {
+	m.for_sale = nil
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (m *BundlePlanMutation) SetSortOrder(i int) {
+	m.sort_order = &i
+	m.addsort_order = nil
+}
+
+// SortOrder returns the value of the "sort_order" field in the mutation.
+func (m *BundlePlanMutation) SortOrder() (r int, exists bool) {
+	v := m.sort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSortOrder returns the old "sort_order" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldSortOrder(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSortOrder is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSortOrder requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSortOrder: %w", err)
+	}
+	return oldValue.SortOrder, nil
+}
+
+// AddSortOrder adds i to the "sort_order" field.
+func (m *BundlePlanMutation) AddSortOrder(i int) {
+	if m.addsort_order != nil {
+		*m.addsort_order += i
+	} else {
+		m.addsort_order = &i
+	}
+}
+
+// AddedSortOrder returns the value that was added to the "sort_order" field in this mutation.
+func (m *BundlePlanMutation) AddedSortOrder() (r int, exists bool) {
+	v := m.addsort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSortOrder resets all changes to the "sort_order" field.
+func (m *BundlePlanMutation) ResetSortOrder() {
+	m.sort_order = nil
+	m.addsort_order = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *BundlePlanMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *BundlePlanMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *BundlePlanMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *BundlePlanMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *BundlePlanMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *BundlePlanMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *BundlePlanMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *BundlePlanMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *BundlePlanMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the BundlePlanMutation builder.
+func (m *BundlePlanMutation) Where(ps ...predicate.BundlePlan) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the BundlePlanMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BundlePlanMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.BundlePlan, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *BundlePlanMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BundlePlanMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (BundlePlan).
+func (m *BundlePlanMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *BundlePlanMutation) Fields() []string {
+	fields := make([]string, 0, 15)
+	if m.name != nil {
+		fields = append(fields, bundleplan.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, bundleplan.FieldDescription)
+	}
+	if m.tier != nil {
+		fields = append(fields, bundleplan.FieldTier)
+	}
+	if m.price != nil {
+		fields = append(fields, bundleplan.FieldPrice)
+	}
+	if m.original_price != nil {
+		fields = append(fields, bundleplan.FieldOriginalPrice)
+	}
+	if m.currency != nil {
+		fields = append(fields, bundleplan.FieldCurrency)
+	}
+	if m.validity_days != nil {
+		fields = append(fields, bundleplan.FieldValidityDays)
+	}
+	if m.concurrency_limit != nil {
+		fields = append(fields, bundleplan.FieldConcurrencyLimit)
+	}
+	if m.rpm_limit != nil {
+		fields = append(fields, bundleplan.FieldRpmLimit)
+	}
+	if m.features != nil {
+		fields = append(fields, bundleplan.FieldFeatures)
+	}
+	if m.for_sale != nil {
+		fields = append(fields, bundleplan.FieldForSale)
+	}
+	if m.sort_order != nil {
+		fields = append(fields, bundleplan.FieldSortOrder)
+	}
+	if m.status != nil {
+		fields = append(fields, bundleplan.FieldStatus)
+	}
+	if m.created_at != nil {
+		fields = append(fields, bundleplan.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, bundleplan.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *BundlePlanMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case bundleplan.FieldName:
+		return m.Name()
+	case bundleplan.FieldDescription:
+		return m.Description()
+	case bundleplan.FieldTier:
+		return m.Tier()
+	case bundleplan.FieldPrice:
+		return m.Price()
+	case bundleplan.FieldOriginalPrice:
+		return m.OriginalPrice()
+	case bundleplan.FieldCurrency:
+		return m.Currency()
+	case bundleplan.FieldValidityDays:
+		return m.ValidityDays()
+	case bundleplan.FieldConcurrencyLimit:
+		return m.ConcurrencyLimit()
+	case bundleplan.FieldRpmLimit:
+		return m.RpmLimit()
+	case bundleplan.FieldFeatures:
+		return m.Features()
+	case bundleplan.FieldForSale:
+		return m.ForSale()
+	case bundleplan.FieldSortOrder:
+		return m.SortOrder()
+	case bundleplan.FieldStatus:
+		return m.Status()
+	case bundleplan.FieldCreatedAt:
+		return m.CreatedAt()
+	case bundleplan.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *BundlePlanMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case bundleplan.FieldName:
+		return m.OldName(ctx)
+	case bundleplan.FieldDescription:
+		return m.OldDescription(ctx)
+	case bundleplan.FieldTier:
+		return m.OldTier(ctx)
+	case bundleplan.FieldPrice:
+		return m.OldPrice(ctx)
+	case bundleplan.FieldOriginalPrice:
+		return m.OldOriginalPrice(ctx)
+	case bundleplan.FieldCurrency:
+		return m.OldCurrency(ctx)
+	case bundleplan.FieldValidityDays:
+		return m.OldValidityDays(ctx)
+	case bundleplan.FieldConcurrencyLimit:
+		return m.OldConcurrencyLimit(ctx)
+	case bundleplan.FieldRpmLimit:
+		return m.OldRpmLimit(ctx)
+	case bundleplan.FieldFeatures:
+		return m.OldFeatures(ctx)
+	case bundleplan.FieldForSale:
+		return m.OldForSale(ctx)
+	case bundleplan.FieldSortOrder:
+		return m.OldSortOrder(ctx)
+	case bundleplan.FieldStatus:
+		return m.OldStatus(ctx)
+	case bundleplan.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case bundleplan.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown BundlePlan field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BundlePlanMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case bundleplan.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case bundleplan.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case bundleplan.FieldTier:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTier(v)
+		return nil
+	case bundleplan.FieldPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrice(v)
+		return nil
+	case bundleplan.FieldOriginalPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOriginalPrice(v)
+		return nil
+	case bundleplan.FieldCurrency:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCurrency(v)
+		return nil
+	case bundleplan.FieldValidityDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValidityDays(v)
+		return nil
+	case bundleplan.FieldConcurrencyLimit:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConcurrencyLimit(v)
+		return nil
+	case bundleplan.FieldRpmLimit:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRpmLimit(v)
+		return nil
+	case bundleplan.FieldFeatures:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFeatures(v)
+		return nil
+	case bundleplan.FieldForSale:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetForSale(v)
+		return nil
+	case bundleplan.FieldSortOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSortOrder(v)
+		return nil
+	case bundleplan.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case bundleplan.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case bundleplan.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BundlePlan field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *BundlePlanMutation) AddedFields() []string {
+	var fields []string
+	if m.addprice != nil {
+		fields = append(fields, bundleplan.FieldPrice)
+	}
+	if m.addoriginal_price != nil {
+		fields = append(fields, bundleplan.FieldOriginalPrice)
+	}
+	if m.addvalidity_days != nil {
+		fields = append(fields, bundleplan.FieldValidityDays)
+	}
+	if m.addconcurrency_limit != nil {
+		fields = append(fields, bundleplan.FieldConcurrencyLimit)
+	}
+	if m.addrpm_limit != nil {
+		fields = append(fields, bundleplan.FieldRpmLimit)
+	}
+	if m.addsort_order != nil {
+		fields = append(fields, bundleplan.FieldSortOrder)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *BundlePlanMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case bundleplan.FieldPrice:
+		return m.AddedPrice()
+	case bundleplan.FieldOriginalPrice:
+		return m.AddedOriginalPrice()
+	case bundleplan.FieldValidityDays:
+		return m.AddedValidityDays()
+	case bundleplan.FieldConcurrencyLimit:
+		return m.AddedConcurrencyLimit()
+	case bundleplan.FieldRpmLimit:
+		return m.AddedRpmLimit()
+	case bundleplan.FieldSortOrder:
+		return m.AddedSortOrder()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BundlePlanMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case bundleplan.FieldPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPrice(v)
+		return nil
+	case bundleplan.FieldOriginalPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOriginalPrice(v)
+		return nil
+	case bundleplan.FieldValidityDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddValidityDays(v)
+		return nil
+	case bundleplan.FieldConcurrencyLimit:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddConcurrencyLimit(v)
+		return nil
+	case bundleplan.FieldRpmLimit:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRpmLimit(v)
+		return nil
+	case bundleplan.FieldSortOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSortOrder(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BundlePlan numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *BundlePlanMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(bundleplan.FieldFeatures) {
+		fields = append(fields, bundleplan.FieldFeatures)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *BundlePlanMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BundlePlanMutation) ClearField(name string) error {
+	switch name {
+	case bundleplan.FieldFeatures:
+		m.ClearFeatures()
+		return nil
+	}
+	return fmt.Errorf("unknown BundlePlan nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *BundlePlanMutation) ResetField(name string) error {
+	switch name {
+	case bundleplan.FieldName:
+		m.ResetName()
+		return nil
+	case bundleplan.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case bundleplan.FieldTier:
+		m.ResetTier()
+		return nil
+	case bundleplan.FieldPrice:
+		m.ResetPrice()
+		return nil
+	case bundleplan.FieldOriginalPrice:
+		m.ResetOriginalPrice()
+		return nil
+	case bundleplan.FieldCurrency:
+		m.ResetCurrency()
+		return nil
+	case bundleplan.FieldValidityDays:
+		m.ResetValidityDays()
+		return nil
+	case bundleplan.FieldConcurrencyLimit:
+		m.ResetConcurrencyLimit()
+		return nil
+	case bundleplan.FieldRpmLimit:
+		m.ResetRpmLimit()
+		return nil
+	case bundleplan.FieldFeatures:
+		m.ResetFeatures()
+		return nil
+	case bundleplan.FieldForSale:
+		m.ResetForSale()
+		return nil
+	case bundleplan.FieldSortOrder:
+		m.ResetSortOrder()
+		return nil
+	case bundleplan.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case bundleplan.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case bundleplan.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown BundlePlan field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *BundlePlanMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *BundlePlanMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *BundlePlanMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *BundlePlanMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *BundlePlanMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *BundlePlanMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *BundlePlanMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown BundlePlan unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *BundlePlanMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown BundlePlan edge %s", name)
+}
+
+// BundlePlanGroupQuotaMutation represents an operation that mutates the BundlePlanGroupQuota nodes in the graph.
+type BundlePlanGroupQuotaMutation struct {
+	config
+	op                   Op
+	typ                  string
+	id                   *int64
+	plan_id              *int64
+	addplan_id           *int64
+	group_id             *int64
+	addgroup_id          *int64
+	quota_scope          *string
+	model_pattern        *string
+	daily_limit_usd      *float64
+	adddaily_limit_usd   *float64
+	weekly_limit_usd     *float64
+	addweekly_limit_usd  *float64
+	monthly_limit_usd    *float64
+	addmonthly_limit_usd *float64
+	clearedFields        map[string]struct{}
+	done                 bool
+	oldValue             func(context.Context) (*BundlePlanGroupQuota, error)
+	predicates           []predicate.BundlePlanGroupQuota
+}
+
+var _ ent.Mutation = (*BundlePlanGroupQuotaMutation)(nil)
+
+// bundleplangroupquotaOption allows management of the mutation configuration using functional options.
+type bundleplangroupquotaOption func(*BundlePlanGroupQuotaMutation)
+
+// newBundlePlanGroupQuotaMutation creates new mutation for the BundlePlanGroupQuota entity.
+func newBundlePlanGroupQuotaMutation(c config, op Op, opts ...bundleplangroupquotaOption) *BundlePlanGroupQuotaMutation {
+	m := &BundlePlanGroupQuotaMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBundlePlanGroupQuota,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBundlePlanGroupQuotaID sets the ID field of the mutation.
+func withBundlePlanGroupQuotaID(id int64) bundleplangroupquotaOption {
+	return func(m *BundlePlanGroupQuotaMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *BundlePlanGroupQuota
+		)
+		m.oldValue = func(ctx context.Context) (*BundlePlanGroupQuota, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().BundlePlanGroupQuota.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBundlePlanGroupQuota sets the old BundlePlanGroupQuota of the mutation.
+func withBundlePlanGroupQuota(node *BundlePlanGroupQuota) bundleplangroupquotaOption {
+	return func(m *BundlePlanGroupQuotaMutation) {
+		m.oldValue = func(context.Context) (*BundlePlanGroupQuota, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BundlePlanGroupQuotaMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BundlePlanGroupQuotaMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *BundlePlanGroupQuotaMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *BundlePlanGroupQuotaMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().BundlePlanGroupQuota.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetPlanID sets the "plan_id" field.
+func (m *BundlePlanGroupQuotaMutation) SetPlanID(i int64) {
+	m.plan_id = &i
+	m.addplan_id = nil
+}
+
+// PlanID returns the value of the "plan_id" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) PlanID() (r int64, exists bool) {
+	v := m.plan_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlanID returns the old "plan_id" field's value of the BundlePlanGroupQuota entity.
+// If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanGroupQuotaMutation) OldPlanID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlanID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlanID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlanID: %w", err)
+	}
+	return oldValue.PlanID, nil
+}
+
+// AddPlanID adds i to the "plan_id" field.
+func (m *BundlePlanGroupQuotaMutation) AddPlanID(i int64) {
+	if m.addplan_id != nil {
+		*m.addplan_id += i
+	} else {
+		m.addplan_id = &i
+	}
+}
+
+// AddedPlanID returns the value that was added to the "plan_id" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedPlanID() (r int64, exists bool) {
+	v := m.addplan_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPlanID resets all changes to the "plan_id" field.
+func (m *BundlePlanGroupQuotaMutation) ResetPlanID() {
+	m.plan_id = nil
+	m.addplan_id = nil
+}
+
+// SetGroupID sets the "group_id" field.
+func (m *BundlePlanGroupQuotaMutation) SetGroupID(i int64) {
+	m.group_id = &i
+	m.addgroup_id = nil
+}
+
+// GroupID returns the value of the "group_id" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) GroupID() (r int64, exists bool) {
+	v := m.group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroupID returns the old "group_id" field's value of the BundlePlanGroupQuota entity.
+// If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanGroupQuotaMutation) OldGroupID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroupID: %w", err)
+	}
+	return oldValue.GroupID, nil
+}
+
+// AddGroupID adds i to the "group_id" field.
+func (m *BundlePlanGroupQuotaMutation) AddGroupID(i int64) {
+	if m.addgroup_id != nil {
+		*m.addgroup_id += i
+	} else {
+		m.addgroup_id = &i
+	}
+}
+
+// AddedGroupID returns the value that was added to the "group_id" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedGroupID() (r int64, exists bool) {
+	v := m.addgroup_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetGroupID resets all changes to the "group_id" field.
+func (m *BundlePlanGroupQuotaMutation) ResetGroupID() {
+	m.group_id = nil
+	m.addgroup_id = nil
+}
+
+// SetQuotaScope sets the "quota_scope" field.
+func (m *BundlePlanGroupQuotaMutation) SetQuotaScope(s string) {
+	m.quota_scope = &s
+}
+
+// QuotaScope returns the value of the "quota_scope" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) QuotaScope() (r string, exists bool) {
+	v := m.quota_scope
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuotaScope returns the old "quota_scope" field's value of the BundlePlanGroupQuota entity.
+// If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanGroupQuotaMutation) OldQuotaScope(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuotaScope is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuotaScope requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuotaScope: %w", err)
+	}
+	return oldValue.QuotaScope, nil
+}
+
+// ResetQuotaScope resets all changes to the "quota_scope" field.
+func (m *BundlePlanGroupQuotaMutation) ResetQuotaScope() {
+	m.quota_scope = nil
+}
+
+// SetModelPattern sets the "model_pattern" field.
+func (m *BundlePlanGroupQuotaMutation) SetModelPattern(s string) {
+	m.model_pattern = &s
+}
+
+// ModelPattern returns the value of the "model_pattern" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) ModelPattern() (r string, exists bool) {
+	v := m.model_pattern
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModelPattern returns the old "model_pattern" field's value of the BundlePlanGroupQuota entity.
+// If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanGroupQuotaMutation) OldModelPattern(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldModelPattern is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldModelPattern requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModelPattern: %w", err)
+	}
+	return oldValue.ModelPattern, nil
+}
+
+// ResetModelPattern resets all changes to the "model_pattern" field.
+func (m *BundlePlanGroupQuotaMutation) ResetModelPattern() {
+	m.model_pattern = nil
+}
+
+// SetDailyLimitUsd sets the "daily_limit_usd" field.
+func (m *BundlePlanGroupQuotaMutation) SetDailyLimitUsd(f float64) {
+	m.daily_limit_usd = &f
+	m.adddaily_limit_usd = nil
+}
+
+// DailyLimitUsd returns the value of the "daily_limit_usd" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) DailyLimitUsd() (r float64, exists bool) {
+	v := m.daily_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDailyLimitUsd returns the old "daily_limit_usd" field's value of the BundlePlanGroupQuota entity.
+// If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanGroupQuotaMutation) OldDailyLimitUsd(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDailyLimitUsd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDailyLimitUsd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDailyLimitUsd: %w", err)
+	}
+	return oldValue.DailyLimitUsd, nil
+}
+
+// AddDailyLimitUsd adds f to the "daily_limit_usd" field.
+func (m *BundlePlanGroupQuotaMutation) AddDailyLimitUsd(f float64) {
+	if m.adddaily_limit_usd != nil {
+		*m.adddaily_limit_usd += f
+	} else {
+		m.adddaily_limit_usd = &f
+	}
+}
+
+// AddedDailyLimitUsd returns the value that was added to the "daily_limit_usd" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedDailyLimitUsd() (r float64, exists bool) {
+	v := m.adddaily_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDailyLimitUsd resets all changes to the "daily_limit_usd" field.
+func (m *BundlePlanGroupQuotaMutation) ResetDailyLimitUsd() {
+	m.daily_limit_usd = nil
+	m.adddaily_limit_usd = nil
+}
+
+// SetWeeklyLimitUsd sets the "weekly_limit_usd" field.
+func (m *BundlePlanGroupQuotaMutation) SetWeeklyLimitUsd(f float64) {
+	m.weekly_limit_usd = &f
+	m.addweekly_limit_usd = nil
+}
+
+// WeeklyLimitUsd returns the value of the "weekly_limit_usd" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) WeeklyLimitUsd() (r float64, exists bool) {
+	v := m.weekly_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeeklyLimitUsd returns the old "weekly_limit_usd" field's value of the BundlePlanGroupQuota entity.
+// If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanGroupQuotaMutation) OldWeeklyLimitUsd(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeeklyLimitUsd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeeklyLimitUsd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeeklyLimitUsd: %w", err)
+	}
+	return oldValue.WeeklyLimitUsd, nil
+}
+
+// AddWeeklyLimitUsd adds f to the "weekly_limit_usd" field.
+func (m *BundlePlanGroupQuotaMutation) AddWeeklyLimitUsd(f float64) {
+	if m.addweekly_limit_usd != nil {
+		*m.addweekly_limit_usd += f
+	} else {
+		m.addweekly_limit_usd = &f
+	}
+}
+
+// AddedWeeklyLimitUsd returns the value that was added to the "weekly_limit_usd" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedWeeklyLimitUsd() (r float64, exists bool) {
+	v := m.addweekly_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeeklyLimitUsd resets all changes to the "weekly_limit_usd" field.
+func (m *BundlePlanGroupQuotaMutation) ResetWeeklyLimitUsd() {
+	m.weekly_limit_usd = nil
+	m.addweekly_limit_usd = nil
+}
+
+// SetMonthlyLimitUsd sets the "monthly_limit_usd" field.
+func (m *BundlePlanGroupQuotaMutation) SetMonthlyLimitUsd(f float64) {
+	m.monthly_limit_usd = &f
+	m.addmonthly_limit_usd = nil
+}
+
+// MonthlyLimitUsd returns the value of the "monthly_limit_usd" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) MonthlyLimitUsd() (r float64, exists bool) {
+	v := m.monthly_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMonthlyLimitUsd returns the old "monthly_limit_usd" field's value of the BundlePlanGroupQuota entity.
+// If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanGroupQuotaMutation) OldMonthlyLimitUsd(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMonthlyLimitUsd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMonthlyLimitUsd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMonthlyLimitUsd: %w", err)
+	}
+	return oldValue.MonthlyLimitUsd, nil
+}
+
+// AddMonthlyLimitUsd adds f to the "monthly_limit_usd" field.
+func (m *BundlePlanGroupQuotaMutation) AddMonthlyLimitUsd(f float64) {
+	if m.addmonthly_limit_usd != nil {
+		*m.addmonthly_limit_usd += f
+	} else {
+		m.addmonthly_limit_usd = &f
+	}
+}
+
+// AddedMonthlyLimitUsd returns the value that was added to the "monthly_limit_usd" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedMonthlyLimitUsd() (r float64, exists bool) {
+	v := m.addmonthly_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMonthlyLimitUsd resets all changes to the "monthly_limit_usd" field.
+func (m *BundlePlanGroupQuotaMutation) ResetMonthlyLimitUsd() {
+	m.monthly_limit_usd = nil
+	m.addmonthly_limit_usd = nil
+}
+
+// Where appends a list predicates to the BundlePlanGroupQuotaMutation builder.
+func (m *BundlePlanGroupQuotaMutation) Where(ps ...predicate.BundlePlanGroupQuota) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the BundlePlanGroupQuotaMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BundlePlanGroupQuotaMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.BundlePlanGroupQuota, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *BundlePlanGroupQuotaMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BundlePlanGroupQuotaMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (BundlePlanGroupQuota).
+func (m *BundlePlanGroupQuotaMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *BundlePlanGroupQuotaMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.plan_id != nil {
+		fields = append(fields, bundleplangroupquota.FieldPlanID)
+	}
+	if m.group_id != nil {
+		fields = append(fields, bundleplangroupquota.FieldGroupID)
+	}
+	if m.quota_scope != nil {
+		fields = append(fields, bundleplangroupquota.FieldQuotaScope)
+	}
+	if m.model_pattern != nil {
+		fields = append(fields, bundleplangroupquota.FieldModelPattern)
+	}
+	if m.daily_limit_usd != nil {
+		fields = append(fields, bundleplangroupquota.FieldDailyLimitUsd)
+	}
+	if m.weekly_limit_usd != nil {
+		fields = append(fields, bundleplangroupquota.FieldWeeklyLimitUsd)
+	}
+	if m.monthly_limit_usd != nil {
+		fields = append(fields, bundleplangroupquota.FieldMonthlyLimitUsd)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *BundlePlanGroupQuotaMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case bundleplangroupquota.FieldPlanID:
+		return m.PlanID()
+	case bundleplangroupquota.FieldGroupID:
+		return m.GroupID()
+	case bundleplangroupquota.FieldQuotaScope:
+		return m.QuotaScope()
+	case bundleplangroupquota.FieldModelPattern:
+		return m.ModelPattern()
+	case bundleplangroupquota.FieldDailyLimitUsd:
+		return m.DailyLimitUsd()
+	case bundleplangroupquota.FieldWeeklyLimitUsd:
+		return m.WeeklyLimitUsd()
+	case bundleplangroupquota.FieldMonthlyLimitUsd:
+		return m.MonthlyLimitUsd()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *BundlePlanGroupQuotaMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case bundleplangroupquota.FieldPlanID:
+		return m.OldPlanID(ctx)
+	case bundleplangroupquota.FieldGroupID:
+		return m.OldGroupID(ctx)
+	case bundleplangroupquota.FieldQuotaScope:
+		return m.OldQuotaScope(ctx)
+	case bundleplangroupquota.FieldModelPattern:
+		return m.OldModelPattern(ctx)
+	case bundleplangroupquota.FieldDailyLimitUsd:
+		return m.OldDailyLimitUsd(ctx)
+	case bundleplangroupquota.FieldWeeklyLimitUsd:
+		return m.OldWeeklyLimitUsd(ctx)
+	case bundleplangroupquota.FieldMonthlyLimitUsd:
+		return m.OldMonthlyLimitUsd(ctx)
+	}
+	return nil, fmt.Errorf("unknown BundlePlanGroupQuota field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BundlePlanGroupQuotaMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case bundleplangroupquota.FieldPlanID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlanID(v)
+		return nil
+	case bundleplangroupquota.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroupID(v)
+		return nil
+	case bundleplangroupquota.FieldQuotaScope:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuotaScope(v)
+		return nil
+	case bundleplangroupquota.FieldModelPattern:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModelPattern(v)
+		return nil
+	case bundleplangroupquota.FieldDailyLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDailyLimitUsd(v)
+		return nil
+	case bundleplangroupquota.FieldWeeklyLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeeklyLimitUsd(v)
+		return nil
+	case bundleplangroupquota.FieldMonthlyLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMonthlyLimitUsd(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BundlePlanGroupQuota field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedFields() []string {
+	var fields []string
+	if m.addplan_id != nil {
+		fields = append(fields, bundleplangroupquota.FieldPlanID)
+	}
+	if m.addgroup_id != nil {
+		fields = append(fields, bundleplangroupquota.FieldGroupID)
+	}
+	if m.adddaily_limit_usd != nil {
+		fields = append(fields, bundleplangroupquota.FieldDailyLimitUsd)
+	}
+	if m.addweekly_limit_usd != nil {
+		fields = append(fields, bundleplangroupquota.FieldWeeklyLimitUsd)
+	}
+	if m.addmonthly_limit_usd != nil {
+		fields = append(fields, bundleplangroupquota.FieldMonthlyLimitUsd)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *BundlePlanGroupQuotaMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case bundleplangroupquota.FieldPlanID:
+		return m.AddedPlanID()
+	case bundleplangroupquota.FieldGroupID:
+		return m.AddedGroupID()
+	case bundleplangroupquota.FieldDailyLimitUsd:
+		return m.AddedDailyLimitUsd()
+	case bundleplangroupquota.FieldWeeklyLimitUsd:
+		return m.AddedWeeklyLimitUsd()
+	case bundleplangroupquota.FieldMonthlyLimitUsd:
+		return m.AddedMonthlyLimitUsd()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BundlePlanGroupQuotaMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case bundleplangroupquota.FieldPlanID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPlanID(v)
+		return nil
+	case bundleplangroupquota.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGroupID(v)
+		return nil
+	case bundleplangroupquota.FieldDailyLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDailyLimitUsd(v)
+		return nil
+	case bundleplangroupquota.FieldWeeklyLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeeklyLimitUsd(v)
+		return nil
+	case bundleplangroupquota.FieldMonthlyLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMonthlyLimitUsd(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BundlePlanGroupQuota numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *BundlePlanGroupQuotaMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *BundlePlanGroupQuotaMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BundlePlanGroupQuotaMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown BundlePlanGroupQuota nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *BundlePlanGroupQuotaMutation) ResetField(name string) error {
+	switch name {
+	case bundleplangroupquota.FieldPlanID:
+		m.ResetPlanID()
+		return nil
+	case bundleplangroupquota.FieldGroupID:
+		m.ResetGroupID()
+		return nil
+	case bundleplangroupquota.FieldQuotaScope:
+		m.ResetQuotaScope()
+		return nil
+	case bundleplangroupquota.FieldModelPattern:
+		m.ResetModelPattern()
+		return nil
+	case bundleplangroupquota.FieldDailyLimitUsd:
+		m.ResetDailyLimitUsd()
+		return nil
+	case bundleplangroupquota.FieldWeeklyLimitUsd:
+		m.ResetWeeklyLimitUsd()
+		return nil
+	case bundleplangroupquota.FieldMonthlyLimitUsd:
+		m.ResetMonthlyLimitUsd()
+		return nil
+	}
+	return fmt.Errorf("unknown BundlePlanGroupQuota field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *BundlePlanGroupQuotaMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *BundlePlanGroupQuotaMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *BundlePlanGroupQuotaMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *BundlePlanGroupQuotaMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *BundlePlanGroupQuotaMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown BundlePlanGroupQuota unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *BundlePlanGroupQuotaMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown BundlePlanGroupQuota edge %s", name)
+}
+
+// BundleSubscriptionMutation represents an operation that mutates the BundleSubscription nodes in the graph.
+type BundleSubscriptionMutation struct {
+	config
+	op                   Op
+	typ                  string
+	id                   *int64
+	created_at           *time.Time
+	updated_at           *time.Time
+	deleted_at           *time.Time
+	user_id              *int64
+	adduser_id           *int64
+	plan_id              *int64
+	addplan_id           *int64
+	status               *string
+	starts_at            *time.Time
+	expires_at           *time.Time
+	concurrency_limit    *int
+	addconcurrency_limit *int
+	rpm_limit            *int
+	addrpm_limit         *int
+	source               *string
+	clearedFields        map[string]struct{}
+	done                 bool
+	oldValue             func(context.Context) (*BundleSubscription, error)
+	predicates           []predicate.BundleSubscription
+}
+
+var _ ent.Mutation = (*BundleSubscriptionMutation)(nil)
+
+// bundlesubscriptionOption allows management of the mutation configuration using functional options.
+type bundlesubscriptionOption func(*BundleSubscriptionMutation)
+
+// newBundleSubscriptionMutation creates new mutation for the BundleSubscription entity.
+func newBundleSubscriptionMutation(c config, op Op, opts ...bundlesubscriptionOption) *BundleSubscriptionMutation {
+	m := &BundleSubscriptionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBundleSubscription,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBundleSubscriptionID sets the ID field of the mutation.
+func withBundleSubscriptionID(id int64) bundlesubscriptionOption {
+	return func(m *BundleSubscriptionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *BundleSubscription
+		)
+		m.oldValue = func(ctx context.Context) (*BundleSubscription, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().BundleSubscription.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBundleSubscription sets the old BundleSubscription of the mutation.
+func withBundleSubscription(node *BundleSubscription) bundlesubscriptionOption {
+	return func(m *BundleSubscriptionMutation) {
+		m.oldValue = func(context.Context) (*BundleSubscription, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BundleSubscriptionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BundleSubscriptionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *BundleSubscriptionMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *BundleSubscriptionMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().BundleSubscription.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *BundleSubscriptionMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *BundleSubscriptionMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the BundleSubscription entity.
+// If the BundleSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *BundleSubscriptionMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *BundleSubscriptionMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *BundleSubscriptionMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the BundleSubscription entity.
+// If the BundleSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *BundleSubscriptionMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (m *BundleSubscriptionMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *BundleSubscriptionMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the BundleSubscription entity.
+// If the BundleSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *BundleSubscriptionMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[bundlesubscription.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *BundleSubscriptionMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[bundlesubscription.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *BundleSubscriptionMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, bundlesubscription.FieldDeletedAt)
+}
+
+// SetUserID sets the "user_id" field.
+func (m *BundleSubscriptionMutation) SetUserID(i int64) {
+	m.user_id = &i
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *BundleSubscriptionMutation) UserID() (r int64, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the BundleSubscription entity.
+// If the BundleSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds i to the "user_id" field.
+func (m *BundleSubscriptionMutation) AddUserID(i int64) {
+	if m.adduser_id != nil {
+		*m.adduser_id += i
+	} else {
+		m.adduser_id = &i
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *BundleSubscriptionMutation) AddedUserID() (r int64, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *BundleSubscriptionMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+}
+
+// SetPlanID sets the "plan_id" field.
+func (m *BundleSubscriptionMutation) SetPlanID(i int64) {
+	m.plan_id = &i
+	m.addplan_id = nil
+}
+
+// PlanID returns the value of the "plan_id" field in the mutation.
+func (m *BundleSubscriptionMutation) PlanID() (r int64, exists bool) {
+	v := m.plan_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlanID returns the old "plan_id" field's value of the BundleSubscription entity.
+// If the BundleSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionMutation) OldPlanID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlanID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlanID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlanID: %w", err)
+	}
+	return oldValue.PlanID, nil
+}
+
+// AddPlanID adds i to the "plan_id" field.
+func (m *BundleSubscriptionMutation) AddPlanID(i int64) {
+	if m.addplan_id != nil {
+		*m.addplan_id += i
+	} else {
+		m.addplan_id = &i
+	}
+}
+
+// AddedPlanID returns the value that was added to the "plan_id" field in this mutation.
+func (m *BundleSubscriptionMutation) AddedPlanID() (r int64, exists bool) {
+	v := m.addplan_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPlanID resets all changes to the "plan_id" field.
+func (m *BundleSubscriptionMutation) ResetPlanID() {
+	m.plan_id = nil
+	m.addplan_id = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *BundleSubscriptionMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *BundleSubscriptionMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the BundleSubscription entity.
+// If the BundleSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *BundleSubscriptionMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetStartsAt sets the "starts_at" field.
+func (m *BundleSubscriptionMutation) SetStartsAt(t time.Time) {
+	m.starts_at = &t
+}
+
+// StartsAt returns the value of the "starts_at" field in the mutation.
+func (m *BundleSubscriptionMutation) StartsAt() (r time.Time, exists bool) {
+	v := m.starts_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartsAt returns the old "starts_at" field's value of the BundleSubscription entity.
+// If the BundleSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionMutation) OldStartsAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartsAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartsAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartsAt: %w", err)
+	}
+	return oldValue.StartsAt, nil
+}
+
+// ResetStartsAt resets all changes to the "starts_at" field.
+func (m *BundleSubscriptionMutation) ResetStartsAt() {
+	m.starts_at = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *BundleSubscriptionMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *BundleSubscriptionMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the BundleSubscription entity.
+// If the BundleSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *BundleSubscriptionMutation) ResetExpiresAt() {
+	m.expires_at = nil
+}
+
+// SetConcurrencyLimit sets the "concurrency_limit" field.
+func (m *BundleSubscriptionMutation) SetConcurrencyLimit(i int) {
+	m.concurrency_limit = &i
+	m.addconcurrency_limit = nil
+}
+
+// ConcurrencyLimit returns the value of the "concurrency_limit" field in the mutation.
+func (m *BundleSubscriptionMutation) ConcurrencyLimit() (r int, exists bool) {
+	v := m.concurrency_limit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConcurrencyLimit returns the old "concurrency_limit" field's value of the BundleSubscription entity.
+// If the BundleSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionMutation) OldConcurrencyLimit(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConcurrencyLimit is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConcurrencyLimit requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConcurrencyLimit: %w", err)
+	}
+	return oldValue.ConcurrencyLimit, nil
+}
+
+// AddConcurrencyLimit adds i to the "concurrency_limit" field.
+func (m *BundleSubscriptionMutation) AddConcurrencyLimit(i int) {
+	if m.addconcurrency_limit != nil {
+		*m.addconcurrency_limit += i
+	} else {
+		m.addconcurrency_limit = &i
+	}
+}
+
+// AddedConcurrencyLimit returns the value that was added to the "concurrency_limit" field in this mutation.
+func (m *BundleSubscriptionMutation) AddedConcurrencyLimit() (r int, exists bool) {
+	v := m.addconcurrency_limit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetConcurrencyLimit resets all changes to the "concurrency_limit" field.
+func (m *BundleSubscriptionMutation) ResetConcurrencyLimit() {
+	m.concurrency_limit = nil
+	m.addconcurrency_limit = nil
+}
+
+// SetRpmLimit sets the "rpm_limit" field.
+func (m *BundleSubscriptionMutation) SetRpmLimit(i int) {
+	m.rpm_limit = &i
+	m.addrpm_limit = nil
+}
+
+// RpmLimit returns the value of the "rpm_limit" field in the mutation.
+func (m *BundleSubscriptionMutation) RpmLimit() (r int, exists bool) {
+	v := m.rpm_limit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRpmLimit returns the old "rpm_limit" field's value of the BundleSubscription entity.
+// If the BundleSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionMutation) OldRpmLimit(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRpmLimit is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRpmLimit requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRpmLimit: %w", err)
+	}
+	return oldValue.RpmLimit, nil
+}
+
+// AddRpmLimit adds i to the "rpm_limit" field.
+func (m *BundleSubscriptionMutation) AddRpmLimit(i int) {
+	if m.addrpm_limit != nil {
+		*m.addrpm_limit += i
+	} else {
+		m.addrpm_limit = &i
+	}
+}
+
+// AddedRpmLimit returns the value that was added to the "rpm_limit" field in this mutation.
+func (m *BundleSubscriptionMutation) AddedRpmLimit() (r int, exists bool) {
+	v := m.addrpm_limit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRpmLimit resets all changes to the "rpm_limit" field.
+func (m *BundleSubscriptionMutation) ResetRpmLimit() {
+	m.rpm_limit = nil
+	m.addrpm_limit = nil
+}
+
+// SetSource sets the "source" field.
+func (m *BundleSubscriptionMutation) SetSource(s string) {
+	m.source = &s
+}
+
+// Source returns the value of the "source" field in the mutation.
+func (m *BundleSubscriptionMutation) Source() (r string, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSource returns the old "source" field's value of the BundleSubscription entity.
+// If the BundleSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionMutation) OldSource(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSource: %w", err)
+	}
+	return oldValue.Source, nil
+}
+
+// ResetSource resets all changes to the "source" field.
+func (m *BundleSubscriptionMutation) ResetSource() {
+	m.source = nil
+}
+
+// Where appends a list predicates to the BundleSubscriptionMutation builder.
+func (m *BundleSubscriptionMutation) Where(ps ...predicate.BundleSubscription) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the BundleSubscriptionMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BundleSubscriptionMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.BundleSubscription, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *BundleSubscriptionMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BundleSubscriptionMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (BundleSubscription).
+func (m *BundleSubscriptionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *BundleSubscriptionMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.created_at != nil {
+		fields = append(fields, bundlesubscription.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, bundlesubscription.FieldUpdatedAt)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, bundlesubscription.FieldDeletedAt)
+	}
+	if m.user_id != nil {
+		fields = append(fields, bundlesubscription.FieldUserID)
+	}
+	if m.plan_id != nil {
+		fields = append(fields, bundlesubscription.FieldPlanID)
+	}
+	if m.status != nil {
+		fields = append(fields, bundlesubscription.FieldStatus)
+	}
+	if m.starts_at != nil {
+		fields = append(fields, bundlesubscription.FieldStartsAt)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, bundlesubscription.FieldExpiresAt)
+	}
+	if m.concurrency_limit != nil {
+		fields = append(fields, bundlesubscription.FieldConcurrencyLimit)
+	}
+	if m.rpm_limit != nil {
+		fields = append(fields, bundlesubscription.FieldRpmLimit)
+	}
+	if m.source != nil {
+		fields = append(fields, bundlesubscription.FieldSource)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *BundleSubscriptionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case bundlesubscription.FieldCreatedAt:
+		return m.CreatedAt()
+	case bundlesubscription.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case bundlesubscription.FieldDeletedAt:
+		return m.DeletedAt()
+	case bundlesubscription.FieldUserID:
+		return m.UserID()
+	case bundlesubscription.FieldPlanID:
+		return m.PlanID()
+	case bundlesubscription.FieldStatus:
+		return m.Status()
+	case bundlesubscription.FieldStartsAt:
+		return m.StartsAt()
+	case bundlesubscription.FieldExpiresAt:
+		return m.ExpiresAt()
+	case bundlesubscription.FieldConcurrencyLimit:
+		return m.ConcurrencyLimit()
+	case bundlesubscription.FieldRpmLimit:
+		return m.RpmLimit()
+	case bundlesubscription.FieldSource:
+		return m.Source()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *BundleSubscriptionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case bundlesubscription.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case bundlesubscription.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case bundlesubscription.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
+	case bundlesubscription.FieldUserID:
+		return m.OldUserID(ctx)
+	case bundlesubscription.FieldPlanID:
+		return m.OldPlanID(ctx)
+	case bundlesubscription.FieldStatus:
+		return m.OldStatus(ctx)
+	case bundlesubscription.FieldStartsAt:
+		return m.OldStartsAt(ctx)
+	case bundlesubscription.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case bundlesubscription.FieldConcurrencyLimit:
+		return m.OldConcurrencyLimit(ctx)
+	case bundlesubscription.FieldRpmLimit:
+		return m.OldRpmLimit(ctx)
+	case bundlesubscription.FieldSource:
+		return m.OldSource(ctx)
+	}
+	return nil, fmt.Errorf("unknown BundleSubscription field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BundleSubscriptionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case bundlesubscription.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case bundlesubscription.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case bundlesubscription.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
+		return nil
+	case bundlesubscription.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case bundlesubscription.FieldPlanID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlanID(v)
+		return nil
+	case bundlesubscription.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case bundlesubscription.FieldStartsAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartsAt(v)
+		return nil
+	case bundlesubscription.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case bundlesubscription.FieldConcurrencyLimit:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConcurrencyLimit(v)
+		return nil
+	case bundlesubscription.FieldRpmLimit:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRpmLimit(v)
+		return nil
+	case bundlesubscription.FieldSource:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSource(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BundleSubscription field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *BundleSubscriptionMutation) AddedFields() []string {
+	var fields []string
+	if m.adduser_id != nil {
+		fields = append(fields, bundlesubscription.FieldUserID)
+	}
+	if m.addplan_id != nil {
+		fields = append(fields, bundlesubscription.FieldPlanID)
+	}
+	if m.addconcurrency_limit != nil {
+		fields = append(fields, bundlesubscription.FieldConcurrencyLimit)
+	}
+	if m.addrpm_limit != nil {
+		fields = append(fields, bundlesubscription.FieldRpmLimit)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *BundleSubscriptionMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case bundlesubscription.FieldUserID:
+		return m.AddedUserID()
+	case bundlesubscription.FieldPlanID:
+		return m.AddedPlanID()
+	case bundlesubscription.FieldConcurrencyLimit:
+		return m.AddedConcurrencyLimit()
+	case bundlesubscription.FieldRpmLimit:
+		return m.AddedRpmLimit()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BundleSubscriptionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case bundlesubscription.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	case bundlesubscription.FieldPlanID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPlanID(v)
+		return nil
+	case bundlesubscription.FieldConcurrencyLimit:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddConcurrencyLimit(v)
+		return nil
+	case bundlesubscription.FieldRpmLimit:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRpmLimit(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BundleSubscription numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *BundleSubscriptionMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(bundlesubscription.FieldDeletedAt) {
+		fields = append(fields, bundlesubscription.FieldDeletedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *BundleSubscriptionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BundleSubscriptionMutation) ClearField(name string) error {
+	switch name {
+	case bundlesubscription.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown BundleSubscription nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *BundleSubscriptionMutation) ResetField(name string) error {
+	switch name {
+	case bundlesubscription.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case bundlesubscription.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case bundlesubscription.FieldDeletedAt:
+		m.ResetDeletedAt()
+		return nil
+	case bundlesubscription.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case bundlesubscription.FieldPlanID:
+		m.ResetPlanID()
+		return nil
+	case bundlesubscription.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case bundlesubscription.FieldStartsAt:
+		m.ResetStartsAt()
+		return nil
+	case bundlesubscription.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case bundlesubscription.FieldConcurrencyLimit:
+		m.ResetConcurrencyLimit()
+		return nil
+	case bundlesubscription.FieldRpmLimit:
+		m.ResetRpmLimit()
+		return nil
+	case bundlesubscription.FieldSource:
+		m.ResetSource()
+		return nil
+	}
+	return fmt.Errorf("unknown BundleSubscription field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *BundleSubscriptionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *BundleSubscriptionMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *BundleSubscriptionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *BundleSubscriptionMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *BundleSubscriptionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *BundleSubscriptionMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *BundleSubscriptionMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown BundleSubscription unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *BundleSubscriptionMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown BundleSubscription edge %s", name)
+}
+
+// BundleSubscriptionUsageMutation represents an operation that mutates the BundleSubscriptionUsage nodes in the graph.
+type BundleSubscriptionUsageMutation struct {
+	config
+	op                        Op
+	typ                       string
+	id                        *int64
+	bundle_subscription_id    *int64
+	addbundle_subscription_id *int64
+	group_id                  *int64
+	addgroup_id               *int64
+	model_pattern             *string
+	daily_usage_usd           *float64
+	adddaily_usage_usd        *float64
+	daily_window_start        *time.Time
+	weekly_usage_usd          *float64
+	addweekly_usage_usd       *float64
+	weekly_window_start       *time.Time
+	monthly_usage_usd         *float64
+	addmonthly_usage_usd      *float64
+	monthly_window_start      *time.Time
+	clearedFields             map[string]struct{}
+	done                      bool
+	oldValue                  func(context.Context) (*BundleSubscriptionUsage, error)
+	predicates                []predicate.BundleSubscriptionUsage
+}
+
+var _ ent.Mutation = (*BundleSubscriptionUsageMutation)(nil)
+
+// bundlesubscriptionusageOption allows management of the mutation configuration using functional options.
+type bundlesubscriptionusageOption func(*BundleSubscriptionUsageMutation)
+
+// newBundleSubscriptionUsageMutation creates new mutation for the BundleSubscriptionUsage entity.
+func newBundleSubscriptionUsageMutation(c config, op Op, opts ...bundlesubscriptionusageOption) *BundleSubscriptionUsageMutation {
+	m := &BundleSubscriptionUsageMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBundleSubscriptionUsage,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBundleSubscriptionUsageID sets the ID field of the mutation.
+func withBundleSubscriptionUsageID(id int64) bundlesubscriptionusageOption {
+	return func(m *BundleSubscriptionUsageMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *BundleSubscriptionUsage
+		)
+		m.oldValue = func(ctx context.Context) (*BundleSubscriptionUsage, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().BundleSubscriptionUsage.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBundleSubscriptionUsage sets the old BundleSubscriptionUsage of the mutation.
+func withBundleSubscriptionUsage(node *BundleSubscriptionUsage) bundlesubscriptionusageOption {
+	return func(m *BundleSubscriptionUsageMutation) {
+		m.oldValue = func(context.Context) (*BundleSubscriptionUsage, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BundleSubscriptionUsageMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BundleSubscriptionUsageMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *BundleSubscriptionUsageMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *BundleSubscriptionUsageMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().BundleSubscriptionUsage.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (m *BundleSubscriptionUsageMutation) SetBundleSubscriptionID(i int64) {
+	m.bundle_subscription_id = &i
+	m.addbundle_subscription_id = nil
+}
+
+// BundleSubscriptionID returns the value of the "bundle_subscription_id" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) BundleSubscriptionID() (r int64, exists bool) {
+	v := m.bundle_subscription_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBundleSubscriptionID returns the old "bundle_subscription_id" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldBundleSubscriptionID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBundleSubscriptionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBundleSubscriptionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBundleSubscriptionID: %w", err)
+	}
+	return oldValue.BundleSubscriptionID, nil
+}
+
+// AddBundleSubscriptionID adds i to the "bundle_subscription_id" field.
+func (m *BundleSubscriptionUsageMutation) AddBundleSubscriptionID(i int64) {
+	if m.addbundle_subscription_id != nil {
+		*m.addbundle_subscription_id += i
+	} else {
+		m.addbundle_subscription_id = &i
+	}
+}
+
+// AddedBundleSubscriptionID returns the value that was added to the "bundle_subscription_id" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedBundleSubscriptionID() (r int64, exists bool) {
+	v := m.addbundle_subscription_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBundleSubscriptionID resets all changes to the "bundle_subscription_id" field.
+func (m *BundleSubscriptionUsageMutation) ResetBundleSubscriptionID() {
+	m.bundle_subscription_id = nil
+	m.addbundle_subscription_id = nil
+}
+
+// SetGroupID sets the "group_id" field.
+func (m *BundleSubscriptionUsageMutation) SetGroupID(i int64) {
+	m.group_id = &i
+	m.addgroup_id = nil
+}
+
+// GroupID returns the value of the "group_id" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) GroupID() (r int64, exists bool) {
+	v := m.group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroupID returns the old "group_id" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldGroupID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroupID: %w", err)
+	}
+	return oldValue.GroupID, nil
+}
+
+// AddGroupID adds i to the "group_id" field.
+func (m *BundleSubscriptionUsageMutation) AddGroupID(i int64) {
+	if m.addgroup_id != nil {
+		*m.addgroup_id += i
+	} else {
+		m.addgroup_id = &i
+	}
+}
+
+// AddedGroupID returns the value that was added to the "group_id" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedGroupID() (r int64, exists bool) {
+	v := m.addgroup_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetGroupID resets all changes to the "group_id" field.
+func (m *BundleSubscriptionUsageMutation) ResetGroupID() {
+	m.group_id = nil
+	m.addgroup_id = nil
+}
+
+// SetModelPattern sets the "model_pattern" field.
+func (m *BundleSubscriptionUsageMutation) SetModelPattern(s string) {
+	m.model_pattern = &s
+}
+
+// ModelPattern returns the value of the "model_pattern" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) ModelPattern() (r string, exists bool) {
+	v := m.model_pattern
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModelPattern returns the old "model_pattern" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldModelPattern(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldModelPattern is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldModelPattern requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModelPattern: %w", err)
+	}
+	return oldValue.ModelPattern, nil
+}
+
+// ResetModelPattern resets all changes to the "model_pattern" field.
+func (m *BundleSubscriptionUsageMutation) ResetModelPattern() {
+	m.model_pattern = nil
+}
+
+// SetDailyUsageUsd sets the "daily_usage_usd" field.
+func (m *BundleSubscriptionUsageMutation) SetDailyUsageUsd(f float64) {
+	m.daily_usage_usd = &f
+	m.adddaily_usage_usd = nil
+}
+
+// DailyUsageUsd returns the value of the "daily_usage_usd" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) DailyUsageUsd() (r float64, exists bool) {
+	v := m.daily_usage_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDailyUsageUsd returns the old "daily_usage_usd" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldDailyUsageUsd(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDailyUsageUsd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDailyUsageUsd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDailyUsageUsd: %w", err)
+	}
+	return oldValue.DailyUsageUsd, nil
+}
+
+// AddDailyUsageUsd adds f to the "daily_usage_usd" field.
+func (m *BundleSubscriptionUsageMutation) AddDailyUsageUsd(f float64) {
+	if m.adddaily_usage_usd != nil {
+		*m.adddaily_usage_usd += f
+	} else {
+		m.adddaily_usage_usd = &f
+	}
+}
+
+// AddedDailyUsageUsd returns the value that was added to the "daily_usage_usd" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedDailyUsageUsd() (r float64, exists bool) {
+	v := m.adddaily_usage_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDailyUsageUsd resets all changes to the "daily_usage_usd" field.
+func (m *BundleSubscriptionUsageMutation) ResetDailyUsageUsd() {
+	m.daily_usage_usd = nil
+	m.adddaily_usage_usd = nil
+}
+
+// SetDailyWindowStart sets the "daily_window_start" field.
+func (m *BundleSubscriptionUsageMutation) SetDailyWindowStart(t time.Time) {
+	m.daily_window_start = &t
+}
+
+// DailyWindowStart returns the value of the "daily_window_start" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) DailyWindowStart() (r time.Time, exists bool) {
+	v := m.daily_window_start
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDailyWindowStart returns the old "daily_window_start" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldDailyWindowStart(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDailyWindowStart is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDailyWindowStart requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDailyWindowStart: %w", err)
+	}
+	return oldValue.DailyWindowStart, nil
+}
+
+// ResetDailyWindowStart resets all changes to the "daily_window_start" field.
+func (m *BundleSubscriptionUsageMutation) ResetDailyWindowStart() {
+	m.daily_window_start = nil
+}
+
+// SetWeeklyUsageUsd sets the "weekly_usage_usd" field.
+func (m *BundleSubscriptionUsageMutation) SetWeeklyUsageUsd(f float64) {
+	m.weekly_usage_usd = &f
+	m.addweekly_usage_usd = nil
+}
+
+// WeeklyUsageUsd returns the value of the "weekly_usage_usd" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) WeeklyUsageUsd() (r float64, exists bool) {
+	v := m.weekly_usage_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeeklyUsageUsd returns the old "weekly_usage_usd" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldWeeklyUsageUsd(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeeklyUsageUsd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeeklyUsageUsd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeeklyUsageUsd: %w", err)
+	}
+	return oldValue.WeeklyUsageUsd, nil
+}
+
+// AddWeeklyUsageUsd adds f to the "weekly_usage_usd" field.
+func (m *BundleSubscriptionUsageMutation) AddWeeklyUsageUsd(f float64) {
+	if m.addweekly_usage_usd != nil {
+		*m.addweekly_usage_usd += f
+	} else {
+		m.addweekly_usage_usd = &f
+	}
+}
+
+// AddedWeeklyUsageUsd returns the value that was added to the "weekly_usage_usd" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedWeeklyUsageUsd() (r float64, exists bool) {
+	v := m.addweekly_usage_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeeklyUsageUsd resets all changes to the "weekly_usage_usd" field.
+func (m *BundleSubscriptionUsageMutation) ResetWeeklyUsageUsd() {
+	m.weekly_usage_usd = nil
+	m.addweekly_usage_usd = nil
+}
+
+// SetWeeklyWindowStart sets the "weekly_window_start" field.
+func (m *BundleSubscriptionUsageMutation) SetWeeklyWindowStart(t time.Time) {
+	m.weekly_window_start = &t
+}
+
+// WeeklyWindowStart returns the value of the "weekly_window_start" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) WeeklyWindowStart() (r time.Time, exists bool) {
+	v := m.weekly_window_start
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeeklyWindowStart returns the old "weekly_window_start" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldWeeklyWindowStart(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeeklyWindowStart is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeeklyWindowStart requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeeklyWindowStart: %w", err)
+	}
+	return oldValue.WeeklyWindowStart, nil
+}
+
+// ResetWeeklyWindowStart resets all changes to the "weekly_window_start" field.
+func (m *BundleSubscriptionUsageMutation) ResetWeeklyWindowStart() {
+	m.weekly_window_start = nil
+}
+
+// SetMonthlyUsageUsd sets the "monthly_usage_usd" field.
+func (m *BundleSubscriptionUsageMutation) SetMonthlyUsageUsd(f float64) {
+	m.monthly_usage_usd = &f
+	m.addmonthly_usage_usd = nil
+}
+
+// MonthlyUsageUsd returns the value of the "monthly_usage_usd" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) MonthlyUsageUsd() (r float64, exists bool) {
+	v := m.monthly_usage_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMonthlyUsageUsd returns the old "monthly_usage_usd" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldMonthlyUsageUsd(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMonthlyUsageUsd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMonthlyUsageUsd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMonthlyUsageUsd: %w", err)
+	}
+	return oldValue.MonthlyUsageUsd, nil
+}
+
+// AddMonthlyUsageUsd adds f to the "monthly_usage_usd" field.
+func (m *BundleSubscriptionUsageMutation) AddMonthlyUsageUsd(f float64) {
+	if m.addmonthly_usage_usd != nil {
+		*m.addmonthly_usage_usd += f
+	} else {
+		m.addmonthly_usage_usd = &f
+	}
+}
+
+// AddedMonthlyUsageUsd returns the value that was added to the "monthly_usage_usd" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedMonthlyUsageUsd() (r float64, exists bool) {
+	v := m.addmonthly_usage_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMonthlyUsageUsd resets all changes to the "monthly_usage_usd" field.
+func (m *BundleSubscriptionUsageMutation) ResetMonthlyUsageUsd() {
+	m.monthly_usage_usd = nil
+	m.addmonthly_usage_usd = nil
+}
+
+// SetMonthlyWindowStart sets the "monthly_window_start" field.
+func (m *BundleSubscriptionUsageMutation) SetMonthlyWindowStart(t time.Time) {
+	m.monthly_window_start = &t
+}
+
+// MonthlyWindowStart returns the value of the "monthly_window_start" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) MonthlyWindowStart() (r time.Time, exists bool) {
+	v := m.monthly_window_start
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMonthlyWindowStart returns the old "monthly_window_start" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldMonthlyWindowStart(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMonthlyWindowStart is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMonthlyWindowStart requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMonthlyWindowStart: %w", err)
+	}
+	return oldValue.MonthlyWindowStart, nil
+}
+
+// ResetMonthlyWindowStart resets all changes to the "monthly_window_start" field.
+func (m *BundleSubscriptionUsageMutation) ResetMonthlyWindowStart() {
+	m.monthly_window_start = nil
+}
+
+// Where appends a list predicates to the BundleSubscriptionUsageMutation builder.
+func (m *BundleSubscriptionUsageMutation) Where(ps ...predicate.BundleSubscriptionUsage) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the BundleSubscriptionUsageMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BundleSubscriptionUsageMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.BundleSubscriptionUsage, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *BundleSubscriptionUsageMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BundleSubscriptionUsageMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (BundleSubscriptionUsage).
+func (m *BundleSubscriptionUsageMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *BundleSubscriptionUsageMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.bundle_subscription_id != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldBundleSubscriptionID)
+	}
+	if m.group_id != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldGroupID)
+	}
+	if m.model_pattern != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldModelPattern)
+	}
+	if m.daily_usage_usd != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldDailyUsageUsd)
+	}
+	if m.daily_window_start != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldDailyWindowStart)
+	}
+	if m.weekly_usage_usd != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldWeeklyUsageUsd)
+	}
+	if m.weekly_window_start != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldWeeklyWindowStart)
+	}
+	if m.monthly_usage_usd != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldMonthlyUsageUsd)
+	}
+	if m.monthly_window_start != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldMonthlyWindowStart)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *BundleSubscriptionUsageMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case bundlesubscriptionusage.FieldBundleSubscriptionID:
+		return m.BundleSubscriptionID()
+	case bundlesubscriptionusage.FieldGroupID:
+		return m.GroupID()
+	case bundlesubscriptionusage.FieldModelPattern:
+		return m.ModelPattern()
+	case bundlesubscriptionusage.FieldDailyUsageUsd:
+		return m.DailyUsageUsd()
+	case bundlesubscriptionusage.FieldDailyWindowStart:
+		return m.DailyWindowStart()
+	case bundlesubscriptionusage.FieldWeeklyUsageUsd:
+		return m.WeeklyUsageUsd()
+	case bundlesubscriptionusage.FieldWeeklyWindowStart:
+		return m.WeeklyWindowStart()
+	case bundlesubscriptionusage.FieldMonthlyUsageUsd:
+		return m.MonthlyUsageUsd()
+	case bundlesubscriptionusage.FieldMonthlyWindowStart:
+		return m.MonthlyWindowStart()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *BundleSubscriptionUsageMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case bundlesubscriptionusage.FieldBundleSubscriptionID:
+		return m.OldBundleSubscriptionID(ctx)
+	case bundlesubscriptionusage.FieldGroupID:
+		return m.OldGroupID(ctx)
+	case bundlesubscriptionusage.FieldModelPattern:
+		return m.OldModelPattern(ctx)
+	case bundlesubscriptionusage.FieldDailyUsageUsd:
+		return m.OldDailyUsageUsd(ctx)
+	case bundlesubscriptionusage.FieldDailyWindowStart:
+		return m.OldDailyWindowStart(ctx)
+	case bundlesubscriptionusage.FieldWeeklyUsageUsd:
+		return m.OldWeeklyUsageUsd(ctx)
+	case bundlesubscriptionusage.FieldWeeklyWindowStart:
+		return m.OldWeeklyWindowStart(ctx)
+	case bundlesubscriptionusage.FieldMonthlyUsageUsd:
+		return m.OldMonthlyUsageUsd(ctx)
+	case bundlesubscriptionusage.FieldMonthlyWindowStart:
+		return m.OldMonthlyWindowStart(ctx)
+	}
+	return nil, fmt.Errorf("unknown BundleSubscriptionUsage field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BundleSubscriptionUsageMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case bundlesubscriptionusage.FieldBundleSubscriptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBundleSubscriptionID(v)
+		return nil
+	case bundlesubscriptionusage.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroupID(v)
+		return nil
+	case bundlesubscriptionusage.FieldModelPattern:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModelPattern(v)
+		return nil
+	case bundlesubscriptionusage.FieldDailyUsageUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDailyUsageUsd(v)
+		return nil
+	case bundlesubscriptionusage.FieldDailyWindowStart:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDailyWindowStart(v)
+		return nil
+	case bundlesubscriptionusage.FieldWeeklyUsageUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeeklyUsageUsd(v)
+		return nil
+	case bundlesubscriptionusage.FieldWeeklyWindowStart:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeeklyWindowStart(v)
+		return nil
+	case bundlesubscriptionusage.FieldMonthlyUsageUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMonthlyUsageUsd(v)
+		return nil
+	case bundlesubscriptionusage.FieldMonthlyWindowStart:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMonthlyWindowStart(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BundleSubscriptionUsage field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedFields() []string {
+	var fields []string
+	if m.addbundle_subscription_id != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldBundleSubscriptionID)
+	}
+	if m.addgroup_id != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldGroupID)
+	}
+	if m.adddaily_usage_usd != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldDailyUsageUsd)
+	}
+	if m.addweekly_usage_usd != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldWeeklyUsageUsd)
+	}
+	if m.addmonthly_usage_usd != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldMonthlyUsageUsd)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *BundleSubscriptionUsageMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case bundlesubscriptionusage.FieldBundleSubscriptionID:
+		return m.AddedBundleSubscriptionID()
+	case bundlesubscriptionusage.FieldGroupID:
+		return m.AddedGroupID()
+	case bundlesubscriptionusage.FieldDailyUsageUsd:
+		return m.AddedDailyUsageUsd()
+	case bundlesubscriptionusage.FieldWeeklyUsageUsd:
+		return m.AddedWeeklyUsageUsd()
+	case bundlesubscriptionusage.FieldMonthlyUsageUsd:
+		return m.AddedMonthlyUsageUsd()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BundleSubscriptionUsageMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case bundlesubscriptionusage.FieldBundleSubscriptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBundleSubscriptionID(v)
+		return nil
+	case bundlesubscriptionusage.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGroupID(v)
+		return nil
+	case bundlesubscriptionusage.FieldDailyUsageUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDailyUsageUsd(v)
+		return nil
+	case bundlesubscriptionusage.FieldWeeklyUsageUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeeklyUsageUsd(v)
+		return nil
+	case bundlesubscriptionusage.FieldMonthlyUsageUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMonthlyUsageUsd(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BundleSubscriptionUsage numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *BundleSubscriptionUsageMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *BundleSubscriptionUsageMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BundleSubscriptionUsageMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown BundleSubscriptionUsage nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *BundleSubscriptionUsageMutation) ResetField(name string) error {
+	switch name {
+	case bundlesubscriptionusage.FieldBundleSubscriptionID:
+		m.ResetBundleSubscriptionID()
+		return nil
+	case bundlesubscriptionusage.FieldGroupID:
+		m.ResetGroupID()
+		return nil
+	case bundlesubscriptionusage.FieldModelPattern:
+		m.ResetModelPattern()
+		return nil
+	case bundlesubscriptionusage.FieldDailyUsageUsd:
+		m.ResetDailyUsageUsd()
+		return nil
+	case bundlesubscriptionusage.FieldDailyWindowStart:
+		m.ResetDailyWindowStart()
+		return nil
+	case bundlesubscriptionusage.FieldWeeklyUsageUsd:
+		m.ResetWeeklyUsageUsd()
+		return nil
+	case bundlesubscriptionusage.FieldWeeklyWindowStart:
+		m.ResetWeeklyWindowStart()
+		return nil
+	case bundlesubscriptionusage.FieldMonthlyUsageUsd:
+		m.ResetMonthlyUsageUsd()
+		return nil
+	case bundlesubscriptionusage.FieldMonthlyWindowStart:
+		m.ResetMonthlyWindowStart()
+		return nil
+	}
+	return fmt.Errorf("unknown BundleSubscriptionUsage field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *BundleSubscriptionUsageMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *BundleSubscriptionUsageMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *BundleSubscriptionUsageMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *BundleSubscriptionUsageMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *BundleSubscriptionUsageMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown BundleSubscriptionUsage unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *BundleSubscriptionUsageMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown BundleSubscriptionUsage edge %s", name)
 }
 
 // ChannelMonitorMutation represents an operation that mutates the ChannelMonitor nodes in the graph.
@@ -20695,6 +24899,8 @@ type PaymentOrderMutation struct {
 	addpay_amount            *float64
 	fee_rate                 *float64
 	addfee_rate              *float64
+	balance_deduct_amount    *float64
+	addbalance_deduct_amount *float64
 	recharge_code            *string
 	out_trade_no             *string
 	payment_type             *string
@@ -21160,6 +25366,62 @@ func (m *PaymentOrderMutation) AddedFeeRate() (r float64, exists bool) {
 func (m *PaymentOrderMutation) ResetFeeRate() {
 	m.fee_rate = nil
 	m.addfee_rate = nil
+}
+
+// SetBalanceDeductAmount sets the "balance_deduct_amount" field.
+func (m *PaymentOrderMutation) SetBalanceDeductAmount(f float64) {
+	m.balance_deduct_amount = &f
+	m.addbalance_deduct_amount = nil
+}
+
+// BalanceDeductAmount returns the value of the "balance_deduct_amount" field in the mutation.
+func (m *PaymentOrderMutation) BalanceDeductAmount() (r float64, exists bool) {
+	v := m.balance_deduct_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBalanceDeductAmount returns the old "balance_deduct_amount" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldBalanceDeductAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBalanceDeductAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBalanceDeductAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBalanceDeductAmount: %w", err)
+	}
+	return oldValue.BalanceDeductAmount, nil
+}
+
+// AddBalanceDeductAmount adds f to the "balance_deduct_amount" field.
+func (m *PaymentOrderMutation) AddBalanceDeductAmount(f float64) {
+	if m.addbalance_deduct_amount != nil {
+		*m.addbalance_deduct_amount += f
+	} else {
+		m.addbalance_deduct_amount = &f
+	}
+}
+
+// AddedBalanceDeductAmount returns the value that was added to the "balance_deduct_amount" field in this mutation.
+func (m *PaymentOrderMutation) AddedBalanceDeductAmount() (r float64, exists bool) {
+	v := m.addbalance_deduct_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBalanceDeductAmount resets all changes to the "balance_deduct_amount" field.
+func (m *PaymentOrderMutation) ResetBalanceDeductAmount() {
+	m.balance_deduct_amount = nil
+	m.addbalance_deduct_amount = nil
 }
 
 // SetRechargeCode sets the "recharge_code" field.
@@ -22705,7 +26967,7 @@ func (m *PaymentOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentOrderMutation) Fields() []string {
-	fields := make([]string, 0, 39)
+	fields := make([]string, 0, 40)
 	if m.user != nil {
 		fields = append(fields, paymentorder.FieldUserID)
 	}
@@ -22726,6 +26988,9 @@ func (m *PaymentOrderMutation) Fields() []string {
 	}
 	if m.fee_rate != nil {
 		fields = append(fields, paymentorder.FieldFeeRate)
+	}
+	if m.balance_deduct_amount != nil {
+		fields = append(fields, paymentorder.FieldBalanceDeductAmount)
 	}
 	if m.recharge_code != nil {
 		fields = append(fields, paymentorder.FieldRechargeCode)
@@ -22845,6 +27110,8 @@ func (m *PaymentOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.PayAmount()
 	case paymentorder.FieldFeeRate:
 		return m.FeeRate()
+	case paymentorder.FieldBalanceDeductAmount:
+		return m.BalanceDeductAmount()
 	case paymentorder.FieldRechargeCode:
 		return m.RechargeCode()
 	case paymentorder.FieldOutTradeNo:
@@ -22932,6 +27199,8 @@ func (m *PaymentOrderMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldPayAmount(ctx)
 	case paymentorder.FieldFeeRate:
 		return m.OldFeeRate(ctx)
+	case paymentorder.FieldBalanceDeductAmount:
+		return m.OldBalanceDeductAmount(ctx)
 	case paymentorder.FieldRechargeCode:
 		return m.OldRechargeCode(ctx)
 	case paymentorder.FieldOutTradeNo:
@@ -23053,6 +27322,13 @@ func (m *PaymentOrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFeeRate(v)
+		return nil
+	case paymentorder.FieldBalanceDeductAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBalanceDeductAmount(v)
 		return nil
 	case paymentorder.FieldRechargeCode:
 		v, ok := value.(string)
@@ -23295,6 +27571,9 @@ func (m *PaymentOrderMutation) AddedFields() []string {
 	if m.addfee_rate != nil {
 		fields = append(fields, paymentorder.FieldFeeRate)
 	}
+	if m.addbalance_deduct_amount != nil {
+		fields = append(fields, paymentorder.FieldBalanceDeductAmount)
+	}
 	if m.addplan_id != nil {
 		fields = append(fields, paymentorder.FieldPlanID)
 	}
@@ -23321,6 +27600,8 @@ func (m *PaymentOrderMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedPayAmount()
 	case paymentorder.FieldFeeRate:
 		return m.AddedFeeRate()
+	case paymentorder.FieldBalanceDeductAmount:
+		return m.AddedBalanceDeductAmount()
 	case paymentorder.FieldPlanID:
 		return m.AddedPlanID()
 	case paymentorder.FieldSubscriptionGroupID:
@@ -23358,6 +27639,13 @@ func (m *PaymentOrderMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddFeeRate(v)
+		return nil
+	case paymentorder.FieldBalanceDeductAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBalanceDeductAmount(v)
 		return nil
 	case paymentorder.FieldPlanID:
 		v, ok := value.(int64)
@@ -23557,6 +27845,9 @@ func (m *PaymentOrderMutation) ResetField(name string) error {
 		return nil
 	case paymentorder.FieldFeeRate:
 		m.ResetFeeRate()
+		return nil
+	case paymentorder.FieldBalanceDeductAmount:
+		m.ResetBalanceDeductAmount()
 		return nil
 	case paymentorder.FieldRechargeCode:
 		m.ResetRechargeCode()
@@ -45202,39 +49493,47 @@ func (m *UserPlatformQuotaMutation) ResetEdge(name string) error {
 // UserSubscriptionMutation represents an operation that mutates the UserSubscription nodes in the graph.
 type UserSubscriptionMutation struct {
 	config
-	op                      Op
-	typ                     string
-	id                      *int64
-	created_at              *time.Time
-	updated_at              *time.Time
-	deleted_at              *time.Time
-	starts_at               *time.Time
-	expires_at              *time.Time
-	status                  *string
-	daily_window_start      *time.Time
-	weekly_window_start     *time.Time
-	monthly_window_start    *time.Time
-	daily_usage_usd         *float64
-	adddaily_usage_usd      *float64
-	weekly_usage_usd        *float64
-	addweekly_usage_usd     *float64
-	monthly_usage_usd       *float64
-	addmonthly_usage_usd    *float64
-	assigned_at             *time.Time
-	notes                   *string
-	clearedFields           map[string]struct{}
-	user                    *int64
-	cleareduser             bool
-	group                   *int64
-	clearedgroup            bool
-	assigned_by_user        *int64
-	clearedassigned_by_user bool
-	usage_logs              map[int64]struct{}
-	removedusage_logs       map[int64]struct{}
-	clearedusage_logs       bool
-	done                    bool
-	oldValue                func(context.Context) (*UserSubscription, error)
-	predicates              []predicate.UserSubscription
+	op                        Op
+	typ                       string
+	id                        *int64
+	created_at                *time.Time
+	updated_at                *time.Time
+	deleted_at                *time.Time
+	starts_at                 *time.Time
+	expires_at                *time.Time
+	status                    *string
+	daily_window_start        *time.Time
+	weekly_window_start       *time.Time
+	monthly_window_start      *time.Time
+	daily_usage_usd           *float64
+	adddaily_usage_usd        *float64
+	weekly_usage_usd          *float64
+	addweekly_usage_usd       *float64
+	monthly_usage_usd         *float64
+	addmonthly_usage_usd      *float64
+	assigned_at               *time.Time
+	notes                     *string
+	bundle_subscription_id    *int64
+	addbundle_subscription_id *int64
+	daily_limit_usd           *float64
+	adddaily_limit_usd        *float64
+	weekly_limit_usd          *float64
+	addweekly_limit_usd       *float64
+	monthly_limit_usd         *float64
+	addmonthly_limit_usd      *float64
+	clearedFields             map[string]struct{}
+	user                      *int64
+	cleareduser               bool
+	group                     *int64
+	clearedgroup              bool
+	assigned_by_user          *int64
+	clearedassigned_by_user   bool
+	usage_logs                map[int64]struct{}
+	removedusage_logs         map[int64]struct{}
+	clearedusage_logs         bool
+	done                      bool
+	oldValue                  func(context.Context) (*UserSubscription, error)
+	predicates                []predicate.UserSubscription
 }
 
 var _ ent.Mutation = (*UserSubscriptionMutation)(nil)
@@ -46085,6 +50384,244 @@ func (m *UserSubscriptionMutation) ResetNotes() {
 	delete(m.clearedFields, usersubscription.FieldNotes)
 }
 
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (m *UserSubscriptionMutation) SetBundleSubscriptionID(i int64) {
+	m.bundle_subscription_id = &i
+	m.addbundle_subscription_id = nil
+}
+
+// BundleSubscriptionID returns the value of the "bundle_subscription_id" field in the mutation.
+func (m *UserSubscriptionMutation) BundleSubscriptionID() (r int64, exists bool) {
+	v := m.bundle_subscription_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBundleSubscriptionID returns the old "bundle_subscription_id" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldBundleSubscriptionID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBundleSubscriptionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBundleSubscriptionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBundleSubscriptionID: %w", err)
+	}
+	return oldValue.BundleSubscriptionID, nil
+}
+
+// AddBundleSubscriptionID adds i to the "bundle_subscription_id" field.
+func (m *UserSubscriptionMutation) AddBundleSubscriptionID(i int64) {
+	if m.addbundle_subscription_id != nil {
+		*m.addbundle_subscription_id += i
+	} else {
+		m.addbundle_subscription_id = &i
+	}
+}
+
+// AddedBundleSubscriptionID returns the value that was added to the "bundle_subscription_id" field in this mutation.
+func (m *UserSubscriptionMutation) AddedBundleSubscriptionID() (r int64, exists bool) {
+	v := m.addbundle_subscription_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearBundleSubscriptionID clears the value of the "bundle_subscription_id" field.
+func (m *UserSubscriptionMutation) ClearBundleSubscriptionID() {
+	m.bundle_subscription_id = nil
+	m.addbundle_subscription_id = nil
+	m.clearedFields[usersubscription.FieldBundleSubscriptionID] = struct{}{}
+}
+
+// BundleSubscriptionIDCleared returns if the "bundle_subscription_id" field was cleared in this mutation.
+func (m *UserSubscriptionMutation) BundleSubscriptionIDCleared() bool {
+	_, ok := m.clearedFields[usersubscription.FieldBundleSubscriptionID]
+	return ok
+}
+
+// ResetBundleSubscriptionID resets all changes to the "bundle_subscription_id" field.
+func (m *UserSubscriptionMutation) ResetBundleSubscriptionID() {
+	m.bundle_subscription_id = nil
+	m.addbundle_subscription_id = nil
+	delete(m.clearedFields, usersubscription.FieldBundleSubscriptionID)
+}
+
+// SetDailyLimitUsd sets the "daily_limit_usd" field.
+func (m *UserSubscriptionMutation) SetDailyLimitUsd(f float64) {
+	m.daily_limit_usd = &f
+	m.adddaily_limit_usd = nil
+}
+
+// DailyLimitUsd returns the value of the "daily_limit_usd" field in the mutation.
+func (m *UserSubscriptionMutation) DailyLimitUsd() (r float64, exists bool) {
+	v := m.daily_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDailyLimitUsd returns the old "daily_limit_usd" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldDailyLimitUsd(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDailyLimitUsd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDailyLimitUsd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDailyLimitUsd: %w", err)
+	}
+	return oldValue.DailyLimitUsd, nil
+}
+
+// AddDailyLimitUsd adds f to the "daily_limit_usd" field.
+func (m *UserSubscriptionMutation) AddDailyLimitUsd(f float64) {
+	if m.adddaily_limit_usd != nil {
+		*m.adddaily_limit_usd += f
+	} else {
+		m.adddaily_limit_usd = &f
+	}
+}
+
+// AddedDailyLimitUsd returns the value that was added to the "daily_limit_usd" field in this mutation.
+func (m *UserSubscriptionMutation) AddedDailyLimitUsd() (r float64, exists bool) {
+	v := m.adddaily_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDailyLimitUsd resets all changes to the "daily_limit_usd" field.
+func (m *UserSubscriptionMutation) ResetDailyLimitUsd() {
+	m.daily_limit_usd = nil
+	m.adddaily_limit_usd = nil
+}
+
+// SetWeeklyLimitUsd sets the "weekly_limit_usd" field.
+func (m *UserSubscriptionMutation) SetWeeklyLimitUsd(f float64) {
+	m.weekly_limit_usd = &f
+	m.addweekly_limit_usd = nil
+}
+
+// WeeklyLimitUsd returns the value of the "weekly_limit_usd" field in the mutation.
+func (m *UserSubscriptionMutation) WeeklyLimitUsd() (r float64, exists bool) {
+	v := m.weekly_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeeklyLimitUsd returns the old "weekly_limit_usd" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldWeeklyLimitUsd(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeeklyLimitUsd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeeklyLimitUsd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeeklyLimitUsd: %w", err)
+	}
+	return oldValue.WeeklyLimitUsd, nil
+}
+
+// AddWeeklyLimitUsd adds f to the "weekly_limit_usd" field.
+func (m *UserSubscriptionMutation) AddWeeklyLimitUsd(f float64) {
+	if m.addweekly_limit_usd != nil {
+		*m.addweekly_limit_usd += f
+	} else {
+		m.addweekly_limit_usd = &f
+	}
+}
+
+// AddedWeeklyLimitUsd returns the value that was added to the "weekly_limit_usd" field in this mutation.
+func (m *UserSubscriptionMutation) AddedWeeklyLimitUsd() (r float64, exists bool) {
+	v := m.addweekly_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeeklyLimitUsd resets all changes to the "weekly_limit_usd" field.
+func (m *UserSubscriptionMutation) ResetWeeklyLimitUsd() {
+	m.weekly_limit_usd = nil
+	m.addweekly_limit_usd = nil
+}
+
+// SetMonthlyLimitUsd sets the "monthly_limit_usd" field.
+func (m *UserSubscriptionMutation) SetMonthlyLimitUsd(f float64) {
+	m.monthly_limit_usd = &f
+	m.addmonthly_limit_usd = nil
+}
+
+// MonthlyLimitUsd returns the value of the "monthly_limit_usd" field in the mutation.
+func (m *UserSubscriptionMutation) MonthlyLimitUsd() (r float64, exists bool) {
+	v := m.monthly_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMonthlyLimitUsd returns the old "monthly_limit_usd" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldMonthlyLimitUsd(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMonthlyLimitUsd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMonthlyLimitUsd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMonthlyLimitUsd: %w", err)
+	}
+	return oldValue.MonthlyLimitUsd, nil
+}
+
+// AddMonthlyLimitUsd adds f to the "monthly_limit_usd" field.
+func (m *UserSubscriptionMutation) AddMonthlyLimitUsd(f float64) {
+	if m.addmonthly_limit_usd != nil {
+		*m.addmonthly_limit_usd += f
+	} else {
+		m.addmonthly_limit_usd = &f
+	}
+}
+
+// AddedMonthlyLimitUsd returns the value that was added to the "monthly_limit_usd" field in this mutation.
+func (m *UserSubscriptionMutation) AddedMonthlyLimitUsd() (r float64, exists bool) {
+	v := m.addmonthly_limit_usd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMonthlyLimitUsd resets all changes to the "monthly_limit_usd" field.
+func (m *UserSubscriptionMutation) ResetMonthlyLimitUsd() {
+	m.monthly_limit_usd = nil
+	m.addmonthly_limit_usd = nil
+}
+
 // ClearUser clears the "user" edge to the User entity.
 func (m *UserSubscriptionMutation) ClearUser() {
 	m.cleareduser = true
@@ -46267,7 +50804,7 @@ func (m *UserSubscriptionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserSubscriptionMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 21)
 	if m.created_at != nil {
 		fields = append(fields, usersubscription.FieldCreatedAt)
 	}
@@ -46319,6 +50856,18 @@ func (m *UserSubscriptionMutation) Fields() []string {
 	if m.notes != nil {
 		fields = append(fields, usersubscription.FieldNotes)
 	}
+	if m.bundle_subscription_id != nil {
+		fields = append(fields, usersubscription.FieldBundleSubscriptionID)
+	}
+	if m.daily_limit_usd != nil {
+		fields = append(fields, usersubscription.FieldDailyLimitUsd)
+	}
+	if m.weekly_limit_usd != nil {
+		fields = append(fields, usersubscription.FieldWeeklyLimitUsd)
+	}
+	if m.monthly_limit_usd != nil {
+		fields = append(fields, usersubscription.FieldMonthlyLimitUsd)
+	}
 	return fields
 }
 
@@ -46361,6 +50910,14 @@ func (m *UserSubscriptionMutation) Field(name string) (ent.Value, bool) {
 		return m.AssignedAt()
 	case usersubscription.FieldNotes:
 		return m.Notes()
+	case usersubscription.FieldBundleSubscriptionID:
+		return m.BundleSubscriptionID()
+	case usersubscription.FieldDailyLimitUsd:
+		return m.DailyLimitUsd()
+	case usersubscription.FieldWeeklyLimitUsd:
+		return m.WeeklyLimitUsd()
+	case usersubscription.FieldMonthlyLimitUsd:
+		return m.MonthlyLimitUsd()
 	}
 	return nil, false
 }
@@ -46404,6 +50961,14 @@ func (m *UserSubscriptionMutation) OldField(ctx context.Context, name string) (e
 		return m.OldAssignedAt(ctx)
 	case usersubscription.FieldNotes:
 		return m.OldNotes(ctx)
+	case usersubscription.FieldBundleSubscriptionID:
+		return m.OldBundleSubscriptionID(ctx)
+	case usersubscription.FieldDailyLimitUsd:
+		return m.OldDailyLimitUsd(ctx)
+	case usersubscription.FieldWeeklyLimitUsd:
+		return m.OldWeeklyLimitUsd(ctx)
+	case usersubscription.FieldMonthlyLimitUsd:
+		return m.OldMonthlyLimitUsd(ctx)
 	}
 	return nil, fmt.Errorf("unknown UserSubscription field %s", name)
 }
@@ -46532,6 +51097,34 @@ func (m *UserSubscriptionMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetNotes(v)
 		return nil
+	case usersubscription.FieldBundleSubscriptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBundleSubscriptionID(v)
+		return nil
+	case usersubscription.FieldDailyLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDailyLimitUsd(v)
+		return nil
+	case usersubscription.FieldWeeklyLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeeklyLimitUsd(v)
+		return nil
+	case usersubscription.FieldMonthlyLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMonthlyLimitUsd(v)
+		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription field %s", name)
 }
@@ -46549,6 +51142,18 @@ func (m *UserSubscriptionMutation) AddedFields() []string {
 	if m.addmonthly_usage_usd != nil {
 		fields = append(fields, usersubscription.FieldMonthlyUsageUsd)
 	}
+	if m.addbundle_subscription_id != nil {
+		fields = append(fields, usersubscription.FieldBundleSubscriptionID)
+	}
+	if m.adddaily_limit_usd != nil {
+		fields = append(fields, usersubscription.FieldDailyLimitUsd)
+	}
+	if m.addweekly_limit_usd != nil {
+		fields = append(fields, usersubscription.FieldWeeklyLimitUsd)
+	}
+	if m.addmonthly_limit_usd != nil {
+		fields = append(fields, usersubscription.FieldMonthlyLimitUsd)
+	}
 	return fields
 }
 
@@ -46563,6 +51168,14 @@ func (m *UserSubscriptionMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedWeeklyUsageUsd()
 	case usersubscription.FieldMonthlyUsageUsd:
 		return m.AddedMonthlyUsageUsd()
+	case usersubscription.FieldBundleSubscriptionID:
+		return m.AddedBundleSubscriptionID()
+	case usersubscription.FieldDailyLimitUsd:
+		return m.AddedDailyLimitUsd()
+	case usersubscription.FieldWeeklyLimitUsd:
+		return m.AddedWeeklyLimitUsd()
+	case usersubscription.FieldMonthlyLimitUsd:
+		return m.AddedMonthlyLimitUsd()
 	}
 	return nil, false
 }
@@ -46593,6 +51206,34 @@ func (m *UserSubscriptionMutation) AddField(name string, value ent.Value) error 
 		}
 		m.AddMonthlyUsageUsd(v)
 		return nil
+	case usersubscription.FieldBundleSubscriptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBundleSubscriptionID(v)
+		return nil
+	case usersubscription.FieldDailyLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDailyLimitUsd(v)
+		return nil
+	case usersubscription.FieldWeeklyLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeeklyLimitUsd(v)
+		return nil
+	case usersubscription.FieldMonthlyLimitUsd:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMonthlyLimitUsd(v)
+		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription numeric field %s", name)
 }
@@ -46618,6 +51259,9 @@ func (m *UserSubscriptionMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(usersubscription.FieldNotes) {
 		fields = append(fields, usersubscription.FieldNotes)
+	}
+	if m.FieldCleared(usersubscription.FieldBundleSubscriptionID) {
+		fields = append(fields, usersubscription.FieldBundleSubscriptionID)
 	}
 	return fields
 }
@@ -46650,6 +51294,9 @@ func (m *UserSubscriptionMutation) ClearField(name string) error {
 		return nil
 	case usersubscription.FieldNotes:
 		m.ClearNotes()
+		return nil
+	case usersubscription.FieldBundleSubscriptionID:
+		m.ClearBundleSubscriptionID()
 		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription nullable field %s", name)
@@ -46709,6 +51356,18 @@ func (m *UserSubscriptionMutation) ResetField(name string) error {
 		return nil
 	case usersubscription.FieldNotes:
 		m.ResetNotes()
+		return nil
+	case usersubscription.FieldBundleSubscriptionID:
+		m.ResetBundleSubscriptionID()
+		return nil
+	case usersubscription.FieldDailyLimitUsd:
+		m.ResetDailyLimitUsd()
+		return nil
+	case usersubscription.FieldWeeklyLimitUsd:
+		m.ResetWeeklyLimitUsd()
+		return nil
+	case usersubscription.FieldMonthlyLimitUsd:
+		m.ResetMonthlyLimitUsd()
 		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription field %s", name)

@@ -20,7 +20,7 @@ export type OrderStatus =
 
 export type PaymentType = 'alipay' | 'wxpay' | 'alipay_direct' | 'wxpay_direct' | 'stripe' | 'easypay' | 'airwallex'
 
-export type OrderType = 'balance' | 'subscription'
+export type OrderType = 'balance' | 'subscription' | 'bundle'
 
 // ==================== Configuration ====================
 
@@ -97,6 +97,7 @@ export interface PaymentOrder {
   refund_request_reason?: string
   plan_id?: number
   provider_instance_id?: string
+  balance_deduct_amount?: number
 }
 
 // ==================== Plans & Channels ====================
@@ -203,6 +204,8 @@ export interface CreateOrderResult {
   out_trade_no?: string
   payment_mode?: string
   resume_token?: string
+  direct_success?: boolean // 纯余额支付立即成功
+  balance_deduct_amount?: number // 余额抵扣金额
   oauth?: WechatOAuthInfo
   jsapi?: WechatJSAPIPayload
   jsapi_payload?: WechatJSAPIPayload
@@ -215,6 +218,6 @@ export interface DashboardStats {
   total_count: number
   avg_amount: number
   daily_series: { date: string; amount: number; count: number }[]
-  payment_methods: { type: string; amount: number; count: number }[]
-  top_users: { user_id: number; email: string; amount: number }[]
+  payment_methods: { type: string; amount: number; balance_amount: number; count: number }[]
+  top_users: { user_id: number; email: string; amount: number; balance_amount: number }[]
 }

@@ -32,7 +32,8 @@ func newGatewayRoutesTestRouter() *gin.Engine {
 			})
 			c.Next()
 		}),
-		nil,
+			nil, // apiKeyService
+			nil, // subscriptionService
 		nil,
 		nil,
 		nil,

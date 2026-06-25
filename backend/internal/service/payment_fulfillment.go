@@ -217,6 +217,9 @@ func (s *PaymentService) executeFulfillment(ctx context.Context, oid int64) erro
 	if o.OrderType == payment.OrderTypeSubscription {
 		return s.ExecuteSubscriptionFulfillment(ctx, oid)
 	}
+	if o.OrderType == payment.OrderTypeBundle {
+		return s.ExecuteBundleFulfillment(ctx, oid)
+	}
 	return s.ExecuteBalanceFulfillment(ctx, oid)
 }
 
@@ -684,4 +687,61 @@ func (s *PaymentService) RetryFulfillment(ctx context.Context, oid int64) error 
 	}
 	s.writeAuditLog(ctx, oid, "RECHARGE_RETRY", "admin", map[string]any{"detail": "admin manual retry"})
 	return s.executeFulfillment(ctx, oid)
+}
+
+// ExecuteBundleFulfillment fulfills a bundle purchase order by activating the bundle plan.
+func (s *PaymentService) ExecuteBundleFulfillment(ctx context.Context, oid int64) error {
+	o, err := s.entClient.PaymentOrder.Get(ctx, oid)
+	if err != nil {
+		return infraerrors.NotFound("NOT_FOUND", "order not found")
+	}
+	if o.Status == OrderStatusCompleted {
+		return nil
+	}
+	if psIsRefundStatus(o.Status) {
+		return infraerrors.BadRequest("INVALID_STATUS", "refund-related order cannot fulfill")
+	}
+	if o.Status != OrderStatusPaid && o.Status != OrderStatusFailed {
+		return infraerrors.BadRequest("INVALID_STATUS", "order cannot fulfill in status "+o.Status)
+	}
+	if o.PlanID == nil {
+		return infraerrors.BadRequest("INVALID_STATUS", "missing plan_id for bundle order")
+	}
+	c, err := s.entClient.PaymentOrder.Update().Where(
+		paymentorder.IDEQ(oid),
+		paymentorder.StatusIn(OrderStatusPaid, OrderStatusFailed),
+	).SetStatus(OrderStatusRecharging).Save(ctx)
+	if err != nil {
+		return fmt.Errorf("lock: %w", err)
+	}
+	if c == 0 {
+		return nil
+	}
+	if err := s.doBundle(ctx, o); err != nil {
+		s.markFailed(ctx, oid, err)
+		return err
+	}
+	return nil
+}
+
+func (s *PaymentService) doBundle(ctx context.Context, o *dbent.PaymentOrder) error {
+	if s.bundleSubscriptionSvc == nil {
+		return fmt.Errorf("bundle subscription service not available")
+	}
+	// Idempotency: check audit log to see if bundle was already activated.
+	if s.hasAuditLog(ctx, o.ID, "BUNDLE_ACTIVATION_SUCCESS") {
+		slog.Info("bundle already activated for order, skipping", "orderID", o.ID)
+		return s.markCompleted(ctx, o, "BUNDLE_ACTIVATION_SUCCESS")
+	}
+	// Activate the bundle via BundleSubscriptionService.
+	source := "purchase"
+	_, err := s.bundleSubscriptionSvc.ActivateBundle(ctx, &ActivateBundleRequest{
+		UserID: o.UserID,
+		PlanID: *o.PlanID,
+		Source: source,
+	})
+	if err != nil {
+		return fmt.Errorf("activate bundle: %w", err)
+	}
+	return s.markCompleted(ctx, o, "BUNDLE_ACTIVATION_SUCCESS")
 }

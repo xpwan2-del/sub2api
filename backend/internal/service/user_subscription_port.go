@@ -32,4 +32,5 @@ type UserSubscriptionRepository interface {
 	IncrementUsage(ctx context.Context, id int64, costUSD float64) error
 
 	BatchUpdateExpiredStatus(ctx context.Context) (int64, error)
+	ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error)
 }

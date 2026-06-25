@@ -6,8 +6,8 @@
     @close="emit('close')"
   >
     <div class="space-y-4">
-      <!-- No Group Assigned Warning -->
-      <div v-if="!platform" class="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+      <!-- No Group Assigned Warning (only for non-universal keys) -->
+      <div v-if="!platform && !isUniversalKey" class="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
         <svg class="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
         </svg>
@@ -21,8 +21,23 @@
         </div>
       </div>
 
-      <!-- Platform-specific content -->
-      <template v-else>
+      <!-- Universal Key auto-route notice -->
+      <div v-if="isUniversalKey && !platform" class="flex items-start gap-3 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+        <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
+        </svg>
+        <div>
+          <p class="text-sm font-medium text-blue-800 dark:text-blue-200">
+            {{ t('keys.useKeyModal.universalKeyTitle') }}
+          </p>
+          <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">
+            {{ t('keys.useKeyModal.universalKeyDescription') }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Platform-specific content (also shown for universal keys) -->
+      <template v-if="platform || isUniversalKey">
         <!-- Description -->
         <p class="text-sm text-gray-600 dark:text-gray-400">
           {{ platformDescription }}
@@ -147,6 +162,7 @@ interface Props {
   baseUrl: string
   platform: GroupPlatform | null
   allowMessagesDispatch?: boolean
+  isUniversalKey?: boolean
 }
 
 interface Emits {
@@ -178,6 +194,8 @@ const activeClientTab = ref<string>('claude')
 
 // Reset tabs when platform changes
 const defaultClientTab = computed(() => {
+  // Universal key without group: default to claude
+  if (!props.platform && props.isUniversalKey) return 'claude'
   switch (props.platform) {
     case 'openai':
       return 'codex'
@@ -264,6 +282,15 @@ const SparkleIcon = {
 }
 
 const clientTabs = computed((): TabConfig[] => {
+  // Universal key without group: show all supported clients
+  if (!props.platform && props.isUniversalKey) {
+    return [
+      { id: 'claude', label: t('keys.useKeyModal.cliTabs.claudeCode'), icon: TerminalIcon },
+      { id: 'codex', label: t('keys.useKeyModal.cliTabs.codexCli'), icon: TerminalIcon },
+      { id: 'gemini', label: t('keys.useKeyModal.cliTabs.geminiCli'), icon: SparkleIcon },
+      { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
+    ]
+  }
   if (!props.platform) return []
   switch (props.platform) {
     case 'openai': {
@@ -320,6 +347,10 @@ const currentTabs = computed(() => {
 })
 
 const platformDescription = computed(() => {
+  // Universal key without group: show generic description
+  if (!props.platform && props.isUniversalKey) {
+    return t('keys.useKeyModal.description')
+  }
   switch (props.platform) {
     case 'openai':
       if (activeClientTab.value === 'claude') {
@@ -393,6 +424,26 @@ const currentFiles = computed((): FileConfig[] => {
     const trimmed = baseRoot.replace(/\/+$/, '')
     return trimmed.endsWith('/v1beta') ? trimmed : `${trimmed}/v1beta`
   })()
+
+  // Universal key without group: route based on selected client tab
+  if (!props.platform && props.isUniversalKey) {
+    if (activeClientTab.value === 'opencode') {
+      return [generateOpenCodeConfig('openai', apiBase, apiKey)]
+    }
+    switch (activeClientTab.value) {
+      case 'codex':
+      case 'codex-ws':
+        if (activeClientTab.value === 'codex-ws') {
+          return generateOpenAIWsFiles(baseUrl, apiKey)
+        }
+        return generateOpenAIFiles(baseUrl, apiKey)
+      case 'gemini':
+        return [generateGeminiCliContent(baseUrl, apiKey)]
+      case 'claude':
+      default:
+        return generateAnthropicFiles(baseUrl, apiKey)
+    }
+  }
 
   if (activeClientTab.value === 'opencode') {
     switch (props.platform) {

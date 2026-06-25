@@ -40,6 +40,24 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/jarvis-brain',
+    name: 'JarvisBrain',
+    component: () => import('@/views/public/JarvisBrainView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Neural Gateway'
+    }
+  },
+  {
+    path: '/docs',
+    name: 'TopAiDocs',
+    component: () => import('@/views/public/TopAiDocsView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Documentation'
+    }
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/auth/LoginView.vue'),
@@ -275,6 +293,28 @@ const routes: RouteRecordRaw[] = [
       title: 'My Subscriptions',
       titleKey: 'userSubscriptions.title',
       descriptionKey: 'userSubscriptions.description'
+    }
+  },
+  {
+    path: '/bundles',
+    name: 'Bundles',
+    component: () => import('@/views/user/BundlesView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: '套餐订阅',
+      titleKey: 'bundles.title'
+    }
+  },
+  {
+    path: '/bundles/usage',
+    name: 'BundleUsage',
+    component: () => import('@/views/user/BundleUsageView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: '套餐用量',
+      titleKey: 'bundles.usageTitle'
     }
   },
   {
@@ -651,6 +691,32 @@ const routes: RouteRecordRaw[] = [
       title: 'Subscription Plans',
       titleKey: 'nav.paymentPlans',
       requiresPayment: true
+    }
+  },
+
+  // ==================== Bundle Admin Routes ====================
+  {
+    path: '/admin/bundles/plans',
+    name: 'AdminBundlePlans',
+    component: () => import('@/views/admin/bundles/BundlePlansView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Bundle Plans',
+      titleKey: 'nav.bundlePlans',
+      descriptionKey: 'admin.bundlePlans.description'
+    }
+  },
+  {
+    path: '/admin/bundles/subscriptions',
+    name: 'AdminBundleSubscriptions',
+    component: () => import('@/views/admin/bundles/BundleSubscriptionsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Bundle Subscriptions',
+      titleKey: 'nav.bundleSubscriptions',
+      descriptionKey: 'admin.bundleSubscriptions.description'
     }
   },
 

@@ -84,6 +84,7 @@ type CreateOrderRequest struct {
 	OrderType       string
 	PlanID          int64
 	Locale          string
+	UseBalance      bool // 使用账户余额抵扣（用于套餐购买）
 }
 
 type CreateOrderResponse struct {
@@ -107,7 +108,9 @@ type CreateOrderResponse struct {
 	JSAPIPayload *payment.WechatJSAPIPayload     `json:"jsapi_payload,omitempty"`
 	ExpiresAt    time.Time                       `json:"expires_at"`
 	PaymentMode  string                          `json:"payment_mode,omitempty"`
-	ResumeToken  string                          `json:"resume_token,omitempty"`
+	ResumeToken        string                          `json:"resume_token,omitempty"`
+	DirectSuccess       bool    `json:"direct_success,omitempty"` // 纯余额支付立即成功
+	BalanceDeductAmount float64 `json:"balance_deduct_amount,omitempty"` // 余额抵扣金额
 }
 
 type OrderListParams struct {
@@ -161,15 +164,17 @@ type DailyStats struct {
 }
 
 type PaymentMethodStat struct {
-	Type   string  `json:"type"`
-	Amount float64 `json:"amount"`
-	Count  int     `json:"count"`
+	Type          string  `json:"type"`
+	Amount        float64 `json:"amount"`
+	BalanceAmount float64 `json:"balance_amount"`
+	Count         int     `json:"count"`
 }
 
 type TopUserStat struct {
-	UserID int64   `json:"user_id"`
-	Email  string  `json:"email"`
-	Amount float64 `json:"amount"`
+	UserID        int64   `json:"user_id"`
+	Email         string  `json:"email"`
+	Amount        float64 `json:"amount"`
+	BalanceAmount float64 `json:"balance_amount"`
 }
 
 // --- Service ---
@@ -182,6 +187,7 @@ type PaymentService struct {
 	loadBalancer             payment.LoadBalancer
 	redeemService            *RedeemService
 	subscriptionSvc          *SubscriptionService
+	bundleSubscriptionSvc     *BundleSubscriptionService
 	configService            *PaymentConfigService
 	userRepo                 UserRepository
 	groupRepo                GroupRepository
@@ -190,8 +196,8 @@ type PaymentService struct {
 	notificationEmailService *NotificationEmailService
 }
 
-func NewPaymentService(entClient *dbent.Client, registry *payment.Registry, loadBalancer payment.LoadBalancer, redeemService *RedeemService, subscriptionSvc *SubscriptionService, configService *PaymentConfigService, userRepo UserRepository, groupRepo GroupRepository, affiliateService *AffiliateService) *PaymentService {
-	svc := &PaymentService{entClient: entClient, registry: registry, loadBalancer: newVisibleMethodLoadBalancer(loadBalancer, configService), redeemService: redeemService, subscriptionSvc: subscriptionSvc, configService: configService, userRepo: userRepo, groupRepo: groupRepo, affiliateService: affiliateService}
+func NewPaymentService(entClient *dbent.Client, registry *payment.Registry, loadBalancer payment.LoadBalancer, redeemService *RedeemService, subscriptionSvc *SubscriptionService, bundleSubscriptionSvc *BundleSubscriptionService, configService *PaymentConfigService, userRepo UserRepository, groupRepo GroupRepository, affiliateService *AffiliateService) *PaymentService {
+	svc := &PaymentService{entClient: entClient, registry: registry, loadBalancer: newVisibleMethodLoadBalancer(loadBalancer, configService), redeemService: redeemService, subscriptionSvc: subscriptionSvc, bundleSubscriptionSvc: bundleSubscriptionSvc, configService: configService, userRepo: userRepo, groupRepo: groupRepo, affiliateService: affiliateService}
 	svc.resumeService = psNewPaymentResumeService(configService)
 	return svc
 }

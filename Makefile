@@ -1,4 +1,4 @@
-.PHONY: build build-backend build-frontend build-datamanagementd test test-backend test-frontend test-frontend-critical test-datamanagementd secret-scan
+.PHONY: build build-backend build-frontend build-datamanagementd test test-backend test-frontend test-frontend-critical test-datamanagementd secret-scan dev-backend dev-frontend
 
 FRONTEND_CRITICAL_VITEST := \
 	src/views/auth/__tests__/LinuxDoCallbackView.spec.ts \
@@ -39,6 +39,14 @@ test-frontend-critical:
 
 test-datamanagementd:
 	@cd datamanagement && go test ./...
+
+# 本地开发：快速启动后端
+dev-backend:
+	@cd backend && go run ./cmd/server/
+
+# 本地开发：启动前端热重载
+dev-frontend:
+	@cd frontend && pnpm run dev
 
 secret-scan:
 	@python3 tools/secret_scan.py

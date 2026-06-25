@@ -95,6 +95,13 @@ func (s *billingCacheMissStub) BatchGetUserPlatformQuotaCache(ctx context.Contex
 	return nil, nil
 }
 
+func (m *billingCacheMissStub) GetBundleSubscriptionCache(context.Context, int64) (*BundleSubscriptionCacheData, error) { return nil, nil }
+func (m *billingCacheMissStub) SetBundleSubscriptionCache(context.Context, int64, *BundleSubscriptionCacheData, time.Duration) error { return nil }
+func (m *billingCacheMissStub) InvalidateBundleSubscriptionCache(context.Context, int64) error { return nil }
+func (m *billingCacheMissStub) GetBundlePlansForSaleCache(context.Context) ([]byte, error) { return nil, nil }
+func (m *billingCacheMissStub) SetBundlePlansForSaleCache(context.Context, []byte, time.Duration) error { return nil }
+func (m *billingCacheMissStub) InvalidateBundlePlansForSaleCache(context.Context) error { return nil }
+
 type balanceLoadUserRepoStub struct {
 	mockUserRepo
 	calls   atomic.Int64

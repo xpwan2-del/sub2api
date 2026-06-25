@@ -81,6 +81,20 @@ func (_c *PaymentOrderCreate) SetNillableFeeRate(v *float64) *PaymentOrderCreate
 	return _c
 }
 
+// SetBalanceDeductAmount sets the "balance_deduct_amount" field.
+func (_c *PaymentOrderCreate) SetBalanceDeductAmount(v float64) *PaymentOrderCreate {
+	_c.mutation.SetBalanceDeductAmount(v)
+	return _c
+}
+
+// SetNillableBalanceDeductAmount sets the "balance_deduct_amount" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableBalanceDeductAmount(v *float64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetBalanceDeductAmount(*v)
+	}
+	return _c
+}
+
 // SetRechargeCode sets the "recharge_code" field.
 func (_c *PaymentOrderCreate) SetRechargeCode(v string) *PaymentOrderCreate {
 	_c.mutation.SetRechargeCode(v)
@@ -517,6 +531,10 @@ func (_c *PaymentOrderCreate) defaults() {
 		v := paymentorder.DefaultFeeRate
 		_c.mutation.SetFeeRate(v)
 	}
+	if _, ok := _c.mutation.BalanceDeductAmount(); !ok {
+		v := paymentorder.DefaultBalanceDeductAmount
+		_c.mutation.SetBalanceDeductAmount(v)
+	}
 	if _, ok := _c.mutation.OutTradeNo(); !ok {
 		v := paymentorder.DefaultOutTradeNo
 		_c.mutation.SetOutTradeNo(v)
@@ -576,6 +594,9 @@ func (_c *PaymentOrderCreate) check() error {
 	}
 	if _, ok := _c.mutation.FeeRate(); !ok {
 		return &ValidationError{Name: "fee_rate", err: errors.New(`ent: missing required field "PaymentOrder.fee_rate"`)}
+	}
+	if _, ok := _c.mutation.BalanceDeductAmount(); !ok {
+		return &ValidationError{Name: "balance_deduct_amount", err: errors.New(`ent: missing required field "PaymentOrder.balance_deduct_amount"`)}
 	}
 	if _, ok := _c.mutation.RechargeCode(); !ok {
 		return &ValidationError{Name: "recharge_code", err: errors.New(`ent: missing required field "PaymentOrder.recharge_code"`)}
@@ -724,6 +745,10 @@ func (_c *PaymentOrderCreate) createSpec() (*PaymentOrder, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.FeeRate(); ok {
 		_spec.SetField(paymentorder.FieldFeeRate, field.TypeFloat64, value)
 		_node.FeeRate = value
+	}
+	if value, ok := _c.mutation.BalanceDeductAmount(); ok {
+		_spec.SetField(paymentorder.FieldBalanceDeductAmount, field.TypeFloat64, value)
+		_node.BalanceDeductAmount = value
 	}
 	if value, ok := _c.mutation.RechargeCode(); ok {
 		_spec.SetField(paymentorder.FieldRechargeCode, field.TypeString, value)
@@ -1027,6 +1052,24 @@ func (u *PaymentOrderUpsert) UpdateFeeRate() *PaymentOrderUpsert {
 // AddFeeRate adds v to the "fee_rate" field.
 func (u *PaymentOrderUpsert) AddFeeRate(v float64) *PaymentOrderUpsert {
 	u.Add(paymentorder.FieldFeeRate, v)
+	return u
+}
+
+// SetBalanceDeductAmount sets the "balance_deduct_amount" field.
+func (u *PaymentOrderUpsert) SetBalanceDeductAmount(v float64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldBalanceDeductAmount, v)
+	return u
+}
+
+// UpdateBalanceDeductAmount sets the "balance_deduct_amount" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateBalanceDeductAmount() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldBalanceDeductAmount)
+	return u
+}
+
+// AddBalanceDeductAmount adds v to the "balance_deduct_amount" field.
+func (u *PaymentOrderUpsert) AddBalanceDeductAmount(v float64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldBalanceDeductAmount, v)
 	return u
 }
 
@@ -1708,6 +1751,27 @@ func (u *PaymentOrderUpsertOne) AddFeeRate(v float64) *PaymentOrderUpsertOne {
 func (u *PaymentOrderUpsertOne) UpdateFeeRate() *PaymentOrderUpsertOne {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.UpdateFeeRate()
+	})
+}
+
+// SetBalanceDeductAmount sets the "balance_deduct_amount" field.
+func (u *PaymentOrderUpsertOne) SetBalanceDeductAmount(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetBalanceDeductAmount(v)
+	})
+}
+
+// AddBalanceDeductAmount adds v to the "balance_deduct_amount" field.
+func (u *PaymentOrderUpsertOne) AddBalanceDeductAmount(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddBalanceDeductAmount(v)
+	})
+}
+
+// UpdateBalanceDeductAmount sets the "balance_deduct_amount" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateBalanceDeductAmount() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateBalanceDeductAmount()
 	})
 }
 
@@ -2640,6 +2704,27 @@ func (u *PaymentOrderUpsertBulk) AddFeeRate(v float64) *PaymentOrderUpsertBulk {
 func (u *PaymentOrderUpsertBulk) UpdateFeeRate() *PaymentOrderUpsertBulk {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.UpdateFeeRate()
+	})
+}
+
+// SetBalanceDeductAmount sets the "balance_deduct_amount" field.
+func (u *PaymentOrderUpsertBulk) SetBalanceDeductAmount(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetBalanceDeductAmount(v)
+	})
+}
+
+// AddBalanceDeductAmount adds v to the "balance_deduct_amount" field.
+func (u *PaymentOrderUpsertBulk) AddBalanceDeductAmount(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddBalanceDeductAmount(v)
+	})
+}
+
+// UpdateBalanceDeductAmount sets the "balance_deduct_amount" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateBalanceDeductAmount() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateBalanceDeductAmount()
 	})
 }
 

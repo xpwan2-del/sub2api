@@ -90,6 +90,11 @@ func FeeRate(v float64) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldFeeRate, v))
 }
 
+// BalanceDeductAmount applies equality check predicate on the "balance_deduct_amount" field. It's identical to BalanceDeductAmountEQ.
+func BalanceDeductAmount(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldBalanceDeductAmount, v))
+}
+
 // RechargeCode applies equality check predicate on the "recharge_code" field. It's identical to RechargeCodeEQ.
 func RechargeCode(v string) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldRechargeCode, v))
@@ -588,6 +593,46 @@ func FeeRateLT(v float64) predicate.PaymentOrder {
 // FeeRateLTE applies the LTE predicate on the "fee_rate" field.
 func FeeRateLTE(v float64) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldLTE(FieldFeeRate, v))
+}
+
+// BalanceDeductAmountEQ applies the EQ predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldBalanceDeductAmount, v))
+}
+
+// BalanceDeductAmountNEQ applies the NEQ predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountNEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldBalanceDeductAmount, v))
+}
+
+// BalanceDeductAmountIn applies the In predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldBalanceDeductAmount, vs...))
+}
+
+// BalanceDeductAmountNotIn applies the NotIn predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountNotIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldBalanceDeductAmount, vs...))
+}
+
+// BalanceDeductAmountGT applies the GT predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountGT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldBalanceDeductAmount, v))
+}
+
+// BalanceDeductAmountGTE applies the GTE predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountGTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldBalanceDeductAmount, v))
+}
+
+// BalanceDeductAmountLT applies the LT predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountLT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldBalanceDeductAmount, v))
+}
+
+// BalanceDeductAmountLTE applies the LTE predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountLTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldBalanceDeductAmount, v))
 }
 
 // RechargeCodeEQ applies the EQ predicate on the "recharge_code" field.

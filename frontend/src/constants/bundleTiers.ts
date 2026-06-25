@@ -1,0 +1,137 @@
+/**
+ * Bundle tier shared constants and display configuration.
+ *
+ * Single source of truth for tier values used by admin
+ * (`views/admin/bundles/BundlePlansView.vue`) and user-facing
+ * (`views/user/BundlesView.vue`, `BundleUsageView.vue`) screens.
+ *
+ * When adding a new tier, only this file and the backend
+ * `bundle_constants.go` need to be updated.
+ */
+
+/**
+ * 套餐层级（Tier）共享常量和显示配置
+ *
+ * 前端单例数据源，管理后台和用户端共用的层级定义。
+ * 新增层级时只需修改此文件和后端 bundle_constants.go。
+ *
+ * 包含：
+ * - 层级常量（starter/pro/enterprise）
+ * - 各层级的 TailwindCSS 主题样式（徽章、边框、按钮等）
+ * - i18n 键映射和下拉选择器构建函数
+ */
+
+// ── 层级常量（必须与后端 bundle_constants.go 中 BundleTier* 一致）──
+// ── Tier value constants (must match backend BundleTier* in bundle_constants.go) ──
+
+export const BUNDLE_TIER_STARTER = 'starter' as const
+export const BUNDLE_TIER_PRO = 'pro' as const
+export const BUNDLE_TIER_ENTERPRISE = 'enterprise' as const
+
+/** Union type for all valid tier values */
+export type BundleTier = typeof BUNDLE_TIER_STARTER | typeof BUNDLE_TIER_PRO | typeof BUNDLE_TIER_ENTERPRISE
+
+/** Ordered list of all tier values (lowest to highest) */
+export const BUNDLE_TIERS: readonly BundleTier[] = [
+  BUNDLE_TIER_STARTER,
+  BUNDLE_TIER_PRO,
+  BUNDLE_TIER_ENTERPRISE,
+] as const
+
+// ── 国际化键映射（用户端 / 管理后台命名空间分离）──
+// ── i18n key mapping ──
+
+const TIER_I18N_KEYS: Record<BundleTier, { user: string; admin: string }> = {
+  starter: { user: 'bundles.tierStarter', admin: 'bundles.admin.tierStarter' },
+  pro: { user: 'bundles.tierPro', admin: 'bundles.admin.tierPro' },
+  enterprise: { user: 'bundles.tierEnterprise', admin: 'bundles.admin.tierEnterprise' },
+}
+
+// ── 各层级的 TailwindCSS 显示主题 ──
+// ── Display theme per tier ──
+
+export interface TierTheme {
+  badgeClass: string
+  borderClass: string
+  accentClass: string
+  textClass: string
+  iconClass: string
+  btnClass: string
+  disabledBtnClass: string
+  discountClass: string
+  adminBadgeClass: string
+}
+
+const TIER_THEME: Record<BundleTier, TierTheme> = {
+  starter: {
+    badgeClass: 'bg-blue-500/10 text-blue-600 border border-blue-500/30 dark:text-blue-400 rounded-md px-2 py-0.5 text-[11px] font-medium',
+    borderClass: 'border-blue-500/20',
+    accentClass: 'bg-gradient-to-r from-blue-400 to-blue-500',
+    textClass: 'text-blue-600 dark:text-blue-400',
+    iconClass: 'text-blue-500 dark:text-blue-400',
+    btnClass: 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700',
+    disabledBtnClass: 'bg-blue-100 text-blue-400 dark:bg-blue-900/30 dark:text-blue-500 cursor-not-allowed',
+    discountClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    adminBadgeClass: 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  },
+  pro: {
+    badgeClass: 'bg-purple-500/10 text-purple-600 border border-purple-500/30 dark:text-purple-400 rounded-md px-2 py-0.5 text-[11px] font-medium',
+    borderClass: 'border-purple-500/20',
+    accentClass: 'bg-gradient-to-r from-purple-400 to-purple-500',
+    textClass: 'text-purple-600 dark:text-purple-400',
+    iconClass: 'text-purple-500 dark:text-purple-400',
+    btnClass: 'bg-purple-500 text-white hover:bg-purple-600 active:bg-purple-700',
+    disabledBtnClass: 'bg-purple-100 text-purple-400 dark:bg-purple-900/30 dark:text-purple-500 cursor-not-allowed',
+    discountClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+    adminBadgeClass: 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  },
+  enterprise: {
+    badgeClass: 'bg-amber-500/10 text-amber-600 border border-amber-500/30 dark:text-amber-400 rounded-md px-2 py-0.5 text-[11px] font-medium',
+    borderClass: 'border-amber-500/20',
+    accentClass: 'bg-gradient-to-r from-amber-400 to-amber-500',
+    textClass: 'text-amber-600 dark:text-amber-400',
+    iconClass: 'text-amber-500 dark:text-amber-400',
+    btnClass: 'bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700',
+    disabledBtnClass: 'bg-amber-100 text-amber-400 dark:bg-amber-900/30 dark:text-amber-500 cursor-not-allowed',
+    discountClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+    adminBadgeClass: 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+  },
+}
+
+const DEFAULT_TIER_THEME: TierTheme = {
+  badgeClass: 'bg-gray-500/10 text-gray-600 border border-gray-500/30 dark:text-gray-400 rounded-md px-2 py-0.5 text-[11px] font-medium',
+  borderClass: 'border-gray-200 dark:border-dark-700',
+  accentClass: 'bg-gradient-to-r from-primary-400 to-primary-500',
+  textClass: 'text-primary-600 dark:text-primary-400',
+  iconClass: 'text-primary-500 dark:text-primary-400',
+  btnClass: 'bg-primary-500 text-white hover:bg-primary-600',
+  disabledBtnClass: 'bg-primary-100 text-primary-400 dark:bg-primary-900/30 dark:text-primary-500 cursor-not-allowed',
+  discountClass: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+  adminBadgeClass: 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+}
+
+// ── 工具函数 ──
+// ── Helper functions ──
+
+/** 获取层级主题，未知层级返回默认主题 */
+/** Get theme for a tier, with fallback for unknown values */
+export function getTierTheme(tier?: string): TierTheme {
+  if (tier && tier in TIER_THEME) return TIER_THEME[tier as BundleTier]
+  return DEFAULT_TIER_THEME
+}
+
+/** 获取层级的 i18n 显示标签键 */
+/** Get i18n display label key for a tier */
+export function getTierI18nKey(tier?: string, namespace: 'user' | 'admin' = 'user'): string {
+  if (tier && tier in TIER_I18N_KEYS) return TIER_I18N_KEYS[tier as BundleTier][namespace]
+  return tier || ''
+}
+
+/** 构建层级下拉选项（管理后台使用） */
+/** Build select dropdown options for tier (admin) */
+export function getTierSelectOptions(t: (key: string) => string): Array<{ value: BundleTier; label: string }> {
+  return BUNDLE_TIERS.map(tier => ({
+    value: tier,
+    label: t(TIER_I18N_KEYS[tier].admin),
+  }))
+}

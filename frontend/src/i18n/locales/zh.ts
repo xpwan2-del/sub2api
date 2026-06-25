@@ -18,6 +18,93 @@ export default {
       stickySession: '会话保持',
       realtimeBilling: '按量计费'
     },
+    jarvis: {
+      kicker: 'AI 路由智能中枢',
+      title: '模型流量，实时思考。',
+      description: '一个网关协调上游账号、延迟、额度、故障切换与计费信号，让接入系统像神经中枢一样持续运转。',
+      models: {
+        Claude: {
+          specialty: '长文 · 推理 · 写作',
+          intro: '我是 Claude，写报告像咨询顾问，讲道理像班主任，贵是贵点，但我真的稳。'
+        },
+        OpenAI: {
+          specialty: '工具调用 · 代码 · Agent',
+          intro: '我是 OpenAI，全场最会接工具的打工人，写代码、调 API、跑 Agent，我一条龙。'
+        },
+        Gemini: {
+          specialty: '多模态 · 长上下文 · Google 生态',
+          intro: '我是 Gemini，文字图片视频都能看，背后还有 Google，主打一个家里资源多。'
+        },
+        Grok: {
+          specialty: '实时感 · 个性 · 快速推理',
+          intro: '我是 Grok，别人一本正经，我先开个玩笑；能聊能冲，就是嘴比较快。'
+        },
+        Qwen: {
+          specialty: '中文 · 代码 · 开源',
+          intro: '我是 Qwen，中文我熟，代码我会，开源我给，老板问成本我也不慌。'
+        },
+        DeepSeek: {
+          specialty: '推理 · 代码 · 低成本',
+          intro: '我是 DeepSeek，我会推理，还便宜，还能打。你预算紧？巧了，我也擅长省钱。'
+        },
+        Kimi: {
+          specialty: '长上下文 · 文档 · 中文',
+          intro: '我是 Kimi，你把文档堆过来，我慢慢吃。长文档？别客气，我胃口大。'
+        },
+        Meta: {
+          specialty: '开源 · 本地部署 · 微调',
+          intro: '我是 Llama，不一定最会装，但最适合被你改装。想私有化？我搬进你服务器。'
+        },
+        Zhipu: {
+          specialty: '中文推理 · 企业 · 国产生态',
+          intro: '我是 GLM，中文业务我门儿清，写方案、做问答、进企业，我比较接地气。'
+        },
+        Baidu: {
+          specialty: '中文知识 · 搜索增强 · 落地',
+          intro: '我是 ERNIE，背靠百度搜索，别人靠记忆，我还能顺手翻资料。'
+        },
+        MiniMax: {
+          specialty: '中文对话 · 长上下文 · 应用体验',
+          intro: '我是 MiniMax，聊天不端着，长文也能扛，主打一个产品感比较顺。'
+        },
+        Mistral: {
+          specialty: '轻量高效 · 商用 · 欧洲生态',
+          intro: '我是 Mistral，法国来的效率派，不一定嗓门最大，但跑起来很利索。'
+        },
+        AWS: {
+          specialty: '云集成 · 企业部署 · 稳定',
+          intro: '我是 Nova，AWS 家亲儿子，上云、扩容、接企业系统，我熟得像回家。'
+        },
+        Hunyuan: {
+          specialty: '中文 · 多媒体 · 腾讯生态',
+          intro: '我是 Hunyuan，中文内容和社交场景我懂，毕竟腾讯系流量我见得多。'
+        },
+        Nvidia: {
+          specialty: '推理优化 · GPU · 私有化',
+          intro: '我是 Nemotron，别人谈模型，我先看显卡。GPU 吃满，性能拉满。'
+        },
+        Doubao: {
+          specialty: '中文内容 · 对话 · 产品化',
+          intro: '我是 Doubao，做内容我熟，用户爱不爱看，我比你老板还敏感。'
+        },
+        Microsoft: {
+          specialty: '小模型 · 高效率 · 端侧',
+          intro: '我是 Phi，别看我小，我省电省钱省机器。小身板，也能干正事。'
+        },
+        Perplexity: {
+          specialty: '联网搜索 · 引用 · 研究',
+          intro: '我是 Sonar，我不装全知全能，我会查，还会告诉你我从哪查的。'
+        },
+        AI21: {
+          specialty: '长上下文 · 文档 · 企业文本',
+          intro: '我是 Jamba，文档工作流我能啃，合同、报告、知识库，来多少我排队处理。'
+        },
+        Cohere: {
+          specialty: 'RAG · 多语言 · 企业检索',
+          intro: '我是 Cohere，企业 RAG 老熟人，别问我会不会聊天，问我资料找得准不准。'
+        }
+      }
+    },
     // 用户痛点区块
     painPoints: {
       title: '你是否也遇到这些问题？',
@@ -44,14 +131,6 @@ export default {
     solutions: {
       title: '我们帮你解决',
       subtitle: '简单三步，开始省心使用 AI'
-    },
-    features: {
-      unifiedGateway: '一键接入',
-      unifiedGatewayDesc: '获取一个 API 密钥，即可调用所有已接入的 AI 模型，无需分别申请。',
-      multiAccount: '稳定可靠',
-      multiAccountDesc: '智能调度多个上游账号，自动切换和负载均衡，告别频繁报错。',
-      balanceQuota: '用多少付多少',
-      balanceQuotaDesc: '按实际使用量计费，支持设置配额上限，团队用量一目了然。'
     },
     // 优势对比
     comparison: {
@@ -89,16 +168,6 @@ export default {
         }
       }
     },
-    providers: {
-      title: '已支持的 AI 模型',
-      description: '一个 API，多种选择',
-      supported: '已支持',
-      soon: '即将推出',
-      claude: 'Claude',
-      gemini: 'Gemini',
-      antigravity: 'Antigravity',
-      more: '更多'
-    },
     // CTA 区块
     cta: {
       title: '准备好开始了吗？',
@@ -106,7 +175,7 @@ export default {
       button: '免费注册'
     },
     footer: {
-      allRightsReserved: '保留所有权利。'
+      allRightsReserved: 'All rights reserved.'
     }
   },
 
@@ -416,6 +485,11 @@ export default {
     channelMonitor: '渠道监控',
     channelStatus: '渠道状态',
     riskControl: '风控中心',
+    bundleManagement: '套餐管理',
+    bundlePlans: '套餐方案',
+    bundleSubscriptions: '套餐订阅',
+    bundles: '套餐订阅',
+    bundleUsage: '套餐用量',
   },
 
   // Auth
@@ -768,6 +842,9 @@ export default {
       noGroupTitle: '请先分配分组',
       noGroupDescription:
         '此 API 密钥尚未分配分组，请先在密钥列表中点击分组列进行分配，然后才能查看使用配置。',
+      universalKeyTitle: '通用 Key · 自动路由',
+      universalKeyDescription:
+        '此密钥为通用 Key，支持自动路由至套餐内所有模型。根据下方所选客户端完成配置即可使用。',
       openai: {
         description: '将以下配置文件添加到 Codex CLI 配置目录中。',
         configTomlHint: '请确保以下内容位于 config.toml 文件的开头部分',
@@ -6004,8 +6081,8 @@ export default {
         contactInfoPlaceholder: '例如：QQ: 123456789',
         contactInfoHint: '填写客服联系方式，将展示在兑换页面、个人资料等位置',
         docUrl: '文档链接',
-        docUrlHint: '文档网站的链接。留空则隐藏文档链接。',
-        docUrlPlaceholder: 'https://docs.example.com',
+        docUrlHint: '文档网站的链接，也可以填写站内路径，例如 /docs。留空则隐藏文档链接。',
+        docUrlPlaceholder: '/docs 或 https://docs.example.com',
         siteLogo: '站点Logo',
         uploadImage: '上传图片',
         remove: '移除',
@@ -6777,7 +6854,15 @@ export default {
       loadFailed: '加载模板失败',
       saveFailed: '保存模板失败',
       deleteFailed: '删除模板失败'
-    }
+    },
+
+    // Bundle Plans & Subscriptions (router description keys)
+    bundlePlans: {
+      description: '管理套餐方案，包括创建、编辑和停用套餐',
+    },
+    bundleSubscriptions: {
+      description: '查看和管理用户套餐订阅，支持延长和撤销',
+    },
   },
 
   // Subscription Progress (Header component)
@@ -6793,8 +6878,19 @@ export default {
     expiresToday: '今天到期',
     expiresTomorrow: '明天到期',
     viewAll: '查看全部订阅',
+    viewCurrent: '查看当前订阅',
     noSubscriptions: '暂无有效订阅',
-    unlimited: '无限制'
+    unlimited: '无限制',
+    bundleActive: '有效套餐',
+    currentSubscription: '当前订阅',
+    expires: '到期时间',
+    concurrency: '并发数',
+    rpm: 'RPM 限制',
+    source: '来源',
+    sourcePurchase: '购买',
+    sourceRedeem: '兑换',
+    sourceAdmin: '管理员分配',
+    moreFeatures: '项更多特性'
   },
 
   // Version Badge
@@ -6891,7 +6987,9 @@ export default {
     resetIn: '{time} 后重置',
     quotaEndsIn: '额度将在 {time} 后结束',
     windowNotActive: '等待首次使用',
-    usageOf: '已用 {used} / {limit}'
+    usageOf: '已用 {used} / {limit}',
+    bundleBadge: '套餐订阅',
+    bundleRenew: '续费套餐'
   },
 
   // Onboarding Tour
@@ -7070,6 +7168,7 @@ export default {
   payment: {
     title: '充值/订阅',
     amountLabel: '充值金额',
+    bundleAmount: '套餐金额',
     paymentAmount: '支付金额',
     creditedBalance: '到账余额',
     quickAmounts: '快捷金额',
@@ -7089,6 +7188,7 @@ export default {
       link: 'Link',
       alipay_direct: '支付宝（直连）',
       wxpay_direct: '微信支付（直连）',
+      balance: '余额支付',
     },
     status: {
       pending: '待支付',
@@ -7140,10 +7240,15 @@ export default {
       orderType: '订单类型',
       actions: '操作',
       requestRefund: '申请退款',
+      viewDetail: '查看详情',
+      amountInfo: '金额明细',
+      timeline: '订单进度',
+      refundRequestedAt: '申请退款时间',
     },
     result: {
       success: '支付成功',
       subscriptionSuccess: '订阅成功',
+      bundleSuccess: '套餐购买成功',
       processing: '支付处理中',
       processingHint: '支付结果仍在确认中，页面会自动刷新。',
       failed: '支付失败',
@@ -7151,6 +7256,12 @@ export default {
       viewOrders: '查看订单',
     },
     currentBalance: '当前余额',
+    useBalance: '使用账户余额',
+    balanceCoversFull: '余额足以支付全额，无需其他支付方式',
+    balancePartial: '余额抵扣 ${deduct}，还需支付 ${remaining}',
+    balanceDeduct: '余额抵扣',
+    gatewayPay: '需支付',
+    payWithBalance: '余额支付',
     groupFallback: '分组 #{id}',
     rechargeAccount: '充值账户',
     activeSubscription: '当前订阅',
@@ -7263,6 +7374,9 @@ export default {
       paymentDistribution: '支付方式分布',
       colUser: '用户',
       topUsers: '消费排行',
+      paidAmount: '实付',
+      balanceAmount: '余额',
+      amountFormat: '{paid}/{balance}',
       noData: '暂无数据',
       days: '天',
       weeks: '周',
@@ -7280,6 +7394,7 @@ export default {
       completedAt: '完成时间',
       expiresAt: '过期时间',
       feeRate: '手续费率',
+      balanceDeductAmount: '余额抵扣金额',
       refund: '退款',
       refundOrder: '退款订单',
       refundAmount: '退款金额',
@@ -7380,6 +7495,164 @@ export default {
         revoked: '已撤销',
       },
     },
+  },
+
+  // Bundle (套餐) module
+  bundles: {
+    title: '模型套餐',
+    usageTitle: '套餐用量',
+    // 用户视图顶层 key
+    groupFallback: '分组 #{id}',
+    currentBundle: '当前套餐',
+    active: '活跃',
+    expiresAt: '到期时间',
+    concurrency: '并发数',
+    rpm: 'RPM',
+    includedGroups: '包含的 Group',
+    viewUsage: '查看用量',
+    noActiveBundle: '暂无活跃套餐',
+    noActiveBundleDesc: '您尚未订阅任何套餐，请在下方浏览可购套餐',
+    availablePlans: '可购套餐',
+    currentPlan: '已订阅',
+    noPlans: '暂无可购套餐',
+    days: '天',
+    daily: '日用量',
+    weekly: '周用量',
+    monthly: '月用量',
+    concurrencyShort: '并发',
+    includesGroupCount: '包含 {count} 个模型分组',
+    purchaseNow: '立即购买',
+    purchaseSuccess: '套餐购买成功',
+    purchaseNotAvailable: '购买功能暂未开放',
+    tierStarter: '入门版',
+    tierPro: '专业版',
+    tierEnterprise: '企业版',
+    daysRemaining: '剩余 {days} 天',
+    failedToLoad: '加载失败，请刷新重试',
+    planNotAvailable: '该套餐已下架或不可购买',
+    browsePlans: '浏览套餐',
+    usageByGroup: '各 Group 用量',
+    noUsageData: '暂无用量数据',
+    unlimited: '不限额度',
+    viewUsageRecords: '使用记录',
+    backToBundles: '返回套餐',
+    bundleEntryTitle: '模型套餐',
+    bundleEntryDesc: '订阅套餐获取更多模型配额与特权',
+    // 管理员
+    admin: {
+      planManagement: '套餐管理',
+      subscriptionManagement: '套餐订阅管理',
+      createPlan: '创建套餐',
+      editPlan: '编辑套餐',
+      planName: '套餐名称',
+      planTier: '套餐层级',
+      tier: '套餐层级',
+      tierStarter: '入门版',
+      tierPro: '专业版',
+      tierEnterprise: '企业版',
+      selectTier: '选择套餐层级',
+      planDescription: '套餐描述',
+      price: '价格',
+      originalPrice: '原价',
+      currency: '货币',
+      validityDays: '有效天数',
+      sortOrder: '排序',
+      concurrencyLimit: '并发上限',
+      rpmLimit: 'RPM上限',
+      groupQuotas: 'Group 额度配置',
+      addGroup: '添加 Group',
+      selectGroup: '选择 Group',
+      noGroupQuotas: '暂未配置 Group 额度',
+      group: 'Group',
+      groupCount: 'Group 数',
+      quotaScope: '额度粒度',
+      scopePlatform: '按平台',
+      scopeModel: '按模型',
+      modelPattern: '模型匹配',
+      dailyLimit: '日额度 (USD)',
+      weeklyLimit: '周额度 (USD)',
+      monthlyLimit: '月额度 (USD)',
+      daily: '日额度',
+      weekly: '周额度',
+      monthly: '月额度',
+      days: '天',
+      features: '功能特性',
+      featuresPlaceholder: '每行一个功能特性',
+      featuresHint: '每行输入一个功能特性，将显示在用户端的套餐卡片中',
+      forSale: '在售',
+      onSale: '上架',
+      offSale: '下架',
+      status: '状态',
+      statusActive: '启用',
+      statusDisabled: '停用',
+      statusExpired: '已过期',
+      statusRevoked: '已撤销',
+      disable: '停用',
+      enable: '启用',
+      disableConfirm: '确定要停用该套餐吗？',
+      tierRequired: '请选择套餐层级',
+      priceRequired: '请输入有效价格',
+      validityDaysRequired: '请输入有效天数',
+      saveSuccess: '保存成功',
+      deleteSuccess: '删除成功',
+      // 订阅管理
+      searchUserId: '搜索用户 ID',
+      allStatus: '全部状态',
+      noSubscriptions: '暂无订阅记录',
+      userId: '用户ID',
+      plan: '套餐',
+      source: '来源',
+      sourcePurchase: '购买',
+      sourceRedeem: '兑换',
+      sourceAdminAssign: '管理员分配',
+      revoke: '撤销',
+      revokeConfirm: '确定要撤销该用户的套餐吗？',
+      revokeSubscription: '撤销订阅',
+      extend: '延长',
+      extendDays: '延长天数',
+      extendSubscription: '延长订阅',
+      extendHint: '订阅 #{id} 的到期时间将被延长以下天数',
+      extendSuccess: '延长成功',
+      revokeSuccess: '撤销成功',
+      expiresAt: '到期时间',
+      startsAt: '生效时间',
+      usage: '用量',
+      groupUsageDetails: 'Group 用量详情',
+      noGroupUsage: '暂无用量数据',
+    },
+    // 用户
+    user: {
+      myBundle: '我的套餐',
+      noActiveBundle: '暂无活跃套餐',
+      browsePlans: '浏览可购套餐',
+      purchaseBundle: '购买套餐',
+      purchaseComingSoon: '支付功能开发中，敬请期待',
+      viewUsage: '查看用量',
+      bundleExpiresIn: '套餐将在 {days} 天后到期',
+      bundleExpired: '套餐已过期',
+      includedModels: '包含的模型',
+      days: '天',
+      validity: '有效期',
+      // 用量
+      usageTitle: '套餐用量',
+      daily: '日用量',
+      weekly: '周用量',
+      monthly: '月用量',
+      noLimit: '不限',
+      used: '已用',
+      limit: '限额',
+      remaining: '剩余',
+      progressOf: '{used} / {limit}',
+    },
+    // Key 创建
+    keyMode: 'Key 模式',
+    keyModeUniversal: '通用 Key（自动路由）',
+    keyModeUniversalDesc: '一个 Key 访问套餐内所有模型，系统自动根据请求的模型选择对应的平台',
+    keyModeDedicated: '专用 Key（指定平台）',
+    keyModeDedicatedDesc: '绑定到套餐内某个特定的平台，只能使用该平台的模型',
+    keyModeNormal: '标准 Key',
+    keyModeNormalDesc: '绑定到指定的分组',
+    selectBundleGroup: '选择套餐内的平台',
   },
 
 }
