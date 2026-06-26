@@ -42,9 +42,9 @@ type BundlePlanGroupQuota struct {
 	DailyLimitUSD     float64 `json:"daily_limit_usd"`
 	WeeklyLimitUSD    float64 `json:"weekly_limit_usd"`
 	MonthlyLimitUSD   float64 `json:"monthly_limit_usd"`
-	DailyLimitCount   int     `json:"daily_limit_count"`
-	WeeklyLimitCount  int     `json:"weekly_limit_count"`
-	MonthlyLimitCount int     `json:"monthly_limit_count"`
+	DailyImageLimitCount   int     `json:"daily_image_limit_count"`
+	WeeklyImageLimitCount  int     `json:"weekly_image_limit_count"`
+	MonthlyImageLimitCount int     `json:"monthly_image_limit_count"`
 }
 
 // BundleSubscription 用户套餐订阅实例，包含订阅状态、时间范围和用量数据
@@ -76,9 +76,9 @@ type BundleSubscriptionUsage struct {
 	ModelPattern         string    `json:"model_pattern"`
 	DailyUsageUSD        float64   `json:"daily_usage_usd"`
 	DailyWindowStart     time.Time `json:"daily_window_start"`
-	DailyUsageCount      int       `json:"daily_usage_count"`
-	WeeklyUsageCount     int       `json:"weekly_usage_count"`
-	MonthlyUsageCount    int       `json:"monthly_usage_count"`
+	DailyImageUsageCount      int       `json:"daily_image_usage_count"`
+	WeeklyImageUsageCount     int       `json:"weekly_image_usage_count"`
+	MonthlyImageUsageCount    int       `json:"monthly_image_usage_count"`
 	WeeklyUsageUSD       float64   `json:"weekly_usage_usd"`
 	WeeklyWindowStart    time.Time `json:"weekly_window_start"`
 	MonthlyUsageUSD      float64   `json:"monthly_usage_usd"`
@@ -112,9 +112,9 @@ type CreateGroupQuotaRequest struct {
 	DailyLimitUSD     float64 `json:"daily_limit_usd"`
 	WeeklyLimitUSD    float64 `json:"weekly_limit_usd"`
 	MonthlyLimitUSD   float64 `json:"monthly_limit_usd"`
-	DailyLimitCount   int     `json:"daily_limit_count"`
-	WeeklyLimitCount  int     `json:"weekly_limit_count"`
-	MonthlyLimitCount int     `json:"monthly_limit_count"`
+	DailyImageLimitCount   int     `json:"daily_image_limit_count"`
+	WeeklyImageLimitCount  int     `json:"weekly_image_limit_count"`
+	MonthlyImageLimitCount int     `json:"monthly_image_limit_count"`
 }
 
 // UpdateBundlePlanRequest 更新套餐计划的请求 DTO，所有字段为指针类型支持部分更新
@@ -144,16 +144,16 @@ type BundleUsageProgress struct {
 	Platform          string  `json:"platform"`
 	QuotaScope        string  `json:"quota_scope"`
 	ModelPattern      string  `json:"model_pattern"`
-	DailyUsageCount   int     `json:"daily_usage_count"`
+	DailyImageUsageCount   int     `json:"daily_image_usage_count"`
 	DailyUsageUSD     float64 `json:"daily_usage_usd"`
-	DailyLimitCount   int     `json:"daily_limit_count"`
+	DailyImageLimitCount   int     `json:"daily_image_limit_count"`
 	DailyLimitUSD     float64 `json:"daily_limit_usd"`
-	WeeklyUsageCount  int     `json:"weekly_usage_count"`
+	WeeklyImageUsageCount  int     `json:"weekly_image_usage_count"`
 	WeeklyUsageUSD    float64 `json:"weekly_usage_usd"`
-	WeeklyLimitCount  int     `json:"weekly_limit_count"`
+	WeeklyImageLimitCount  int     `json:"weekly_image_limit_count"`
 	WeeklyLimitUSD    float64 `json:"weekly_limit_usd"`
-	MonthlyUsageCount int     `json:"monthly_usage_count"`
+	MonthlyImageUsageCount int     `json:"monthly_image_usage_count"`
 	MonthlyUsageUSD   float64 `json:"monthly_usage_usd"`
-	MonthlyLimitCount int     `json:"monthly_limit_count"`
+	MonthlyImageLimitCount int     `json:"monthly_image_limit_count"`
 	MonthlyLimitUSD   float64 `json:"monthly_limit_usd"`
 }

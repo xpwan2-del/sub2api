@@ -526,18 +526,30 @@ func init() {
 	bundleplangroupquotaDescMonthlyLimitUsd := bundleplangroupquotaFields[6].Descriptor()
 	// bundleplangroupquota.DefaultMonthlyLimitUsd holds the default value on creation for the monthly_limit_usd field.
 	bundleplangroupquota.DefaultMonthlyLimitUsd = bundleplangroupquotaDescMonthlyLimitUsd.Default.(float64)
-	// bundleplangroupquotaDescDailyLimitCount is the schema descriptor for daily_limit_count field.
-	bundleplangroupquotaDescDailyLimitCount := bundleplangroupquotaFields[7].Descriptor()
-	// bundleplangroupquota.DefaultDailyLimitCount holds the default value on creation for the daily_limit_count field.
-	bundleplangroupquota.DefaultDailyLimitCount = bundleplangroupquotaDescDailyLimitCount.Default.(int)
-	// bundleplangroupquotaDescWeeklyLimitCount is the schema descriptor for weekly_limit_count field.
-	bundleplangroupquotaDescWeeklyLimitCount := bundleplangroupquotaFields[8].Descriptor()
-	// bundleplangroupquota.DefaultWeeklyLimitCount holds the default value on creation for the weekly_limit_count field.
-	bundleplangroupquota.DefaultWeeklyLimitCount = bundleplangroupquotaDescWeeklyLimitCount.Default.(int)
-	// bundleplangroupquotaDescMonthlyLimitCount is the schema descriptor for monthly_limit_count field.
-	bundleplangroupquotaDescMonthlyLimitCount := bundleplangroupquotaFields[9].Descriptor()
-	// bundleplangroupquota.DefaultMonthlyLimitCount holds the default value on creation for the monthly_limit_count field.
-	bundleplangroupquota.DefaultMonthlyLimitCount = bundleplangroupquotaDescMonthlyLimitCount.Default.(int)
+	// bundleplangroupquotaDescDailyImageLimitCount is the schema descriptor for daily_image_limit_count field.
+	bundleplangroupquotaDescDailyImageLimitCount := bundleplangroupquotaFields[7].Descriptor()
+	// bundleplangroupquota.DefaultDailyImageLimitCount holds the default value on creation for the daily_image_limit_count field.
+	bundleplangroupquota.DefaultDailyImageLimitCount = bundleplangroupquotaDescDailyImageLimitCount.Default.(int)
+	// bundleplangroupquotaDescWeeklyImageLimitCount is the schema descriptor for weekly_image_limit_count field.
+	bundleplangroupquotaDescWeeklyImageLimitCount := bundleplangroupquotaFields[8].Descriptor()
+	// bundleplangroupquota.DefaultWeeklyImageLimitCount holds the default value on creation for the weekly_image_limit_count field.
+	bundleplangroupquota.DefaultWeeklyImageLimitCount = bundleplangroupquotaDescWeeklyImageLimitCount.Default.(int)
+	// bundleplangroupquotaDescMonthlyImageLimitCount is the schema descriptor for monthly_image_limit_count field.
+	bundleplangroupquotaDescMonthlyImageLimitCount := bundleplangroupquotaFields[9].Descriptor()
+	// bundleplangroupquota.DefaultMonthlyImageLimitCount holds the default value on creation for the monthly_image_limit_count field.
+	bundleplangroupquota.DefaultMonthlyImageLimitCount = bundleplangroupquotaDescMonthlyImageLimitCount.Default.(int)
+	// bundleplangroupquotaDescDailyVideoLimitCount is the schema descriptor for daily_video_limit_count field.
+	bundleplangroupquotaDescDailyVideoLimitCount := bundleplangroupquotaFields[10].Descriptor()
+	// bundleplangroupquota.DefaultDailyVideoLimitCount holds the default value on creation for the daily_video_limit_count field.
+	bundleplangroupquota.DefaultDailyVideoLimitCount = bundleplangroupquotaDescDailyVideoLimitCount.Default.(int)
+	// bundleplangroupquotaDescWeeklyVideoLimitCount is the schema descriptor for weekly_video_limit_count field.
+	bundleplangroupquotaDescWeeklyVideoLimitCount := bundleplangroupquotaFields[11].Descriptor()
+	// bundleplangroupquota.DefaultWeeklyVideoLimitCount holds the default value on creation for the weekly_video_limit_count field.
+	bundleplangroupquota.DefaultWeeklyVideoLimitCount = bundleplangroupquotaDescWeeklyVideoLimitCount.Default.(int)
+	// bundleplangroupquotaDescMonthlyVideoLimitCount is the schema descriptor for monthly_video_limit_count field.
+	bundleplangroupquotaDescMonthlyVideoLimitCount := bundleplangroupquotaFields[12].Descriptor()
+	// bundleplangroupquota.DefaultMonthlyVideoLimitCount holds the default value on creation for the monthly_video_limit_count field.
+	bundleplangroupquota.DefaultMonthlyVideoLimitCount = bundleplangroupquotaDescMonthlyVideoLimitCount.Default.(int)
 	bundlesubscriptionMixin := schema.BundleSubscription{}.Mixin()
 	bundlesubscriptionMixinHooks1 := bundlesubscriptionMixin[1].Hooks()
 	bundlesubscription.Hooks[0] = bundlesubscriptionMixinHooks1[0]
@@ -607,18 +619,30 @@ func init() {
 	bundlesubscriptionusageDescMonthlyWindowStart := bundlesubscriptionusageFields[8].Descriptor()
 	// bundlesubscriptionusage.DefaultMonthlyWindowStart holds the default value on creation for the monthly_window_start field.
 	bundlesubscriptionusage.DefaultMonthlyWindowStart = bundlesubscriptionusageDescMonthlyWindowStart.Default.(time.Time)
-	// bundlesubscriptionusageDescDailyUsageCount is the schema descriptor for daily_usage_count field.
-	bundlesubscriptionusageDescDailyUsageCount := bundlesubscriptionusageFields[9].Descriptor()
-	// bundlesubscriptionusage.DefaultDailyUsageCount holds the default value on creation for the daily_usage_count field.
-	bundlesubscriptionusage.DefaultDailyUsageCount = bundlesubscriptionusageDescDailyUsageCount.Default.(int)
-	// bundlesubscriptionusageDescWeeklyUsageCount is the schema descriptor for weekly_usage_count field.
-	bundlesubscriptionusageDescWeeklyUsageCount := bundlesubscriptionusageFields[10].Descriptor()
-	// bundlesubscriptionusage.DefaultWeeklyUsageCount holds the default value on creation for the weekly_usage_count field.
-	bundlesubscriptionusage.DefaultWeeklyUsageCount = bundlesubscriptionusageDescWeeklyUsageCount.Default.(int)
-	// bundlesubscriptionusageDescMonthlyUsageCount is the schema descriptor for monthly_usage_count field.
-	bundlesubscriptionusageDescMonthlyUsageCount := bundlesubscriptionusageFields[11].Descriptor()
-	// bundlesubscriptionusage.DefaultMonthlyUsageCount holds the default value on creation for the monthly_usage_count field.
-	bundlesubscriptionusage.DefaultMonthlyUsageCount = bundlesubscriptionusageDescMonthlyUsageCount.Default.(int)
+	// bundlesubscriptionusageDescDailyImageUsageCount is the schema descriptor for daily_image_usage_count field.
+	bundlesubscriptionusageDescDailyImageUsageCount := bundlesubscriptionusageFields[9].Descriptor()
+	// bundlesubscriptionusage.DefaultDailyImageUsageCount holds the default value on creation for the daily_image_usage_count field.
+	bundlesubscriptionusage.DefaultDailyImageUsageCount = bundlesubscriptionusageDescDailyImageUsageCount.Default.(int)
+	// bundlesubscriptionusageDescWeeklyImageUsageCount is the schema descriptor for weekly_image_usage_count field.
+	bundlesubscriptionusageDescWeeklyImageUsageCount := bundlesubscriptionusageFields[10].Descriptor()
+	// bundlesubscriptionusage.DefaultWeeklyImageUsageCount holds the default value on creation for the weekly_image_usage_count field.
+	bundlesubscriptionusage.DefaultWeeklyImageUsageCount = bundlesubscriptionusageDescWeeklyImageUsageCount.Default.(int)
+	// bundlesubscriptionusageDescMonthlyImageUsageCount is the schema descriptor for monthly_image_usage_count field.
+	bundlesubscriptionusageDescMonthlyImageUsageCount := bundlesubscriptionusageFields[11].Descriptor()
+	// bundlesubscriptionusage.DefaultMonthlyImageUsageCount holds the default value on creation for the monthly_image_usage_count field.
+	bundlesubscriptionusage.DefaultMonthlyImageUsageCount = bundlesubscriptionusageDescMonthlyImageUsageCount.Default.(int)
+	// bundlesubscriptionusageDescDailyVideoUsageCount is the schema descriptor for daily_video_usage_count field.
+	bundlesubscriptionusageDescDailyVideoUsageCount := bundlesubscriptionusageFields[12].Descriptor()
+	// bundlesubscriptionusage.DefaultDailyVideoUsageCount holds the default value on creation for the daily_video_usage_count field.
+	bundlesubscriptionusage.DefaultDailyVideoUsageCount = bundlesubscriptionusageDescDailyVideoUsageCount.Default.(int)
+	// bundlesubscriptionusageDescWeeklyVideoUsageCount is the schema descriptor for weekly_video_usage_count field.
+	bundlesubscriptionusageDescWeeklyVideoUsageCount := bundlesubscriptionusageFields[13].Descriptor()
+	// bundlesubscriptionusage.DefaultWeeklyVideoUsageCount holds the default value on creation for the weekly_video_usage_count field.
+	bundlesubscriptionusage.DefaultWeeklyVideoUsageCount = bundlesubscriptionusageDescWeeklyVideoUsageCount.Default.(int)
+	// bundlesubscriptionusageDescMonthlyVideoUsageCount is the schema descriptor for monthly_video_usage_count field.
+	bundlesubscriptionusageDescMonthlyVideoUsageCount := bundlesubscriptionusageFields[14].Descriptor()
+	// bundlesubscriptionusage.DefaultMonthlyVideoUsageCount holds the default value on creation for the monthly_video_usage_count field.
+	bundlesubscriptionusage.DefaultMonthlyVideoUsageCount = bundlesubscriptionusageDescMonthlyVideoUsageCount.Default.(int)
 	channelmonitorMixin := schema.ChannelMonitor{}.Mixin()
 	channelmonitorMixinFields0 := channelmonitorMixin[0].Fields()
 	_ = channelmonitorMixinFields0
@@ -1942,28 +1966,32 @@ func init() {
 	usagelogDescImageCount := usagelogFields[33].Descriptor()
 	// usagelog.DefaultImageCount holds the default value on creation for the image_count field.
 	usagelog.DefaultImageCount = usagelogDescImageCount.Default.(int)
+	// usagelogDescVideoCount is the schema descriptor for video_count field.
+	usagelogDescVideoCount := usagelogFields[34].Descriptor()
+	// usagelog.DefaultVideoCount holds the default value on creation for the video_count field.
+	usagelog.DefaultVideoCount = usagelogDescVideoCount.Default.(int)
 	// usagelogDescImageSize is the schema descriptor for image_size field.
-	usagelogDescImageSize := usagelogFields[34].Descriptor()
+	usagelogDescImageSize := usagelogFields[35].Descriptor()
 	// usagelog.ImageSizeValidator is a validator for the "image_size" field. It is called by the builders before save.
 	usagelog.ImageSizeValidator = usagelogDescImageSize.Validators[0].(func(string) error)
 	// usagelogDescImageInputSize is the schema descriptor for image_input_size field.
-	usagelogDescImageInputSize := usagelogFields[35].Descriptor()
+	usagelogDescImageInputSize := usagelogFields[36].Descriptor()
 	// usagelog.ImageInputSizeValidator is a validator for the "image_input_size" field. It is called by the builders before save.
 	usagelog.ImageInputSizeValidator = usagelogDescImageInputSize.Validators[0].(func(string) error)
 	// usagelogDescImageOutputSize is the schema descriptor for image_output_size field.
-	usagelogDescImageOutputSize := usagelogFields[36].Descriptor()
+	usagelogDescImageOutputSize := usagelogFields[37].Descriptor()
 	// usagelog.ImageOutputSizeValidator is a validator for the "image_output_size" field. It is called by the builders before save.
 	usagelog.ImageOutputSizeValidator = usagelogDescImageOutputSize.Validators[0].(func(string) error)
 	// usagelogDescImageSizeSource is the schema descriptor for image_size_source field.
-	usagelogDescImageSizeSource := usagelogFields[37].Descriptor()
+	usagelogDescImageSizeSource := usagelogFields[38].Descriptor()
 	// usagelog.ImageSizeSourceValidator is a validator for the "image_size_source" field. It is called by the builders before save.
 	usagelog.ImageSizeSourceValidator = usagelogDescImageSizeSource.Validators[0].(func(string) error)
 	// usagelogDescCacheTTLOverridden is the schema descriptor for cache_ttl_overridden field.
-	usagelogDescCacheTTLOverridden := usagelogFields[39].Descriptor()
+	usagelogDescCacheTTLOverridden := usagelogFields[40].Descriptor()
 	// usagelog.DefaultCacheTTLOverridden holds the default value on creation for the cache_ttl_overridden field.
 	usagelog.DefaultCacheTTLOverridden = usagelogDescCacheTTLOverridden.Default.(bool)
 	// usagelogDescCreatedAt is the schema descriptor for created_at field.
-	usagelogDescCreatedAt := usagelogFields[40].Descriptor()
+	usagelogDescCreatedAt := usagelogFields[41].Descriptor()
 	// usagelog.DefaultCreatedAt holds the default value on creation for the created_at field.
 	usagelog.DefaultCreatedAt = usagelogDescCreatedAt.Default.(func() time.Time)
 	userMixin := schema.User{}.Mixin()
@@ -2312,18 +2340,30 @@ func init() {
 	usersubscriptionDescMonthlyLimitUsd := usersubscriptionFields[17].Descriptor()
 	// usersubscription.DefaultMonthlyLimitUsd holds the default value on creation for the monthly_limit_usd field.
 	usersubscription.DefaultMonthlyLimitUsd = usersubscriptionDescMonthlyLimitUsd.Default.(float64)
-	// usersubscriptionDescDailyLimitCount is the schema descriptor for daily_limit_count field.
-	usersubscriptionDescDailyLimitCount := usersubscriptionFields[18].Descriptor()
-	// usersubscription.DefaultDailyLimitCount holds the default value on creation for the daily_limit_count field.
-	usersubscription.DefaultDailyLimitCount = usersubscriptionDescDailyLimitCount.Default.(int)
-	// usersubscriptionDescWeeklyLimitCount is the schema descriptor for weekly_limit_count field.
-	usersubscriptionDescWeeklyLimitCount := usersubscriptionFields[19].Descriptor()
-	// usersubscription.DefaultWeeklyLimitCount holds the default value on creation for the weekly_limit_count field.
-	usersubscription.DefaultWeeklyLimitCount = usersubscriptionDescWeeklyLimitCount.Default.(int)
-	// usersubscriptionDescMonthlyLimitCount is the schema descriptor for monthly_limit_count field.
-	usersubscriptionDescMonthlyLimitCount := usersubscriptionFields[20].Descriptor()
-	// usersubscription.DefaultMonthlyLimitCount holds the default value on creation for the monthly_limit_count field.
-	usersubscription.DefaultMonthlyLimitCount = usersubscriptionDescMonthlyLimitCount.Default.(int)
+	// usersubscriptionDescDailyImageLimitCount is the schema descriptor for daily_image_limit_count field.
+	usersubscriptionDescDailyImageLimitCount := usersubscriptionFields[18].Descriptor()
+	// usersubscription.DefaultDailyImageLimitCount holds the default value on creation for the daily_image_limit_count field.
+	usersubscription.DefaultDailyImageLimitCount = usersubscriptionDescDailyImageLimitCount.Default.(int)
+	// usersubscriptionDescWeeklyImageLimitCount is the schema descriptor for weekly_image_limit_count field.
+	usersubscriptionDescWeeklyImageLimitCount := usersubscriptionFields[19].Descriptor()
+	// usersubscription.DefaultWeeklyImageLimitCount holds the default value on creation for the weekly_image_limit_count field.
+	usersubscription.DefaultWeeklyImageLimitCount = usersubscriptionDescWeeklyImageLimitCount.Default.(int)
+	// usersubscriptionDescMonthlyImageLimitCount is the schema descriptor for monthly_image_limit_count field.
+	usersubscriptionDescMonthlyImageLimitCount := usersubscriptionFields[20].Descriptor()
+	// usersubscription.DefaultMonthlyImageLimitCount holds the default value on creation for the monthly_image_limit_count field.
+	usersubscription.DefaultMonthlyImageLimitCount = usersubscriptionDescMonthlyImageLimitCount.Default.(int)
+	// usersubscriptionDescDailyVideoLimitCount is the schema descriptor for daily_video_limit_count field.
+	usersubscriptionDescDailyVideoLimitCount := usersubscriptionFields[21].Descriptor()
+	// usersubscription.DefaultDailyVideoLimitCount holds the default value on creation for the daily_video_limit_count field.
+	usersubscription.DefaultDailyVideoLimitCount = usersubscriptionDescDailyVideoLimitCount.Default.(int)
+	// usersubscriptionDescWeeklyVideoLimitCount is the schema descriptor for weekly_video_limit_count field.
+	usersubscriptionDescWeeklyVideoLimitCount := usersubscriptionFields[22].Descriptor()
+	// usersubscription.DefaultWeeklyVideoLimitCount holds the default value on creation for the weekly_video_limit_count field.
+	usersubscription.DefaultWeeklyVideoLimitCount = usersubscriptionDescWeeklyVideoLimitCount.Default.(int)
+	// usersubscriptionDescMonthlyVideoLimitCount is the schema descriptor for monthly_video_limit_count field.
+	usersubscriptionDescMonthlyVideoLimitCount := usersubscriptionFields[23].Descriptor()
+	// usersubscription.DefaultMonthlyVideoLimitCount holds the default value on creation for the monthly_video_limit_count field.
+	usersubscription.DefaultMonthlyVideoLimitCount = usersubscriptionDescMonthlyVideoLimitCount.Default.(int)
 }
 
 const (

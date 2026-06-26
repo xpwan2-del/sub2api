@@ -10291,31 +10291,37 @@ func (m *BundlePlanMutation) ResetEdge(name string) error {
 // BundlePlanGroupQuotaMutation represents an operation that mutates the BundlePlanGroupQuota nodes in the graph.
 type BundlePlanGroupQuotaMutation struct {
 	config
-	op                     Op
-	typ                    string
-	id                     *int64
-	plan_id                *int64
-	addplan_id             *int64
-	group_id               *int64
-	addgroup_id            *int64
-	quota_scope            *string
-	model_pattern          *string
-	daily_limit_usd        *float64
-	adddaily_limit_usd     *float64
-	weekly_limit_usd       *float64
-	addweekly_limit_usd    *float64
-	monthly_limit_usd      *float64
-	addmonthly_limit_usd   *float64
-	daily_limit_count      *int
-	adddaily_limit_count   *int
-	weekly_limit_count     *int
-	addweekly_limit_count  *int
-	monthly_limit_count    *int
-	addmonthly_limit_count *int
-	clearedFields          map[string]struct{}
-	done                   bool
-	oldValue               func(context.Context) (*BundlePlanGroupQuota, error)
-	predicates             []predicate.BundlePlanGroupQuota
+	op                           Op
+	typ                          string
+	id                           *int64
+	plan_id                      *int64
+	addplan_id                   *int64
+	group_id                     *int64
+	addgroup_id                  *int64
+	quota_scope                  *string
+	model_pattern                *string
+	daily_limit_usd              *float64
+	adddaily_limit_usd           *float64
+	weekly_limit_usd             *float64
+	addweekly_limit_usd          *float64
+	monthly_limit_usd            *float64
+	addmonthly_limit_usd         *float64
+	daily_image_limit_count      *int
+	adddaily_image_limit_count   *int
+	weekly_image_limit_count     *int
+	addweekly_image_limit_count  *int
+	monthly_image_limit_count    *int
+	addmonthly_image_limit_count *int
+	daily_video_limit_count      *int
+	adddaily_video_limit_count   *int
+	weekly_video_limit_count     *int
+	addweekly_video_limit_count  *int
+	monthly_video_limit_count    *int
+	addmonthly_video_limit_count *int
+	clearedFields                map[string]struct{}
+	done                         bool
+	oldValue                     func(context.Context) (*BundlePlanGroupQuota, error)
+	predicates                   []predicate.BundlePlanGroupQuota
 }
 
 var _ ent.Mutation = (*BundlePlanGroupQuotaMutation)(nil)
@@ -10768,172 +10774,340 @@ func (m *BundlePlanGroupQuotaMutation) ResetMonthlyLimitUsd() {
 	m.addmonthly_limit_usd = nil
 }
 
-// SetDailyLimitCount sets the "daily_limit_count" field.
-func (m *BundlePlanGroupQuotaMutation) SetDailyLimitCount(i int) {
-	m.daily_limit_count = &i
-	m.adddaily_limit_count = nil
+// SetDailyImageLimitCount sets the "daily_image_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) SetDailyImageLimitCount(i int) {
+	m.daily_image_limit_count = &i
+	m.adddaily_image_limit_count = nil
 }
 
-// DailyLimitCount returns the value of the "daily_limit_count" field in the mutation.
-func (m *BundlePlanGroupQuotaMutation) DailyLimitCount() (r int, exists bool) {
-	v := m.daily_limit_count
+// DailyImageLimitCount returns the value of the "daily_image_limit_count" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) DailyImageLimitCount() (r int, exists bool) {
+	v := m.daily_image_limit_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDailyLimitCount returns the old "daily_limit_count" field's value of the BundlePlanGroupQuota entity.
+// OldDailyImageLimitCount returns the old "daily_image_limit_count" field's value of the BundlePlanGroupQuota entity.
 // If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BundlePlanGroupQuotaMutation) OldDailyLimitCount(ctx context.Context) (v int, err error) {
+func (m *BundlePlanGroupQuotaMutation) OldDailyImageLimitCount(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDailyLimitCount is only allowed on UpdateOne operations")
+		return v, errors.New("OldDailyImageLimitCount is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDailyLimitCount requires an ID field in the mutation")
+		return v, errors.New("OldDailyImageLimitCount requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDailyLimitCount: %w", err)
+		return v, fmt.Errorf("querying old value for OldDailyImageLimitCount: %w", err)
 	}
-	return oldValue.DailyLimitCount, nil
+	return oldValue.DailyImageLimitCount, nil
 }
 
-// AddDailyLimitCount adds i to the "daily_limit_count" field.
-func (m *BundlePlanGroupQuotaMutation) AddDailyLimitCount(i int) {
-	if m.adddaily_limit_count != nil {
-		*m.adddaily_limit_count += i
+// AddDailyImageLimitCount adds i to the "daily_image_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) AddDailyImageLimitCount(i int) {
+	if m.adddaily_image_limit_count != nil {
+		*m.adddaily_image_limit_count += i
 	} else {
-		m.adddaily_limit_count = &i
+		m.adddaily_image_limit_count = &i
 	}
 }
 
-// AddedDailyLimitCount returns the value that was added to the "daily_limit_count" field in this mutation.
-func (m *BundlePlanGroupQuotaMutation) AddedDailyLimitCount() (r int, exists bool) {
-	v := m.adddaily_limit_count
+// AddedDailyImageLimitCount returns the value that was added to the "daily_image_limit_count" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedDailyImageLimitCount() (r int, exists bool) {
+	v := m.adddaily_image_limit_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetDailyLimitCount resets all changes to the "daily_limit_count" field.
-func (m *BundlePlanGroupQuotaMutation) ResetDailyLimitCount() {
-	m.daily_limit_count = nil
-	m.adddaily_limit_count = nil
+// ResetDailyImageLimitCount resets all changes to the "daily_image_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) ResetDailyImageLimitCount() {
+	m.daily_image_limit_count = nil
+	m.adddaily_image_limit_count = nil
 }
 
-// SetWeeklyLimitCount sets the "weekly_limit_count" field.
-func (m *BundlePlanGroupQuotaMutation) SetWeeklyLimitCount(i int) {
-	m.weekly_limit_count = &i
-	m.addweekly_limit_count = nil
+// SetWeeklyImageLimitCount sets the "weekly_image_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) SetWeeklyImageLimitCount(i int) {
+	m.weekly_image_limit_count = &i
+	m.addweekly_image_limit_count = nil
 }
 
-// WeeklyLimitCount returns the value of the "weekly_limit_count" field in the mutation.
-func (m *BundlePlanGroupQuotaMutation) WeeklyLimitCount() (r int, exists bool) {
-	v := m.weekly_limit_count
+// WeeklyImageLimitCount returns the value of the "weekly_image_limit_count" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) WeeklyImageLimitCount() (r int, exists bool) {
+	v := m.weekly_image_limit_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldWeeklyLimitCount returns the old "weekly_limit_count" field's value of the BundlePlanGroupQuota entity.
+// OldWeeklyImageLimitCount returns the old "weekly_image_limit_count" field's value of the BundlePlanGroupQuota entity.
 // If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BundlePlanGroupQuotaMutation) OldWeeklyLimitCount(ctx context.Context) (v int, err error) {
+func (m *BundlePlanGroupQuotaMutation) OldWeeklyImageLimitCount(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldWeeklyLimitCount is only allowed on UpdateOne operations")
+		return v, errors.New("OldWeeklyImageLimitCount is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldWeeklyLimitCount requires an ID field in the mutation")
+		return v, errors.New("OldWeeklyImageLimitCount requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldWeeklyLimitCount: %w", err)
+		return v, fmt.Errorf("querying old value for OldWeeklyImageLimitCount: %w", err)
 	}
-	return oldValue.WeeklyLimitCount, nil
+	return oldValue.WeeklyImageLimitCount, nil
 }
 
-// AddWeeklyLimitCount adds i to the "weekly_limit_count" field.
-func (m *BundlePlanGroupQuotaMutation) AddWeeklyLimitCount(i int) {
-	if m.addweekly_limit_count != nil {
-		*m.addweekly_limit_count += i
+// AddWeeklyImageLimitCount adds i to the "weekly_image_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) AddWeeklyImageLimitCount(i int) {
+	if m.addweekly_image_limit_count != nil {
+		*m.addweekly_image_limit_count += i
 	} else {
-		m.addweekly_limit_count = &i
+		m.addweekly_image_limit_count = &i
 	}
 }
 
-// AddedWeeklyLimitCount returns the value that was added to the "weekly_limit_count" field in this mutation.
-func (m *BundlePlanGroupQuotaMutation) AddedWeeklyLimitCount() (r int, exists bool) {
-	v := m.addweekly_limit_count
+// AddedWeeklyImageLimitCount returns the value that was added to the "weekly_image_limit_count" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedWeeklyImageLimitCount() (r int, exists bool) {
+	v := m.addweekly_image_limit_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetWeeklyLimitCount resets all changes to the "weekly_limit_count" field.
-func (m *BundlePlanGroupQuotaMutation) ResetWeeklyLimitCount() {
-	m.weekly_limit_count = nil
-	m.addweekly_limit_count = nil
+// ResetWeeklyImageLimitCount resets all changes to the "weekly_image_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) ResetWeeklyImageLimitCount() {
+	m.weekly_image_limit_count = nil
+	m.addweekly_image_limit_count = nil
 }
 
-// SetMonthlyLimitCount sets the "monthly_limit_count" field.
-func (m *BundlePlanGroupQuotaMutation) SetMonthlyLimitCount(i int) {
-	m.monthly_limit_count = &i
-	m.addmonthly_limit_count = nil
+// SetMonthlyImageLimitCount sets the "monthly_image_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) SetMonthlyImageLimitCount(i int) {
+	m.monthly_image_limit_count = &i
+	m.addmonthly_image_limit_count = nil
 }
 
-// MonthlyLimitCount returns the value of the "monthly_limit_count" field in the mutation.
-func (m *BundlePlanGroupQuotaMutation) MonthlyLimitCount() (r int, exists bool) {
-	v := m.monthly_limit_count
+// MonthlyImageLimitCount returns the value of the "monthly_image_limit_count" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) MonthlyImageLimitCount() (r int, exists bool) {
+	v := m.monthly_image_limit_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldMonthlyLimitCount returns the old "monthly_limit_count" field's value of the BundlePlanGroupQuota entity.
+// OldMonthlyImageLimitCount returns the old "monthly_image_limit_count" field's value of the BundlePlanGroupQuota entity.
 // If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BundlePlanGroupQuotaMutation) OldMonthlyLimitCount(ctx context.Context) (v int, err error) {
+func (m *BundlePlanGroupQuotaMutation) OldMonthlyImageLimitCount(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldMonthlyLimitCount is only allowed on UpdateOne operations")
+		return v, errors.New("OldMonthlyImageLimitCount is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldMonthlyLimitCount requires an ID field in the mutation")
+		return v, errors.New("OldMonthlyImageLimitCount requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldMonthlyLimitCount: %w", err)
+		return v, fmt.Errorf("querying old value for OldMonthlyImageLimitCount: %w", err)
 	}
-	return oldValue.MonthlyLimitCount, nil
+	return oldValue.MonthlyImageLimitCount, nil
 }
 
-// AddMonthlyLimitCount adds i to the "monthly_limit_count" field.
-func (m *BundlePlanGroupQuotaMutation) AddMonthlyLimitCount(i int) {
-	if m.addmonthly_limit_count != nil {
-		*m.addmonthly_limit_count += i
+// AddMonthlyImageLimitCount adds i to the "monthly_image_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) AddMonthlyImageLimitCount(i int) {
+	if m.addmonthly_image_limit_count != nil {
+		*m.addmonthly_image_limit_count += i
 	} else {
-		m.addmonthly_limit_count = &i
+		m.addmonthly_image_limit_count = &i
 	}
 }
 
-// AddedMonthlyLimitCount returns the value that was added to the "monthly_limit_count" field in this mutation.
-func (m *BundlePlanGroupQuotaMutation) AddedMonthlyLimitCount() (r int, exists bool) {
-	v := m.addmonthly_limit_count
+// AddedMonthlyImageLimitCount returns the value that was added to the "monthly_image_limit_count" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedMonthlyImageLimitCount() (r int, exists bool) {
+	v := m.addmonthly_image_limit_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetMonthlyLimitCount resets all changes to the "monthly_limit_count" field.
-func (m *BundlePlanGroupQuotaMutation) ResetMonthlyLimitCount() {
-	m.monthly_limit_count = nil
-	m.addmonthly_limit_count = nil
+// ResetMonthlyImageLimitCount resets all changes to the "monthly_image_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) ResetMonthlyImageLimitCount() {
+	m.monthly_image_limit_count = nil
+	m.addmonthly_image_limit_count = nil
+}
+
+// SetDailyVideoLimitCount sets the "daily_video_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) SetDailyVideoLimitCount(i int) {
+	m.daily_video_limit_count = &i
+	m.adddaily_video_limit_count = nil
+}
+
+// DailyVideoLimitCount returns the value of the "daily_video_limit_count" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) DailyVideoLimitCount() (r int, exists bool) {
+	v := m.daily_video_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDailyVideoLimitCount returns the old "daily_video_limit_count" field's value of the BundlePlanGroupQuota entity.
+// If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanGroupQuotaMutation) OldDailyVideoLimitCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDailyVideoLimitCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDailyVideoLimitCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDailyVideoLimitCount: %w", err)
+	}
+	return oldValue.DailyVideoLimitCount, nil
+}
+
+// AddDailyVideoLimitCount adds i to the "daily_video_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) AddDailyVideoLimitCount(i int) {
+	if m.adddaily_video_limit_count != nil {
+		*m.adddaily_video_limit_count += i
+	} else {
+		m.adddaily_video_limit_count = &i
+	}
+}
+
+// AddedDailyVideoLimitCount returns the value that was added to the "daily_video_limit_count" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedDailyVideoLimitCount() (r int, exists bool) {
+	v := m.adddaily_video_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDailyVideoLimitCount resets all changes to the "daily_video_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) ResetDailyVideoLimitCount() {
+	m.daily_video_limit_count = nil
+	m.adddaily_video_limit_count = nil
+}
+
+// SetWeeklyVideoLimitCount sets the "weekly_video_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) SetWeeklyVideoLimitCount(i int) {
+	m.weekly_video_limit_count = &i
+	m.addweekly_video_limit_count = nil
+}
+
+// WeeklyVideoLimitCount returns the value of the "weekly_video_limit_count" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) WeeklyVideoLimitCount() (r int, exists bool) {
+	v := m.weekly_video_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeeklyVideoLimitCount returns the old "weekly_video_limit_count" field's value of the BundlePlanGroupQuota entity.
+// If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanGroupQuotaMutation) OldWeeklyVideoLimitCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeeklyVideoLimitCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeeklyVideoLimitCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeeklyVideoLimitCount: %w", err)
+	}
+	return oldValue.WeeklyVideoLimitCount, nil
+}
+
+// AddWeeklyVideoLimitCount adds i to the "weekly_video_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) AddWeeklyVideoLimitCount(i int) {
+	if m.addweekly_video_limit_count != nil {
+		*m.addweekly_video_limit_count += i
+	} else {
+		m.addweekly_video_limit_count = &i
+	}
+}
+
+// AddedWeeklyVideoLimitCount returns the value that was added to the "weekly_video_limit_count" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedWeeklyVideoLimitCount() (r int, exists bool) {
+	v := m.addweekly_video_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeeklyVideoLimitCount resets all changes to the "weekly_video_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) ResetWeeklyVideoLimitCount() {
+	m.weekly_video_limit_count = nil
+	m.addweekly_video_limit_count = nil
+}
+
+// SetMonthlyVideoLimitCount sets the "monthly_video_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) SetMonthlyVideoLimitCount(i int) {
+	m.monthly_video_limit_count = &i
+	m.addmonthly_video_limit_count = nil
+}
+
+// MonthlyVideoLimitCount returns the value of the "monthly_video_limit_count" field in the mutation.
+func (m *BundlePlanGroupQuotaMutation) MonthlyVideoLimitCount() (r int, exists bool) {
+	v := m.monthly_video_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMonthlyVideoLimitCount returns the old "monthly_video_limit_count" field's value of the BundlePlanGroupQuota entity.
+// If the BundlePlanGroupQuota object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanGroupQuotaMutation) OldMonthlyVideoLimitCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMonthlyVideoLimitCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMonthlyVideoLimitCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMonthlyVideoLimitCount: %w", err)
+	}
+	return oldValue.MonthlyVideoLimitCount, nil
+}
+
+// AddMonthlyVideoLimitCount adds i to the "monthly_video_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) AddMonthlyVideoLimitCount(i int) {
+	if m.addmonthly_video_limit_count != nil {
+		*m.addmonthly_video_limit_count += i
+	} else {
+		m.addmonthly_video_limit_count = &i
+	}
+}
+
+// AddedMonthlyVideoLimitCount returns the value that was added to the "monthly_video_limit_count" field in this mutation.
+func (m *BundlePlanGroupQuotaMutation) AddedMonthlyVideoLimitCount() (r int, exists bool) {
+	v := m.addmonthly_video_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMonthlyVideoLimitCount resets all changes to the "monthly_video_limit_count" field.
+func (m *BundlePlanGroupQuotaMutation) ResetMonthlyVideoLimitCount() {
+	m.monthly_video_limit_count = nil
+	m.addmonthly_video_limit_count = nil
 }
 
 // Where appends a list predicates to the BundlePlanGroupQuotaMutation builder.
@@ -10970,7 +11144,7 @@ func (m *BundlePlanGroupQuotaMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BundlePlanGroupQuotaMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 13)
 	if m.plan_id != nil {
 		fields = append(fields, bundleplangroupquota.FieldPlanID)
 	}
@@ -10992,14 +11166,23 @@ func (m *BundlePlanGroupQuotaMutation) Fields() []string {
 	if m.monthly_limit_usd != nil {
 		fields = append(fields, bundleplangroupquota.FieldMonthlyLimitUsd)
 	}
-	if m.daily_limit_count != nil {
-		fields = append(fields, bundleplangroupquota.FieldDailyLimitCount)
+	if m.daily_image_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldDailyImageLimitCount)
 	}
-	if m.weekly_limit_count != nil {
-		fields = append(fields, bundleplangroupquota.FieldWeeklyLimitCount)
+	if m.weekly_image_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldWeeklyImageLimitCount)
 	}
-	if m.monthly_limit_count != nil {
-		fields = append(fields, bundleplangroupquota.FieldMonthlyLimitCount)
+	if m.monthly_image_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldMonthlyImageLimitCount)
+	}
+	if m.daily_video_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldDailyVideoLimitCount)
+	}
+	if m.weekly_video_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldWeeklyVideoLimitCount)
+	}
+	if m.monthly_video_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldMonthlyVideoLimitCount)
 	}
 	return fields
 }
@@ -11023,12 +11206,18 @@ func (m *BundlePlanGroupQuotaMutation) Field(name string) (ent.Value, bool) {
 		return m.WeeklyLimitUsd()
 	case bundleplangroupquota.FieldMonthlyLimitUsd:
 		return m.MonthlyLimitUsd()
-	case bundleplangroupquota.FieldDailyLimitCount:
-		return m.DailyLimitCount()
-	case bundleplangroupquota.FieldWeeklyLimitCount:
-		return m.WeeklyLimitCount()
-	case bundleplangroupquota.FieldMonthlyLimitCount:
-		return m.MonthlyLimitCount()
+	case bundleplangroupquota.FieldDailyImageLimitCount:
+		return m.DailyImageLimitCount()
+	case bundleplangroupquota.FieldWeeklyImageLimitCount:
+		return m.WeeklyImageLimitCount()
+	case bundleplangroupquota.FieldMonthlyImageLimitCount:
+		return m.MonthlyImageLimitCount()
+	case bundleplangroupquota.FieldDailyVideoLimitCount:
+		return m.DailyVideoLimitCount()
+	case bundleplangroupquota.FieldWeeklyVideoLimitCount:
+		return m.WeeklyVideoLimitCount()
+	case bundleplangroupquota.FieldMonthlyVideoLimitCount:
+		return m.MonthlyVideoLimitCount()
 	}
 	return nil, false
 }
@@ -11052,12 +11241,18 @@ func (m *BundlePlanGroupQuotaMutation) OldField(ctx context.Context, name string
 		return m.OldWeeklyLimitUsd(ctx)
 	case bundleplangroupquota.FieldMonthlyLimitUsd:
 		return m.OldMonthlyLimitUsd(ctx)
-	case bundleplangroupquota.FieldDailyLimitCount:
-		return m.OldDailyLimitCount(ctx)
-	case bundleplangroupquota.FieldWeeklyLimitCount:
-		return m.OldWeeklyLimitCount(ctx)
-	case bundleplangroupquota.FieldMonthlyLimitCount:
-		return m.OldMonthlyLimitCount(ctx)
+	case bundleplangroupquota.FieldDailyImageLimitCount:
+		return m.OldDailyImageLimitCount(ctx)
+	case bundleplangroupquota.FieldWeeklyImageLimitCount:
+		return m.OldWeeklyImageLimitCount(ctx)
+	case bundleplangroupquota.FieldMonthlyImageLimitCount:
+		return m.OldMonthlyImageLimitCount(ctx)
+	case bundleplangroupquota.FieldDailyVideoLimitCount:
+		return m.OldDailyVideoLimitCount(ctx)
+	case bundleplangroupquota.FieldWeeklyVideoLimitCount:
+		return m.OldWeeklyVideoLimitCount(ctx)
+	case bundleplangroupquota.FieldMonthlyVideoLimitCount:
+		return m.OldMonthlyVideoLimitCount(ctx)
 	}
 	return nil, fmt.Errorf("unknown BundlePlanGroupQuota field %s", name)
 }
@@ -11116,26 +11311,47 @@ func (m *BundlePlanGroupQuotaMutation) SetField(name string, value ent.Value) er
 		}
 		m.SetMonthlyLimitUsd(v)
 		return nil
-	case bundleplangroupquota.FieldDailyLimitCount:
+	case bundleplangroupquota.FieldDailyImageLimitCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDailyLimitCount(v)
+		m.SetDailyImageLimitCount(v)
 		return nil
-	case bundleplangroupquota.FieldWeeklyLimitCount:
+	case bundleplangroupquota.FieldWeeklyImageLimitCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetWeeklyLimitCount(v)
+		m.SetWeeklyImageLimitCount(v)
 		return nil
-	case bundleplangroupquota.FieldMonthlyLimitCount:
+	case bundleplangroupquota.FieldMonthlyImageLimitCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetMonthlyLimitCount(v)
+		m.SetMonthlyImageLimitCount(v)
+		return nil
+	case bundleplangroupquota.FieldDailyVideoLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDailyVideoLimitCount(v)
+		return nil
+	case bundleplangroupquota.FieldWeeklyVideoLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeeklyVideoLimitCount(v)
+		return nil
+	case bundleplangroupquota.FieldMonthlyVideoLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMonthlyVideoLimitCount(v)
 		return nil
 	}
 	return fmt.Errorf("unknown BundlePlanGroupQuota field %s", name)
@@ -11160,14 +11376,23 @@ func (m *BundlePlanGroupQuotaMutation) AddedFields() []string {
 	if m.addmonthly_limit_usd != nil {
 		fields = append(fields, bundleplangroupquota.FieldMonthlyLimitUsd)
 	}
-	if m.adddaily_limit_count != nil {
-		fields = append(fields, bundleplangroupquota.FieldDailyLimitCount)
+	if m.adddaily_image_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldDailyImageLimitCount)
 	}
-	if m.addweekly_limit_count != nil {
-		fields = append(fields, bundleplangroupquota.FieldWeeklyLimitCount)
+	if m.addweekly_image_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldWeeklyImageLimitCount)
 	}
-	if m.addmonthly_limit_count != nil {
-		fields = append(fields, bundleplangroupquota.FieldMonthlyLimitCount)
+	if m.addmonthly_image_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldMonthlyImageLimitCount)
+	}
+	if m.adddaily_video_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldDailyVideoLimitCount)
+	}
+	if m.addweekly_video_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldWeeklyVideoLimitCount)
+	}
+	if m.addmonthly_video_limit_count != nil {
+		fields = append(fields, bundleplangroupquota.FieldMonthlyVideoLimitCount)
 	}
 	return fields
 }
@@ -11187,12 +11412,18 @@ func (m *BundlePlanGroupQuotaMutation) AddedField(name string) (ent.Value, bool)
 		return m.AddedWeeklyLimitUsd()
 	case bundleplangroupquota.FieldMonthlyLimitUsd:
 		return m.AddedMonthlyLimitUsd()
-	case bundleplangroupquota.FieldDailyLimitCount:
-		return m.AddedDailyLimitCount()
-	case bundleplangroupquota.FieldWeeklyLimitCount:
-		return m.AddedWeeklyLimitCount()
-	case bundleplangroupquota.FieldMonthlyLimitCount:
-		return m.AddedMonthlyLimitCount()
+	case bundleplangroupquota.FieldDailyImageLimitCount:
+		return m.AddedDailyImageLimitCount()
+	case bundleplangroupquota.FieldWeeklyImageLimitCount:
+		return m.AddedWeeklyImageLimitCount()
+	case bundleplangroupquota.FieldMonthlyImageLimitCount:
+		return m.AddedMonthlyImageLimitCount()
+	case bundleplangroupquota.FieldDailyVideoLimitCount:
+		return m.AddedDailyVideoLimitCount()
+	case bundleplangroupquota.FieldWeeklyVideoLimitCount:
+		return m.AddedWeeklyVideoLimitCount()
+	case bundleplangroupquota.FieldMonthlyVideoLimitCount:
+		return m.AddedMonthlyVideoLimitCount()
 	}
 	return nil, false
 }
@@ -11237,26 +11468,47 @@ func (m *BundlePlanGroupQuotaMutation) AddField(name string, value ent.Value) er
 		}
 		m.AddMonthlyLimitUsd(v)
 		return nil
-	case bundleplangroupquota.FieldDailyLimitCount:
+	case bundleplangroupquota.FieldDailyImageLimitCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddDailyLimitCount(v)
+		m.AddDailyImageLimitCount(v)
 		return nil
-	case bundleplangroupquota.FieldWeeklyLimitCount:
+	case bundleplangroupquota.FieldWeeklyImageLimitCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddWeeklyLimitCount(v)
+		m.AddWeeklyImageLimitCount(v)
 		return nil
-	case bundleplangroupquota.FieldMonthlyLimitCount:
+	case bundleplangroupquota.FieldMonthlyImageLimitCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddMonthlyLimitCount(v)
+		m.AddMonthlyImageLimitCount(v)
+		return nil
+	case bundleplangroupquota.FieldDailyVideoLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDailyVideoLimitCount(v)
+		return nil
+	case bundleplangroupquota.FieldWeeklyVideoLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeeklyVideoLimitCount(v)
+		return nil
+	case bundleplangroupquota.FieldMonthlyVideoLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMonthlyVideoLimitCount(v)
 		return nil
 	}
 	return fmt.Errorf("unknown BundlePlanGroupQuota numeric field %s", name)
@@ -11306,14 +11558,23 @@ func (m *BundlePlanGroupQuotaMutation) ResetField(name string) error {
 	case bundleplangroupquota.FieldMonthlyLimitUsd:
 		m.ResetMonthlyLimitUsd()
 		return nil
-	case bundleplangroupquota.FieldDailyLimitCount:
-		m.ResetDailyLimitCount()
+	case bundleplangroupquota.FieldDailyImageLimitCount:
+		m.ResetDailyImageLimitCount()
 		return nil
-	case bundleplangroupquota.FieldWeeklyLimitCount:
-		m.ResetWeeklyLimitCount()
+	case bundleplangroupquota.FieldWeeklyImageLimitCount:
+		m.ResetWeeklyImageLimitCount()
 		return nil
-	case bundleplangroupquota.FieldMonthlyLimitCount:
-		m.ResetMonthlyLimitCount()
+	case bundleplangroupquota.FieldMonthlyImageLimitCount:
+		m.ResetMonthlyImageLimitCount()
+		return nil
+	case bundleplangroupquota.FieldDailyVideoLimitCount:
+		m.ResetDailyVideoLimitCount()
+		return nil
+	case bundleplangroupquota.FieldWeeklyVideoLimitCount:
+		m.ResetWeeklyVideoLimitCount()
+		return nil
+	case bundleplangroupquota.FieldMonthlyVideoLimitCount:
+		m.ResetMonthlyVideoLimitCount()
 		return nil
 	}
 	return fmt.Errorf("unknown BundlePlanGroupQuota field %s", name)
@@ -12393,33 +12654,39 @@ func (m *BundleSubscriptionMutation) ResetEdge(name string) error {
 // BundleSubscriptionUsageMutation represents an operation that mutates the BundleSubscriptionUsage nodes in the graph.
 type BundleSubscriptionUsageMutation struct {
 	config
-	op                        Op
-	typ                       string
-	id                        *int64
-	bundle_subscription_id    *int64
-	addbundle_subscription_id *int64
-	group_id                  *int64
-	addgroup_id               *int64
-	model_pattern             *string
-	daily_usage_usd           *float64
-	adddaily_usage_usd        *float64
-	daily_window_start        *time.Time
-	weekly_usage_usd          *float64
-	addweekly_usage_usd       *float64
-	weekly_window_start       *time.Time
-	monthly_usage_usd         *float64
-	addmonthly_usage_usd      *float64
-	monthly_window_start      *time.Time
-	daily_usage_count         *int
-	adddaily_usage_count      *int
-	weekly_usage_count        *int
-	addweekly_usage_count     *int
-	monthly_usage_count       *int
-	addmonthly_usage_count    *int
-	clearedFields             map[string]struct{}
-	done                      bool
-	oldValue                  func(context.Context) (*BundleSubscriptionUsage, error)
-	predicates                []predicate.BundleSubscriptionUsage
+	op                           Op
+	typ                          string
+	id                           *int64
+	bundle_subscription_id       *int64
+	addbundle_subscription_id    *int64
+	group_id                     *int64
+	addgroup_id                  *int64
+	model_pattern                *string
+	daily_usage_usd              *float64
+	adddaily_usage_usd           *float64
+	daily_window_start           *time.Time
+	weekly_usage_usd             *float64
+	addweekly_usage_usd          *float64
+	weekly_window_start          *time.Time
+	monthly_usage_usd            *float64
+	addmonthly_usage_usd         *float64
+	monthly_window_start         *time.Time
+	daily_image_usage_count      *int
+	adddaily_image_usage_count   *int
+	weekly_image_usage_count     *int
+	addweekly_image_usage_count  *int
+	monthly_image_usage_count    *int
+	addmonthly_image_usage_count *int
+	daily_video_usage_count      *int
+	adddaily_video_usage_count   *int
+	weekly_video_usage_count     *int
+	addweekly_video_usage_count  *int
+	monthly_video_usage_count    *int
+	addmonthly_video_usage_count *int
+	clearedFields                map[string]struct{}
+	done                         bool
+	oldValue                     func(context.Context) (*BundleSubscriptionUsage, error)
+	predicates                   []predicate.BundleSubscriptionUsage
 }
 
 var _ ent.Mutation = (*BundleSubscriptionUsageMutation)(nil)
@@ -12944,172 +13211,340 @@ func (m *BundleSubscriptionUsageMutation) ResetMonthlyWindowStart() {
 	m.monthly_window_start = nil
 }
 
-// SetDailyUsageCount sets the "daily_usage_count" field.
-func (m *BundleSubscriptionUsageMutation) SetDailyUsageCount(i int) {
-	m.daily_usage_count = &i
-	m.adddaily_usage_count = nil
+// SetDailyImageUsageCount sets the "daily_image_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) SetDailyImageUsageCount(i int) {
+	m.daily_image_usage_count = &i
+	m.adddaily_image_usage_count = nil
 }
 
-// DailyUsageCount returns the value of the "daily_usage_count" field in the mutation.
-func (m *BundleSubscriptionUsageMutation) DailyUsageCount() (r int, exists bool) {
-	v := m.daily_usage_count
+// DailyImageUsageCount returns the value of the "daily_image_usage_count" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) DailyImageUsageCount() (r int, exists bool) {
+	v := m.daily_image_usage_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDailyUsageCount returns the old "daily_usage_count" field's value of the BundleSubscriptionUsage entity.
+// OldDailyImageUsageCount returns the old "daily_image_usage_count" field's value of the BundleSubscriptionUsage entity.
 // If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BundleSubscriptionUsageMutation) OldDailyUsageCount(ctx context.Context) (v int, err error) {
+func (m *BundleSubscriptionUsageMutation) OldDailyImageUsageCount(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDailyUsageCount is only allowed on UpdateOne operations")
+		return v, errors.New("OldDailyImageUsageCount is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDailyUsageCount requires an ID field in the mutation")
+		return v, errors.New("OldDailyImageUsageCount requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDailyUsageCount: %w", err)
+		return v, fmt.Errorf("querying old value for OldDailyImageUsageCount: %w", err)
 	}
-	return oldValue.DailyUsageCount, nil
+	return oldValue.DailyImageUsageCount, nil
 }
 
-// AddDailyUsageCount adds i to the "daily_usage_count" field.
-func (m *BundleSubscriptionUsageMutation) AddDailyUsageCount(i int) {
-	if m.adddaily_usage_count != nil {
-		*m.adddaily_usage_count += i
+// AddDailyImageUsageCount adds i to the "daily_image_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) AddDailyImageUsageCount(i int) {
+	if m.adddaily_image_usage_count != nil {
+		*m.adddaily_image_usage_count += i
 	} else {
-		m.adddaily_usage_count = &i
+		m.adddaily_image_usage_count = &i
 	}
 }
 
-// AddedDailyUsageCount returns the value that was added to the "daily_usage_count" field in this mutation.
-func (m *BundleSubscriptionUsageMutation) AddedDailyUsageCount() (r int, exists bool) {
-	v := m.adddaily_usage_count
+// AddedDailyImageUsageCount returns the value that was added to the "daily_image_usage_count" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedDailyImageUsageCount() (r int, exists bool) {
+	v := m.adddaily_image_usage_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetDailyUsageCount resets all changes to the "daily_usage_count" field.
-func (m *BundleSubscriptionUsageMutation) ResetDailyUsageCount() {
-	m.daily_usage_count = nil
-	m.adddaily_usage_count = nil
+// ResetDailyImageUsageCount resets all changes to the "daily_image_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) ResetDailyImageUsageCount() {
+	m.daily_image_usage_count = nil
+	m.adddaily_image_usage_count = nil
 }
 
-// SetWeeklyUsageCount sets the "weekly_usage_count" field.
-func (m *BundleSubscriptionUsageMutation) SetWeeklyUsageCount(i int) {
-	m.weekly_usage_count = &i
-	m.addweekly_usage_count = nil
+// SetWeeklyImageUsageCount sets the "weekly_image_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) SetWeeklyImageUsageCount(i int) {
+	m.weekly_image_usage_count = &i
+	m.addweekly_image_usage_count = nil
 }
 
-// WeeklyUsageCount returns the value of the "weekly_usage_count" field in the mutation.
-func (m *BundleSubscriptionUsageMutation) WeeklyUsageCount() (r int, exists bool) {
-	v := m.weekly_usage_count
+// WeeklyImageUsageCount returns the value of the "weekly_image_usage_count" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) WeeklyImageUsageCount() (r int, exists bool) {
+	v := m.weekly_image_usage_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldWeeklyUsageCount returns the old "weekly_usage_count" field's value of the BundleSubscriptionUsage entity.
+// OldWeeklyImageUsageCount returns the old "weekly_image_usage_count" field's value of the BundleSubscriptionUsage entity.
 // If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BundleSubscriptionUsageMutation) OldWeeklyUsageCount(ctx context.Context) (v int, err error) {
+func (m *BundleSubscriptionUsageMutation) OldWeeklyImageUsageCount(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldWeeklyUsageCount is only allowed on UpdateOne operations")
+		return v, errors.New("OldWeeklyImageUsageCount is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldWeeklyUsageCount requires an ID field in the mutation")
+		return v, errors.New("OldWeeklyImageUsageCount requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldWeeklyUsageCount: %w", err)
+		return v, fmt.Errorf("querying old value for OldWeeklyImageUsageCount: %w", err)
 	}
-	return oldValue.WeeklyUsageCount, nil
+	return oldValue.WeeklyImageUsageCount, nil
 }
 
-// AddWeeklyUsageCount adds i to the "weekly_usage_count" field.
-func (m *BundleSubscriptionUsageMutation) AddWeeklyUsageCount(i int) {
-	if m.addweekly_usage_count != nil {
-		*m.addweekly_usage_count += i
+// AddWeeklyImageUsageCount adds i to the "weekly_image_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) AddWeeklyImageUsageCount(i int) {
+	if m.addweekly_image_usage_count != nil {
+		*m.addweekly_image_usage_count += i
 	} else {
-		m.addweekly_usage_count = &i
+		m.addweekly_image_usage_count = &i
 	}
 }
 
-// AddedWeeklyUsageCount returns the value that was added to the "weekly_usage_count" field in this mutation.
-func (m *BundleSubscriptionUsageMutation) AddedWeeklyUsageCount() (r int, exists bool) {
-	v := m.addweekly_usage_count
+// AddedWeeklyImageUsageCount returns the value that was added to the "weekly_image_usage_count" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedWeeklyImageUsageCount() (r int, exists bool) {
+	v := m.addweekly_image_usage_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetWeeklyUsageCount resets all changes to the "weekly_usage_count" field.
-func (m *BundleSubscriptionUsageMutation) ResetWeeklyUsageCount() {
-	m.weekly_usage_count = nil
-	m.addweekly_usage_count = nil
+// ResetWeeklyImageUsageCount resets all changes to the "weekly_image_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) ResetWeeklyImageUsageCount() {
+	m.weekly_image_usage_count = nil
+	m.addweekly_image_usage_count = nil
 }
 
-// SetMonthlyUsageCount sets the "monthly_usage_count" field.
-func (m *BundleSubscriptionUsageMutation) SetMonthlyUsageCount(i int) {
-	m.monthly_usage_count = &i
-	m.addmonthly_usage_count = nil
+// SetMonthlyImageUsageCount sets the "monthly_image_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) SetMonthlyImageUsageCount(i int) {
+	m.monthly_image_usage_count = &i
+	m.addmonthly_image_usage_count = nil
 }
 
-// MonthlyUsageCount returns the value of the "monthly_usage_count" field in the mutation.
-func (m *BundleSubscriptionUsageMutation) MonthlyUsageCount() (r int, exists bool) {
-	v := m.monthly_usage_count
+// MonthlyImageUsageCount returns the value of the "monthly_image_usage_count" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) MonthlyImageUsageCount() (r int, exists bool) {
+	v := m.monthly_image_usage_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldMonthlyUsageCount returns the old "monthly_usage_count" field's value of the BundleSubscriptionUsage entity.
+// OldMonthlyImageUsageCount returns the old "monthly_image_usage_count" field's value of the BundleSubscriptionUsage entity.
 // If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BundleSubscriptionUsageMutation) OldMonthlyUsageCount(ctx context.Context) (v int, err error) {
+func (m *BundleSubscriptionUsageMutation) OldMonthlyImageUsageCount(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldMonthlyUsageCount is only allowed on UpdateOne operations")
+		return v, errors.New("OldMonthlyImageUsageCount is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldMonthlyUsageCount requires an ID field in the mutation")
+		return v, errors.New("OldMonthlyImageUsageCount requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldMonthlyUsageCount: %w", err)
+		return v, fmt.Errorf("querying old value for OldMonthlyImageUsageCount: %w", err)
 	}
-	return oldValue.MonthlyUsageCount, nil
+	return oldValue.MonthlyImageUsageCount, nil
 }
 
-// AddMonthlyUsageCount adds i to the "monthly_usage_count" field.
-func (m *BundleSubscriptionUsageMutation) AddMonthlyUsageCount(i int) {
-	if m.addmonthly_usage_count != nil {
-		*m.addmonthly_usage_count += i
+// AddMonthlyImageUsageCount adds i to the "monthly_image_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) AddMonthlyImageUsageCount(i int) {
+	if m.addmonthly_image_usage_count != nil {
+		*m.addmonthly_image_usage_count += i
 	} else {
-		m.addmonthly_usage_count = &i
+		m.addmonthly_image_usage_count = &i
 	}
 }
 
-// AddedMonthlyUsageCount returns the value that was added to the "monthly_usage_count" field in this mutation.
-func (m *BundleSubscriptionUsageMutation) AddedMonthlyUsageCount() (r int, exists bool) {
-	v := m.addmonthly_usage_count
+// AddedMonthlyImageUsageCount returns the value that was added to the "monthly_image_usage_count" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedMonthlyImageUsageCount() (r int, exists bool) {
+	v := m.addmonthly_image_usage_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetMonthlyUsageCount resets all changes to the "monthly_usage_count" field.
-func (m *BundleSubscriptionUsageMutation) ResetMonthlyUsageCount() {
-	m.monthly_usage_count = nil
-	m.addmonthly_usage_count = nil
+// ResetMonthlyImageUsageCount resets all changes to the "monthly_image_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) ResetMonthlyImageUsageCount() {
+	m.monthly_image_usage_count = nil
+	m.addmonthly_image_usage_count = nil
+}
+
+// SetDailyVideoUsageCount sets the "daily_video_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) SetDailyVideoUsageCount(i int) {
+	m.daily_video_usage_count = &i
+	m.adddaily_video_usage_count = nil
+}
+
+// DailyVideoUsageCount returns the value of the "daily_video_usage_count" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) DailyVideoUsageCount() (r int, exists bool) {
+	v := m.daily_video_usage_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDailyVideoUsageCount returns the old "daily_video_usage_count" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldDailyVideoUsageCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDailyVideoUsageCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDailyVideoUsageCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDailyVideoUsageCount: %w", err)
+	}
+	return oldValue.DailyVideoUsageCount, nil
+}
+
+// AddDailyVideoUsageCount adds i to the "daily_video_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) AddDailyVideoUsageCount(i int) {
+	if m.adddaily_video_usage_count != nil {
+		*m.adddaily_video_usage_count += i
+	} else {
+		m.adddaily_video_usage_count = &i
+	}
+}
+
+// AddedDailyVideoUsageCount returns the value that was added to the "daily_video_usage_count" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedDailyVideoUsageCount() (r int, exists bool) {
+	v := m.adddaily_video_usage_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDailyVideoUsageCount resets all changes to the "daily_video_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) ResetDailyVideoUsageCount() {
+	m.daily_video_usage_count = nil
+	m.adddaily_video_usage_count = nil
+}
+
+// SetWeeklyVideoUsageCount sets the "weekly_video_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) SetWeeklyVideoUsageCount(i int) {
+	m.weekly_video_usage_count = &i
+	m.addweekly_video_usage_count = nil
+}
+
+// WeeklyVideoUsageCount returns the value of the "weekly_video_usage_count" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) WeeklyVideoUsageCount() (r int, exists bool) {
+	v := m.weekly_video_usage_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeeklyVideoUsageCount returns the old "weekly_video_usage_count" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldWeeklyVideoUsageCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeeklyVideoUsageCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeeklyVideoUsageCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeeklyVideoUsageCount: %w", err)
+	}
+	return oldValue.WeeklyVideoUsageCount, nil
+}
+
+// AddWeeklyVideoUsageCount adds i to the "weekly_video_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) AddWeeklyVideoUsageCount(i int) {
+	if m.addweekly_video_usage_count != nil {
+		*m.addweekly_video_usage_count += i
+	} else {
+		m.addweekly_video_usage_count = &i
+	}
+}
+
+// AddedWeeklyVideoUsageCount returns the value that was added to the "weekly_video_usage_count" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedWeeklyVideoUsageCount() (r int, exists bool) {
+	v := m.addweekly_video_usage_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeeklyVideoUsageCount resets all changes to the "weekly_video_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) ResetWeeklyVideoUsageCount() {
+	m.weekly_video_usage_count = nil
+	m.addweekly_video_usage_count = nil
+}
+
+// SetMonthlyVideoUsageCount sets the "monthly_video_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) SetMonthlyVideoUsageCount(i int) {
+	m.monthly_video_usage_count = &i
+	m.addmonthly_video_usage_count = nil
+}
+
+// MonthlyVideoUsageCount returns the value of the "monthly_video_usage_count" field in the mutation.
+func (m *BundleSubscriptionUsageMutation) MonthlyVideoUsageCount() (r int, exists bool) {
+	v := m.monthly_video_usage_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMonthlyVideoUsageCount returns the old "monthly_video_usage_count" field's value of the BundleSubscriptionUsage entity.
+// If the BundleSubscriptionUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionUsageMutation) OldMonthlyVideoUsageCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMonthlyVideoUsageCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMonthlyVideoUsageCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMonthlyVideoUsageCount: %w", err)
+	}
+	return oldValue.MonthlyVideoUsageCount, nil
+}
+
+// AddMonthlyVideoUsageCount adds i to the "monthly_video_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) AddMonthlyVideoUsageCount(i int) {
+	if m.addmonthly_video_usage_count != nil {
+		*m.addmonthly_video_usage_count += i
+	} else {
+		m.addmonthly_video_usage_count = &i
+	}
+}
+
+// AddedMonthlyVideoUsageCount returns the value that was added to the "monthly_video_usage_count" field in this mutation.
+func (m *BundleSubscriptionUsageMutation) AddedMonthlyVideoUsageCount() (r int, exists bool) {
+	v := m.addmonthly_video_usage_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMonthlyVideoUsageCount resets all changes to the "monthly_video_usage_count" field.
+func (m *BundleSubscriptionUsageMutation) ResetMonthlyVideoUsageCount() {
+	m.monthly_video_usage_count = nil
+	m.addmonthly_video_usage_count = nil
 }
 
 // Where appends a list predicates to the BundleSubscriptionUsageMutation builder.
@@ -13146,7 +13581,7 @@ func (m *BundleSubscriptionUsageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BundleSubscriptionUsageMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 15)
 	if m.bundle_subscription_id != nil {
 		fields = append(fields, bundlesubscriptionusage.FieldBundleSubscriptionID)
 	}
@@ -13174,14 +13609,23 @@ func (m *BundleSubscriptionUsageMutation) Fields() []string {
 	if m.monthly_window_start != nil {
 		fields = append(fields, bundlesubscriptionusage.FieldMonthlyWindowStart)
 	}
-	if m.daily_usage_count != nil {
-		fields = append(fields, bundlesubscriptionusage.FieldDailyUsageCount)
+	if m.daily_image_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldDailyImageUsageCount)
 	}
-	if m.weekly_usage_count != nil {
-		fields = append(fields, bundlesubscriptionusage.FieldWeeklyUsageCount)
+	if m.weekly_image_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldWeeklyImageUsageCount)
 	}
-	if m.monthly_usage_count != nil {
-		fields = append(fields, bundlesubscriptionusage.FieldMonthlyUsageCount)
+	if m.monthly_image_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldMonthlyImageUsageCount)
+	}
+	if m.daily_video_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldDailyVideoUsageCount)
+	}
+	if m.weekly_video_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldWeeklyVideoUsageCount)
+	}
+	if m.monthly_video_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldMonthlyVideoUsageCount)
 	}
 	return fields
 }
@@ -13209,12 +13653,18 @@ func (m *BundleSubscriptionUsageMutation) Field(name string) (ent.Value, bool) {
 		return m.MonthlyUsageUsd()
 	case bundlesubscriptionusage.FieldMonthlyWindowStart:
 		return m.MonthlyWindowStart()
-	case bundlesubscriptionusage.FieldDailyUsageCount:
-		return m.DailyUsageCount()
-	case bundlesubscriptionusage.FieldWeeklyUsageCount:
-		return m.WeeklyUsageCount()
-	case bundlesubscriptionusage.FieldMonthlyUsageCount:
-		return m.MonthlyUsageCount()
+	case bundlesubscriptionusage.FieldDailyImageUsageCount:
+		return m.DailyImageUsageCount()
+	case bundlesubscriptionusage.FieldWeeklyImageUsageCount:
+		return m.WeeklyImageUsageCount()
+	case bundlesubscriptionusage.FieldMonthlyImageUsageCount:
+		return m.MonthlyImageUsageCount()
+	case bundlesubscriptionusage.FieldDailyVideoUsageCount:
+		return m.DailyVideoUsageCount()
+	case bundlesubscriptionusage.FieldWeeklyVideoUsageCount:
+		return m.WeeklyVideoUsageCount()
+	case bundlesubscriptionusage.FieldMonthlyVideoUsageCount:
+		return m.MonthlyVideoUsageCount()
 	}
 	return nil, false
 }
@@ -13242,12 +13692,18 @@ func (m *BundleSubscriptionUsageMutation) OldField(ctx context.Context, name str
 		return m.OldMonthlyUsageUsd(ctx)
 	case bundlesubscriptionusage.FieldMonthlyWindowStart:
 		return m.OldMonthlyWindowStart(ctx)
-	case bundlesubscriptionusage.FieldDailyUsageCount:
-		return m.OldDailyUsageCount(ctx)
-	case bundlesubscriptionusage.FieldWeeklyUsageCount:
-		return m.OldWeeklyUsageCount(ctx)
-	case bundlesubscriptionusage.FieldMonthlyUsageCount:
-		return m.OldMonthlyUsageCount(ctx)
+	case bundlesubscriptionusage.FieldDailyImageUsageCount:
+		return m.OldDailyImageUsageCount(ctx)
+	case bundlesubscriptionusage.FieldWeeklyImageUsageCount:
+		return m.OldWeeklyImageUsageCount(ctx)
+	case bundlesubscriptionusage.FieldMonthlyImageUsageCount:
+		return m.OldMonthlyImageUsageCount(ctx)
+	case bundlesubscriptionusage.FieldDailyVideoUsageCount:
+		return m.OldDailyVideoUsageCount(ctx)
+	case bundlesubscriptionusage.FieldWeeklyVideoUsageCount:
+		return m.OldWeeklyVideoUsageCount(ctx)
+	case bundlesubscriptionusage.FieldMonthlyVideoUsageCount:
+		return m.OldMonthlyVideoUsageCount(ctx)
 	}
 	return nil, fmt.Errorf("unknown BundleSubscriptionUsage field %s", name)
 }
@@ -13320,26 +13776,47 @@ func (m *BundleSubscriptionUsageMutation) SetField(name string, value ent.Value)
 		}
 		m.SetMonthlyWindowStart(v)
 		return nil
-	case bundlesubscriptionusage.FieldDailyUsageCount:
+	case bundlesubscriptionusage.FieldDailyImageUsageCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDailyUsageCount(v)
+		m.SetDailyImageUsageCount(v)
 		return nil
-	case bundlesubscriptionusage.FieldWeeklyUsageCount:
+	case bundlesubscriptionusage.FieldWeeklyImageUsageCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetWeeklyUsageCount(v)
+		m.SetWeeklyImageUsageCount(v)
 		return nil
-	case bundlesubscriptionusage.FieldMonthlyUsageCount:
+	case bundlesubscriptionusage.FieldMonthlyImageUsageCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetMonthlyUsageCount(v)
+		m.SetMonthlyImageUsageCount(v)
+		return nil
+	case bundlesubscriptionusage.FieldDailyVideoUsageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDailyVideoUsageCount(v)
+		return nil
+	case bundlesubscriptionusage.FieldWeeklyVideoUsageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeeklyVideoUsageCount(v)
+		return nil
+	case bundlesubscriptionusage.FieldMonthlyVideoUsageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMonthlyVideoUsageCount(v)
 		return nil
 	}
 	return fmt.Errorf("unknown BundleSubscriptionUsage field %s", name)
@@ -13364,14 +13841,23 @@ func (m *BundleSubscriptionUsageMutation) AddedFields() []string {
 	if m.addmonthly_usage_usd != nil {
 		fields = append(fields, bundlesubscriptionusage.FieldMonthlyUsageUsd)
 	}
-	if m.adddaily_usage_count != nil {
-		fields = append(fields, bundlesubscriptionusage.FieldDailyUsageCount)
+	if m.adddaily_image_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldDailyImageUsageCount)
 	}
-	if m.addweekly_usage_count != nil {
-		fields = append(fields, bundlesubscriptionusage.FieldWeeklyUsageCount)
+	if m.addweekly_image_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldWeeklyImageUsageCount)
 	}
-	if m.addmonthly_usage_count != nil {
-		fields = append(fields, bundlesubscriptionusage.FieldMonthlyUsageCount)
+	if m.addmonthly_image_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldMonthlyImageUsageCount)
+	}
+	if m.adddaily_video_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldDailyVideoUsageCount)
+	}
+	if m.addweekly_video_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldWeeklyVideoUsageCount)
+	}
+	if m.addmonthly_video_usage_count != nil {
+		fields = append(fields, bundlesubscriptionusage.FieldMonthlyVideoUsageCount)
 	}
 	return fields
 }
@@ -13391,12 +13877,18 @@ func (m *BundleSubscriptionUsageMutation) AddedField(name string) (ent.Value, bo
 		return m.AddedWeeklyUsageUsd()
 	case bundlesubscriptionusage.FieldMonthlyUsageUsd:
 		return m.AddedMonthlyUsageUsd()
-	case bundlesubscriptionusage.FieldDailyUsageCount:
-		return m.AddedDailyUsageCount()
-	case bundlesubscriptionusage.FieldWeeklyUsageCount:
-		return m.AddedWeeklyUsageCount()
-	case bundlesubscriptionusage.FieldMonthlyUsageCount:
-		return m.AddedMonthlyUsageCount()
+	case bundlesubscriptionusage.FieldDailyImageUsageCount:
+		return m.AddedDailyImageUsageCount()
+	case bundlesubscriptionusage.FieldWeeklyImageUsageCount:
+		return m.AddedWeeklyImageUsageCount()
+	case bundlesubscriptionusage.FieldMonthlyImageUsageCount:
+		return m.AddedMonthlyImageUsageCount()
+	case bundlesubscriptionusage.FieldDailyVideoUsageCount:
+		return m.AddedDailyVideoUsageCount()
+	case bundlesubscriptionusage.FieldWeeklyVideoUsageCount:
+		return m.AddedWeeklyVideoUsageCount()
+	case bundlesubscriptionusage.FieldMonthlyVideoUsageCount:
+		return m.AddedMonthlyVideoUsageCount()
 	}
 	return nil, false
 }
@@ -13441,26 +13933,47 @@ func (m *BundleSubscriptionUsageMutation) AddField(name string, value ent.Value)
 		}
 		m.AddMonthlyUsageUsd(v)
 		return nil
-	case bundlesubscriptionusage.FieldDailyUsageCount:
+	case bundlesubscriptionusage.FieldDailyImageUsageCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddDailyUsageCount(v)
+		m.AddDailyImageUsageCount(v)
 		return nil
-	case bundlesubscriptionusage.FieldWeeklyUsageCount:
+	case bundlesubscriptionusage.FieldWeeklyImageUsageCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddWeeklyUsageCount(v)
+		m.AddWeeklyImageUsageCount(v)
 		return nil
-	case bundlesubscriptionusage.FieldMonthlyUsageCount:
+	case bundlesubscriptionusage.FieldMonthlyImageUsageCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddMonthlyUsageCount(v)
+		m.AddMonthlyImageUsageCount(v)
+		return nil
+	case bundlesubscriptionusage.FieldDailyVideoUsageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDailyVideoUsageCount(v)
+		return nil
+	case bundlesubscriptionusage.FieldWeeklyVideoUsageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeeklyVideoUsageCount(v)
+		return nil
+	case bundlesubscriptionusage.FieldMonthlyVideoUsageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMonthlyVideoUsageCount(v)
 		return nil
 	}
 	return fmt.Errorf("unknown BundleSubscriptionUsage numeric field %s", name)
@@ -13516,14 +14029,23 @@ func (m *BundleSubscriptionUsageMutation) ResetField(name string) error {
 	case bundlesubscriptionusage.FieldMonthlyWindowStart:
 		m.ResetMonthlyWindowStart()
 		return nil
-	case bundlesubscriptionusage.FieldDailyUsageCount:
-		m.ResetDailyUsageCount()
+	case bundlesubscriptionusage.FieldDailyImageUsageCount:
+		m.ResetDailyImageUsageCount()
 		return nil
-	case bundlesubscriptionusage.FieldWeeklyUsageCount:
-		m.ResetWeeklyUsageCount()
+	case bundlesubscriptionusage.FieldWeeklyImageUsageCount:
+		m.ResetWeeklyImageUsageCount()
 		return nil
-	case bundlesubscriptionusage.FieldMonthlyUsageCount:
-		m.ResetMonthlyUsageCount()
+	case bundlesubscriptionusage.FieldMonthlyImageUsageCount:
+		m.ResetMonthlyImageUsageCount()
+		return nil
+	case bundlesubscriptionusage.FieldDailyVideoUsageCount:
+		m.ResetDailyVideoUsageCount()
+		return nil
+	case bundlesubscriptionusage.FieldWeeklyVideoUsageCount:
+		m.ResetWeeklyVideoUsageCount()
+		return nil
+	case bundlesubscriptionusage.FieldMonthlyVideoUsageCount:
+		m.ResetMonthlyVideoUsageCount()
 		return nil
 	}
 	return fmt.Errorf("unknown BundleSubscriptionUsage field %s", name)
@@ -39836,6 +40358,8 @@ type UsageLogMutation struct {
 	ip_address                  *string
 	image_count                 *int
 	addimage_count              *int
+	video_count                 *int
+	addvideo_count              *int
 	image_size                  *string
 	image_input_size            *string
 	image_output_size           *string
@@ -41734,6 +42258,62 @@ func (m *UsageLogMutation) ResetImageCount() {
 	m.addimage_count = nil
 }
 
+// SetVideoCount sets the "video_count" field.
+func (m *UsageLogMutation) SetVideoCount(i int) {
+	m.video_count = &i
+	m.addvideo_count = nil
+}
+
+// VideoCount returns the value of the "video_count" field in the mutation.
+func (m *UsageLogMutation) VideoCount() (r int, exists bool) {
+	v := m.video_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVideoCount returns the old "video_count" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldVideoCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVideoCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVideoCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVideoCount: %w", err)
+	}
+	return oldValue.VideoCount, nil
+}
+
+// AddVideoCount adds i to the "video_count" field.
+func (m *UsageLogMutation) AddVideoCount(i int) {
+	if m.addvideo_count != nil {
+		*m.addvideo_count += i
+	} else {
+		m.addvideo_count = &i
+	}
+}
+
+// AddedVideoCount returns the value that was added to the "video_count" field in this mutation.
+func (m *UsageLogMutation) AddedVideoCount() (r int, exists bool) {
+	v := m.addvideo_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVideoCount resets all changes to the "video_count" field.
+func (m *UsageLogMutation) ResetVideoCount() {
+	m.video_count = nil
+	m.addvideo_count = nil
+}
+
 // SetImageSize sets the "image_size" field.
 func (m *UsageLogMutation) SetImageSize(s string) {
 	m.image_size = &s
@@ -42220,7 +42800,7 @@ func (m *UsageLogMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UsageLogMutation) Fields() []string {
-	fields := make([]string, 0, 41)
+	fields := make([]string, 0, 42)
 	if m.user != nil {
 		fields = append(fields, usagelog.FieldUserID)
 	}
@@ -42323,6 +42903,9 @@ func (m *UsageLogMutation) Fields() []string {
 	if m.image_count != nil {
 		fields = append(fields, usagelog.FieldImageCount)
 	}
+	if m.video_count != nil {
+		fields = append(fields, usagelog.FieldVideoCount)
+	}
 	if m.image_size != nil {
 		fields = append(fields, usagelog.FieldImageSize)
 	}
@@ -42420,6 +43003,8 @@ func (m *UsageLogMutation) Field(name string) (ent.Value, bool) {
 		return m.IPAddress()
 	case usagelog.FieldImageCount:
 		return m.ImageCount()
+	case usagelog.FieldVideoCount:
+		return m.VideoCount()
 	case usagelog.FieldImageSize:
 		return m.ImageSize()
 	case usagelog.FieldImageInputSize:
@@ -42511,6 +43096,8 @@ func (m *UsageLogMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldIPAddress(ctx)
 	case usagelog.FieldImageCount:
 		return m.OldImageCount(ctx)
+	case usagelog.FieldVideoCount:
+		return m.OldVideoCount(ctx)
 	case usagelog.FieldImageSize:
 		return m.OldImageSize(ctx)
 	case usagelog.FieldImageInputSize:
@@ -42772,6 +43359,13 @@ func (m *UsageLogMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetImageCount(v)
 		return nil
+	case usagelog.FieldVideoCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVideoCount(v)
+		return nil
 	case usagelog.FieldImageSize:
 		v, ok := value.(string)
 		if !ok {
@@ -42886,6 +43480,9 @@ func (m *UsageLogMutation) AddedFields() []string {
 	if m.addimage_count != nil {
 		fields = append(fields, usagelog.FieldImageCount)
 	}
+	if m.addvideo_count != nil {
+		fields = append(fields, usagelog.FieldVideoCount)
+	}
 	return fields
 }
 
@@ -42932,6 +43529,8 @@ func (m *UsageLogMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedFirstTokenMs()
 	case usagelog.FieldImageCount:
 		return m.AddedImageCount()
+	case usagelog.FieldVideoCount:
+		return m.AddedVideoCount()
 	}
 	return nil, false
 }
@@ -43073,6 +43672,13 @@ func (m *UsageLogMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddImageCount(v)
+		return nil
+	case usagelog.FieldVideoCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVideoCount(v)
 		return nil
 	}
 	return fmt.Errorf("unknown UsageLog numeric field %s", name)
@@ -43313,6 +43919,9 @@ func (m *UsageLogMutation) ResetField(name string) error {
 		return nil
 	case usagelog.FieldImageCount:
 		m.ResetImageCount()
+		return nil
+	case usagelog.FieldVideoCount:
+		m.ResetVideoCount()
 		return nil
 	case usagelog.FieldImageSize:
 		m.ResetImageSize()
@@ -50015,53 +50624,59 @@ func (m *UserPlatformQuotaMutation) ResetEdge(name string) error {
 // UserSubscriptionMutation represents an operation that mutates the UserSubscription nodes in the graph.
 type UserSubscriptionMutation struct {
 	config
-	op                        Op
-	typ                       string
-	id                        *int64
-	created_at                *time.Time
-	updated_at                *time.Time
-	deleted_at                *time.Time
-	starts_at                 *time.Time
-	expires_at                *time.Time
-	status                    *string
-	daily_window_start        *time.Time
-	weekly_window_start       *time.Time
-	monthly_window_start      *time.Time
-	daily_usage_usd           *float64
-	adddaily_usage_usd        *float64
-	weekly_usage_usd          *float64
-	addweekly_usage_usd       *float64
-	monthly_usage_usd         *float64
-	addmonthly_usage_usd      *float64
-	assigned_at               *time.Time
-	notes                     *string
-	bundle_subscription_id    *int64
-	addbundle_subscription_id *int64
-	daily_limit_usd           *float64
-	adddaily_limit_usd        *float64
-	weekly_limit_usd          *float64
-	addweekly_limit_usd       *float64
-	monthly_limit_usd         *float64
-	addmonthly_limit_usd      *float64
-	daily_limit_count         *int
-	adddaily_limit_count      *int
-	weekly_limit_count        *int
-	addweekly_limit_count     *int
-	monthly_limit_count       *int
-	addmonthly_limit_count    *int
-	clearedFields             map[string]struct{}
-	user                      *int64
-	cleareduser               bool
-	group                     *int64
-	clearedgroup              bool
-	assigned_by_user          *int64
-	clearedassigned_by_user   bool
-	usage_logs                map[int64]struct{}
-	removedusage_logs         map[int64]struct{}
-	clearedusage_logs         bool
-	done                      bool
-	oldValue                  func(context.Context) (*UserSubscription, error)
-	predicates                []predicate.UserSubscription
+	op                           Op
+	typ                          string
+	id                           *int64
+	created_at                   *time.Time
+	updated_at                   *time.Time
+	deleted_at                   *time.Time
+	starts_at                    *time.Time
+	expires_at                   *time.Time
+	status                       *string
+	daily_window_start           *time.Time
+	weekly_window_start          *time.Time
+	monthly_window_start         *time.Time
+	daily_usage_usd              *float64
+	adddaily_usage_usd           *float64
+	weekly_usage_usd             *float64
+	addweekly_usage_usd          *float64
+	monthly_usage_usd            *float64
+	addmonthly_usage_usd         *float64
+	assigned_at                  *time.Time
+	notes                        *string
+	bundle_subscription_id       *int64
+	addbundle_subscription_id    *int64
+	daily_limit_usd              *float64
+	adddaily_limit_usd           *float64
+	weekly_limit_usd             *float64
+	addweekly_limit_usd          *float64
+	monthly_limit_usd            *float64
+	addmonthly_limit_usd         *float64
+	daily_image_limit_count      *int
+	adddaily_image_limit_count   *int
+	weekly_image_limit_count     *int
+	addweekly_image_limit_count  *int
+	monthly_image_limit_count    *int
+	addmonthly_image_limit_count *int
+	daily_video_limit_count      *int
+	adddaily_video_limit_count   *int
+	weekly_video_limit_count     *int
+	addweekly_video_limit_count  *int
+	monthly_video_limit_count    *int
+	addmonthly_video_limit_count *int
+	clearedFields                map[string]struct{}
+	user                         *int64
+	cleareduser                  bool
+	group                        *int64
+	clearedgroup                 bool
+	assigned_by_user             *int64
+	clearedassigned_by_user      bool
+	usage_logs                   map[int64]struct{}
+	removedusage_logs            map[int64]struct{}
+	clearedusage_logs            bool
+	done                         bool
+	oldValue                     func(context.Context) (*UserSubscription, error)
+	predicates                   []predicate.UserSubscription
 }
 
 var _ ent.Mutation = (*UserSubscriptionMutation)(nil)
@@ -51150,172 +51765,340 @@ func (m *UserSubscriptionMutation) ResetMonthlyLimitUsd() {
 	m.addmonthly_limit_usd = nil
 }
 
-// SetDailyLimitCount sets the "daily_limit_count" field.
-func (m *UserSubscriptionMutation) SetDailyLimitCount(i int) {
-	m.daily_limit_count = &i
-	m.adddaily_limit_count = nil
+// SetDailyImageLimitCount sets the "daily_image_limit_count" field.
+func (m *UserSubscriptionMutation) SetDailyImageLimitCount(i int) {
+	m.daily_image_limit_count = &i
+	m.adddaily_image_limit_count = nil
 }
 
-// DailyLimitCount returns the value of the "daily_limit_count" field in the mutation.
-func (m *UserSubscriptionMutation) DailyLimitCount() (r int, exists bool) {
-	v := m.daily_limit_count
+// DailyImageLimitCount returns the value of the "daily_image_limit_count" field in the mutation.
+func (m *UserSubscriptionMutation) DailyImageLimitCount() (r int, exists bool) {
+	v := m.daily_image_limit_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDailyLimitCount returns the old "daily_limit_count" field's value of the UserSubscription entity.
+// OldDailyImageLimitCount returns the old "daily_image_limit_count" field's value of the UserSubscription entity.
 // If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserSubscriptionMutation) OldDailyLimitCount(ctx context.Context) (v int, err error) {
+func (m *UserSubscriptionMutation) OldDailyImageLimitCount(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDailyLimitCount is only allowed on UpdateOne operations")
+		return v, errors.New("OldDailyImageLimitCount is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDailyLimitCount requires an ID field in the mutation")
+		return v, errors.New("OldDailyImageLimitCount requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDailyLimitCount: %w", err)
+		return v, fmt.Errorf("querying old value for OldDailyImageLimitCount: %w", err)
 	}
-	return oldValue.DailyLimitCount, nil
+	return oldValue.DailyImageLimitCount, nil
 }
 
-// AddDailyLimitCount adds i to the "daily_limit_count" field.
-func (m *UserSubscriptionMutation) AddDailyLimitCount(i int) {
-	if m.adddaily_limit_count != nil {
-		*m.adddaily_limit_count += i
+// AddDailyImageLimitCount adds i to the "daily_image_limit_count" field.
+func (m *UserSubscriptionMutation) AddDailyImageLimitCount(i int) {
+	if m.adddaily_image_limit_count != nil {
+		*m.adddaily_image_limit_count += i
 	} else {
-		m.adddaily_limit_count = &i
+		m.adddaily_image_limit_count = &i
 	}
 }
 
-// AddedDailyLimitCount returns the value that was added to the "daily_limit_count" field in this mutation.
-func (m *UserSubscriptionMutation) AddedDailyLimitCount() (r int, exists bool) {
-	v := m.adddaily_limit_count
+// AddedDailyImageLimitCount returns the value that was added to the "daily_image_limit_count" field in this mutation.
+func (m *UserSubscriptionMutation) AddedDailyImageLimitCount() (r int, exists bool) {
+	v := m.adddaily_image_limit_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetDailyLimitCount resets all changes to the "daily_limit_count" field.
-func (m *UserSubscriptionMutation) ResetDailyLimitCount() {
-	m.daily_limit_count = nil
-	m.adddaily_limit_count = nil
+// ResetDailyImageLimitCount resets all changes to the "daily_image_limit_count" field.
+func (m *UserSubscriptionMutation) ResetDailyImageLimitCount() {
+	m.daily_image_limit_count = nil
+	m.adddaily_image_limit_count = nil
 }
 
-// SetWeeklyLimitCount sets the "weekly_limit_count" field.
-func (m *UserSubscriptionMutation) SetWeeklyLimitCount(i int) {
-	m.weekly_limit_count = &i
-	m.addweekly_limit_count = nil
+// SetWeeklyImageLimitCount sets the "weekly_image_limit_count" field.
+func (m *UserSubscriptionMutation) SetWeeklyImageLimitCount(i int) {
+	m.weekly_image_limit_count = &i
+	m.addweekly_image_limit_count = nil
 }
 
-// WeeklyLimitCount returns the value of the "weekly_limit_count" field in the mutation.
-func (m *UserSubscriptionMutation) WeeklyLimitCount() (r int, exists bool) {
-	v := m.weekly_limit_count
+// WeeklyImageLimitCount returns the value of the "weekly_image_limit_count" field in the mutation.
+func (m *UserSubscriptionMutation) WeeklyImageLimitCount() (r int, exists bool) {
+	v := m.weekly_image_limit_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldWeeklyLimitCount returns the old "weekly_limit_count" field's value of the UserSubscription entity.
+// OldWeeklyImageLimitCount returns the old "weekly_image_limit_count" field's value of the UserSubscription entity.
 // If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserSubscriptionMutation) OldWeeklyLimitCount(ctx context.Context) (v int, err error) {
+func (m *UserSubscriptionMutation) OldWeeklyImageLimitCount(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldWeeklyLimitCount is only allowed on UpdateOne operations")
+		return v, errors.New("OldWeeklyImageLimitCount is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldWeeklyLimitCount requires an ID field in the mutation")
+		return v, errors.New("OldWeeklyImageLimitCount requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldWeeklyLimitCount: %w", err)
+		return v, fmt.Errorf("querying old value for OldWeeklyImageLimitCount: %w", err)
 	}
-	return oldValue.WeeklyLimitCount, nil
+	return oldValue.WeeklyImageLimitCount, nil
 }
 
-// AddWeeklyLimitCount adds i to the "weekly_limit_count" field.
-func (m *UserSubscriptionMutation) AddWeeklyLimitCount(i int) {
-	if m.addweekly_limit_count != nil {
-		*m.addweekly_limit_count += i
+// AddWeeklyImageLimitCount adds i to the "weekly_image_limit_count" field.
+func (m *UserSubscriptionMutation) AddWeeklyImageLimitCount(i int) {
+	if m.addweekly_image_limit_count != nil {
+		*m.addweekly_image_limit_count += i
 	} else {
-		m.addweekly_limit_count = &i
+		m.addweekly_image_limit_count = &i
 	}
 }
 
-// AddedWeeklyLimitCount returns the value that was added to the "weekly_limit_count" field in this mutation.
-func (m *UserSubscriptionMutation) AddedWeeklyLimitCount() (r int, exists bool) {
-	v := m.addweekly_limit_count
+// AddedWeeklyImageLimitCount returns the value that was added to the "weekly_image_limit_count" field in this mutation.
+func (m *UserSubscriptionMutation) AddedWeeklyImageLimitCount() (r int, exists bool) {
+	v := m.addweekly_image_limit_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetWeeklyLimitCount resets all changes to the "weekly_limit_count" field.
-func (m *UserSubscriptionMutation) ResetWeeklyLimitCount() {
-	m.weekly_limit_count = nil
-	m.addweekly_limit_count = nil
+// ResetWeeklyImageLimitCount resets all changes to the "weekly_image_limit_count" field.
+func (m *UserSubscriptionMutation) ResetWeeklyImageLimitCount() {
+	m.weekly_image_limit_count = nil
+	m.addweekly_image_limit_count = nil
 }
 
-// SetMonthlyLimitCount sets the "monthly_limit_count" field.
-func (m *UserSubscriptionMutation) SetMonthlyLimitCount(i int) {
-	m.monthly_limit_count = &i
-	m.addmonthly_limit_count = nil
+// SetMonthlyImageLimitCount sets the "monthly_image_limit_count" field.
+func (m *UserSubscriptionMutation) SetMonthlyImageLimitCount(i int) {
+	m.monthly_image_limit_count = &i
+	m.addmonthly_image_limit_count = nil
 }
 
-// MonthlyLimitCount returns the value of the "monthly_limit_count" field in the mutation.
-func (m *UserSubscriptionMutation) MonthlyLimitCount() (r int, exists bool) {
-	v := m.monthly_limit_count
+// MonthlyImageLimitCount returns the value of the "monthly_image_limit_count" field in the mutation.
+func (m *UserSubscriptionMutation) MonthlyImageLimitCount() (r int, exists bool) {
+	v := m.monthly_image_limit_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldMonthlyLimitCount returns the old "monthly_limit_count" field's value of the UserSubscription entity.
+// OldMonthlyImageLimitCount returns the old "monthly_image_limit_count" field's value of the UserSubscription entity.
 // If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserSubscriptionMutation) OldMonthlyLimitCount(ctx context.Context) (v int, err error) {
+func (m *UserSubscriptionMutation) OldMonthlyImageLimitCount(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldMonthlyLimitCount is only allowed on UpdateOne operations")
+		return v, errors.New("OldMonthlyImageLimitCount is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldMonthlyLimitCount requires an ID field in the mutation")
+		return v, errors.New("OldMonthlyImageLimitCount requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldMonthlyLimitCount: %w", err)
+		return v, fmt.Errorf("querying old value for OldMonthlyImageLimitCount: %w", err)
 	}
-	return oldValue.MonthlyLimitCount, nil
+	return oldValue.MonthlyImageLimitCount, nil
 }
 
-// AddMonthlyLimitCount adds i to the "monthly_limit_count" field.
-func (m *UserSubscriptionMutation) AddMonthlyLimitCount(i int) {
-	if m.addmonthly_limit_count != nil {
-		*m.addmonthly_limit_count += i
+// AddMonthlyImageLimitCount adds i to the "monthly_image_limit_count" field.
+func (m *UserSubscriptionMutation) AddMonthlyImageLimitCount(i int) {
+	if m.addmonthly_image_limit_count != nil {
+		*m.addmonthly_image_limit_count += i
 	} else {
-		m.addmonthly_limit_count = &i
+		m.addmonthly_image_limit_count = &i
 	}
 }
 
-// AddedMonthlyLimitCount returns the value that was added to the "monthly_limit_count" field in this mutation.
-func (m *UserSubscriptionMutation) AddedMonthlyLimitCount() (r int, exists bool) {
-	v := m.addmonthly_limit_count
+// AddedMonthlyImageLimitCount returns the value that was added to the "monthly_image_limit_count" field in this mutation.
+func (m *UserSubscriptionMutation) AddedMonthlyImageLimitCount() (r int, exists bool) {
+	v := m.addmonthly_image_limit_count
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetMonthlyLimitCount resets all changes to the "monthly_limit_count" field.
-func (m *UserSubscriptionMutation) ResetMonthlyLimitCount() {
-	m.monthly_limit_count = nil
-	m.addmonthly_limit_count = nil
+// ResetMonthlyImageLimitCount resets all changes to the "monthly_image_limit_count" field.
+func (m *UserSubscriptionMutation) ResetMonthlyImageLimitCount() {
+	m.monthly_image_limit_count = nil
+	m.addmonthly_image_limit_count = nil
+}
+
+// SetDailyVideoLimitCount sets the "daily_video_limit_count" field.
+func (m *UserSubscriptionMutation) SetDailyVideoLimitCount(i int) {
+	m.daily_video_limit_count = &i
+	m.adddaily_video_limit_count = nil
+}
+
+// DailyVideoLimitCount returns the value of the "daily_video_limit_count" field in the mutation.
+func (m *UserSubscriptionMutation) DailyVideoLimitCount() (r int, exists bool) {
+	v := m.daily_video_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDailyVideoLimitCount returns the old "daily_video_limit_count" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldDailyVideoLimitCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDailyVideoLimitCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDailyVideoLimitCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDailyVideoLimitCount: %w", err)
+	}
+	return oldValue.DailyVideoLimitCount, nil
+}
+
+// AddDailyVideoLimitCount adds i to the "daily_video_limit_count" field.
+func (m *UserSubscriptionMutation) AddDailyVideoLimitCount(i int) {
+	if m.adddaily_video_limit_count != nil {
+		*m.adddaily_video_limit_count += i
+	} else {
+		m.adddaily_video_limit_count = &i
+	}
+}
+
+// AddedDailyVideoLimitCount returns the value that was added to the "daily_video_limit_count" field in this mutation.
+func (m *UserSubscriptionMutation) AddedDailyVideoLimitCount() (r int, exists bool) {
+	v := m.adddaily_video_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDailyVideoLimitCount resets all changes to the "daily_video_limit_count" field.
+func (m *UserSubscriptionMutation) ResetDailyVideoLimitCount() {
+	m.daily_video_limit_count = nil
+	m.adddaily_video_limit_count = nil
+}
+
+// SetWeeklyVideoLimitCount sets the "weekly_video_limit_count" field.
+func (m *UserSubscriptionMutation) SetWeeklyVideoLimitCount(i int) {
+	m.weekly_video_limit_count = &i
+	m.addweekly_video_limit_count = nil
+}
+
+// WeeklyVideoLimitCount returns the value of the "weekly_video_limit_count" field in the mutation.
+func (m *UserSubscriptionMutation) WeeklyVideoLimitCount() (r int, exists bool) {
+	v := m.weekly_video_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeeklyVideoLimitCount returns the old "weekly_video_limit_count" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldWeeklyVideoLimitCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeeklyVideoLimitCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeeklyVideoLimitCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeeklyVideoLimitCount: %w", err)
+	}
+	return oldValue.WeeklyVideoLimitCount, nil
+}
+
+// AddWeeklyVideoLimitCount adds i to the "weekly_video_limit_count" field.
+func (m *UserSubscriptionMutation) AddWeeklyVideoLimitCount(i int) {
+	if m.addweekly_video_limit_count != nil {
+		*m.addweekly_video_limit_count += i
+	} else {
+		m.addweekly_video_limit_count = &i
+	}
+}
+
+// AddedWeeklyVideoLimitCount returns the value that was added to the "weekly_video_limit_count" field in this mutation.
+func (m *UserSubscriptionMutation) AddedWeeklyVideoLimitCount() (r int, exists bool) {
+	v := m.addweekly_video_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeeklyVideoLimitCount resets all changes to the "weekly_video_limit_count" field.
+func (m *UserSubscriptionMutation) ResetWeeklyVideoLimitCount() {
+	m.weekly_video_limit_count = nil
+	m.addweekly_video_limit_count = nil
+}
+
+// SetMonthlyVideoLimitCount sets the "monthly_video_limit_count" field.
+func (m *UserSubscriptionMutation) SetMonthlyVideoLimitCount(i int) {
+	m.monthly_video_limit_count = &i
+	m.addmonthly_video_limit_count = nil
+}
+
+// MonthlyVideoLimitCount returns the value of the "monthly_video_limit_count" field in the mutation.
+func (m *UserSubscriptionMutation) MonthlyVideoLimitCount() (r int, exists bool) {
+	v := m.monthly_video_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMonthlyVideoLimitCount returns the old "monthly_video_limit_count" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldMonthlyVideoLimitCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMonthlyVideoLimitCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMonthlyVideoLimitCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMonthlyVideoLimitCount: %w", err)
+	}
+	return oldValue.MonthlyVideoLimitCount, nil
+}
+
+// AddMonthlyVideoLimitCount adds i to the "monthly_video_limit_count" field.
+func (m *UserSubscriptionMutation) AddMonthlyVideoLimitCount(i int) {
+	if m.addmonthly_video_limit_count != nil {
+		*m.addmonthly_video_limit_count += i
+	} else {
+		m.addmonthly_video_limit_count = &i
+	}
+}
+
+// AddedMonthlyVideoLimitCount returns the value that was added to the "monthly_video_limit_count" field in this mutation.
+func (m *UserSubscriptionMutation) AddedMonthlyVideoLimitCount() (r int, exists bool) {
+	v := m.addmonthly_video_limit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMonthlyVideoLimitCount resets all changes to the "monthly_video_limit_count" field.
+func (m *UserSubscriptionMutation) ResetMonthlyVideoLimitCount() {
+	m.monthly_video_limit_count = nil
+	m.addmonthly_video_limit_count = nil
 }
 
 // ClearUser clears the "user" edge to the User entity.
@@ -51500,7 +52283,7 @@ func (m *UserSubscriptionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserSubscriptionMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 27)
 	if m.created_at != nil {
 		fields = append(fields, usersubscription.FieldCreatedAt)
 	}
@@ -51564,14 +52347,23 @@ func (m *UserSubscriptionMutation) Fields() []string {
 	if m.monthly_limit_usd != nil {
 		fields = append(fields, usersubscription.FieldMonthlyLimitUsd)
 	}
-	if m.daily_limit_count != nil {
-		fields = append(fields, usersubscription.FieldDailyLimitCount)
+	if m.daily_image_limit_count != nil {
+		fields = append(fields, usersubscription.FieldDailyImageLimitCount)
 	}
-	if m.weekly_limit_count != nil {
-		fields = append(fields, usersubscription.FieldWeeklyLimitCount)
+	if m.weekly_image_limit_count != nil {
+		fields = append(fields, usersubscription.FieldWeeklyImageLimitCount)
 	}
-	if m.monthly_limit_count != nil {
-		fields = append(fields, usersubscription.FieldMonthlyLimitCount)
+	if m.monthly_image_limit_count != nil {
+		fields = append(fields, usersubscription.FieldMonthlyImageLimitCount)
+	}
+	if m.daily_video_limit_count != nil {
+		fields = append(fields, usersubscription.FieldDailyVideoLimitCount)
+	}
+	if m.weekly_video_limit_count != nil {
+		fields = append(fields, usersubscription.FieldWeeklyVideoLimitCount)
+	}
+	if m.monthly_video_limit_count != nil {
+		fields = append(fields, usersubscription.FieldMonthlyVideoLimitCount)
 	}
 	return fields
 }
@@ -51623,12 +52415,18 @@ func (m *UserSubscriptionMutation) Field(name string) (ent.Value, bool) {
 		return m.WeeklyLimitUsd()
 	case usersubscription.FieldMonthlyLimitUsd:
 		return m.MonthlyLimitUsd()
-	case usersubscription.FieldDailyLimitCount:
-		return m.DailyLimitCount()
-	case usersubscription.FieldWeeklyLimitCount:
-		return m.WeeklyLimitCount()
-	case usersubscription.FieldMonthlyLimitCount:
-		return m.MonthlyLimitCount()
+	case usersubscription.FieldDailyImageLimitCount:
+		return m.DailyImageLimitCount()
+	case usersubscription.FieldWeeklyImageLimitCount:
+		return m.WeeklyImageLimitCount()
+	case usersubscription.FieldMonthlyImageLimitCount:
+		return m.MonthlyImageLimitCount()
+	case usersubscription.FieldDailyVideoLimitCount:
+		return m.DailyVideoLimitCount()
+	case usersubscription.FieldWeeklyVideoLimitCount:
+		return m.WeeklyVideoLimitCount()
+	case usersubscription.FieldMonthlyVideoLimitCount:
+		return m.MonthlyVideoLimitCount()
 	}
 	return nil, false
 }
@@ -51680,12 +52478,18 @@ func (m *UserSubscriptionMutation) OldField(ctx context.Context, name string) (e
 		return m.OldWeeklyLimitUsd(ctx)
 	case usersubscription.FieldMonthlyLimitUsd:
 		return m.OldMonthlyLimitUsd(ctx)
-	case usersubscription.FieldDailyLimitCount:
-		return m.OldDailyLimitCount(ctx)
-	case usersubscription.FieldWeeklyLimitCount:
-		return m.OldWeeklyLimitCount(ctx)
-	case usersubscription.FieldMonthlyLimitCount:
-		return m.OldMonthlyLimitCount(ctx)
+	case usersubscription.FieldDailyImageLimitCount:
+		return m.OldDailyImageLimitCount(ctx)
+	case usersubscription.FieldWeeklyImageLimitCount:
+		return m.OldWeeklyImageLimitCount(ctx)
+	case usersubscription.FieldMonthlyImageLimitCount:
+		return m.OldMonthlyImageLimitCount(ctx)
+	case usersubscription.FieldDailyVideoLimitCount:
+		return m.OldDailyVideoLimitCount(ctx)
+	case usersubscription.FieldWeeklyVideoLimitCount:
+		return m.OldWeeklyVideoLimitCount(ctx)
+	case usersubscription.FieldMonthlyVideoLimitCount:
+		return m.OldMonthlyVideoLimitCount(ctx)
 	}
 	return nil, fmt.Errorf("unknown UserSubscription field %s", name)
 }
@@ -51842,26 +52646,47 @@ func (m *UserSubscriptionMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetMonthlyLimitUsd(v)
 		return nil
-	case usersubscription.FieldDailyLimitCount:
+	case usersubscription.FieldDailyImageLimitCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDailyLimitCount(v)
+		m.SetDailyImageLimitCount(v)
 		return nil
-	case usersubscription.FieldWeeklyLimitCount:
+	case usersubscription.FieldWeeklyImageLimitCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetWeeklyLimitCount(v)
+		m.SetWeeklyImageLimitCount(v)
 		return nil
-	case usersubscription.FieldMonthlyLimitCount:
+	case usersubscription.FieldMonthlyImageLimitCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetMonthlyLimitCount(v)
+		m.SetMonthlyImageLimitCount(v)
+		return nil
+	case usersubscription.FieldDailyVideoLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDailyVideoLimitCount(v)
+		return nil
+	case usersubscription.FieldWeeklyVideoLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeeklyVideoLimitCount(v)
+		return nil
+	case usersubscription.FieldMonthlyVideoLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMonthlyVideoLimitCount(v)
 		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription field %s", name)
@@ -51892,14 +52717,23 @@ func (m *UserSubscriptionMutation) AddedFields() []string {
 	if m.addmonthly_limit_usd != nil {
 		fields = append(fields, usersubscription.FieldMonthlyLimitUsd)
 	}
-	if m.adddaily_limit_count != nil {
-		fields = append(fields, usersubscription.FieldDailyLimitCount)
+	if m.adddaily_image_limit_count != nil {
+		fields = append(fields, usersubscription.FieldDailyImageLimitCount)
 	}
-	if m.addweekly_limit_count != nil {
-		fields = append(fields, usersubscription.FieldWeeklyLimitCount)
+	if m.addweekly_image_limit_count != nil {
+		fields = append(fields, usersubscription.FieldWeeklyImageLimitCount)
 	}
-	if m.addmonthly_limit_count != nil {
-		fields = append(fields, usersubscription.FieldMonthlyLimitCount)
+	if m.addmonthly_image_limit_count != nil {
+		fields = append(fields, usersubscription.FieldMonthlyImageLimitCount)
+	}
+	if m.adddaily_video_limit_count != nil {
+		fields = append(fields, usersubscription.FieldDailyVideoLimitCount)
+	}
+	if m.addweekly_video_limit_count != nil {
+		fields = append(fields, usersubscription.FieldWeeklyVideoLimitCount)
+	}
+	if m.addmonthly_video_limit_count != nil {
+		fields = append(fields, usersubscription.FieldMonthlyVideoLimitCount)
 	}
 	return fields
 }
@@ -51923,12 +52757,18 @@ func (m *UserSubscriptionMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedWeeklyLimitUsd()
 	case usersubscription.FieldMonthlyLimitUsd:
 		return m.AddedMonthlyLimitUsd()
-	case usersubscription.FieldDailyLimitCount:
-		return m.AddedDailyLimitCount()
-	case usersubscription.FieldWeeklyLimitCount:
-		return m.AddedWeeklyLimitCount()
-	case usersubscription.FieldMonthlyLimitCount:
-		return m.AddedMonthlyLimitCount()
+	case usersubscription.FieldDailyImageLimitCount:
+		return m.AddedDailyImageLimitCount()
+	case usersubscription.FieldWeeklyImageLimitCount:
+		return m.AddedWeeklyImageLimitCount()
+	case usersubscription.FieldMonthlyImageLimitCount:
+		return m.AddedMonthlyImageLimitCount()
+	case usersubscription.FieldDailyVideoLimitCount:
+		return m.AddedDailyVideoLimitCount()
+	case usersubscription.FieldWeeklyVideoLimitCount:
+		return m.AddedWeeklyVideoLimitCount()
+	case usersubscription.FieldMonthlyVideoLimitCount:
+		return m.AddedMonthlyVideoLimitCount()
 	}
 	return nil, false
 }
@@ -51987,26 +52827,47 @@ func (m *UserSubscriptionMutation) AddField(name string, value ent.Value) error 
 		}
 		m.AddMonthlyLimitUsd(v)
 		return nil
-	case usersubscription.FieldDailyLimitCount:
+	case usersubscription.FieldDailyImageLimitCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddDailyLimitCount(v)
+		m.AddDailyImageLimitCount(v)
 		return nil
-	case usersubscription.FieldWeeklyLimitCount:
+	case usersubscription.FieldWeeklyImageLimitCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddWeeklyLimitCount(v)
+		m.AddWeeklyImageLimitCount(v)
 		return nil
-	case usersubscription.FieldMonthlyLimitCount:
+	case usersubscription.FieldMonthlyImageLimitCount:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddMonthlyLimitCount(v)
+		m.AddMonthlyImageLimitCount(v)
+		return nil
+	case usersubscription.FieldDailyVideoLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDailyVideoLimitCount(v)
+		return nil
+	case usersubscription.FieldWeeklyVideoLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeeklyVideoLimitCount(v)
+		return nil
+	case usersubscription.FieldMonthlyVideoLimitCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMonthlyVideoLimitCount(v)
 		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription numeric field %s", name)
@@ -52143,14 +53004,23 @@ func (m *UserSubscriptionMutation) ResetField(name string) error {
 	case usersubscription.FieldMonthlyLimitUsd:
 		m.ResetMonthlyLimitUsd()
 		return nil
-	case usersubscription.FieldDailyLimitCount:
-		m.ResetDailyLimitCount()
+	case usersubscription.FieldDailyImageLimitCount:
+		m.ResetDailyImageLimitCount()
 		return nil
-	case usersubscription.FieldWeeklyLimitCount:
-		m.ResetWeeklyLimitCount()
+	case usersubscription.FieldWeeklyImageLimitCount:
+		m.ResetWeeklyImageLimitCount()
 		return nil
-	case usersubscription.FieldMonthlyLimitCount:
-		m.ResetMonthlyLimitCount()
+	case usersubscription.FieldMonthlyImageLimitCount:
+		m.ResetMonthlyImageLimitCount()
+		return nil
+	case usersubscription.FieldDailyVideoLimitCount:
+		m.ResetDailyVideoLimitCount()
+		return nil
+	case usersubscription.FieldWeeklyVideoLimitCount:
+		m.ResetWeeklyVideoLimitCount()
+		return nil
+	case usersubscription.FieldMonthlyVideoLimitCount:
+		m.ResetMonthlyVideoLimitCount()
 		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription field %s", name)

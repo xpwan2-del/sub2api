@@ -34,9 +34,12 @@ func (BundlePlanGroupQuota) Fields() []ent.Field {
 		field.Float("daily_limit_usd").Default(0).Comment("日额度（0=不限）"),
 		field.Float("weekly_limit_usd").Default(0).Comment("周额度（0=不限）"),
 		field.Float("monthly_limit_usd").Default(0).Comment("月额度（0=不限）"),
-		field.Int("daily_limit_count").Default(0).Comment("日次数上限（0=不限），用于图片/视频按次计费"),
-		field.Int("weekly_limit_count").Default(0).Comment("周次数上限（0=不限）"),
-		field.Int("monthly_limit_count").Default(0).Comment("月次数上限（0=不限）"),
+		field.Int("daily_image_limit_count").Default(0).Comment("日图片次数上限（0=不限）"),
+		field.Int("weekly_image_limit_count").Default(0).Comment("周图片次数上限（0=不限）"),
+		field.Int("monthly_image_limit_count").Default(0).Comment("月图片次数上限（0=不限）"),
+		field.Int("daily_video_limit_count").Default(0).Comment("日视频次数上限（0=不限）"),
+		field.Int("weekly_video_limit_count").Default(0).Comment("周视频次数上限（0=不限）"),
+		field.Int("monthly_video_limit_count").Default(0).Comment("月视频次数上限（0=不限）"),
 	}
 }
 

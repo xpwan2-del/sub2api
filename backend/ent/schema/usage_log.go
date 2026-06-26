@@ -130,6 +130,9 @@ func (UsageLog) Fields() []ent.Field {
 		// 图片生成字段（仅 gemini-3-pro-image 等图片模型使用）
 		field.Int("image_count").
 			Default(0),
+		// 视频生成段数（仅视频模型使用,与 image_count 对称）
+		field.Int("video_count").
+			Default(0),
 		field.String("image_size").
 			MaxLen(10).
 			Optional().

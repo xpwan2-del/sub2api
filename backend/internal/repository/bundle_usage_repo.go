@@ -61,9 +61,9 @@ func (r *bundleUsageRepository) Create(ctx context.Context, usage *service.Bundl
 		SetWeeklyWindowStart(usage.WeeklyWindowStart).
 		SetMonthlyUsageUsd(usage.MonthlyUsageUSD).
 		SetMonthlyWindowStart(usage.MonthlyWindowStart).
-		SetDailyUsageCount(usage.DailyUsageCount).
-		SetWeeklyUsageCount(usage.WeeklyUsageCount).
-		SetMonthlyUsageCount(usage.MonthlyUsageCount).
+		SetDailyImageUsageCount(usage.DailyImageUsageCount).
+		SetWeeklyImageUsageCount(usage.WeeklyImageUsageCount).
+		SetMonthlyImageUsageCount(usage.MonthlyImageUsageCount).
 		Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, nil, nil)
@@ -83,19 +83,19 @@ func (r *bundleUsageRepository) IncrementUsage(ctx context.Context, id int64, co
 
 	update := client.BundleSubscriptionUsage.UpdateOneID(id)
 	if roll.Daily {
-		update.SetDailyUsageUsd(costUSD).SetDailyUsageCount(count).SetDailyWindowStart(roll.NewDailyStart)
+		update.SetDailyUsageUsd(costUSD).SetDailyImageUsageCount(count).SetDailyWindowStart(roll.NewDailyStart)
 	} else {
-		update.AddDailyUsageUsd(costUSD).AddDailyUsageCount(count)
+		update.AddDailyUsageUsd(costUSD).AddDailyImageUsageCount(count)
 	}
 	if roll.Weekly {
-		update.SetWeeklyUsageUsd(costUSD).SetWeeklyUsageCount(count).SetWeeklyWindowStart(roll.NewWeeklyStart)
+		update.SetWeeklyUsageUsd(costUSD).SetWeeklyImageUsageCount(count).SetWeeklyWindowStart(roll.NewWeeklyStart)
 	} else {
-		update.AddWeeklyUsageUsd(costUSD).AddWeeklyUsageCount(count)
+		update.AddWeeklyUsageUsd(costUSD).AddWeeklyImageUsageCount(count)
 	}
 	if roll.Monthly {
-		update.SetMonthlyUsageUsd(costUSD).SetMonthlyUsageCount(count).SetMonthlyWindowStart(roll.NewMonthlyStart)
+		update.SetMonthlyUsageUsd(costUSD).SetMonthlyImageUsageCount(count).SetMonthlyWindowStart(roll.NewMonthlyStart)
 	} else {
-		update.AddMonthlyUsageUsd(costUSD).AddMonthlyUsageCount(count)
+		update.AddMonthlyUsageUsd(costUSD).AddMonthlyImageUsageCount(count)
 	}
 
 	_, err := update.Save(ctx)
@@ -108,7 +108,7 @@ func (r *bundleUsageRepository) ResetDailyWindow(ctx context.Context, id int64, 
 
 	_, err := client.BundleSubscriptionUsage.UpdateOneID(id).
 		SetDailyUsageUsd(0).
-		SetDailyUsageCount(0).
+		SetDailyImageUsageCount(0).
 		SetDailyWindowStart(newWindowStart).
 		Save(ctx)
 	return translatePersistenceError(err, nil, nil)
@@ -120,7 +120,7 @@ func (r *bundleUsageRepository) ResetWeeklyWindow(ctx context.Context, id int64,
 
 	_, err := client.BundleSubscriptionUsage.UpdateOneID(id).
 		SetWeeklyUsageUsd(0).
-		SetWeeklyUsageCount(0).
+		SetWeeklyImageUsageCount(0).
 		SetWeeklyWindowStart(newWindowStart).
 		Save(ctx)
 	return translatePersistenceError(err, nil, nil)
@@ -132,7 +132,7 @@ func (r *bundleUsageRepository) ResetMonthlyWindow(ctx context.Context, id int64
 
 	_, err := client.BundleSubscriptionUsage.UpdateOneID(id).
 		SetMonthlyUsageUsd(0).
-		SetMonthlyUsageCount(0).
+		SetMonthlyImageUsageCount(0).
 		SetMonthlyWindowStart(newWindowStart).
 		Save(ctx)
 	return translatePersistenceError(err, nil, nil)

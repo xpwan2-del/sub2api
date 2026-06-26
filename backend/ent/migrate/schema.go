@@ -470,9 +470,12 @@ var (
 		{Name: "daily_limit_usd", Type: field.TypeFloat64, Default: 0},
 		{Name: "weekly_limit_usd", Type: field.TypeFloat64, Default: 0},
 		{Name: "monthly_limit_usd", Type: field.TypeFloat64, Default: 0},
-		{Name: "daily_limit_count", Type: field.TypeInt, Default: 0},
-		{Name: "weekly_limit_count", Type: field.TypeInt, Default: 0},
-		{Name: "monthly_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "daily_image_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "weekly_image_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "monthly_image_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "daily_video_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "weekly_video_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "monthly_video_limit_count", Type: field.TypeInt, Default: 0},
 	}
 	// BundlePlanGroupQuotasTable holds the schema information for the "bundle_plan_group_quotas" table.
 	BundlePlanGroupQuotasTable = &schema.Table{
@@ -532,9 +535,12 @@ var (
 		{Name: "weekly_window_start", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "monthly_usage_usd", Type: field.TypeFloat64, Default: 0},
 		{Name: "monthly_window_start", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
-		{Name: "daily_usage_count", Type: field.TypeInt, Default: 0},
-		{Name: "weekly_usage_count", Type: field.TypeInt, Default: 0},
-		{Name: "monthly_usage_count", Type: field.TypeInt, Default: 0},
+		{Name: "daily_image_usage_count", Type: field.TypeInt, Default: 0},
+		{Name: "weekly_image_usage_count", Type: field.TypeInt, Default: 0},
+		{Name: "monthly_image_usage_count", Type: field.TypeInt, Default: 0},
+		{Name: "daily_video_usage_count", Type: field.TypeInt, Default: 0},
+		{Name: "weekly_video_usage_count", Type: field.TypeInt, Default: 0},
+		{Name: "monthly_video_usage_count", Type: field.TypeInt, Default: 0},
 	}
 	// BundleSubscriptionUsagesTable holds the schema information for the "bundle_subscription_usages" table.
 	BundleSubscriptionUsagesTable = &schema.Table{
@@ -1488,6 +1494,7 @@ var (
 		{Name: "user_agent", Type: field.TypeString, Nullable: true, Size: 512},
 		{Name: "ip_address", Type: field.TypeString, Nullable: true, Size: 45},
 		{Name: "image_count", Type: field.TypeInt, Default: 0},
+		{Name: "video_count", Type: field.TypeInt, Default: 0},
 		{Name: "image_size", Type: field.TypeString, Nullable: true, Size: 10},
 		{Name: "image_input_size", Type: field.TypeString, Nullable: true, Size: 32},
 		{Name: "image_output_size", Type: field.TypeString, Nullable: true, Size: 32},
@@ -1509,31 +1516,31 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "usage_logs_api_keys_usage_logs",
-				Columns:    []*schema.Column{UsageLogsColumns[37]},
+				Columns:    []*schema.Column{UsageLogsColumns[38]},
 				RefColumns: []*schema.Column{APIKeysColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "usage_logs_accounts_usage_logs",
-				Columns:    []*schema.Column{UsageLogsColumns[38]},
+				Columns:    []*schema.Column{UsageLogsColumns[39]},
 				RefColumns: []*schema.Column{AccountsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "usage_logs_groups_usage_logs",
-				Columns:    []*schema.Column{UsageLogsColumns[39]},
+				Columns:    []*schema.Column{UsageLogsColumns[40]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "usage_logs_users_usage_logs",
-				Columns:    []*schema.Column{UsageLogsColumns[40]},
+				Columns:    []*schema.Column{UsageLogsColumns[41]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "usage_logs_user_subscriptions_usage_logs",
-				Columns:    []*schema.Column{UsageLogsColumns[41]},
+				Columns:    []*schema.Column{UsageLogsColumns[42]},
 				RefColumns: []*schema.Column{UserSubscriptionsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1542,32 +1549,32 @@ var (
 			{
 				Name:    "usagelog_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[40]},
+				Columns: []*schema.Column{UsageLogsColumns[41]},
 			},
 			{
 				Name:    "usagelog_api_key_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[37]},
+				Columns: []*schema.Column{UsageLogsColumns[38]},
 			},
 			{
 				Name:    "usagelog_account_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[38]},
+				Columns: []*schema.Column{UsageLogsColumns[39]},
 			},
 			{
 				Name:    "usagelog_group_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[39]},
+				Columns: []*schema.Column{UsageLogsColumns[40]},
 			},
 			{
 				Name:    "usagelog_subscription_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[41]},
+				Columns: []*schema.Column{UsageLogsColumns[42]},
 			},
 			{
 				Name:    "usagelog_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[36]},
+				Columns: []*schema.Column{UsageLogsColumns[37]},
 			},
 			{
 				Name:    "usagelog_model",
@@ -1587,17 +1594,17 @@ var (
 			{
 				Name:    "usagelog_user_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[40], UsageLogsColumns[36]},
+				Columns: []*schema.Column{UsageLogsColumns[41], UsageLogsColumns[37]},
 			},
 			{
 				Name:    "usagelog_api_key_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[37], UsageLogsColumns[36]},
+				Columns: []*schema.Column{UsageLogsColumns[38], UsageLogsColumns[37]},
 			},
 			{
 				Name:    "usagelog_group_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{UsageLogsColumns[39], UsageLogsColumns[36]},
+				Columns: []*schema.Column{UsageLogsColumns[40], UsageLogsColumns[37]},
 			},
 		},
 	}
@@ -1833,9 +1840,12 @@ var (
 		{Name: "daily_limit_usd", Type: field.TypeFloat64, Default: 0},
 		{Name: "weekly_limit_usd", Type: field.TypeFloat64, Default: 0},
 		{Name: "monthly_limit_usd", Type: field.TypeFloat64, Default: 0},
-		{Name: "daily_limit_count", Type: field.TypeInt, Default: 0},
-		{Name: "weekly_limit_count", Type: field.TypeInt, Default: 0},
-		{Name: "monthly_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "daily_image_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "weekly_image_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "monthly_image_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "daily_video_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "weekly_video_limit_count", Type: field.TypeInt, Default: 0},
+		{Name: "monthly_video_limit_count", Type: field.TypeInt, Default: 0},
 		{Name: "group_id", Type: field.TypeInt64},
 		{Name: "user_id", Type: field.TypeInt64},
 		{Name: "assigned_by", Type: field.TypeInt64, Nullable: true},
@@ -1848,19 +1858,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "user_subscriptions_groups_subscriptions",
-				Columns:    []*schema.Column{UserSubscriptionsColumns[22]},
+				Columns:    []*schema.Column{UserSubscriptionsColumns[25]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "user_subscriptions_users_subscriptions",
-				Columns:    []*schema.Column{UserSubscriptionsColumns[23]},
+				Columns:    []*schema.Column{UserSubscriptionsColumns[26]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "user_subscriptions_users_assigned_subscriptions",
-				Columns:    []*schema.Column{UserSubscriptionsColumns[24]},
+				Columns:    []*schema.Column{UserSubscriptionsColumns[27]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1869,12 +1879,12 @@ var (
 			{
 				Name:    "usersubscription_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{UserSubscriptionsColumns[23]},
+				Columns: []*schema.Column{UserSubscriptionsColumns[26]},
 			},
 			{
 				Name:    "usersubscription_group_id",
 				Unique:  false,
-				Columns: []*schema.Column{UserSubscriptionsColumns[22]},
+				Columns: []*schema.Column{UserSubscriptionsColumns[25]},
 			},
 			{
 				Name:    "usersubscription_status",
@@ -1889,17 +1899,17 @@ var (
 			{
 				Name:    "usersubscription_user_id_status_expires_at",
 				Unique:  false,
-				Columns: []*schema.Column{UserSubscriptionsColumns[23], UserSubscriptionsColumns[6], UserSubscriptionsColumns[5]},
+				Columns: []*schema.Column{UserSubscriptionsColumns[26], UserSubscriptionsColumns[6], UserSubscriptionsColumns[5]},
 			},
 			{
 				Name:    "usersubscription_assigned_by",
 				Unique:  false,
-				Columns: []*schema.Column{UserSubscriptionsColumns[24]},
+				Columns: []*schema.Column{UserSubscriptionsColumns[27]},
 			},
 			{
 				Name:    "usersubscription_user_id_group_id",
 				Unique:  false,
-				Columns: []*schema.Column{UserSubscriptionsColumns[23], UserSubscriptionsColumns[22]},
+				Columns: []*schema.Column{UserSubscriptionsColumns[26], UserSubscriptionsColumns[25]},
 			},
 			{
 				Name:    "usersubscription_deleted_at",

@@ -719,6 +719,27 @@ func (_u *UsageLogUpdate) AddImageCount(v int) *UsageLogUpdate {
 	return _u
 }
 
+// SetVideoCount sets the "video_count" field.
+func (_u *UsageLogUpdate) SetVideoCount(v int) *UsageLogUpdate {
+	_u.mutation.ResetVideoCount()
+	_u.mutation.SetVideoCount(v)
+	return _u
+}
+
+// SetNillableVideoCount sets the "video_count" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableVideoCount(v *int) *UsageLogUpdate {
+	if v != nil {
+		_u.SetVideoCount(*v)
+	}
+	return _u
+}
+
+// AddVideoCount adds value to the "video_count" field.
+func (_u *UsageLogUpdate) AddVideoCount(v int) *UsageLogUpdate {
+	_u.mutation.AddVideoCount(v)
+	return _u
+}
+
 // SetImageSize sets the "image_size" field.
 func (_u *UsageLogUpdate) SetImageSize(v string) *UsageLogUpdate {
 	_u.mutation.SetImageSize(v)
@@ -1179,6 +1200,12 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedImageCount(); ok {
 		_spec.AddField(usagelog.FieldImageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.VideoCount(); ok {
+		_spec.SetField(usagelog.FieldVideoCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVideoCount(); ok {
+		_spec.AddField(usagelog.FieldVideoCount, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.ImageSize(); ok {
 		_spec.SetField(usagelog.FieldImageSize, field.TypeString, value)
@@ -2065,6 +2092,27 @@ func (_u *UsageLogUpdateOne) AddImageCount(v int) *UsageLogUpdateOne {
 	return _u
 }
 
+// SetVideoCount sets the "video_count" field.
+func (_u *UsageLogUpdateOne) SetVideoCount(v int) *UsageLogUpdateOne {
+	_u.mutation.ResetVideoCount()
+	_u.mutation.SetVideoCount(v)
+	return _u
+}
+
+// SetNillableVideoCount sets the "video_count" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableVideoCount(v *int) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetVideoCount(*v)
+	}
+	return _u
+}
+
+// AddVideoCount adds value to the "video_count" field.
+func (_u *UsageLogUpdateOne) AddVideoCount(v int) *UsageLogUpdateOne {
+	_u.mutation.AddVideoCount(v)
+	return _u
+}
+
 // SetImageSize sets the "image_size" field.
 func (_u *UsageLogUpdateOne) SetImageSize(v string) *UsageLogUpdateOne {
 	_u.mutation.SetImageSize(v)
@@ -2555,6 +2603,12 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if value, ok := _u.mutation.AddedImageCount(); ok {
 		_spec.AddField(usagelog.FieldImageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.VideoCount(); ok {
+		_spec.SetField(usagelog.FieldVideoCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVideoCount(); ok {
+		_spec.AddField(usagelog.FieldVideoCount, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.ImageSize(); ok {
 		_spec.SetField(usagelog.FieldImageSize, field.TypeString, value)

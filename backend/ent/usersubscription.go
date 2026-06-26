@@ -61,12 +61,18 @@ type UserSubscription struct {
 	WeeklyLimitUsd float64 `json:"weekly_limit_usd,omitempty"`
 	// 独立月限额
 	MonthlyLimitUsd float64 `json:"monthly_limit_usd,omitempty"`
-	// 独立日次数限额快照（0=不限）
-	DailyLimitCount int `json:"daily_limit_count,omitempty"`
-	// 独立周次数限额快照
-	WeeklyLimitCount int `json:"weekly_limit_count,omitempty"`
-	// 独立月次数限额快照
-	MonthlyLimitCount int `json:"monthly_limit_count,omitempty"`
+	// 独立日图片次数限额快照（0=不限）
+	DailyImageLimitCount int `json:"daily_image_limit_count,omitempty"`
+	// 独立周图片次数限额快照
+	WeeklyImageLimitCount int `json:"weekly_image_limit_count,omitempty"`
+	// 独立月图片次数限额快照
+	MonthlyImageLimitCount int `json:"monthly_image_limit_count,omitempty"`
+	// 独立日视频次数限额快照（0=不限）
+	DailyVideoLimitCount int `json:"daily_video_limit_count,omitempty"`
+	// 独立周视频次数限额快照
+	WeeklyVideoLimitCount int `json:"weekly_video_limit_count,omitempty"`
+	// 独立月视频次数限额快照
+	MonthlyVideoLimitCount int `json:"monthly_video_limit_count,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserSubscriptionQuery when eager-loading is set.
 	Edges        UserSubscriptionEdges `json:"edges"`
@@ -137,7 +143,7 @@ func (*UserSubscription) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case usersubscription.FieldDailyUsageUsd, usersubscription.FieldWeeklyUsageUsd, usersubscription.FieldMonthlyUsageUsd, usersubscription.FieldDailyLimitUsd, usersubscription.FieldWeeklyLimitUsd, usersubscription.FieldMonthlyLimitUsd:
 			values[i] = new(sql.NullFloat64)
-		case usersubscription.FieldID, usersubscription.FieldUserID, usersubscription.FieldGroupID, usersubscription.FieldAssignedBy, usersubscription.FieldBundleSubscriptionID, usersubscription.FieldDailyLimitCount, usersubscription.FieldWeeklyLimitCount, usersubscription.FieldMonthlyLimitCount:
+		case usersubscription.FieldID, usersubscription.FieldUserID, usersubscription.FieldGroupID, usersubscription.FieldAssignedBy, usersubscription.FieldBundleSubscriptionID, usersubscription.FieldDailyImageLimitCount, usersubscription.FieldWeeklyImageLimitCount, usersubscription.FieldMonthlyImageLimitCount, usersubscription.FieldDailyVideoLimitCount, usersubscription.FieldWeeklyVideoLimitCount, usersubscription.FieldMonthlyVideoLimitCount:
 			values[i] = new(sql.NullInt64)
 		case usersubscription.FieldStatus, usersubscription.FieldNotes:
 			values[i] = new(sql.NullString)
@@ -297,23 +303,41 @@ func (_m *UserSubscription) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.MonthlyLimitUsd = value.Float64
 			}
-		case usersubscription.FieldDailyLimitCount:
+		case usersubscription.FieldDailyImageLimitCount:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field daily_limit_count", values[i])
+				return fmt.Errorf("unexpected type %T for field daily_image_limit_count", values[i])
 			} else if value.Valid {
-				_m.DailyLimitCount = int(value.Int64)
+				_m.DailyImageLimitCount = int(value.Int64)
 			}
-		case usersubscription.FieldWeeklyLimitCount:
+		case usersubscription.FieldWeeklyImageLimitCount:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field weekly_limit_count", values[i])
+				return fmt.Errorf("unexpected type %T for field weekly_image_limit_count", values[i])
 			} else if value.Valid {
-				_m.WeeklyLimitCount = int(value.Int64)
+				_m.WeeklyImageLimitCount = int(value.Int64)
 			}
-		case usersubscription.FieldMonthlyLimitCount:
+		case usersubscription.FieldMonthlyImageLimitCount:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field monthly_limit_count", values[i])
+				return fmt.Errorf("unexpected type %T for field monthly_image_limit_count", values[i])
 			} else if value.Valid {
-				_m.MonthlyLimitCount = int(value.Int64)
+				_m.MonthlyImageLimitCount = int(value.Int64)
+			}
+		case usersubscription.FieldDailyVideoLimitCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field daily_video_limit_count", values[i])
+			} else if value.Valid {
+				_m.DailyVideoLimitCount = int(value.Int64)
+			}
+		case usersubscription.FieldWeeklyVideoLimitCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field weekly_video_limit_count", values[i])
+			} else if value.Valid {
+				_m.WeeklyVideoLimitCount = int(value.Int64)
+			}
+		case usersubscription.FieldMonthlyVideoLimitCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field monthly_video_limit_count", values[i])
+			} else if value.Valid {
+				_m.MonthlyVideoLimitCount = int(value.Int64)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -448,14 +472,23 @@ func (_m *UserSubscription) String() string {
 	builder.WriteString("monthly_limit_usd=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyLimitUsd))
 	builder.WriteString(", ")
-	builder.WriteString("daily_limit_count=")
-	builder.WriteString(fmt.Sprintf("%v", _m.DailyLimitCount))
+	builder.WriteString("daily_image_limit_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DailyImageLimitCount))
 	builder.WriteString(", ")
-	builder.WriteString("weekly_limit_count=")
-	builder.WriteString(fmt.Sprintf("%v", _m.WeeklyLimitCount))
+	builder.WriteString("weekly_image_limit_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WeeklyImageLimitCount))
 	builder.WriteString(", ")
-	builder.WriteString("monthly_limit_count=")
-	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyLimitCount))
+	builder.WriteString("monthly_image_limit_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyImageLimitCount))
+	builder.WriteString(", ")
+	builder.WriteString("daily_video_limit_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DailyVideoLimitCount))
+	builder.WriteString(", ")
+	builder.WriteString("weekly_video_limit_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WeeklyVideoLimitCount))
+	builder.WriteString(", ")
+	builder.WriteString("monthly_video_limit_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyVideoLimitCount))
 	builder.WriteByte(')')
 	return builder.String()
 }

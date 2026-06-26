@@ -103,44 +103,86 @@ func (_c *BundlePlanGroupQuotaCreate) SetNillableMonthlyLimitUsd(v *float64) *Bu
 	return _c
 }
 
-// SetDailyLimitCount sets the "daily_limit_count" field.
-func (_c *BundlePlanGroupQuotaCreate) SetDailyLimitCount(v int) *BundlePlanGroupQuotaCreate {
-	_c.mutation.SetDailyLimitCount(v)
+// SetDailyImageLimitCount sets the "daily_image_limit_count" field.
+func (_c *BundlePlanGroupQuotaCreate) SetDailyImageLimitCount(v int) *BundlePlanGroupQuotaCreate {
+	_c.mutation.SetDailyImageLimitCount(v)
 	return _c
 }
 
-// SetNillableDailyLimitCount sets the "daily_limit_count" field if the given value is not nil.
-func (_c *BundlePlanGroupQuotaCreate) SetNillableDailyLimitCount(v *int) *BundlePlanGroupQuotaCreate {
+// SetNillableDailyImageLimitCount sets the "daily_image_limit_count" field if the given value is not nil.
+func (_c *BundlePlanGroupQuotaCreate) SetNillableDailyImageLimitCount(v *int) *BundlePlanGroupQuotaCreate {
 	if v != nil {
-		_c.SetDailyLimitCount(*v)
+		_c.SetDailyImageLimitCount(*v)
 	}
 	return _c
 }
 
-// SetWeeklyLimitCount sets the "weekly_limit_count" field.
-func (_c *BundlePlanGroupQuotaCreate) SetWeeklyLimitCount(v int) *BundlePlanGroupQuotaCreate {
-	_c.mutation.SetWeeklyLimitCount(v)
+// SetWeeklyImageLimitCount sets the "weekly_image_limit_count" field.
+func (_c *BundlePlanGroupQuotaCreate) SetWeeklyImageLimitCount(v int) *BundlePlanGroupQuotaCreate {
+	_c.mutation.SetWeeklyImageLimitCount(v)
 	return _c
 }
 
-// SetNillableWeeklyLimitCount sets the "weekly_limit_count" field if the given value is not nil.
-func (_c *BundlePlanGroupQuotaCreate) SetNillableWeeklyLimitCount(v *int) *BundlePlanGroupQuotaCreate {
+// SetNillableWeeklyImageLimitCount sets the "weekly_image_limit_count" field if the given value is not nil.
+func (_c *BundlePlanGroupQuotaCreate) SetNillableWeeklyImageLimitCount(v *int) *BundlePlanGroupQuotaCreate {
 	if v != nil {
-		_c.SetWeeklyLimitCount(*v)
+		_c.SetWeeklyImageLimitCount(*v)
 	}
 	return _c
 }
 
-// SetMonthlyLimitCount sets the "monthly_limit_count" field.
-func (_c *BundlePlanGroupQuotaCreate) SetMonthlyLimitCount(v int) *BundlePlanGroupQuotaCreate {
-	_c.mutation.SetMonthlyLimitCount(v)
+// SetMonthlyImageLimitCount sets the "monthly_image_limit_count" field.
+func (_c *BundlePlanGroupQuotaCreate) SetMonthlyImageLimitCount(v int) *BundlePlanGroupQuotaCreate {
+	_c.mutation.SetMonthlyImageLimitCount(v)
 	return _c
 }
 
-// SetNillableMonthlyLimitCount sets the "monthly_limit_count" field if the given value is not nil.
-func (_c *BundlePlanGroupQuotaCreate) SetNillableMonthlyLimitCount(v *int) *BundlePlanGroupQuotaCreate {
+// SetNillableMonthlyImageLimitCount sets the "monthly_image_limit_count" field if the given value is not nil.
+func (_c *BundlePlanGroupQuotaCreate) SetNillableMonthlyImageLimitCount(v *int) *BundlePlanGroupQuotaCreate {
 	if v != nil {
-		_c.SetMonthlyLimitCount(*v)
+		_c.SetMonthlyImageLimitCount(*v)
+	}
+	return _c
+}
+
+// SetDailyVideoLimitCount sets the "daily_video_limit_count" field.
+func (_c *BundlePlanGroupQuotaCreate) SetDailyVideoLimitCount(v int) *BundlePlanGroupQuotaCreate {
+	_c.mutation.SetDailyVideoLimitCount(v)
+	return _c
+}
+
+// SetNillableDailyVideoLimitCount sets the "daily_video_limit_count" field if the given value is not nil.
+func (_c *BundlePlanGroupQuotaCreate) SetNillableDailyVideoLimitCount(v *int) *BundlePlanGroupQuotaCreate {
+	if v != nil {
+		_c.SetDailyVideoLimitCount(*v)
+	}
+	return _c
+}
+
+// SetWeeklyVideoLimitCount sets the "weekly_video_limit_count" field.
+func (_c *BundlePlanGroupQuotaCreate) SetWeeklyVideoLimitCount(v int) *BundlePlanGroupQuotaCreate {
+	_c.mutation.SetWeeklyVideoLimitCount(v)
+	return _c
+}
+
+// SetNillableWeeklyVideoLimitCount sets the "weekly_video_limit_count" field if the given value is not nil.
+func (_c *BundlePlanGroupQuotaCreate) SetNillableWeeklyVideoLimitCount(v *int) *BundlePlanGroupQuotaCreate {
+	if v != nil {
+		_c.SetWeeklyVideoLimitCount(*v)
+	}
+	return _c
+}
+
+// SetMonthlyVideoLimitCount sets the "monthly_video_limit_count" field.
+func (_c *BundlePlanGroupQuotaCreate) SetMonthlyVideoLimitCount(v int) *BundlePlanGroupQuotaCreate {
+	_c.mutation.SetMonthlyVideoLimitCount(v)
+	return _c
+}
+
+// SetNillableMonthlyVideoLimitCount sets the "monthly_video_limit_count" field if the given value is not nil.
+func (_c *BundlePlanGroupQuotaCreate) SetNillableMonthlyVideoLimitCount(v *int) *BundlePlanGroupQuotaCreate {
+	if v != nil {
+		_c.SetMonthlyVideoLimitCount(*v)
 	}
 	return _c
 }
@@ -200,17 +242,29 @@ func (_c *BundlePlanGroupQuotaCreate) defaults() {
 		v := bundleplangroupquota.DefaultMonthlyLimitUsd
 		_c.mutation.SetMonthlyLimitUsd(v)
 	}
-	if _, ok := _c.mutation.DailyLimitCount(); !ok {
-		v := bundleplangroupquota.DefaultDailyLimitCount
-		_c.mutation.SetDailyLimitCount(v)
+	if _, ok := _c.mutation.DailyImageLimitCount(); !ok {
+		v := bundleplangroupquota.DefaultDailyImageLimitCount
+		_c.mutation.SetDailyImageLimitCount(v)
 	}
-	if _, ok := _c.mutation.WeeklyLimitCount(); !ok {
-		v := bundleplangroupquota.DefaultWeeklyLimitCount
-		_c.mutation.SetWeeklyLimitCount(v)
+	if _, ok := _c.mutation.WeeklyImageLimitCount(); !ok {
+		v := bundleplangroupquota.DefaultWeeklyImageLimitCount
+		_c.mutation.SetWeeklyImageLimitCount(v)
 	}
-	if _, ok := _c.mutation.MonthlyLimitCount(); !ok {
-		v := bundleplangroupquota.DefaultMonthlyLimitCount
-		_c.mutation.SetMonthlyLimitCount(v)
+	if _, ok := _c.mutation.MonthlyImageLimitCount(); !ok {
+		v := bundleplangroupquota.DefaultMonthlyImageLimitCount
+		_c.mutation.SetMonthlyImageLimitCount(v)
+	}
+	if _, ok := _c.mutation.DailyVideoLimitCount(); !ok {
+		v := bundleplangroupquota.DefaultDailyVideoLimitCount
+		_c.mutation.SetDailyVideoLimitCount(v)
+	}
+	if _, ok := _c.mutation.WeeklyVideoLimitCount(); !ok {
+		v := bundleplangroupquota.DefaultWeeklyVideoLimitCount
+		_c.mutation.SetWeeklyVideoLimitCount(v)
+	}
+	if _, ok := _c.mutation.MonthlyVideoLimitCount(); !ok {
+		v := bundleplangroupquota.DefaultMonthlyVideoLimitCount
+		_c.mutation.SetMonthlyVideoLimitCount(v)
 	}
 }
 
@@ -237,14 +291,23 @@ func (_c *BundlePlanGroupQuotaCreate) check() error {
 	if _, ok := _c.mutation.MonthlyLimitUsd(); !ok {
 		return &ValidationError{Name: "monthly_limit_usd", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.monthly_limit_usd"`)}
 	}
-	if _, ok := _c.mutation.DailyLimitCount(); !ok {
-		return &ValidationError{Name: "daily_limit_count", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.daily_limit_count"`)}
+	if _, ok := _c.mutation.DailyImageLimitCount(); !ok {
+		return &ValidationError{Name: "daily_image_limit_count", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.daily_image_limit_count"`)}
 	}
-	if _, ok := _c.mutation.WeeklyLimitCount(); !ok {
-		return &ValidationError{Name: "weekly_limit_count", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.weekly_limit_count"`)}
+	if _, ok := _c.mutation.WeeklyImageLimitCount(); !ok {
+		return &ValidationError{Name: "weekly_image_limit_count", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.weekly_image_limit_count"`)}
 	}
-	if _, ok := _c.mutation.MonthlyLimitCount(); !ok {
-		return &ValidationError{Name: "monthly_limit_count", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.monthly_limit_count"`)}
+	if _, ok := _c.mutation.MonthlyImageLimitCount(); !ok {
+		return &ValidationError{Name: "monthly_image_limit_count", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.monthly_image_limit_count"`)}
+	}
+	if _, ok := _c.mutation.DailyVideoLimitCount(); !ok {
+		return &ValidationError{Name: "daily_video_limit_count", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.daily_video_limit_count"`)}
+	}
+	if _, ok := _c.mutation.WeeklyVideoLimitCount(); !ok {
+		return &ValidationError{Name: "weekly_video_limit_count", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.weekly_video_limit_count"`)}
+	}
+	if _, ok := _c.mutation.MonthlyVideoLimitCount(); !ok {
+		return &ValidationError{Name: "monthly_video_limit_count", err: errors.New(`ent: missing required field "BundlePlanGroupQuota.monthly_video_limit_count"`)}
 	}
 	return nil
 }
@@ -301,17 +364,29 @@ func (_c *BundlePlanGroupQuotaCreate) createSpec() (*BundlePlanGroupQuota, *sqlg
 		_spec.SetField(bundleplangroupquota.FieldMonthlyLimitUsd, field.TypeFloat64, value)
 		_node.MonthlyLimitUsd = value
 	}
-	if value, ok := _c.mutation.DailyLimitCount(); ok {
-		_spec.SetField(bundleplangroupquota.FieldDailyLimitCount, field.TypeInt, value)
-		_node.DailyLimitCount = value
+	if value, ok := _c.mutation.DailyImageLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldDailyImageLimitCount, field.TypeInt, value)
+		_node.DailyImageLimitCount = value
 	}
-	if value, ok := _c.mutation.WeeklyLimitCount(); ok {
-		_spec.SetField(bundleplangroupquota.FieldWeeklyLimitCount, field.TypeInt, value)
-		_node.WeeklyLimitCount = value
+	if value, ok := _c.mutation.WeeklyImageLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldWeeklyImageLimitCount, field.TypeInt, value)
+		_node.WeeklyImageLimitCount = value
 	}
-	if value, ok := _c.mutation.MonthlyLimitCount(); ok {
-		_spec.SetField(bundleplangroupquota.FieldMonthlyLimitCount, field.TypeInt, value)
-		_node.MonthlyLimitCount = value
+	if value, ok := _c.mutation.MonthlyImageLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldMonthlyImageLimitCount, field.TypeInt, value)
+		_node.MonthlyImageLimitCount = value
+	}
+	if value, ok := _c.mutation.DailyVideoLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldDailyVideoLimitCount, field.TypeInt, value)
+		_node.DailyVideoLimitCount = value
+	}
+	if value, ok := _c.mutation.WeeklyVideoLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldWeeklyVideoLimitCount, field.TypeInt, value)
+		_node.WeeklyVideoLimitCount = value
+	}
+	if value, ok := _c.mutation.MonthlyVideoLimitCount(); ok {
+		_spec.SetField(bundleplangroupquota.FieldMonthlyVideoLimitCount, field.TypeInt, value)
+		_node.MonthlyVideoLimitCount = value
 	}
 	return _node, _spec
 }
@@ -479,57 +554,111 @@ func (u *BundlePlanGroupQuotaUpsert) AddMonthlyLimitUsd(v float64) *BundlePlanGr
 	return u
 }
 
-// SetDailyLimitCount sets the "daily_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsert) SetDailyLimitCount(v int) *BundlePlanGroupQuotaUpsert {
-	u.Set(bundleplangroupquota.FieldDailyLimitCount, v)
+// SetDailyImageLimitCount sets the "daily_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) SetDailyImageLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Set(bundleplangroupquota.FieldDailyImageLimitCount, v)
 	return u
 }
 
-// UpdateDailyLimitCount sets the "daily_limit_count" field to the value that was provided on create.
-func (u *BundlePlanGroupQuotaUpsert) UpdateDailyLimitCount() *BundlePlanGroupQuotaUpsert {
-	u.SetExcluded(bundleplangroupquota.FieldDailyLimitCount)
+// UpdateDailyImageLimitCount sets the "daily_image_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsert) UpdateDailyImageLimitCount() *BundlePlanGroupQuotaUpsert {
+	u.SetExcluded(bundleplangroupquota.FieldDailyImageLimitCount)
 	return u
 }
 
-// AddDailyLimitCount adds v to the "daily_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsert) AddDailyLimitCount(v int) *BundlePlanGroupQuotaUpsert {
-	u.Add(bundleplangroupquota.FieldDailyLimitCount, v)
+// AddDailyImageLimitCount adds v to the "daily_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) AddDailyImageLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Add(bundleplangroupquota.FieldDailyImageLimitCount, v)
 	return u
 }
 
-// SetWeeklyLimitCount sets the "weekly_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsert) SetWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpsert {
-	u.Set(bundleplangroupquota.FieldWeeklyLimitCount, v)
+// SetWeeklyImageLimitCount sets the "weekly_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) SetWeeklyImageLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Set(bundleplangroupquota.FieldWeeklyImageLimitCount, v)
 	return u
 }
 
-// UpdateWeeklyLimitCount sets the "weekly_limit_count" field to the value that was provided on create.
-func (u *BundlePlanGroupQuotaUpsert) UpdateWeeklyLimitCount() *BundlePlanGroupQuotaUpsert {
-	u.SetExcluded(bundleplangroupquota.FieldWeeklyLimitCount)
+// UpdateWeeklyImageLimitCount sets the "weekly_image_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsert) UpdateWeeklyImageLimitCount() *BundlePlanGroupQuotaUpsert {
+	u.SetExcluded(bundleplangroupquota.FieldWeeklyImageLimitCount)
 	return u
 }
 
-// AddWeeklyLimitCount adds v to the "weekly_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsert) AddWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpsert {
-	u.Add(bundleplangroupquota.FieldWeeklyLimitCount, v)
+// AddWeeklyImageLimitCount adds v to the "weekly_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) AddWeeklyImageLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Add(bundleplangroupquota.FieldWeeklyImageLimitCount, v)
 	return u
 }
 
-// SetMonthlyLimitCount sets the "monthly_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsert) SetMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpsert {
-	u.Set(bundleplangroupquota.FieldMonthlyLimitCount, v)
+// SetMonthlyImageLimitCount sets the "monthly_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) SetMonthlyImageLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Set(bundleplangroupquota.FieldMonthlyImageLimitCount, v)
 	return u
 }
 
-// UpdateMonthlyLimitCount sets the "monthly_limit_count" field to the value that was provided on create.
-func (u *BundlePlanGroupQuotaUpsert) UpdateMonthlyLimitCount() *BundlePlanGroupQuotaUpsert {
-	u.SetExcluded(bundleplangroupquota.FieldMonthlyLimitCount)
+// UpdateMonthlyImageLimitCount sets the "monthly_image_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsert) UpdateMonthlyImageLimitCount() *BundlePlanGroupQuotaUpsert {
+	u.SetExcluded(bundleplangroupquota.FieldMonthlyImageLimitCount)
 	return u
 }
 
-// AddMonthlyLimitCount adds v to the "monthly_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsert) AddMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpsert {
-	u.Add(bundleplangroupquota.FieldMonthlyLimitCount, v)
+// AddMonthlyImageLimitCount adds v to the "monthly_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) AddMonthlyImageLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Add(bundleplangroupquota.FieldMonthlyImageLimitCount, v)
+	return u
+}
+
+// SetDailyVideoLimitCount sets the "daily_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) SetDailyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Set(bundleplangroupquota.FieldDailyVideoLimitCount, v)
+	return u
+}
+
+// UpdateDailyVideoLimitCount sets the "daily_video_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsert) UpdateDailyVideoLimitCount() *BundlePlanGroupQuotaUpsert {
+	u.SetExcluded(bundleplangroupquota.FieldDailyVideoLimitCount)
+	return u
+}
+
+// AddDailyVideoLimitCount adds v to the "daily_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) AddDailyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Add(bundleplangroupquota.FieldDailyVideoLimitCount, v)
+	return u
+}
+
+// SetWeeklyVideoLimitCount sets the "weekly_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) SetWeeklyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Set(bundleplangroupquota.FieldWeeklyVideoLimitCount, v)
+	return u
+}
+
+// UpdateWeeklyVideoLimitCount sets the "weekly_video_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsert) UpdateWeeklyVideoLimitCount() *BundlePlanGroupQuotaUpsert {
+	u.SetExcluded(bundleplangroupquota.FieldWeeklyVideoLimitCount)
+	return u
+}
+
+// AddWeeklyVideoLimitCount adds v to the "weekly_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) AddWeeklyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Add(bundleplangroupquota.FieldWeeklyVideoLimitCount, v)
+	return u
+}
+
+// SetMonthlyVideoLimitCount sets the "monthly_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) SetMonthlyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Set(bundleplangroupquota.FieldMonthlyVideoLimitCount, v)
+	return u
+}
+
+// UpdateMonthlyVideoLimitCount sets the "monthly_video_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsert) UpdateMonthlyVideoLimitCount() *BundlePlanGroupQuotaUpsert {
+	u.SetExcluded(bundleplangroupquota.FieldMonthlyVideoLimitCount)
+	return u
+}
+
+// AddMonthlyVideoLimitCount adds v to the "monthly_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsert) AddMonthlyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsert {
+	u.Add(bundleplangroupquota.FieldMonthlyVideoLimitCount, v)
 	return u
 }
 
@@ -706,66 +835,129 @@ func (u *BundlePlanGroupQuotaUpsertOne) UpdateMonthlyLimitUsd() *BundlePlanGroup
 	})
 }
 
-// SetDailyLimitCount sets the "daily_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsertOne) SetDailyLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+// SetDailyImageLimitCount sets the "daily_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) SetDailyImageLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.SetDailyLimitCount(v)
+		s.SetDailyImageLimitCount(v)
 	})
 }
 
-// AddDailyLimitCount adds v to the "daily_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsertOne) AddDailyLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+// AddDailyImageLimitCount adds v to the "daily_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) AddDailyImageLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.AddDailyLimitCount(v)
+		s.AddDailyImageLimitCount(v)
 	})
 }
 
-// UpdateDailyLimitCount sets the "daily_limit_count" field to the value that was provided on create.
-func (u *BundlePlanGroupQuotaUpsertOne) UpdateDailyLimitCount() *BundlePlanGroupQuotaUpsertOne {
+// UpdateDailyImageLimitCount sets the "daily_image_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertOne) UpdateDailyImageLimitCount() *BundlePlanGroupQuotaUpsertOne {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.UpdateDailyLimitCount()
+		s.UpdateDailyImageLimitCount()
 	})
 }
 
-// SetWeeklyLimitCount sets the "weekly_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsertOne) SetWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+// SetWeeklyImageLimitCount sets the "weekly_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) SetWeeklyImageLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.SetWeeklyLimitCount(v)
+		s.SetWeeklyImageLimitCount(v)
 	})
 }
 
-// AddWeeklyLimitCount adds v to the "weekly_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsertOne) AddWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+// AddWeeklyImageLimitCount adds v to the "weekly_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) AddWeeklyImageLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.AddWeeklyLimitCount(v)
+		s.AddWeeklyImageLimitCount(v)
 	})
 }
 
-// UpdateWeeklyLimitCount sets the "weekly_limit_count" field to the value that was provided on create.
-func (u *BundlePlanGroupQuotaUpsertOne) UpdateWeeklyLimitCount() *BundlePlanGroupQuotaUpsertOne {
+// UpdateWeeklyImageLimitCount sets the "weekly_image_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertOne) UpdateWeeklyImageLimitCount() *BundlePlanGroupQuotaUpsertOne {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.UpdateWeeklyLimitCount()
+		s.UpdateWeeklyImageLimitCount()
 	})
 }
 
-// SetMonthlyLimitCount sets the "monthly_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsertOne) SetMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+// SetMonthlyImageLimitCount sets the "monthly_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) SetMonthlyImageLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.SetMonthlyLimitCount(v)
+		s.SetMonthlyImageLimitCount(v)
 	})
 }
 
-// AddMonthlyLimitCount adds v to the "monthly_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsertOne) AddMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+// AddMonthlyImageLimitCount adds v to the "monthly_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) AddMonthlyImageLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.AddMonthlyLimitCount(v)
+		s.AddMonthlyImageLimitCount(v)
 	})
 }
 
-// UpdateMonthlyLimitCount sets the "monthly_limit_count" field to the value that was provided on create.
-func (u *BundlePlanGroupQuotaUpsertOne) UpdateMonthlyLimitCount() *BundlePlanGroupQuotaUpsertOne {
+// UpdateMonthlyImageLimitCount sets the "monthly_image_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertOne) UpdateMonthlyImageLimitCount() *BundlePlanGroupQuotaUpsertOne {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.UpdateMonthlyLimitCount()
+		s.UpdateMonthlyImageLimitCount()
+	})
+}
+
+// SetDailyVideoLimitCount sets the "daily_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) SetDailyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.SetDailyVideoLimitCount(v)
+	})
+}
+
+// AddDailyVideoLimitCount adds v to the "daily_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) AddDailyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.AddDailyVideoLimitCount(v)
+	})
+}
+
+// UpdateDailyVideoLimitCount sets the "daily_video_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertOne) UpdateDailyVideoLimitCount() *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.UpdateDailyVideoLimitCount()
+	})
+}
+
+// SetWeeklyVideoLimitCount sets the "weekly_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) SetWeeklyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.SetWeeklyVideoLimitCount(v)
+	})
+}
+
+// AddWeeklyVideoLimitCount adds v to the "weekly_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) AddWeeklyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.AddWeeklyVideoLimitCount(v)
+	})
+}
+
+// UpdateWeeklyVideoLimitCount sets the "weekly_video_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertOne) UpdateWeeklyVideoLimitCount() *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.UpdateWeeklyVideoLimitCount()
+	})
+}
+
+// SetMonthlyVideoLimitCount sets the "monthly_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) SetMonthlyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.SetMonthlyVideoLimitCount(v)
+	})
+}
+
+// AddMonthlyVideoLimitCount adds v to the "monthly_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertOne) AddMonthlyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.AddMonthlyVideoLimitCount(v)
+	})
+}
+
+// UpdateMonthlyVideoLimitCount sets the "monthly_video_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertOne) UpdateMonthlyVideoLimitCount() *BundlePlanGroupQuotaUpsertOne {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.UpdateMonthlyVideoLimitCount()
 	})
 }
 
@@ -1106,66 +1298,129 @@ func (u *BundlePlanGroupQuotaUpsertBulk) UpdateMonthlyLimitUsd() *BundlePlanGrou
 	})
 }
 
-// SetDailyLimitCount sets the "daily_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsertBulk) SetDailyLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+// SetDailyImageLimitCount sets the "daily_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) SetDailyImageLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.SetDailyLimitCount(v)
+		s.SetDailyImageLimitCount(v)
 	})
 }
 
-// AddDailyLimitCount adds v to the "daily_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsertBulk) AddDailyLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+// AddDailyImageLimitCount adds v to the "daily_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) AddDailyImageLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.AddDailyLimitCount(v)
+		s.AddDailyImageLimitCount(v)
 	})
 }
 
-// UpdateDailyLimitCount sets the "daily_limit_count" field to the value that was provided on create.
-func (u *BundlePlanGroupQuotaUpsertBulk) UpdateDailyLimitCount() *BundlePlanGroupQuotaUpsertBulk {
+// UpdateDailyImageLimitCount sets the "daily_image_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertBulk) UpdateDailyImageLimitCount() *BundlePlanGroupQuotaUpsertBulk {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.UpdateDailyLimitCount()
+		s.UpdateDailyImageLimitCount()
 	})
 }
 
-// SetWeeklyLimitCount sets the "weekly_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsertBulk) SetWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+// SetWeeklyImageLimitCount sets the "weekly_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) SetWeeklyImageLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.SetWeeklyLimitCount(v)
+		s.SetWeeklyImageLimitCount(v)
 	})
 }
 
-// AddWeeklyLimitCount adds v to the "weekly_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsertBulk) AddWeeklyLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+// AddWeeklyImageLimitCount adds v to the "weekly_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) AddWeeklyImageLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.AddWeeklyLimitCount(v)
+		s.AddWeeklyImageLimitCount(v)
 	})
 }
 
-// UpdateWeeklyLimitCount sets the "weekly_limit_count" field to the value that was provided on create.
-func (u *BundlePlanGroupQuotaUpsertBulk) UpdateWeeklyLimitCount() *BundlePlanGroupQuotaUpsertBulk {
+// UpdateWeeklyImageLimitCount sets the "weekly_image_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertBulk) UpdateWeeklyImageLimitCount() *BundlePlanGroupQuotaUpsertBulk {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.UpdateWeeklyLimitCount()
+		s.UpdateWeeklyImageLimitCount()
 	})
 }
 
-// SetMonthlyLimitCount sets the "monthly_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsertBulk) SetMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+// SetMonthlyImageLimitCount sets the "monthly_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) SetMonthlyImageLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.SetMonthlyLimitCount(v)
+		s.SetMonthlyImageLimitCount(v)
 	})
 }
 
-// AddMonthlyLimitCount adds v to the "monthly_limit_count" field.
-func (u *BundlePlanGroupQuotaUpsertBulk) AddMonthlyLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+// AddMonthlyImageLimitCount adds v to the "monthly_image_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) AddMonthlyImageLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.AddMonthlyLimitCount(v)
+		s.AddMonthlyImageLimitCount(v)
 	})
 }
 
-// UpdateMonthlyLimitCount sets the "monthly_limit_count" field to the value that was provided on create.
-func (u *BundlePlanGroupQuotaUpsertBulk) UpdateMonthlyLimitCount() *BundlePlanGroupQuotaUpsertBulk {
+// UpdateMonthlyImageLimitCount sets the "monthly_image_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertBulk) UpdateMonthlyImageLimitCount() *BundlePlanGroupQuotaUpsertBulk {
 	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
-		s.UpdateMonthlyLimitCount()
+		s.UpdateMonthlyImageLimitCount()
+	})
+}
+
+// SetDailyVideoLimitCount sets the "daily_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) SetDailyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.SetDailyVideoLimitCount(v)
+	})
+}
+
+// AddDailyVideoLimitCount adds v to the "daily_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) AddDailyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.AddDailyVideoLimitCount(v)
+	})
+}
+
+// UpdateDailyVideoLimitCount sets the "daily_video_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertBulk) UpdateDailyVideoLimitCount() *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.UpdateDailyVideoLimitCount()
+	})
+}
+
+// SetWeeklyVideoLimitCount sets the "weekly_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) SetWeeklyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.SetWeeklyVideoLimitCount(v)
+	})
+}
+
+// AddWeeklyVideoLimitCount adds v to the "weekly_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) AddWeeklyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.AddWeeklyVideoLimitCount(v)
+	})
+}
+
+// UpdateWeeklyVideoLimitCount sets the "weekly_video_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertBulk) UpdateWeeklyVideoLimitCount() *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.UpdateWeeklyVideoLimitCount()
+	})
+}
+
+// SetMonthlyVideoLimitCount sets the "monthly_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) SetMonthlyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.SetMonthlyVideoLimitCount(v)
+	})
+}
+
+// AddMonthlyVideoLimitCount adds v to the "monthly_video_limit_count" field.
+func (u *BundlePlanGroupQuotaUpsertBulk) AddMonthlyVideoLimitCount(v int) *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.AddMonthlyVideoLimitCount(v)
+	})
+}
+
+// UpdateMonthlyVideoLimitCount sets the "monthly_video_limit_count" field to the value that was provided on create.
+func (u *BundlePlanGroupQuotaUpsertBulk) UpdateMonthlyVideoLimitCount() *BundlePlanGroupQuotaUpsertBulk {
+	return u.Update(func(s *BundlePlanGroupQuotaUpsert) {
+		s.UpdateMonthlyVideoLimitCount()
 	})
 }
 

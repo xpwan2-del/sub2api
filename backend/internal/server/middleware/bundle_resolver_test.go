@@ -145,12 +145,12 @@ func TestBundleResolver_QuotaExceededReturns429(t *testing.T) {
 			GroupID:           groupID,
 			QuotaScope:        service.QuotaScopeModel,
 			ModelPattern:      "gpt-4o",
-			MonthlyLimitCount: 5,
+			MonthlyImageLimitCount: 5,
 		}},
 	}
 	sub := &service.BundleSubscription{ID: bundleSubID, PlanID: 1, Status: service.BundleStatusActive}
 	// Usage already at limit -> count exhausted.
-	usage := &service.BundleSubscriptionUsage{MonthlyUsageCount: 5}
+	usage := &service.BundleSubscriptionUsage{MonthlyImageUsageCount: 5}
 	group := &service.Group{ID: groupID, Platform: "openai"}
 
 	resolver := service.NewBundleRouteResolver(

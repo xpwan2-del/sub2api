@@ -132,44 +132,86 @@ func (_c *BundleSubscriptionUsageCreate) SetNillableMonthlyWindowStart(v *time.T
 	return _c
 }
 
-// SetDailyUsageCount sets the "daily_usage_count" field.
-func (_c *BundleSubscriptionUsageCreate) SetDailyUsageCount(v int) *BundleSubscriptionUsageCreate {
-	_c.mutation.SetDailyUsageCount(v)
+// SetDailyImageUsageCount sets the "daily_image_usage_count" field.
+func (_c *BundleSubscriptionUsageCreate) SetDailyImageUsageCount(v int) *BundleSubscriptionUsageCreate {
+	_c.mutation.SetDailyImageUsageCount(v)
 	return _c
 }
 
-// SetNillableDailyUsageCount sets the "daily_usage_count" field if the given value is not nil.
-func (_c *BundleSubscriptionUsageCreate) SetNillableDailyUsageCount(v *int) *BundleSubscriptionUsageCreate {
+// SetNillableDailyImageUsageCount sets the "daily_image_usage_count" field if the given value is not nil.
+func (_c *BundleSubscriptionUsageCreate) SetNillableDailyImageUsageCount(v *int) *BundleSubscriptionUsageCreate {
 	if v != nil {
-		_c.SetDailyUsageCount(*v)
+		_c.SetDailyImageUsageCount(*v)
 	}
 	return _c
 }
 
-// SetWeeklyUsageCount sets the "weekly_usage_count" field.
-func (_c *BundleSubscriptionUsageCreate) SetWeeklyUsageCount(v int) *BundleSubscriptionUsageCreate {
-	_c.mutation.SetWeeklyUsageCount(v)
+// SetWeeklyImageUsageCount sets the "weekly_image_usage_count" field.
+func (_c *BundleSubscriptionUsageCreate) SetWeeklyImageUsageCount(v int) *BundleSubscriptionUsageCreate {
+	_c.mutation.SetWeeklyImageUsageCount(v)
 	return _c
 }
 
-// SetNillableWeeklyUsageCount sets the "weekly_usage_count" field if the given value is not nil.
-func (_c *BundleSubscriptionUsageCreate) SetNillableWeeklyUsageCount(v *int) *BundleSubscriptionUsageCreate {
+// SetNillableWeeklyImageUsageCount sets the "weekly_image_usage_count" field if the given value is not nil.
+func (_c *BundleSubscriptionUsageCreate) SetNillableWeeklyImageUsageCount(v *int) *BundleSubscriptionUsageCreate {
 	if v != nil {
-		_c.SetWeeklyUsageCount(*v)
+		_c.SetWeeklyImageUsageCount(*v)
 	}
 	return _c
 }
 
-// SetMonthlyUsageCount sets the "monthly_usage_count" field.
-func (_c *BundleSubscriptionUsageCreate) SetMonthlyUsageCount(v int) *BundleSubscriptionUsageCreate {
-	_c.mutation.SetMonthlyUsageCount(v)
+// SetMonthlyImageUsageCount sets the "monthly_image_usage_count" field.
+func (_c *BundleSubscriptionUsageCreate) SetMonthlyImageUsageCount(v int) *BundleSubscriptionUsageCreate {
+	_c.mutation.SetMonthlyImageUsageCount(v)
 	return _c
 }
 
-// SetNillableMonthlyUsageCount sets the "monthly_usage_count" field if the given value is not nil.
-func (_c *BundleSubscriptionUsageCreate) SetNillableMonthlyUsageCount(v *int) *BundleSubscriptionUsageCreate {
+// SetNillableMonthlyImageUsageCount sets the "monthly_image_usage_count" field if the given value is not nil.
+func (_c *BundleSubscriptionUsageCreate) SetNillableMonthlyImageUsageCount(v *int) *BundleSubscriptionUsageCreate {
 	if v != nil {
-		_c.SetMonthlyUsageCount(*v)
+		_c.SetMonthlyImageUsageCount(*v)
+	}
+	return _c
+}
+
+// SetDailyVideoUsageCount sets the "daily_video_usage_count" field.
+func (_c *BundleSubscriptionUsageCreate) SetDailyVideoUsageCount(v int) *BundleSubscriptionUsageCreate {
+	_c.mutation.SetDailyVideoUsageCount(v)
+	return _c
+}
+
+// SetNillableDailyVideoUsageCount sets the "daily_video_usage_count" field if the given value is not nil.
+func (_c *BundleSubscriptionUsageCreate) SetNillableDailyVideoUsageCount(v *int) *BundleSubscriptionUsageCreate {
+	if v != nil {
+		_c.SetDailyVideoUsageCount(*v)
+	}
+	return _c
+}
+
+// SetWeeklyVideoUsageCount sets the "weekly_video_usage_count" field.
+func (_c *BundleSubscriptionUsageCreate) SetWeeklyVideoUsageCount(v int) *BundleSubscriptionUsageCreate {
+	_c.mutation.SetWeeklyVideoUsageCount(v)
+	return _c
+}
+
+// SetNillableWeeklyVideoUsageCount sets the "weekly_video_usage_count" field if the given value is not nil.
+func (_c *BundleSubscriptionUsageCreate) SetNillableWeeklyVideoUsageCount(v *int) *BundleSubscriptionUsageCreate {
+	if v != nil {
+		_c.SetWeeklyVideoUsageCount(*v)
+	}
+	return _c
+}
+
+// SetMonthlyVideoUsageCount sets the "monthly_video_usage_count" field.
+func (_c *BundleSubscriptionUsageCreate) SetMonthlyVideoUsageCount(v int) *BundleSubscriptionUsageCreate {
+	_c.mutation.SetMonthlyVideoUsageCount(v)
+	return _c
+}
+
+// SetNillableMonthlyVideoUsageCount sets the "monthly_video_usage_count" field if the given value is not nil.
+func (_c *BundleSubscriptionUsageCreate) SetNillableMonthlyVideoUsageCount(v *int) *BundleSubscriptionUsageCreate {
+	if v != nil {
+		_c.SetMonthlyVideoUsageCount(*v)
 	}
 	return _c
 }
@@ -237,17 +279,29 @@ func (_c *BundleSubscriptionUsageCreate) defaults() {
 		v := bundlesubscriptionusage.DefaultMonthlyWindowStart
 		_c.mutation.SetMonthlyWindowStart(v)
 	}
-	if _, ok := _c.mutation.DailyUsageCount(); !ok {
-		v := bundlesubscriptionusage.DefaultDailyUsageCount
-		_c.mutation.SetDailyUsageCount(v)
+	if _, ok := _c.mutation.DailyImageUsageCount(); !ok {
+		v := bundlesubscriptionusage.DefaultDailyImageUsageCount
+		_c.mutation.SetDailyImageUsageCount(v)
 	}
-	if _, ok := _c.mutation.WeeklyUsageCount(); !ok {
-		v := bundlesubscriptionusage.DefaultWeeklyUsageCount
-		_c.mutation.SetWeeklyUsageCount(v)
+	if _, ok := _c.mutation.WeeklyImageUsageCount(); !ok {
+		v := bundlesubscriptionusage.DefaultWeeklyImageUsageCount
+		_c.mutation.SetWeeklyImageUsageCount(v)
 	}
-	if _, ok := _c.mutation.MonthlyUsageCount(); !ok {
-		v := bundlesubscriptionusage.DefaultMonthlyUsageCount
-		_c.mutation.SetMonthlyUsageCount(v)
+	if _, ok := _c.mutation.MonthlyImageUsageCount(); !ok {
+		v := bundlesubscriptionusage.DefaultMonthlyImageUsageCount
+		_c.mutation.SetMonthlyImageUsageCount(v)
+	}
+	if _, ok := _c.mutation.DailyVideoUsageCount(); !ok {
+		v := bundlesubscriptionusage.DefaultDailyVideoUsageCount
+		_c.mutation.SetDailyVideoUsageCount(v)
+	}
+	if _, ok := _c.mutation.WeeklyVideoUsageCount(); !ok {
+		v := bundlesubscriptionusage.DefaultWeeklyVideoUsageCount
+		_c.mutation.SetWeeklyVideoUsageCount(v)
+	}
+	if _, ok := _c.mutation.MonthlyVideoUsageCount(); !ok {
+		v := bundlesubscriptionusage.DefaultMonthlyVideoUsageCount
+		_c.mutation.SetMonthlyVideoUsageCount(v)
 	}
 }
 
@@ -280,14 +334,23 @@ func (_c *BundleSubscriptionUsageCreate) check() error {
 	if _, ok := _c.mutation.MonthlyWindowStart(); !ok {
 		return &ValidationError{Name: "monthly_window_start", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.monthly_window_start"`)}
 	}
-	if _, ok := _c.mutation.DailyUsageCount(); !ok {
-		return &ValidationError{Name: "daily_usage_count", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.daily_usage_count"`)}
+	if _, ok := _c.mutation.DailyImageUsageCount(); !ok {
+		return &ValidationError{Name: "daily_image_usage_count", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.daily_image_usage_count"`)}
 	}
-	if _, ok := _c.mutation.WeeklyUsageCount(); !ok {
-		return &ValidationError{Name: "weekly_usage_count", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.weekly_usage_count"`)}
+	if _, ok := _c.mutation.WeeklyImageUsageCount(); !ok {
+		return &ValidationError{Name: "weekly_image_usage_count", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.weekly_image_usage_count"`)}
 	}
-	if _, ok := _c.mutation.MonthlyUsageCount(); !ok {
-		return &ValidationError{Name: "monthly_usage_count", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.monthly_usage_count"`)}
+	if _, ok := _c.mutation.MonthlyImageUsageCount(); !ok {
+		return &ValidationError{Name: "monthly_image_usage_count", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.monthly_image_usage_count"`)}
+	}
+	if _, ok := _c.mutation.DailyVideoUsageCount(); !ok {
+		return &ValidationError{Name: "daily_video_usage_count", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.daily_video_usage_count"`)}
+	}
+	if _, ok := _c.mutation.WeeklyVideoUsageCount(); !ok {
+		return &ValidationError{Name: "weekly_video_usage_count", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.weekly_video_usage_count"`)}
+	}
+	if _, ok := _c.mutation.MonthlyVideoUsageCount(); !ok {
+		return &ValidationError{Name: "monthly_video_usage_count", err: errors.New(`ent: missing required field "BundleSubscriptionUsage.monthly_video_usage_count"`)}
 	}
 	return nil
 }
@@ -352,17 +415,29 @@ func (_c *BundleSubscriptionUsageCreate) createSpec() (*BundleSubscriptionUsage,
 		_spec.SetField(bundlesubscriptionusage.FieldMonthlyWindowStart, field.TypeTime, value)
 		_node.MonthlyWindowStart = value
 	}
-	if value, ok := _c.mutation.DailyUsageCount(); ok {
-		_spec.SetField(bundlesubscriptionusage.FieldDailyUsageCount, field.TypeInt, value)
-		_node.DailyUsageCount = value
+	if value, ok := _c.mutation.DailyImageUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldDailyImageUsageCount, field.TypeInt, value)
+		_node.DailyImageUsageCount = value
 	}
-	if value, ok := _c.mutation.WeeklyUsageCount(); ok {
-		_spec.SetField(bundlesubscriptionusage.FieldWeeklyUsageCount, field.TypeInt, value)
-		_node.WeeklyUsageCount = value
+	if value, ok := _c.mutation.WeeklyImageUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldWeeklyImageUsageCount, field.TypeInt, value)
+		_node.WeeklyImageUsageCount = value
 	}
-	if value, ok := _c.mutation.MonthlyUsageCount(); ok {
-		_spec.SetField(bundlesubscriptionusage.FieldMonthlyUsageCount, field.TypeInt, value)
-		_node.MonthlyUsageCount = value
+	if value, ok := _c.mutation.MonthlyImageUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldMonthlyImageUsageCount, field.TypeInt, value)
+		_node.MonthlyImageUsageCount = value
+	}
+	if value, ok := _c.mutation.DailyVideoUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldDailyVideoUsageCount, field.TypeInt, value)
+		_node.DailyVideoUsageCount = value
+	}
+	if value, ok := _c.mutation.WeeklyVideoUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldWeeklyVideoUsageCount, field.TypeInt, value)
+		_node.WeeklyVideoUsageCount = value
+	}
+	if value, ok := _c.mutation.MonthlyVideoUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldMonthlyVideoUsageCount, field.TypeInt, value)
+		_node.MonthlyVideoUsageCount = value
 	}
 	return _node, _spec
 }
@@ -554,57 +629,111 @@ func (u *BundleSubscriptionUsageUpsert) UpdateMonthlyWindowStart() *BundleSubscr
 	return u
 }
 
-// SetDailyUsageCount sets the "daily_usage_count" field.
-func (u *BundleSubscriptionUsageUpsert) SetDailyUsageCount(v int) *BundleSubscriptionUsageUpsert {
-	u.Set(bundlesubscriptionusage.FieldDailyUsageCount, v)
+// SetDailyImageUsageCount sets the "daily_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) SetDailyImageUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Set(bundlesubscriptionusage.FieldDailyImageUsageCount, v)
 	return u
 }
 
-// UpdateDailyUsageCount sets the "daily_usage_count" field to the value that was provided on create.
-func (u *BundleSubscriptionUsageUpsert) UpdateDailyUsageCount() *BundleSubscriptionUsageUpsert {
-	u.SetExcluded(bundlesubscriptionusage.FieldDailyUsageCount)
+// UpdateDailyImageUsageCount sets the "daily_image_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsert) UpdateDailyImageUsageCount() *BundleSubscriptionUsageUpsert {
+	u.SetExcluded(bundlesubscriptionusage.FieldDailyImageUsageCount)
 	return u
 }
 
-// AddDailyUsageCount adds v to the "daily_usage_count" field.
-func (u *BundleSubscriptionUsageUpsert) AddDailyUsageCount(v int) *BundleSubscriptionUsageUpsert {
-	u.Add(bundlesubscriptionusage.FieldDailyUsageCount, v)
+// AddDailyImageUsageCount adds v to the "daily_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) AddDailyImageUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Add(bundlesubscriptionusage.FieldDailyImageUsageCount, v)
 	return u
 }
 
-// SetWeeklyUsageCount sets the "weekly_usage_count" field.
-func (u *BundleSubscriptionUsageUpsert) SetWeeklyUsageCount(v int) *BundleSubscriptionUsageUpsert {
-	u.Set(bundlesubscriptionusage.FieldWeeklyUsageCount, v)
+// SetWeeklyImageUsageCount sets the "weekly_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) SetWeeklyImageUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Set(bundlesubscriptionusage.FieldWeeklyImageUsageCount, v)
 	return u
 }
 
-// UpdateWeeklyUsageCount sets the "weekly_usage_count" field to the value that was provided on create.
-func (u *BundleSubscriptionUsageUpsert) UpdateWeeklyUsageCount() *BundleSubscriptionUsageUpsert {
-	u.SetExcluded(bundlesubscriptionusage.FieldWeeklyUsageCount)
+// UpdateWeeklyImageUsageCount sets the "weekly_image_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsert) UpdateWeeklyImageUsageCount() *BundleSubscriptionUsageUpsert {
+	u.SetExcluded(bundlesubscriptionusage.FieldWeeklyImageUsageCount)
 	return u
 }
 
-// AddWeeklyUsageCount adds v to the "weekly_usage_count" field.
-func (u *BundleSubscriptionUsageUpsert) AddWeeklyUsageCount(v int) *BundleSubscriptionUsageUpsert {
-	u.Add(bundlesubscriptionusage.FieldWeeklyUsageCount, v)
+// AddWeeklyImageUsageCount adds v to the "weekly_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) AddWeeklyImageUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Add(bundlesubscriptionusage.FieldWeeklyImageUsageCount, v)
 	return u
 }
 
-// SetMonthlyUsageCount sets the "monthly_usage_count" field.
-func (u *BundleSubscriptionUsageUpsert) SetMonthlyUsageCount(v int) *BundleSubscriptionUsageUpsert {
-	u.Set(bundlesubscriptionusage.FieldMonthlyUsageCount, v)
+// SetMonthlyImageUsageCount sets the "monthly_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) SetMonthlyImageUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Set(bundlesubscriptionusage.FieldMonthlyImageUsageCount, v)
 	return u
 }
 
-// UpdateMonthlyUsageCount sets the "monthly_usage_count" field to the value that was provided on create.
-func (u *BundleSubscriptionUsageUpsert) UpdateMonthlyUsageCount() *BundleSubscriptionUsageUpsert {
-	u.SetExcluded(bundlesubscriptionusage.FieldMonthlyUsageCount)
+// UpdateMonthlyImageUsageCount sets the "monthly_image_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsert) UpdateMonthlyImageUsageCount() *BundleSubscriptionUsageUpsert {
+	u.SetExcluded(bundlesubscriptionusage.FieldMonthlyImageUsageCount)
 	return u
 }
 
-// AddMonthlyUsageCount adds v to the "monthly_usage_count" field.
-func (u *BundleSubscriptionUsageUpsert) AddMonthlyUsageCount(v int) *BundleSubscriptionUsageUpsert {
-	u.Add(bundlesubscriptionusage.FieldMonthlyUsageCount, v)
+// AddMonthlyImageUsageCount adds v to the "monthly_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) AddMonthlyImageUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Add(bundlesubscriptionusage.FieldMonthlyImageUsageCount, v)
+	return u
+}
+
+// SetDailyVideoUsageCount sets the "daily_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) SetDailyVideoUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Set(bundlesubscriptionusage.FieldDailyVideoUsageCount, v)
+	return u
+}
+
+// UpdateDailyVideoUsageCount sets the "daily_video_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsert) UpdateDailyVideoUsageCount() *BundleSubscriptionUsageUpsert {
+	u.SetExcluded(bundlesubscriptionusage.FieldDailyVideoUsageCount)
+	return u
+}
+
+// AddDailyVideoUsageCount adds v to the "daily_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) AddDailyVideoUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Add(bundlesubscriptionusage.FieldDailyVideoUsageCount, v)
+	return u
+}
+
+// SetWeeklyVideoUsageCount sets the "weekly_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) SetWeeklyVideoUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Set(bundlesubscriptionusage.FieldWeeklyVideoUsageCount, v)
+	return u
+}
+
+// UpdateWeeklyVideoUsageCount sets the "weekly_video_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsert) UpdateWeeklyVideoUsageCount() *BundleSubscriptionUsageUpsert {
+	u.SetExcluded(bundlesubscriptionusage.FieldWeeklyVideoUsageCount)
+	return u
+}
+
+// AddWeeklyVideoUsageCount adds v to the "weekly_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) AddWeeklyVideoUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Add(bundlesubscriptionusage.FieldWeeklyVideoUsageCount, v)
+	return u
+}
+
+// SetMonthlyVideoUsageCount sets the "monthly_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) SetMonthlyVideoUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Set(bundlesubscriptionusage.FieldMonthlyVideoUsageCount, v)
+	return u
+}
+
+// UpdateMonthlyVideoUsageCount sets the "monthly_video_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsert) UpdateMonthlyVideoUsageCount() *BundleSubscriptionUsageUpsert {
+	u.SetExcluded(bundlesubscriptionusage.FieldMonthlyVideoUsageCount)
+	return u
+}
+
+// AddMonthlyVideoUsageCount adds v to the "monthly_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsert) AddMonthlyVideoUsageCount(v int) *BundleSubscriptionUsageUpsert {
+	u.Add(bundlesubscriptionusage.FieldMonthlyVideoUsageCount, v)
 	return u
 }
 
@@ -809,66 +938,129 @@ func (u *BundleSubscriptionUsageUpsertOne) UpdateMonthlyWindowStart() *BundleSub
 	})
 }
 
-// SetDailyUsageCount sets the "daily_usage_count" field.
-func (u *BundleSubscriptionUsageUpsertOne) SetDailyUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+// SetDailyImageUsageCount sets the "daily_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) SetDailyImageUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.SetDailyUsageCount(v)
+		s.SetDailyImageUsageCount(v)
 	})
 }
 
-// AddDailyUsageCount adds v to the "daily_usage_count" field.
-func (u *BundleSubscriptionUsageUpsertOne) AddDailyUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+// AddDailyImageUsageCount adds v to the "daily_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) AddDailyImageUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.AddDailyUsageCount(v)
+		s.AddDailyImageUsageCount(v)
 	})
 }
 
-// UpdateDailyUsageCount sets the "daily_usage_count" field to the value that was provided on create.
-func (u *BundleSubscriptionUsageUpsertOne) UpdateDailyUsageCount() *BundleSubscriptionUsageUpsertOne {
+// UpdateDailyImageUsageCount sets the "daily_image_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertOne) UpdateDailyImageUsageCount() *BundleSubscriptionUsageUpsertOne {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.UpdateDailyUsageCount()
+		s.UpdateDailyImageUsageCount()
 	})
 }
 
-// SetWeeklyUsageCount sets the "weekly_usage_count" field.
-func (u *BundleSubscriptionUsageUpsertOne) SetWeeklyUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+// SetWeeklyImageUsageCount sets the "weekly_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) SetWeeklyImageUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.SetWeeklyUsageCount(v)
+		s.SetWeeklyImageUsageCount(v)
 	})
 }
 
-// AddWeeklyUsageCount adds v to the "weekly_usage_count" field.
-func (u *BundleSubscriptionUsageUpsertOne) AddWeeklyUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+// AddWeeklyImageUsageCount adds v to the "weekly_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) AddWeeklyImageUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.AddWeeklyUsageCount(v)
+		s.AddWeeklyImageUsageCount(v)
 	})
 }
 
-// UpdateWeeklyUsageCount sets the "weekly_usage_count" field to the value that was provided on create.
-func (u *BundleSubscriptionUsageUpsertOne) UpdateWeeklyUsageCount() *BundleSubscriptionUsageUpsertOne {
+// UpdateWeeklyImageUsageCount sets the "weekly_image_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertOne) UpdateWeeklyImageUsageCount() *BundleSubscriptionUsageUpsertOne {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.UpdateWeeklyUsageCount()
+		s.UpdateWeeklyImageUsageCount()
 	})
 }
 
-// SetMonthlyUsageCount sets the "monthly_usage_count" field.
-func (u *BundleSubscriptionUsageUpsertOne) SetMonthlyUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+// SetMonthlyImageUsageCount sets the "monthly_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) SetMonthlyImageUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.SetMonthlyUsageCount(v)
+		s.SetMonthlyImageUsageCount(v)
 	})
 }
 
-// AddMonthlyUsageCount adds v to the "monthly_usage_count" field.
-func (u *BundleSubscriptionUsageUpsertOne) AddMonthlyUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+// AddMonthlyImageUsageCount adds v to the "monthly_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) AddMonthlyImageUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.AddMonthlyUsageCount(v)
+		s.AddMonthlyImageUsageCount(v)
 	})
 }
 
-// UpdateMonthlyUsageCount sets the "monthly_usage_count" field to the value that was provided on create.
-func (u *BundleSubscriptionUsageUpsertOne) UpdateMonthlyUsageCount() *BundleSubscriptionUsageUpsertOne {
+// UpdateMonthlyImageUsageCount sets the "monthly_image_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertOne) UpdateMonthlyImageUsageCount() *BundleSubscriptionUsageUpsertOne {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.UpdateMonthlyUsageCount()
+		s.UpdateMonthlyImageUsageCount()
+	})
+}
+
+// SetDailyVideoUsageCount sets the "daily_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) SetDailyVideoUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.SetDailyVideoUsageCount(v)
+	})
+}
+
+// AddDailyVideoUsageCount adds v to the "daily_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) AddDailyVideoUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.AddDailyVideoUsageCount(v)
+	})
+}
+
+// UpdateDailyVideoUsageCount sets the "daily_video_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertOne) UpdateDailyVideoUsageCount() *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.UpdateDailyVideoUsageCount()
+	})
+}
+
+// SetWeeklyVideoUsageCount sets the "weekly_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) SetWeeklyVideoUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.SetWeeklyVideoUsageCount(v)
+	})
+}
+
+// AddWeeklyVideoUsageCount adds v to the "weekly_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) AddWeeklyVideoUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.AddWeeklyVideoUsageCount(v)
+	})
+}
+
+// UpdateWeeklyVideoUsageCount sets the "weekly_video_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertOne) UpdateWeeklyVideoUsageCount() *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.UpdateWeeklyVideoUsageCount()
+	})
+}
+
+// SetMonthlyVideoUsageCount sets the "monthly_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) SetMonthlyVideoUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.SetMonthlyVideoUsageCount(v)
+	})
+}
+
+// AddMonthlyVideoUsageCount adds v to the "monthly_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertOne) AddMonthlyVideoUsageCount(v int) *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.AddMonthlyVideoUsageCount(v)
+	})
+}
+
+// UpdateMonthlyVideoUsageCount sets the "monthly_video_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertOne) UpdateMonthlyVideoUsageCount() *BundleSubscriptionUsageUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.UpdateMonthlyVideoUsageCount()
 	})
 }
 
@@ -1237,66 +1429,129 @@ func (u *BundleSubscriptionUsageUpsertBulk) UpdateMonthlyWindowStart() *BundleSu
 	})
 }
 
-// SetDailyUsageCount sets the "daily_usage_count" field.
-func (u *BundleSubscriptionUsageUpsertBulk) SetDailyUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+// SetDailyImageUsageCount sets the "daily_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) SetDailyImageUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.SetDailyUsageCount(v)
+		s.SetDailyImageUsageCount(v)
 	})
 }
 
-// AddDailyUsageCount adds v to the "daily_usage_count" field.
-func (u *BundleSubscriptionUsageUpsertBulk) AddDailyUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+// AddDailyImageUsageCount adds v to the "daily_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) AddDailyImageUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.AddDailyUsageCount(v)
+		s.AddDailyImageUsageCount(v)
 	})
 }
 
-// UpdateDailyUsageCount sets the "daily_usage_count" field to the value that was provided on create.
-func (u *BundleSubscriptionUsageUpsertBulk) UpdateDailyUsageCount() *BundleSubscriptionUsageUpsertBulk {
+// UpdateDailyImageUsageCount sets the "daily_image_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertBulk) UpdateDailyImageUsageCount() *BundleSubscriptionUsageUpsertBulk {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.UpdateDailyUsageCount()
+		s.UpdateDailyImageUsageCount()
 	})
 }
 
-// SetWeeklyUsageCount sets the "weekly_usage_count" field.
-func (u *BundleSubscriptionUsageUpsertBulk) SetWeeklyUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+// SetWeeklyImageUsageCount sets the "weekly_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) SetWeeklyImageUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.SetWeeklyUsageCount(v)
+		s.SetWeeklyImageUsageCount(v)
 	})
 }
 
-// AddWeeklyUsageCount adds v to the "weekly_usage_count" field.
-func (u *BundleSubscriptionUsageUpsertBulk) AddWeeklyUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+// AddWeeklyImageUsageCount adds v to the "weekly_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) AddWeeklyImageUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.AddWeeklyUsageCount(v)
+		s.AddWeeklyImageUsageCount(v)
 	})
 }
 
-// UpdateWeeklyUsageCount sets the "weekly_usage_count" field to the value that was provided on create.
-func (u *BundleSubscriptionUsageUpsertBulk) UpdateWeeklyUsageCount() *BundleSubscriptionUsageUpsertBulk {
+// UpdateWeeklyImageUsageCount sets the "weekly_image_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertBulk) UpdateWeeklyImageUsageCount() *BundleSubscriptionUsageUpsertBulk {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.UpdateWeeklyUsageCount()
+		s.UpdateWeeklyImageUsageCount()
 	})
 }
 
-// SetMonthlyUsageCount sets the "monthly_usage_count" field.
-func (u *BundleSubscriptionUsageUpsertBulk) SetMonthlyUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+// SetMonthlyImageUsageCount sets the "monthly_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) SetMonthlyImageUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.SetMonthlyUsageCount(v)
+		s.SetMonthlyImageUsageCount(v)
 	})
 }
 
-// AddMonthlyUsageCount adds v to the "monthly_usage_count" field.
-func (u *BundleSubscriptionUsageUpsertBulk) AddMonthlyUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+// AddMonthlyImageUsageCount adds v to the "monthly_image_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) AddMonthlyImageUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.AddMonthlyUsageCount(v)
+		s.AddMonthlyImageUsageCount(v)
 	})
 }
 
-// UpdateMonthlyUsageCount sets the "monthly_usage_count" field to the value that was provided on create.
-func (u *BundleSubscriptionUsageUpsertBulk) UpdateMonthlyUsageCount() *BundleSubscriptionUsageUpsertBulk {
+// UpdateMonthlyImageUsageCount sets the "monthly_image_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertBulk) UpdateMonthlyImageUsageCount() *BundleSubscriptionUsageUpsertBulk {
 	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
-		s.UpdateMonthlyUsageCount()
+		s.UpdateMonthlyImageUsageCount()
+	})
+}
+
+// SetDailyVideoUsageCount sets the "daily_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) SetDailyVideoUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.SetDailyVideoUsageCount(v)
+	})
+}
+
+// AddDailyVideoUsageCount adds v to the "daily_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) AddDailyVideoUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.AddDailyVideoUsageCount(v)
+	})
+}
+
+// UpdateDailyVideoUsageCount sets the "daily_video_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertBulk) UpdateDailyVideoUsageCount() *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.UpdateDailyVideoUsageCount()
+	})
+}
+
+// SetWeeklyVideoUsageCount sets the "weekly_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) SetWeeklyVideoUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.SetWeeklyVideoUsageCount(v)
+	})
+}
+
+// AddWeeklyVideoUsageCount adds v to the "weekly_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) AddWeeklyVideoUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.AddWeeklyVideoUsageCount(v)
+	})
+}
+
+// UpdateWeeklyVideoUsageCount sets the "weekly_video_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertBulk) UpdateWeeklyVideoUsageCount() *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.UpdateWeeklyVideoUsageCount()
+	})
+}
+
+// SetMonthlyVideoUsageCount sets the "monthly_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) SetMonthlyVideoUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.SetMonthlyVideoUsageCount(v)
+	})
+}
+
+// AddMonthlyVideoUsageCount adds v to the "monthly_video_usage_count" field.
+func (u *BundleSubscriptionUsageUpsertBulk) AddMonthlyVideoUsageCount(v int) *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.AddMonthlyVideoUsageCount(v)
+	})
+}
+
+// UpdateMonthlyVideoUsageCount sets the "monthly_video_usage_count" field to the value that was provided on create.
+func (u *BundleSubscriptionUsageUpsertBulk) UpdateMonthlyVideoUsageCount() *BundleSubscriptionUsageUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUsageUpsert) {
+		s.UpdateMonthlyVideoUsageCount()
 	})
 }
 

@@ -65,9 +65,9 @@ func (s *BundlePlanService) CreatePlan(ctx context.Context, req *CreateBundlePla
 			DailyLimitUSD:     gq.DailyLimitUSD,
 			WeeklyLimitUSD:    gq.WeeklyLimitUSD,
 			MonthlyLimitUSD:   gq.MonthlyLimitUSD,
-			DailyLimitCount:   gq.DailyLimitCount,
-			WeeklyLimitCount:  gq.WeeklyLimitCount,
-			MonthlyLimitCount: gq.MonthlyLimitCount,
+			DailyImageLimitCount:   gq.DailyImageLimitCount,
+			WeeklyImageLimitCount:  gq.WeeklyImageLimitCount,
+			MonthlyImageLimitCount: gq.MonthlyImageLimitCount,
 		})
 	}
 
@@ -147,9 +147,9 @@ func (s *BundlePlanService) UpdatePlan(ctx context.Context, planID int64, req *U
 				DailyLimitUSD:     gq.DailyLimitUSD,
 				WeeklyLimitUSD:    gq.WeeklyLimitUSD,
 				MonthlyLimitUSD:   gq.MonthlyLimitUSD,
-				DailyLimitCount:   gq.DailyLimitCount,
-				WeeklyLimitCount:  gq.WeeklyLimitCount,
-				MonthlyLimitCount: gq.MonthlyLimitCount,
+				DailyImageLimitCount:   gq.DailyImageLimitCount,
+				WeeklyImageLimitCount:  gq.WeeklyImageLimitCount,
+				MonthlyImageLimitCount: gq.MonthlyImageLimitCount,
 			})
 		}
 		existing.GroupQuotas = quotas

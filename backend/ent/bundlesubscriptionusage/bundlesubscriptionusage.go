@@ -31,12 +31,18 @@ const (
 	FieldMonthlyUsageUsd = "monthly_usage_usd"
 	// FieldMonthlyWindowStart holds the string denoting the monthly_window_start field in the database.
 	FieldMonthlyWindowStart = "monthly_window_start"
-	// FieldDailyUsageCount holds the string denoting the daily_usage_count field in the database.
-	FieldDailyUsageCount = "daily_usage_count"
-	// FieldWeeklyUsageCount holds the string denoting the weekly_usage_count field in the database.
-	FieldWeeklyUsageCount = "weekly_usage_count"
-	// FieldMonthlyUsageCount holds the string denoting the monthly_usage_count field in the database.
-	FieldMonthlyUsageCount = "monthly_usage_count"
+	// FieldDailyImageUsageCount holds the string denoting the daily_image_usage_count field in the database.
+	FieldDailyImageUsageCount = "daily_image_usage_count"
+	// FieldWeeklyImageUsageCount holds the string denoting the weekly_image_usage_count field in the database.
+	FieldWeeklyImageUsageCount = "weekly_image_usage_count"
+	// FieldMonthlyImageUsageCount holds the string denoting the monthly_image_usage_count field in the database.
+	FieldMonthlyImageUsageCount = "monthly_image_usage_count"
+	// FieldDailyVideoUsageCount holds the string denoting the daily_video_usage_count field in the database.
+	FieldDailyVideoUsageCount = "daily_video_usage_count"
+	// FieldWeeklyVideoUsageCount holds the string denoting the weekly_video_usage_count field in the database.
+	FieldWeeklyVideoUsageCount = "weekly_video_usage_count"
+	// FieldMonthlyVideoUsageCount holds the string denoting the monthly_video_usage_count field in the database.
+	FieldMonthlyVideoUsageCount = "monthly_video_usage_count"
 	// Table holds the table name of the bundlesubscriptionusage in the database.
 	Table = "bundle_subscription_usages"
 )
@@ -53,9 +59,12 @@ var Columns = []string{
 	FieldWeeklyWindowStart,
 	FieldMonthlyUsageUsd,
 	FieldMonthlyWindowStart,
-	FieldDailyUsageCount,
-	FieldWeeklyUsageCount,
-	FieldMonthlyUsageCount,
+	FieldDailyImageUsageCount,
+	FieldWeeklyImageUsageCount,
+	FieldMonthlyImageUsageCount,
+	FieldDailyVideoUsageCount,
+	FieldWeeklyVideoUsageCount,
+	FieldMonthlyVideoUsageCount,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -83,12 +92,18 @@ var (
 	DefaultMonthlyUsageUsd float64
 	// DefaultMonthlyWindowStart holds the default value on creation for the "monthly_window_start" field.
 	DefaultMonthlyWindowStart time.Time
-	// DefaultDailyUsageCount holds the default value on creation for the "daily_usage_count" field.
-	DefaultDailyUsageCount int
-	// DefaultWeeklyUsageCount holds the default value on creation for the "weekly_usage_count" field.
-	DefaultWeeklyUsageCount int
-	// DefaultMonthlyUsageCount holds the default value on creation for the "monthly_usage_count" field.
-	DefaultMonthlyUsageCount int
+	// DefaultDailyImageUsageCount holds the default value on creation for the "daily_image_usage_count" field.
+	DefaultDailyImageUsageCount int
+	// DefaultWeeklyImageUsageCount holds the default value on creation for the "weekly_image_usage_count" field.
+	DefaultWeeklyImageUsageCount int
+	// DefaultMonthlyImageUsageCount holds the default value on creation for the "monthly_image_usage_count" field.
+	DefaultMonthlyImageUsageCount int
+	// DefaultDailyVideoUsageCount holds the default value on creation for the "daily_video_usage_count" field.
+	DefaultDailyVideoUsageCount int
+	// DefaultWeeklyVideoUsageCount holds the default value on creation for the "weekly_video_usage_count" field.
+	DefaultWeeklyVideoUsageCount int
+	// DefaultMonthlyVideoUsageCount holds the default value on creation for the "monthly_video_usage_count" field.
+	DefaultMonthlyVideoUsageCount int
 )
 
 // OrderOption defines the ordering options for the BundleSubscriptionUsage queries.
@@ -144,17 +159,32 @@ func ByMonthlyWindowStart(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMonthlyWindowStart, opts...).ToFunc()
 }
 
-// ByDailyUsageCount orders the results by the daily_usage_count field.
-func ByDailyUsageCount(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDailyUsageCount, opts...).ToFunc()
+// ByDailyImageUsageCount orders the results by the daily_image_usage_count field.
+func ByDailyImageUsageCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDailyImageUsageCount, opts...).ToFunc()
 }
 
-// ByWeeklyUsageCount orders the results by the weekly_usage_count field.
-func ByWeeklyUsageCount(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldWeeklyUsageCount, opts...).ToFunc()
+// ByWeeklyImageUsageCount orders the results by the weekly_image_usage_count field.
+func ByWeeklyImageUsageCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeeklyImageUsageCount, opts...).ToFunc()
 }
 
-// ByMonthlyUsageCount orders the results by the monthly_usage_count field.
-func ByMonthlyUsageCount(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldMonthlyUsageCount, opts...).ToFunc()
+// ByMonthlyImageUsageCount orders the results by the monthly_image_usage_count field.
+func ByMonthlyImageUsageCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMonthlyImageUsageCount, opts...).ToFunc()
+}
+
+// ByDailyVideoUsageCount orders the results by the daily_video_usage_count field.
+func ByDailyVideoUsageCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDailyVideoUsageCount, opts...).ToFunc()
+}
+
+// ByWeeklyVideoUsageCount orders the results by the weekly_video_usage_count field.
+func ByWeeklyVideoUsageCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeeklyVideoUsageCount, opts...).ToFunc()
+}
+
+// ByMonthlyVideoUsageCount orders the results by the monthly_video_usage_count field.
+func ByMonthlyVideoUsageCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMonthlyVideoUsageCount, opts...).ToFunc()
 }

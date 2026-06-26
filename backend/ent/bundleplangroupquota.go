@@ -30,13 +30,19 @@ type BundlePlanGroupQuota struct {
 	WeeklyLimitUsd float64 `json:"weekly_limit_usd,omitempty"`
 	// 月额度（0=不限）
 	MonthlyLimitUsd float64 `json:"monthly_limit_usd,omitempty"`
-	// 日次数上限（0=不限），用于图片/视频按次计费
-	DailyLimitCount int `json:"daily_limit_count,omitempty"`
-	// 周次数上限（0=不限）
-	WeeklyLimitCount int `json:"weekly_limit_count,omitempty"`
-	// 月次数上限（0=不限）
-	MonthlyLimitCount int `json:"monthly_limit_count,omitempty"`
-	selectValues      sql.SelectValues
+	// 日图片次数上限（0=不限）
+	DailyImageLimitCount int `json:"daily_image_limit_count,omitempty"`
+	// 周图片次数上限（0=不限）
+	WeeklyImageLimitCount int `json:"weekly_image_limit_count,omitempty"`
+	// 月图片次数上限（0=不限）
+	MonthlyImageLimitCount int `json:"monthly_image_limit_count,omitempty"`
+	// 日视频次数上限（0=不限）
+	DailyVideoLimitCount int `json:"daily_video_limit_count,omitempty"`
+	// 周视频次数上限（0=不限）
+	WeeklyVideoLimitCount int `json:"weekly_video_limit_count,omitempty"`
+	// 月视频次数上限（0=不限）
+	MonthlyVideoLimitCount int `json:"monthly_video_limit_count,omitempty"`
+	selectValues           sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -46,7 +52,7 @@ func (*BundlePlanGroupQuota) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case bundleplangroupquota.FieldDailyLimitUsd, bundleplangroupquota.FieldWeeklyLimitUsd, bundleplangroupquota.FieldMonthlyLimitUsd:
 			values[i] = new(sql.NullFloat64)
-		case bundleplangroupquota.FieldID, bundleplangroupquota.FieldPlanID, bundleplangroupquota.FieldGroupID, bundleplangroupquota.FieldDailyLimitCount, bundleplangroupquota.FieldWeeklyLimitCount, bundleplangroupquota.FieldMonthlyLimitCount:
+		case bundleplangroupquota.FieldID, bundleplangroupquota.FieldPlanID, bundleplangroupquota.FieldGroupID, bundleplangroupquota.FieldDailyImageLimitCount, bundleplangroupquota.FieldWeeklyImageLimitCount, bundleplangroupquota.FieldMonthlyImageLimitCount, bundleplangroupquota.FieldDailyVideoLimitCount, bundleplangroupquota.FieldWeeklyVideoLimitCount, bundleplangroupquota.FieldMonthlyVideoLimitCount:
 			values[i] = new(sql.NullInt64)
 		case bundleplangroupquota.FieldQuotaScope, bundleplangroupquota.FieldModelPattern:
 			values[i] = new(sql.NullString)
@@ -113,23 +119,41 @@ func (_m *BundlePlanGroupQuota) assignValues(columns []string, values []any) err
 			} else if value.Valid {
 				_m.MonthlyLimitUsd = value.Float64
 			}
-		case bundleplangroupquota.FieldDailyLimitCount:
+		case bundleplangroupquota.FieldDailyImageLimitCount:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field daily_limit_count", values[i])
+				return fmt.Errorf("unexpected type %T for field daily_image_limit_count", values[i])
 			} else if value.Valid {
-				_m.DailyLimitCount = int(value.Int64)
+				_m.DailyImageLimitCount = int(value.Int64)
 			}
-		case bundleplangroupquota.FieldWeeklyLimitCount:
+		case bundleplangroupquota.FieldWeeklyImageLimitCount:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field weekly_limit_count", values[i])
+				return fmt.Errorf("unexpected type %T for field weekly_image_limit_count", values[i])
 			} else if value.Valid {
-				_m.WeeklyLimitCount = int(value.Int64)
+				_m.WeeklyImageLimitCount = int(value.Int64)
 			}
-		case bundleplangroupquota.FieldMonthlyLimitCount:
+		case bundleplangroupquota.FieldMonthlyImageLimitCount:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field monthly_limit_count", values[i])
+				return fmt.Errorf("unexpected type %T for field monthly_image_limit_count", values[i])
 			} else if value.Valid {
-				_m.MonthlyLimitCount = int(value.Int64)
+				_m.MonthlyImageLimitCount = int(value.Int64)
+			}
+		case bundleplangroupquota.FieldDailyVideoLimitCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field daily_video_limit_count", values[i])
+			} else if value.Valid {
+				_m.DailyVideoLimitCount = int(value.Int64)
+			}
+		case bundleplangroupquota.FieldWeeklyVideoLimitCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field weekly_video_limit_count", values[i])
+			} else if value.Valid {
+				_m.WeeklyVideoLimitCount = int(value.Int64)
+			}
+		case bundleplangroupquota.FieldMonthlyVideoLimitCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field monthly_video_limit_count", values[i])
+			} else if value.Valid {
+				_m.MonthlyVideoLimitCount = int(value.Int64)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -188,14 +212,23 @@ func (_m *BundlePlanGroupQuota) String() string {
 	builder.WriteString("monthly_limit_usd=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyLimitUsd))
 	builder.WriteString(", ")
-	builder.WriteString("daily_limit_count=")
-	builder.WriteString(fmt.Sprintf("%v", _m.DailyLimitCount))
+	builder.WriteString("daily_image_limit_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DailyImageLimitCount))
 	builder.WriteString(", ")
-	builder.WriteString("weekly_limit_count=")
-	builder.WriteString(fmt.Sprintf("%v", _m.WeeklyLimitCount))
+	builder.WriteString("weekly_image_limit_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WeeklyImageLimitCount))
 	builder.WriteString(", ")
-	builder.WriteString("monthly_limit_count=")
-	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyLimitCount))
+	builder.WriteString("monthly_image_limit_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyImageLimitCount))
+	builder.WriteString(", ")
+	builder.WriteString("daily_video_limit_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DailyVideoLimitCount))
+	builder.WriteString(", ")
+	builder.WriteString("weekly_video_limit_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WeeklyVideoLimitCount))
+	builder.WriteString(", ")
+	builder.WriteString("monthly_video_limit_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyVideoLimitCount))
 	builder.WriteByte(')')
 	return builder.String()
 }

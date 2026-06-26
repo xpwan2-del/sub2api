@@ -394,66 +394,129 @@ func (_u *UserSubscriptionUpdate) AddMonthlyLimitUsd(v float64) *UserSubscriptio
 	return _u
 }
 
-// SetDailyLimitCount sets the "daily_limit_count" field.
-func (_u *UserSubscriptionUpdate) SetDailyLimitCount(v int) *UserSubscriptionUpdate {
-	_u.mutation.ResetDailyLimitCount()
-	_u.mutation.SetDailyLimitCount(v)
+// SetDailyImageLimitCount sets the "daily_image_limit_count" field.
+func (_u *UserSubscriptionUpdate) SetDailyImageLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetDailyImageLimitCount()
+	_u.mutation.SetDailyImageLimitCount(v)
 	return _u
 }
 
-// SetNillableDailyLimitCount sets the "daily_limit_count" field if the given value is not nil.
-func (_u *UserSubscriptionUpdate) SetNillableDailyLimitCount(v *int) *UserSubscriptionUpdate {
+// SetNillableDailyImageLimitCount sets the "daily_image_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableDailyImageLimitCount(v *int) *UserSubscriptionUpdate {
 	if v != nil {
-		_u.SetDailyLimitCount(*v)
+		_u.SetDailyImageLimitCount(*v)
 	}
 	return _u
 }
 
-// AddDailyLimitCount adds value to the "daily_limit_count" field.
-func (_u *UserSubscriptionUpdate) AddDailyLimitCount(v int) *UserSubscriptionUpdate {
-	_u.mutation.AddDailyLimitCount(v)
+// AddDailyImageLimitCount adds value to the "daily_image_limit_count" field.
+func (_u *UserSubscriptionUpdate) AddDailyImageLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddDailyImageLimitCount(v)
 	return _u
 }
 
-// SetWeeklyLimitCount sets the "weekly_limit_count" field.
-func (_u *UserSubscriptionUpdate) SetWeeklyLimitCount(v int) *UserSubscriptionUpdate {
-	_u.mutation.ResetWeeklyLimitCount()
-	_u.mutation.SetWeeklyLimitCount(v)
+// SetWeeklyImageLimitCount sets the "weekly_image_limit_count" field.
+func (_u *UserSubscriptionUpdate) SetWeeklyImageLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetWeeklyImageLimitCount()
+	_u.mutation.SetWeeklyImageLimitCount(v)
 	return _u
 }
 
-// SetNillableWeeklyLimitCount sets the "weekly_limit_count" field if the given value is not nil.
-func (_u *UserSubscriptionUpdate) SetNillableWeeklyLimitCount(v *int) *UserSubscriptionUpdate {
+// SetNillableWeeklyImageLimitCount sets the "weekly_image_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableWeeklyImageLimitCount(v *int) *UserSubscriptionUpdate {
 	if v != nil {
-		_u.SetWeeklyLimitCount(*v)
+		_u.SetWeeklyImageLimitCount(*v)
 	}
 	return _u
 }
 
-// AddWeeklyLimitCount adds value to the "weekly_limit_count" field.
-func (_u *UserSubscriptionUpdate) AddWeeklyLimitCount(v int) *UserSubscriptionUpdate {
-	_u.mutation.AddWeeklyLimitCount(v)
+// AddWeeklyImageLimitCount adds value to the "weekly_image_limit_count" field.
+func (_u *UserSubscriptionUpdate) AddWeeklyImageLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddWeeklyImageLimitCount(v)
 	return _u
 }
 
-// SetMonthlyLimitCount sets the "monthly_limit_count" field.
-func (_u *UserSubscriptionUpdate) SetMonthlyLimitCount(v int) *UserSubscriptionUpdate {
-	_u.mutation.ResetMonthlyLimitCount()
-	_u.mutation.SetMonthlyLimitCount(v)
+// SetMonthlyImageLimitCount sets the "monthly_image_limit_count" field.
+func (_u *UserSubscriptionUpdate) SetMonthlyImageLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetMonthlyImageLimitCount()
+	_u.mutation.SetMonthlyImageLimitCount(v)
 	return _u
 }
 
-// SetNillableMonthlyLimitCount sets the "monthly_limit_count" field if the given value is not nil.
-func (_u *UserSubscriptionUpdate) SetNillableMonthlyLimitCount(v *int) *UserSubscriptionUpdate {
+// SetNillableMonthlyImageLimitCount sets the "monthly_image_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableMonthlyImageLimitCount(v *int) *UserSubscriptionUpdate {
 	if v != nil {
-		_u.SetMonthlyLimitCount(*v)
+		_u.SetMonthlyImageLimitCount(*v)
 	}
 	return _u
 }
 
-// AddMonthlyLimitCount adds value to the "monthly_limit_count" field.
-func (_u *UserSubscriptionUpdate) AddMonthlyLimitCount(v int) *UserSubscriptionUpdate {
-	_u.mutation.AddMonthlyLimitCount(v)
+// AddMonthlyImageLimitCount adds value to the "monthly_image_limit_count" field.
+func (_u *UserSubscriptionUpdate) AddMonthlyImageLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddMonthlyImageLimitCount(v)
+	return _u
+}
+
+// SetDailyVideoLimitCount sets the "daily_video_limit_count" field.
+func (_u *UserSubscriptionUpdate) SetDailyVideoLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetDailyVideoLimitCount()
+	_u.mutation.SetDailyVideoLimitCount(v)
+	return _u
+}
+
+// SetNillableDailyVideoLimitCount sets the "daily_video_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableDailyVideoLimitCount(v *int) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetDailyVideoLimitCount(*v)
+	}
+	return _u
+}
+
+// AddDailyVideoLimitCount adds value to the "daily_video_limit_count" field.
+func (_u *UserSubscriptionUpdate) AddDailyVideoLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddDailyVideoLimitCount(v)
+	return _u
+}
+
+// SetWeeklyVideoLimitCount sets the "weekly_video_limit_count" field.
+func (_u *UserSubscriptionUpdate) SetWeeklyVideoLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetWeeklyVideoLimitCount()
+	_u.mutation.SetWeeklyVideoLimitCount(v)
+	return _u
+}
+
+// SetNillableWeeklyVideoLimitCount sets the "weekly_video_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableWeeklyVideoLimitCount(v *int) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetWeeklyVideoLimitCount(*v)
+	}
+	return _u
+}
+
+// AddWeeklyVideoLimitCount adds value to the "weekly_video_limit_count" field.
+func (_u *UserSubscriptionUpdate) AddWeeklyVideoLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddWeeklyVideoLimitCount(v)
+	return _u
+}
+
+// SetMonthlyVideoLimitCount sets the "monthly_video_limit_count" field.
+func (_u *UserSubscriptionUpdate) SetMonthlyVideoLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetMonthlyVideoLimitCount()
+	_u.mutation.SetMonthlyVideoLimitCount(v)
+	return _u
+}
+
+// SetNillableMonthlyVideoLimitCount sets the "monthly_video_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableMonthlyVideoLimitCount(v *int) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetMonthlyVideoLimitCount(*v)
+	}
+	return _u
+}
+
+// AddMonthlyVideoLimitCount adds value to the "monthly_video_limit_count" field.
+func (_u *UserSubscriptionUpdate) AddMonthlyVideoLimitCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddMonthlyVideoLimitCount(v)
 	return _u
 }
 
@@ -705,23 +768,41 @@ func (_u *UserSubscriptionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	if value, ok := _u.mutation.AddedMonthlyLimitUsd(); ok {
 		_spec.AddField(usersubscription.FieldMonthlyLimitUsd, field.TypeFloat64, value)
 	}
-	if value, ok := _u.mutation.DailyLimitCount(); ok {
-		_spec.SetField(usersubscription.FieldDailyLimitCount, field.TypeInt, value)
+	if value, ok := _u.mutation.DailyImageLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldDailyImageLimitCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedDailyLimitCount(); ok {
-		_spec.AddField(usersubscription.FieldDailyLimitCount, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedDailyImageLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldDailyImageLimitCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.WeeklyLimitCount(); ok {
-		_spec.SetField(usersubscription.FieldWeeklyLimitCount, field.TypeInt, value)
+	if value, ok := _u.mutation.WeeklyImageLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyImageLimitCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedWeeklyLimitCount(); ok {
-		_spec.AddField(usersubscription.FieldWeeklyLimitCount, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedWeeklyImageLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldWeeklyImageLimitCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.MonthlyLimitCount(); ok {
-		_spec.SetField(usersubscription.FieldMonthlyLimitCount, field.TypeInt, value)
+	if value, ok := _u.mutation.MonthlyImageLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyImageLimitCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedMonthlyLimitCount(); ok {
-		_spec.AddField(usersubscription.FieldMonthlyLimitCount, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedMonthlyImageLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldMonthlyImageLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.DailyVideoLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldDailyVideoLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyVideoLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldDailyVideoLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.WeeklyVideoLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyVideoLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyVideoLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldWeeklyVideoLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MonthlyVideoLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyVideoLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyVideoLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldMonthlyVideoLimitCount, field.TypeInt, value)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1238,66 +1319,129 @@ func (_u *UserSubscriptionUpdateOne) AddMonthlyLimitUsd(v float64) *UserSubscrip
 	return _u
 }
 
-// SetDailyLimitCount sets the "daily_limit_count" field.
-func (_u *UserSubscriptionUpdateOne) SetDailyLimitCount(v int) *UserSubscriptionUpdateOne {
-	_u.mutation.ResetDailyLimitCount()
-	_u.mutation.SetDailyLimitCount(v)
+// SetDailyImageLimitCount sets the "daily_image_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) SetDailyImageLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetDailyImageLimitCount()
+	_u.mutation.SetDailyImageLimitCount(v)
 	return _u
 }
 
-// SetNillableDailyLimitCount sets the "daily_limit_count" field if the given value is not nil.
-func (_u *UserSubscriptionUpdateOne) SetNillableDailyLimitCount(v *int) *UserSubscriptionUpdateOne {
+// SetNillableDailyImageLimitCount sets the "daily_image_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableDailyImageLimitCount(v *int) *UserSubscriptionUpdateOne {
 	if v != nil {
-		_u.SetDailyLimitCount(*v)
+		_u.SetDailyImageLimitCount(*v)
 	}
 	return _u
 }
 
-// AddDailyLimitCount adds value to the "daily_limit_count" field.
-func (_u *UserSubscriptionUpdateOne) AddDailyLimitCount(v int) *UserSubscriptionUpdateOne {
-	_u.mutation.AddDailyLimitCount(v)
+// AddDailyImageLimitCount adds value to the "daily_image_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) AddDailyImageLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddDailyImageLimitCount(v)
 	return _u
 }
 
-// SetWeeklyLimitCount sets the "weekly_limit_count" field.
-func (_u *UserSubscriptionUpdateOne) SetWeeklyLimitCount(v int) *UserSubscriptionUpdateOne {
-	_u.mutation.ResetWeeklyLimitCount()
-	_u.mutation.SetWeeklyLimitCount(v)
+// SetWeeklyImageLimitCount sets the "weekly_image_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) SetWeeklyImageLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetWeeklyImageLimitCount()
+	_u.mutation.SetWeeklyImageLimitCount(v)
 	return _u
 }
 
-// SetNillableWeeklyLimitCount sets the "weekly_limit_count" field if the given value is not nil.
-func (_u *UserSubscriptionUpdateOne) SetNillableWeeklyLimitCount(v *int) *UserSubscriptionUpdateOne {
+// SetNillableWeeklyImageLimitCount sets the "weekly_image_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableWeeklyImageLimitCount(v *int) *UserSubscriptionUpdateOne {
 	if v != nil {
-		_u.SetWeeklyLimitCount(*v)
+		_u.SetWeeklyImageLimitCount(*v)
 	}
 	return _u
 }
 
-// AddWeeklyLimitCount adds value to the "weekly_limit_count" field.
-func (_u *UserSubscriptionUpdateOne) AddWeeklyLimitCount(v int) *UserSubscriptionUpdateOne {
-	_u.mutation.AddWeeklyLimitCount(v)
+// AddWeeklyImageLimitCount adds value to the "weekly_image_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) AddWeeklyImageLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddWeeklyImageLimitCount(v)
 	return _u
 }
 
-// SetMonthlyLimitCount sets the "monthly_limit_count" field.
-func (_u *UserSubscriptionUpdateOne) SetMonthlyLimitCount(v int) *UserSubscriptionUpdateOne {
-	_u.mutation.ResetMonthlyLimitCount()
-	_u.mutation.SetMonthlyLimitCount(v)
+// SetMonthlyImageLimitCount sets the "monthly_image_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) SetMonthlyImageLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetMonthlyImageLimitCount()
+	_u.mutation.SetMonthlyImageLimitCount(v)
 	return _u
 }
 
-// SetNillableMonthlyLimitCount sets the "monthly_limit_count" field if the given value is not nil.
-func (_u *UserSubscriptionUpdateOne) SetNillableMonthlyLimitCount(v *int) *UserSubscriptionUpdateOne {
+// SetNillableMonthlyImageLimitCount sets the "monthly_image_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableMonthlyImageLimitCount(v *int) *UserSubscriptionUpdateOne {
 	if v != nil {
-		_u.SetMonthlyLimitCount(*v)
+		_u.SetMonthlyImageLimitCount(*v)
 	}
 	return _u
 }
 
-// AddMonthlyLimitCount adds value to the "monthly_limit_count" field.
-func (_u *UserSubscriptionUpdateOne) AddMonthlyLimitCount(v int) *UserSubscriptionUpdateOne {
-	_u.mutation.AddMonthlyLimitCount(v)
+// AddMonthlyImageLimitCount adds value to the "monthly_image_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) AddMonthlyImageLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddMonthlyImageLimitCount(v)
+	return _u
+}
+
+// SetDailyVideoLimitCount sets the "daily_video_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) SetDailyVideoLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetDailyVideoLimitCount()
+	_u.mutation.SetDailyVideoLimitCount(v)
+	return _u
+}
+
+// SetNillableDailyVideoLimitCount sets the "daily_video_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableDailyVideoLimitCount(v *int) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetDailyVideoLimitCount(*v)
+	}
+	return _u
+}
+
+// AddDailyVideoLimitCount adds value to the "daily_video_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) AddDailyVideoLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddDailyVideoLimitCount(v)
+	return _u
+}
+
+// SetWeeklyVideoLimitCount sets the "weekly_video_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) SetWeeklyVideoLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetWeeklyVideoLimitCount()
+	_u.mutation.SetWeeklyVideoLimitCount(v)
+	return _u
+}
+
+// SetNillableWeeklyVideoLimitCount sets the "weekly_video_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableWeeklyVideoLimitCount(v *int) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetWeeklyVideoLimitCount(*v)
+	}
+	return _u
+}
+
+// AddWeeklyVideoLimitCount adds value to the "weekly_video_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) AddWeeklyVideoLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddWeeklyVideoLimitCount(v)
+	return _u
+}
+
+// SetMonthlyVideoLimitCount sets the "monthly_video_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) SetMonthlyVideoLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetMonthlyVideoLimitCount()
+	_u.mutation.SetMonthlyVideoLimitCount(v)
+	return _u
+}
+
+// SetNillableMonthlyVideoLimitCount sets the "monthly_video_limit_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableMonthlyVideoLimitCount(v *int) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetMonthlyVideoLimitCount(*v)
+	}
+	return _u
+}
+
+// AddMonthlyVideoLimitCount adds value to the "monthly_video_limit_count" field.
+func (_u *UserSubscriptionUpdateOne) AddMonthlyVideoLimitCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddMonthlyVideoLimitCount(v)
 	return _u
 }
 
@@ -1579,23 +1723,41 @@ func (_u *UserSubscriptionUpdateOne) sqlSave(ctx context.Context) (_node *UserSu
 	if value, ok := _u.mutation.AddedMonthlyLimitUsd(); ok {
 		_spec.AddField(usersubscription.FieldMonthlyLimitUsd, field.TypeFloat64, value)
 	}
-	if value, ok := _u.mutation.DailyLimitCount(); ok {
-		_spec.SetField(usersubscription.FieldDailyLimitCount, field.TypeInt, value)
+	if value, ok := _u.mutation.DailyImageLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldDailyImageLimitCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedDailyLimitCount(); ok {
-		_spec.AddField(usersubscription.FieldDailyLimitCount, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedDailyImageLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldDailyImageLimitCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.WeeklyLimitCount(); ok {
-		_spec.SetField(usersubscription.FieldWeeklyLimitCount, field.TypeInt, value)
+	if value, ok := _u.mutation.WeeklyImageLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyImageLimitCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedWeeklyLimitCount(); ok {
-		_spec.AddField(usersubscription.FieldWeeklyLimitCount, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedWeeklyImageLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldWeeklyImageLimitCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.MonthlyLimitCount(); ok {
-		_spec.SetField(usersubscription.FieldMonthlyLimitCount, field.TypeInt, value)
+	if value, ok := _u.mutation.MonthlyImageLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyImageLimitCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedMonthlyLimitCount(); ok {
-		_spec.AddField(usersubscription.FieldMonthlyLimitCount, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedMonthlyImageLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldMonthlyImageLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.DailyVideoLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldDailyVideoLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyVideoLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldDailyVideoLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.WeeklyVideoLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyVideoLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyVideoLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldWeeklyVideoLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MonthlyVideoLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyVideoLimitCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyVideoLimitCount(); ok {
+		_spec.AddField(usersubscription.FieldMonthlyVideoLimitCount, field.TypeInt, value)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{

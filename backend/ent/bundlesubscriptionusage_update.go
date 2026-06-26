@@ -189,66 +189,129 @@ func (_u *BundleSubscriptionUsageUpdate) SetNillableMonthlyWindowStart(v *time.T
 	return _u
 }
 
-// SetDailyUsageCount sets the "daily_usage_count" field.
-func (_u *BundleSubscriptionUsageUpdate) SetDailyUsageCount(v int) *BundleSubscriptionUsageUpdate {
-	_u.mutation.ResetDailyUsageCount()
-	_u.mutation.SetDailyUsageCount(v)
+// SetDailyImageUsageCount sets the "daily_image_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) SetDailyImageUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.ResetDailyImageUsageCount()
+	_u.mutation.SetDailyImageUsageCount(v)
 	return _u
 }
 
-// SetNillableDailyUsageCount sets the "daily_usage_count" field if the given value is not nil.
-func (_u *BundleSubscriptionUsageUpdate) SetNillableDailyUsageCount(v *int) *BundleSubscriptionUsageUpdate {
+// SetNillableDailyImageUsageCount sets the "daily_image_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdate) SetNillableDailyImageUsageCount(v *int) *BundleSubscriptionUsageUpdate {
 	if v != nil {
-		_u.SetDailyUsageCount(*v)
+		_u.SetDailyImageUsageCount(*v)
 	}
 	return _u
 }
 
-// AddDailyUsageCount adds value to the "daily_usage_count" field.
-func (_u *BundleSubscriptionUsageUpdate) AddDailyUsageCount(v int) *BundleSubscriptionUsageUpdate {
-	_u.mutation.AddDailyUsageCount(v)
+// AddDailyImageUsageCount adds value to the "daily_image_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) AddDailyImageUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.AddDailyImageUsageCount(v)
 	return _u
 }
 
-// SetWeeklyUsageCount sets the "weekly_usage_count" field.
-func (_u *BundleSubscriptionUsageUpdate) SetWeeklyUsageCount(v int) *BundleSubscriptionUsageUpdate {
-	_u.mutation.ResetWeeklyUsageCount()
-	_u.mutation.SetWeeklyUsageCount(v)
+// SetWeeklyImageUsageCount sets the "weekly_image_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) SetWeeklyImageUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.ResetWeeklyImageUsageCount()
+	_u.mutation.SetWeeklyImageUsageCount(v)
 	return _u
 }
 
-// SetNillableWeeklyUsageCount sets the "weekly_usage_count" field if the given value is not nil.
-func (_u *BundleSubscriptionUsageUpdate) SetNillableWeeklyUsageCount(v *int) *BundleSubscriptionUsageUpdate {
+// SetNillableWeeklyImageUsageCount sets the "weekly_image_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdate) SetNillableWeeklyImageUsageCount(v *int) *BundleSubscriptionUsageUpdate {
 	if v != nil {
-		_u.SetWeeklyUsageCount(*v)
+		_u.SetWeeklyImageUsageCount(*v)
 	}
 	return _u
 }
 
-// AddWeeklyUsageCount adds value to the "weekly_usage_count" field.
-func (_u *BundleSubscriptionUsageUpdate) AddWeeklyUsageCount(v int) *BundleSubscriptionUsageUpdate {
-	_u.mutation.AddWeeklyUsageCount(v)
+// AddWeeklyImageUsageCount adds value to the "weekly_image_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) AddWeeklyImageUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.AddWeeklyImageUsageCount(v)
 	return _u
 }
 
-// SetMonthlyUsageCount sets the "monthly_usage_count" field.
-func (_u *BundleSubscriptionUsageUpdate) SetMonthlyUsageCount(v int) *BundleSubscriptionUsageUpdate {
-	_u.mutation.ResetMonthlyUsageCount()
-	_u.mutation.SetMonthlyUsageCount(v)
+// SetMonthlyImageUsageCount sets the "monthly_image_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) SetMonthlyImageUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.ResetMonthlyImageUsageCount()
+	_u.mutation.SetMonthlyImageUsageCount(v)
 	return _u
 }
 
-// SetNillableMonthlyUsageCount sets the "monthly_usage_count" field if the given value is not nil.
-func (_u *BundleSubscriptionUsageUpdate) SetNillableMonthlyUsageCount(v *int) *BundleSubscriptionUsageUpdate {
+// SetNillableMonthlyImageUsageCount sets the "monthly_image_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdate) SetNillableMonthlyImageUsageCount(v *int) *BundleSubscriptionUsageUpdate {
 	if v != nil {
-		_u.SetMonthlyUsageCount(*v)
+		_u.SetMonthlyImageUsageCount(*v)
 	}
 	return _u
 }
 
-// AddMonthlyUsageCount adds value to the "monthly_usage_count" field.
-func (_u *BundleSubscriptionUsageUpdate) AddMonthlyUsageCount(v int) *BundleSubscriptionUsageUpdate {
-	_u.mutation.AddMonthlyUsageCount(v)
+// AddMonthlyImageUsageCount adds value to the "monthly_image_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) AddMonthlyImageUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.AddMonthlyImageUsageCount(v)
+	return _u
+}
+
+// SetDailyVideoUsageCount sets the "daily_video_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) SetDailyVideoUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.ResetDailyVideoUsageCount()
+	_u.mutation.SetDailyVideoUsageCount(v)
+	return _u
+}
+
+// SetNillableDailyVideoUsageCount sets the "daily_video_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdate) SetNillableDailyVideoUsageCount(v *int) *BundleSubscriptionUsageUpdate {
+	if v != nil {
+		_u.SetDailyVideoUsageCount(*v)
+	}
+	return _u
+}
+
+// AddDailyVideoUsageCount adds value to the "daily_video_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) AddDailyVideoUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.AddDailyVideoUsageCount(v)
+	return _u
+}
+
+// SetWeeklyVideoUsageCount sets the "weekly_video_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) SetWeeklyVideoUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.ResetWeeklyVideoUsageCount()
+	_u.mutation.SetWeeklyVideoUsageCount(v)
+	return _u
+}
+
+// SetNillableWeeklyVideoUsageCount sets the "weekly_video_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdate) SetNillableWeeklyVideoUsageCount(v *int) *BundleSubscriptionUsageUpdate {
+	if v != nil {
+		_u.SetWeeklyVideoUsageCount(*v)
+	}
+	return _u
+}
+
+// AddWeeklyVideoUsageCount adds value to the "weekly_video_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) AddWeeklyVideoUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.AddWeeklyVideoUsageCount(v)
+	return _u
+}
+
+// SetMonthlyVideoUsageCount sets the "monthly_video_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) SetMonthlyVideoUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.ResetMonthlyVideoUsageCount()
+	_u.mutation.SetMonthlyVideoUsageCount(v)
+	return _u
+}
+
+// SetNillableMonthlyVideoUsageCount sets the "monthly_video_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdate) SetNillableMonthlyVideoUsageCount(v *int) *BundleSubscriptionUsageUpdate {
+	if v != nil {
+		_u.SetMonthlyVideoUsageCount(*v)
+	}
+	return _u
+}
+
+// AddMonthlyVideoUsageCount adds value to the "monthly_video_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdate) AddMonthlyVideoUsageCount(v int) *BundleSubscriptionUsageUpdate {
+	_u.mutation.AddMonthlyVideoUsageCount(v)
 	return _u
 }
 
@@ -335,23 +398,41 @@ func (_u *BundleSubscriptionUsageUpdate) sqlSave(ctx context.Context) (_node int
 	if value, ok := _u.mutation.MonthlyWindowStart(); ok {
 		_spec.SetField(bundlesubscriptionusage.FieldMonthlyWindowStart, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.DailyUsageCount(); ok {
-		_spec.SetField(bundlesubscriptionusage.FieldDailyUsageCount, field.TypeInt, value)
+	if value, ok := _u.mutation.DailyImageUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldDailyImageUsageCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedDailyUsageCount(); ok {
-		_spec.AddField(bundlesubscriptionusage.FieldDailyUsageCount, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedDailyImageUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldDailyImageUsageCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.WeeklyUsageCount(); ok {
-		_spec.SetField(bundlesubscriptionusage.FieldWeeklyUsageCount, field.TypeInt, value)
+	if value, ok := _u.mutation.WeeklyImageUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldWeeklyImageUsageCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedWeeklyUsageCount(); ok {
-		_spec.AddField(bundlesubscriptionusage.FieldWeeklyUsageCount, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedWeeklyImageUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldWeeklyImageUsageCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.MonthlyUsageCount(); ok {
-		_spec.SetField(bundlesubscriptionusage.FieldMonthlyUsageCount, field.TypeInt, value)
+	if value, ok := _u.mutation.MonthlyImageUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldMonthlyImageUsageCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedMonthlyUsageCount(); ok {
-		_spec.AddField(bundlesubscriptionusage.FieldMonthlyUsageCount, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedMonthlyImageUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldMonthlyImageUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.DailyVideoUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldDailyVideoUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyVideoUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldDailyVideoUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.WeeklyVideoUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldWeeklyVideoUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyVideoUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldWeeklyVideoUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MonthlyVideoUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldMonthlyVideoUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyVideoUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldMonthlyVideoUsageCount, field.TypeInt, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -534,66 +615,129 @@ func (_u *BundleSubscriptionUsageUpdateOne) SetNillableMonthlyWindowStart(v *tim
 	return _u
 }
 
-// SetDailyUsageCount sets the "daily_usage_count" field.
-func (_u *BundleSubscriptionUsageUpdateOne) SetDailyUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
-	_u.mutation.ResetDailyUsageCount()
-	_u.mutation.SetDailyUsageCount(v)
+// SetDailyImageUsageCount sets the "daily_image_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) SetDailyImageUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.ResetDailyImageUsageCount()
+	_u.mutation.SetDailyImageUsageCount(v)
 	return _u
 }
 
-// SetNillableDailyUsageCount sets the "daily_usage_count" field if the given value is not nil.
-func (_u *BundleSubscriptionUsageUpdateOne) SetNillableDailyUsageCount(v *int) *BundleSubscriptionUsageUpdateOne {
+// SetNillableDailyImageUsageCount sets the "daily_image_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdateOne) SetNillableDailyImageUsageCount(v *int) *BundleSubscriptionUsageUpdateOne {
 	if v != nil {
-		_u.SetDailyUsageCount(*v)
+		_u.SetDailyImageUsageCount(*v)
 	}
 	return _u
 }
 
-// AddDailyUsageCount adds value to the "daily_usage_count" field.
-func (_u *BundleSubscriptionUsageUpdateOne) AddDailyUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
-	_u.mutation.AddDailyUsageCount(v)
+// AddDailyImageUsageCount adds value to the "daily_image_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) AddDailyImageUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.AddDailyImageUsageCount(v)
 	return _u
 }
 
-// SetWeeklyUsageCount sets the "weekly_usage_count" field.
-func (_u *BundleSubscriptionUsageUpdateOne) SetWeeklyUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
-	_u.mutation.ResetWeeklyUsageCount()
-	_u.mutation.SetWeeklyUsageCount(v)
+// SetWeeklyImageUsageCount sets the "weekly_image_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) SetWeeklyImageUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.ResetWeeklyImageUsageCount()
+	_u.mutation.SetWeeklyImageUsageCount(v)
 	return _u
 }
 
-// SetNillableWeeklyUsageCount sets the "weekly_usage_count" field if the given value is not nil.
-func (_u *BundleSubscriptionUsageUpdateOne) SetNillableWeeklyUsageCount(v *int) *BundleSubscriptionUsageUpdateOne {
+// SetNillableWeeklyImageUsageCount sets the "weekly_image_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdateOne) SetNillableWeeklyImageUsageCount(v *int) *BundleSubscriptionUsageUpdateOne {
 	if v != nil {
-		_u.SetWeeklyUsageCount(*v)
+		_u.SetWeeklyImageUsageCount(*v)
 	}
 	return _u
 }
 
-// AddWeeklyUsageCount adds value to the "weekly_usage_count" field.
-func (_u *BundleSubscriptionUsageUpdateOne) AddWeeklyUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
-	_u.mutation.AddWeeklyUsageCount(v)
+// AddWeeklyImageUsageCount adds value to the "weekly_image_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) AddWeeklyImageUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.AddWeeklyImageUsageCount(v)
 	return _u
 }
 
-// SetMonthlyUsageCount sets the "monthly_usage_count" field.
-func (_u *BundleSubscriptionUsageUpdateOne) SetMonthlyUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
-	_u.mutation.ResetMonthlyUsageCount()
-	_u.mutation.SetMonthlyUsageCount(v)
+// SetMonthlyImageUsageCount sets the "monthly_image_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) SetMonthlyImageUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.ResetMonthlyImageUsageCount()
+	_u.mutation.SetMonthlyImageUsageCount(v)
 	return _u
 }
 
-// SetNillableMonthlyUsageCount sets the "monthly_usage_count" field if the given value is not nil.
-func (_u *BundleSubscriptionUsageUpdateOne) SetNillableMonthlyUsageCount(v *int) *BundleSubscriptionUsageUpdateOne {
+// SetNillableMonthlyImageUsageCount sets the "monthly_image_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdateOne) SetNillableMonthlyImageUsageCount(v *int) *BundleSubscriptionUsageUpdateOne {
 	if v != nil {
-		_u.SetMonthlyUsageCount(*v)
+		_u.SetMonthlyImageUsageCount(*v)
 	}
 	return _u
 }
 
-// AddMonthlyUsageCount adds value to the "monthly_usage_count" field.
-func (_u *BundleSubscriptionUsageUpdateOne) AddMonthlyUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
-	_u.mutation.AddMonthlyUsageCount(v)
+// AddMonthlyImageUsageCount adds value to the "monthly_image_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) AddMonthlyImageUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.AddMonthlyImageUsageCount(v)
+	return _u
+}
+
+// SetDailyVideoUsageCount sets the "daily_video_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) SetDailyVideoUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.ResetDailyVideoUsageCount()
+	_u.mutation.SetDailyVideoUsageCount(v)
+	return _u
+}
+
+// SetNillableDailyVideoUsageCount sets the "daily_video_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdateOne) SetNillableDailyVideoUsageCount(v *int) *BundleSubscriptionUsageUpdateOne {
+	if v != nil {
+		_u.SetDailyVideoUsageCount(*v)
+	}
+	return _u
+}
+
+// AddDailyVideoUsageCount adds value to the "daily_video_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) AddDailyVideoUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.AddDailyVideoUsageCount(v)
+	return _u
+}
+
+// SetWeeklyVideoUsageCount sets the "weekly_video_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) SetWeeklyVideoUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.ResetWeeklyVideoUsageCount()
+	_u.mutation.SetWeeklyVideoUsageCount(v)
+	return _u
+}
+
+// SetNillableWeeklyVideoUsageCount sets the "weekly_video_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdateOne) SetNillableWeeklyVideoUsageCount(v *int) *BundleSubscriptionUsageUpdateOne {
+	if v != nil {
+		_u.SetWeeklyVideoUsageCount(*v)
+	}
+	return _u
+}
+
+// AddWeeklyVideoUsageCount adds value to the "weekly_video_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) AddWeeklyVideoUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.AddWeeklyVideoUsageCount(v)
+	return _u
+}
+
+// SetMonthlyVideoUsageCount sets the "monthly_video_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) SetMonthlyVideoUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.ResetMonthlyVideoUsageCount()
+	_u.mutation.SetMonthlyVideoUsageCount(v)
+	return _u
+}
+
+// SetNillableMonthlyVideoUsageCount sets the "monthly_video_usage_count" field if the given value is not nil.
+func (_u *BundleSubscriptionUsageUpdateOne) SetNillableMonthlyVideoUsageCount(v *int) *BundleSubscriptionUsageUpdateOne {
+	if v != nil {
+		_u.SetMonthlyVideoUsageCount(*v)
+	}
+	return _u
+}
+
+// AddMonthlyVideoUsageCount adds value to the "monthly_video_usage_count" field.
+func (_u *BundleSubscriptionUsageUpdateOne) AddMonthlyVideoUsageCount(v int) *BundleSubscriptionUsageUpdateOne {
+	_u.mutation.AddMonthlyVideoUsageCount(v)
 	return _u
 }
 
@@ -710,23 +854,41 @@ func (_u *BundleSubscriptionUsageUpdateOne) sqlSave(ctx context.Context) (_node 
 	if value, ok := _u.mutation.MonthlyWindowStart(); ok {
 		_spec.SetField(bundlesubscriptionusage.FieldMonthlyWindowStart, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.DailyUsageCount(); ok {
-		_spec.SetField(bundlesubscriptionusage.FieldDailyUsageCount, field.TypeInt, value)
+	if value, ok := _u.mutation.DailyImageUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldDailyImageUsageCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedDailyUsageCount(); ok {
-		_spec.AddField(bundlesubscriptionusage.FieldDailyUsageCount, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedDailyImageUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldDailyImageUsageCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.WeeklyUsageCount(); ok {
-		_spec.SetField(bundlesubscriptionusage.FieldWeeklyUsageCount, field.TypeInt, value)
+	if value, ok := _u.mutation.WeeklyImageUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldWeeklyImageUsageCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedWeeklyUsageCount(); ok {
-		_spec.AddField(bundlesubscriptionusage.FieldWeeklyUsageCount, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedWeeklyImageUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldWeeklyImageUsageCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.MonthlyUsageCount(); ok {
-		_spec.SetField(bundlesubscriptionusage.FieldMonthlyUsageCount, field.TypeInt, value)
+	if value, ok := _u.mutation.MonthlyImageUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldMonthlyImageUsageCount, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedMonthlyUsageCount(); ok {
-		_spec.AddField(bundlesubscriptionusage.FieldMonthlyUsageCount, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedMonthlyImageUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldMonthlyImageUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.DailyVideoUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldDailyVideoUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyVideoUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldDailyVideoUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.WeeklyVideoUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldWeeklyVideoUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyVideoUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldWeeklyVideoUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MonthlyVideoUsageCount(); ok {
+		_spec.SetField(bundlesubscriptionusage.FieldMonthlyVideoUsageCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyVideoUsageCount(); ok {
+		_spec.AddField(bundlesubscriptionusage.FieldMonthlyVideoUsageCount, field.TypeInt, value)
 	}
 	_node = &BundleSubscriptionUsage{config: _u.config}
 	_spec.Assign = _node.assignValues

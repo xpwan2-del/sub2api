@@ -287,44 +287,86 @@ func (_c *UserSubscriptionCreate) SetNillableMonthlyLimitUsd(v *float64) *UserSu
 	return _c
 }
 
-// SetDailyLimitCount sets the "daily_limit_count" field.
-func (_c *UserSubscriptionCreate) SetDailyLimitCount(v int) *UserSubscriptionCreate {
-	_c.mutation.SetDailyLimitCount(v)
+// SetDailyImageLimitCount sets the "daily_image_limit_count" field.
+func (_c *UserSubscriptionCreate) SetDailyImageLimitCount(v int) *UserSubscriptionCreate {
+	_c.mutation.SetDailyImageLimitCount(v)
 	return _c
 }
 
-// SetNillableDailyLimitCount sets the "daily_limit_count" field if the given value is not nil.
-func (_c *UserSubscriptionCreate) SetNillableDailyLimitCount(v *int) *UserSubscriptionCreate {
+// SetNillableDailyImageLimitCount sets the "daily_image_limit_count" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableDailyImageLimitCount(v *int) *UserSubscriptionCreate {
 	if v != nil {
-		_c.SetDailyLimitCount(*v)
+		_c.SetDailyImageLimitCount(*v)
 	}
 	return _c
 }
 
-// SetWeeklyLimitCount sets the "weekly_limit_count" field.
-func (_c *UserSubscriptionCreate) SetWeeklyLimitCount(v int) *UserSubscriptionCreate {
-	_c.mutation.SetWeeklyLimitCount(v)
+// SetWeeklyImageLimitCount sets the "weekly_image_limit_count" field.
+func (_c *UserSubscriptionCreate) SetWeeklyImageLimitCount(v int) *UserSubscriptionCreate {
+	_c.mutation.SetWeeklyImageLimitCount(v)
 	return _c
 }
 
-// SetNillableWeeklyLimitCount sets the "weekly_limit_count" field if the given value is not nil.
-func (_c *UserSubscriptionCreate) SetNillableWeeklyLimitCount(v *int) *UserSubscriptionCreate {
+// SetNillableWeeklyImageLimitCount sets the "weekly_image_limit_count" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableWeeklyImageLimitCount(v *int) *UserSubscriptionCreate {
 	if v != nil {
-		_c.SetWeeklyLimitCount(*v)
+		_c.SetWeeklyImageLimitCount(*v)
 	}
 	return _c
 }
 
-// SetMonthlyLimitCount sets the "monthly_limit_count" field.
-func (_c *UserSubscriptionCreate) SetMonthlyLimitCount(v int) *UserSubscriptionCreate {
-	_c.mutation.SetMonthlyLimitCount(v)
+// SetMonthlyImageLimitCount sets the "monthly_image_limit_count" field.
+func (_c *UserSubscriptionCreate) SetMonthlyImageLimitCount(v int) *UserSubscriptionCreate {
+	_c.mutation.SetMonthlyImageLimitCount(v)
 	return _c
 }
 
-// SetNillableMonthlyLimitCount sets the "monthly_limit_count" field if the given value is not nil.
-func (_c *UserSubscriptionCreate) SetNillableMonthlyLimitCount(v *int) *UserSubscriptionCreate {
+// SetNillableMonthlyImageLimitCount sets the "monthly_image_limit_count" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableMonthlyImageLimitCount(v *int) *UserSubscriptionCreate {
 	if v != nil {
-		_c.SetMonthlyLimitCount(*v)
+		_c.SetMonthlyImageLimitCount(*v)
+	}
+	return _c
+}
+
+// SetDailyVideoLimitCount sets the "daily_video_limit_count" field.
+func (_c *UserSubscriptionCreate) SetDailyVideoLimitCount(v int) *UserSubscriptionCreate {
+	_c.mutation.SetDailyVideoLimitCount(v)
+	return _c
+}
+
+// SetNillableDailyVideoLimitCount sets the "daily_video_limit_count" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableDailyVideoLimitCount(v *int) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetDailyVideoLimitCount(*v)
+	}
+	return _c
+}
+
+// SetWeeklyVideoLimitCount sets the "weekly_video_limit_count" field.
+func (_c *UserSubscriptionCreate) SetWeeklyVideoLimitCount(v int) *UserSubscriptionCreate {
+	_c.mutation.SetWeeklyVideoLimitCount(v)
+	return _c
+}
+
+// SetNillableWeeklyVideoLimitCount sets the "weekly_video_limit_count" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableWeeklyVideoLimitCount(v *int) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetWeeklyVideoLimitCount(*v)
+	}
+	return _c
+}
+
+// SetMonthlyVideoLimitCount sets the "monthly_video_limit_count" field.
+func (_c *UserSubscriptionCreate) SetMonthlyVideoLimitCount(v int) *UserSubscriptionCreate {
+	_c.mutation.SetMonthlyVideoLimitCount(v)
+	return _c
+}
+
+// SetNillableMonthlyVideoLimitCount sets the "monthly_video_limit_count" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableMonthlyVideoLimitCount(v *int) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetMonthlyVideoLimitCount(*v)
 	}
 	return _c
 }
@@ -459,17 +501,29 @@ func (_c *UserSubscriptionCreate) defaults() error {
 		v := usersubscription.DefaultMonthlyLimitUsd
 		_c.mutation.SetMonthlyLimitUsd(v)
 	}
-	if _, ok := _c.mutation.DailyLimitCount(); !ok {
-		v := usersubscription.DefaultDailyLimitCount
-		_c.mutation.SetDailyLimitCount(v)
+	if _, ok := _c.mutation.DailyImageLimitCount(); !ok {
+		v := usersubscription.DefaultDailyImageLimitCount
+		_c.mutation.SetDailyImageLimitCount(v)
 	}
-	if _, ok := _c.mutation.WeeklyLimitCount(); !ok {
-		v := usersubscription.DefaultWeeklyLimitCount
-		_c.mutation.SetWeeklyLimitCount(v)
+	if _, ok := _c.mutation.WeeklyImageLimitCount(); !ok {
+		v := usersubscription.DefaultWeeklyImageLimitCount
+		_c.mutation.SetWeeklyImageLimitCount(v)
 	}
-	if _, ok := _c.mutation.MonthlyLimitCount(); !ok {
-		v := usersubscription.DefaultMonthlyLimitCount
-		_c.mutation.SetMonthlyLimitCount(v)
+	if _, ok := _c.mutation.MonthlyImageLimitCount(); !ok {
+		v := usersubscription.DefaultMonthlyImageLimitCount
+		_c.mutation.SetMonthlyImageLimitCount(v)
+	}
+	if _, ok := _c.mutation.DailyVideoLimitCount(); !ok {
+		v := usersubscription.DefaultDailyVideoLimitCount
+		_c.mutation.SetDailyVideoLimitCount(v)
+	}
+	if _, ok := _c.mutation.WeeklyVideoLimitCount(); !ok {
+		v := usersubscription.DefaultWeeklyVideoLimitCount
+		_c.mutation.SetWeeklyVideoLimitCount(v)
+	}
+	if _, ok := _c.mutation.MonthlyVideoLimitCount(); !ok {
+		v := usersubscription.DefaultMonthlyVideoLimitCount
+		_c.mutation.SetMonthlyVideoLimitCount(v)
 	}
 	return nil
 }
@@ -523,14 +577,23 @@ func (_c *UserSubscriptionCreate) check() error {
 	if _, ok := _c.mutation.MonthlyLimitUsd(); !ok {
 		return &ValidationError{Name: "monthly_limit_usd", err: errors.New(`ent: missing required field "UserSubscription.monthly_limit_usd"`)}
 	}
-	if _, ok := _c.mutation.DailyLimitCount(); !ok {
-		return &ValidationError{Name: "daily_limit_count", err: errors.New(`ent: missing required field "UserSubscription.daily_limit_count"`)}
+	if _, ok := _c.mutation.DailyImageLimitCount(); !ok {
+		return &ValidationError{Name: "daily_image_limit_count", err: errors.New(`ent: missing required field "UserSubscription.daily_image_limit_count"`)}
 	}
-	if _, ok := _c.mutation.WeeklyLimitCount(); !ok {
-		return &ValidationError{Name: "weekly_limit_count", err: errors.New(`ent: missing required field "UserSubscription.weekly_limit_count"`)}
+	if _, ok := _c.mutation.WeeklyImageLimitCount(); !ok {
+		return &ValidationError{Name: "weekly_image_limit_count", err: errors.New(`ent: missing required field "UserSubscription.weekly_image_limit_count"`)}
 	}
-	if _, ok := _c.mutation.MonthlyLimitCount(); !ok {
-		return &ValidationError{Name: "monthly_limit_count", err: errors.New(`ent: missing required field "UserSubscription.monthly_limit_count"`)}
+	if _, ok := _c.mutation.MonthlyImageLimitCount(); !ok {
+		return &ValidationError{Name: "monthly_image_limit_count", err: errors.New(`ent: missing required field "UserSubscription.monthly_image_limit_count"`)}
+	}
+	if _, ok := _c.mutation.DailyVideoLimitCount(); !ok {
+		return &ValidationError{Name: "daily_video_limit_count", err: errors.New(`ent: missing required field "UserSubscription.daily_video_limit_count"`)}
+	}
+	if _, ok := _c.mutation.WeeklyVideoLimitCount(); !ok {
+		return &ValidationError{Name: "weekly_video_limit_count", err: errors.New(`ent: missing required field "UserSubscription.weekly_video_limit_count"`)}
+	}
+	if _, ok := _c.mutation.MonthlyVideoLimitCount(); !ok {
+		return &ValidationError{Name: "monthly_video_limit_count", err: errors.New(`ent: missing required field "UserSubscription.monthly_video_limit_count"`)}
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "UserSubscription.user"`)}
@@ -637,17 +700,29 @@ func (_c *UserSubscriptionCreate) createSpec() (*UserSubscription, *sqlgraph.Cre
 		_spec.SetField(usersubscription.FieldMonthlyLimitUsd, field.TypeFloat64, value)
 		_node.MonthlyLimitUsd = value
 	}
-	if value, ok := _c.mutation.DailyLimitCount(); ok {
-		_spec.SetField(usersubscription.FieldDailyLimitCount, field.TypeInt, value)
-		_node.DailyLimitCount = value
+	if value, ok := _c.mutation.DailyImageLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldDailyImageLimitCount, field.TypeInt, value)
+		_node.DailyImageLimitCount = value
 	}
-	if value, ok := _c.mutation.WeeklyLimitCount(); ok {
-		_spec.SetField(usersubscription.FieldWeeklyLimitCount, field.TypeInt, value)
-		_node.WeeklyLimitCount = value
+	if value, ok := _c.mutation.WeeklyImageLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyImageLimitCount, field.TypeInt, value)
+		_node.WeeklyImageLimitCount = value
 	}
-	if value, ok := _c.mutation.MonthlyLimitCount(); ok {
-		_spec.SetField(usersubscription.FieldMonthlyLimitCount, field.TypeInt, value)
-		_node.MonthlyLimitCount = value
+	if value, ok := _c.mutation.MonthlyImageLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyImageLimitCount, field.TypeInt, value)
+		_node.MonthlyImageLimitCount = value
+	}
+	if value, ok := _c.mutation.DailyVideoLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldDailyVideoLimitCount, field.TypeInt, value)
+		_node.DailyVideoLimitCount = value
+	}
+	if value, ok := _c.mutation.WeeklyVideoLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyVideoLimitCount, field.TypeInt, value)
+		_node.WeeklyVideoLimitCount = value
+	}
+	if value, ok := _c.mutation.MonthlyVideoLimitCount(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyVideoLimitCount, field.TypeInt, value)
+		_node.MonthlyVideoLimitCount = value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1092,57 +1167,111 @@ func (u *UserSubscriptionUpsert) AddMonthlyLimitUsd(v float64) *UserSubscription
 	return u
 }
 
-// SetDailyLimitCount sets the "daily_limit_count" field.
-func (u *UserSubscriptionUpsert) SetDailyLimitCount(v int) *UserSubscriptionUpsert {
-	u.Set(usersubscription.FieldDailyLimitCount, v)
+// SetDailyImageLimitCount sets the "daily_image_limit_count" field.
+func (u *UserSubscriptionUpsert) SetDailyImageLimitCount(v int) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldDailyImageLimitCount, v)
 	return u
 }
 
-// UpdateDailyLimitCount sets the "daily_limit_count" field to the value that was provided on create.
-func (u *UserSubscriptionUpsert) UpdateDailyLimitCount() *UserSubscriptionUpsert {
-	u.SetExcluded(usersubscription.FieldDailyLimitCount)
+// UpdateDailyImageLimitCount sets the "daily_image_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateDailyImageLimitCount() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldDailyImageLimitCount)
 	return u
 }
 
-// AddDailyLimitCount adds v to the "daily_limit_count" field.
-func (u *UserSubscriptionUpsert) AddDailyLimitCount(v int) *UserSubscriptionUpsert {
-	u.Add(usersubscription.FieldDailyLimitCount, v)
+// AddDailyImageLimitCount adds v to the "daily_image_limit_count" field.
+func (u *UserSubscriptionUpsert) AddDailyImageLimitCount(v int) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldDailyImageLimitCount, v)
 	return u
 }
 
-// SetWeeklyLimitCount sets the "weekly_limit_count" field.
-func (u *UserSubscriptionUpsert) SetWeeklyLimitCount(v int) *UserSubscriptionUpsert {
-	u.Set(usersubscription.FieldWeeklyLimitCount, v)
+// SetWeeklyImageLimitCount sets the "weekly_image_limit_count" field.
+func (u *UserSubscriptionUpsert) SetWeeklyImageLimitCount(v int) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldWeeklyImageLimitCount, v)
 	return u
 }
 
-// UpdateWeeklyLimitCount sets the "weekly_limit_count" field to the value that was provided on create.
-func (u *UserSubscriptionUpsert) UpdateWeeklyLimitCount() *UserSubscriptionUpsert {
-	u.SetExcluded(usersubscription.FieldWeeklyLimitCount)
+// UpdateWeeklyImageLimitCount sets the "weekly_image_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateWeeklyImageLimitCount() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldWeeklyImageLimitCount)
 	return u
 }
 
-// AddWeeklyLimitCount adds v to the "weekly_limit_count" field.
-func (u *UserSubscriptionUpsert) AddWeeklyLimitCount(v int) *UserSubscriptionUpsert {
-	u.Add(usersubscription.FieldWeeklyLimitCount, v)
+// AddWeeklyImageLimitCount adds v to the "weekly_image_limit_count" field.
+func (u *UserSubscriptionUpsert) AddWeeklyImageLimitCount(v int) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldWeeklyImageLimitCount, v)
 	return u
 }
 
-// SetMonthlyLimitCount sets the "monthly_limit_count" field.
-func (u *UserSubscriptionUpsert) SetMonthlyLimitCount(v int) *UserSubscriptionUpsert {
-	u.Set(usersubscription.FieldMonthlyLimitCount, v)
+// SetMonthlyImageLimitCount sets the "monthly_image_limit_count" field.
+func (u *UserSubscriptionUpsert) SetMonthlyImageLimitCount(v int) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldMonthlyImageLimitCount, v)
 	return u
 }
 
-// UpdateMonthlyLimitCount sets the "monthly_limit_count" field to the value that was provided on create.
-func (u *UserSubscriptionUpsert) UpdateMonthlyLimitCount() *UserSubscriptionUpsert {
-	u.SetExcluded(usersubscription.FieldMonthlyLimitCount)
+// UpdateMonthlyImageLimitCount sets the "monthly_image_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateMonthlyImageLimitCount() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldMonthlyImageLimitCount)
 	return u
 }
 
-// AddMonthlyLimitCount adds v to the "monthly_limit_count" field.
-func (u *UserSubscriptionUpsert) AddMonthlyLimitCount(v int) *UserSubscriptionUpsert {
-	u.Add(usersubscription.FieldMonthlyLimitCount, v)
+// AddMonthlyImageLimitCount adds v to the "monthly_image_limit_count" field.
+func (u *UserSubscriptionUpsert) AddMonthlyImageLimitCount(v int) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldMonthlyImageLimitCount, v)
+	return u
+}
+
+// SetDailyVideoLimitCount sets the "daily_video_limit_count" field.
+func (u *UserSubscriptionUpsert) SetDailyVideoLimitCount(v int) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldDailyVideoLimitCount, v)
+	return u
+}
+
+// UpdateDailyVideoLimitCount sets the "daily_video_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateDailyVideoLimitCount() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldDailyVideoLimitCount)
+	return u
+}
+
+// AddDailyVideoLimitCount adds v to the "daily_video_limit_count" field.
+func (u *UserSubscriptionUpsert) AddDailyVideoLimitCount(v int) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldDailyVideoLimitCount, v)
+	return u
+}
+
+// SetWeeklyVideoLimitCount sets the "weekly_video_limit_count" field.
+func (u *UserSubscriptionUpsert) SetWeeklyVideoLimitCount(v int) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldWeeklyVideoLimitCount, v)
+	return u
+}
+
+// UpdateWeeklyVideoLimitCount sets the "weekly_video_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateWeeklyVideoLimitCount() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldWeeklyVideoLimitCount)
+	return u
+}
+
+// AddWeeklyVideoLimitCount adds v to the "weekly_video_limit_count" field.
+func (u *UserSubscriptionUpsert) AddWeeklyVideoLimitCount(v int) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldWeeklyVideoLimitCount, v)
+	return u
+}
+
+// SetMonthlyVideoLimitCount sets the "monthly_video_limit_count" field.
+func (u *UserSubscriptionUpsert) SetMonthlyVideoLimitCount(v int) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldMonthlyVideoLimitCount, v)
+	return u
+}
+
+// UpdateMonthlyVideoLimitCount sets the "monthly_video_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateMonthlyVideoLimitCount() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldMonthlyVideoLimitCount)
+	return u
+}
+
+// AddMonthlyVideoLimitCount adds v to the "monthly_video_limit_count" field.
+func (u *UserSubscriptionUpsert) AddMonthlyVideoLimitCount(v int) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldMonthlyVideoLimitCount, v)
 	return u
 }
 
@@ -1569,66 +1698,129 @@ func (u *UserSubscriptionUpsertOne) UpdateMonthlyLimitUsd() *UserSubscriptionUps
 	})
 }
 
-// SetDailyLimitCount sets the "daily_limit_count" field.
-func (u *UserSubscriptionUpsertOne) SetDailyLimitCount(v int) *UserSubscriptionUpsertOne {
+// SetDailyImageLimitCount sets the "daily_image_limit_count" field.
+func (u *UserSubscriptionUpsertOne) SetDailyImageLimitCount(v int) *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.SetDailyLimitCount(v)
+		s.SetDailyImageLimitCount(v)
 	})
 }
 
-// AddDailyLimitCount adds v to the "daily_limit_count" field.
-func (u *UserSubscriptionUpsertOne) AddDailyLimitCount(v int) *UserSubscriptionUpsertOne {
+// AddDailyImageLimitCount adds v to the "daily_image_limit_count" field.
+func (u *UserSubscriptionUpsertOne) AddDailyImageLimitCount(v int) *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.AddDailyLimitCount(v)
+		s.AddDailyImageLimitCount(v)
 	})
 }
 
-// UpdateDailyLimitCount sets the "daily_limit_count" field to the value that was provided on create.
-func (u *UserSubscriptionUpsertOne) UpdateDailyLimitCount() *UserSubscriptionUpsertOne {
+// UpdateDailyImageLimitCount sets the "daily_image_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateDailyImageLimitCount() *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.UpdateDailyLimitCount()
+		s.UpdateDailyImageLimitCount()
 	})
 }
 
-// SetWeeklyLimitCount sets the "weekly_limit_count" field.
-func (u *UserSubscriptionUpsertOne) SetWeeklyLimitCount(v int) *UserSubscriptionUpsertOne {
+// SetWeeklyImageLimitCount sets the "weekly_image_limit_count" field.
+func (u *UserSubscriptionUpsertOne) SetWeeklyImageLimitCount(v int) *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.SetWeeklyLimitCount(v)
+		s.SetWeeklyImageLimitCount(v)
 	})
 }
 
-// AddWeeklyLimitCount adds v to the "weekly_limit_count" field.
-func (u *UserSubscriptionUpsertOne) AddWeeklyLimitCount(v int) *UserSubscriptionUpsertOne {
+// AddWeeklyImageLimitCount adds v to the "weekly_image_limit_count" field.
+func (u *UserSubscriptionUpsertOne) AddWeeklyImageLimitCount(v int) *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.AddWeeklyLimitCount(v)
+		s.AddWeeklyImageLimitCount(v)
 	})
 }
 
-// UpdateWeeklyLimitCount sets the "weekly_limit_count" field to the value that was provided on create.
-func (u *UserSubscriptionUpsertOne) UpdateWeeklyLimitCount() *UserSubscriptionUpsertOne {
+// UpdateWeeklyImageLimitCount sets the "weekly_image_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateWeeklyImageLimitCount() *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.UpdateWeeklyLimitCount()
+		s.UpdateWeeklyImageLimitCount()
 	})
 }
 
-// SetMonthlyLimitCount sets the "monthly_limit_count" field.
-func (u *UserSubscriptionUpsertOne) SetMonthlyLimitCount(v int) *UserSubscriptionUpsertOne {
+// SetMonthlyImageLimitCount sets the "monthly_image_limit_count" field.
+func (u *UserSubscriptionUpsertOne) SetMonthlyImageLimitCount(v int) *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.SetMonthlyLimitCount(v)
+		s.SetMonthlyImageLimitCount(v)
 	})
 }
 
-// AddMonthlyLimitCount adds v to the "monthly_limit_count" field.
-func (u *UserSubscriptionUpsertOne) AddMonthlyLimitCount(v int) *UserSubscriptionUpsertOne {
+// AddMonthlyImageLimitCount adds v to the "monthly_image_limit_count" field.
+func (u *UserSubscriptionUpsertOne) AddMonthlyImageLimitCount(v int) *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.AddMonthlyLimitCount(v)
+		s.AddMonthlyImageLimitCount(v)
 	})
 }
 
-// UpdateMonthlyLimitCount sets the "monthly_limit_count" field to the value that was provided on create.
-func (u *UserSubscriptionUpsertOne) UpdateMonthlyLimitCount() *UserSubscriptionUpsertOne {
+// UpdateMonthlyImageLimitCount sets the "monthly_image_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateMonthlyImageLimitCount() *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.UpdateMonthlyLimitCount()
+		s.UpdateMonthlyImageLimitCount()
+	})
+}
+
+// SetDailyVideoLimitCount sets the "daily_video_limit_count" field.
+func (u *UserSubscriptionUpsertOne) SetDailyVideoLimitCount(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetDailyVideoLimitCount(v)
+	})
+}
+
+// AddDailyVideoLimitCount adds v to the "daily_video_limit_count" field.
+func (u *UserSubscriptionUpsertOne) AddDailyVideoLimitCount(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddDailyVideoLimitCount(v)
+	})
+}
+
+// UpdateDailyVideoLimitCount sets the "daily_video_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateDailyVideoLimitCount() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateDailyVideoLimitCount()
+	})
+}
+
+// SetWeeklyVideoLimitCount sets the "weekly_video_limit_count" field.
+func (u *UserSubscriptionUpsertOne) SetWeeklyVideoLimitCount(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetWeeklyVideoLimitCount(v)
+	})
+}
+
+// AddWeeklyVideoLimitCount adds v to the "weekly_video_limit_count" field.
+func (u *UserSubscriptionUpsertOne) AddWeeklyVideoLimitCount(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddWeeklyVideoLimitCount(v)
+	})
+}
+
+// UpdateWeeklyVideoLimitCount sets the "weekly_video_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateWeeklyVideoLimitCount() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateWeeklyVideoLimitCount()
+	})
+}
+
+// SetMonthlyVideoLimitCount sets the "monthly_video_limit_count" field.
+func (u *UserSubscriptionUpsertOne) SetMonthlyVideoLimitCount(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetMonthlyVideoLimitCount(v)
+	})
+}
+
+// AddMonthlyVideoLimitCount adds v to the "monthly_video_limit_count" field.
+func (u *UserSubscriptionUpsertOne) AddMonthlyVideoLimitCount(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddMonthlyVideoLimitCount(v)
+	})
+}
+
+// UpdateMonthlyVideoLimitCount sets the "monthly_video_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateMonthlyVideoLimitCount() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateMonthlyVideoLimitCount()
 	})
 }
 
@@ -2221,66 +2413,129 @@ func (u *UserSubscriptionUpsertBulk) UpdateMonthlyLimitUsd() *UserSubscriptionUp
 	})
 }
 
-// SetDailyLimitCount sets the "daily_limit_count" field.
-func (u *UserSubscriptionUpsertBulk) SetDailyLimitCount(v int) *UserSubscriptionUpsertBulk {
+// SetDailyImageLimitCount sets the "daily_image_limit_count" field.
+func (u *UserSubscriptionUpsertBulk) SetDailyImageLimitCount(v int) *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.SetDailyLimitCount(v)
+		s.SetDailyImageLimitCount(v)
 	})
 }
 
-// AddDailyLimitCount adds v to the "daily_limit_count" field.
-func (u *UserSubscriptionUpsertBulk) AddDailyLimitCount(v int) *UserSubscriptionUpsertBulk {
+// AddDailyImageLimitCount adds v to the "daily_image_limit_count" field.
+func (u *UserSubscriptionUpsertBulk) AddDailyImageLimitCount(v int) *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.AddDailyLimitCount(v)
+		s.AddDailyImageLimitCount(v)
 	})
 }
 
-// UpdateDailyLimitCount sets the "daily_limit_count" field to the value that was provided on create.
-func (u *UserSubscriptionUpsertBulk) UpdateDailyLimitCount() *UserSubscriptionUpsertBulk {
+// UpdateDailyImageLimitCount sets the "daily_image_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateDailyImageLimitCount() *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.UpdateDailyLimitCount()
+		s.UpdateDailyImageLimitCount()
 	})
 }
 
-// SetWeeklyLimitCount sets the "weekly_limit_count" field.
-func (u *UserSubscriptionUpsertBulk) SetWeeklyLimitCount(v int) *UserSubscriptionUpsertBulk {
+// SetWeeklyImageLimitCount sets the "weekly_image_limit_count" field.
+func (u *UserSubscriptionUpsertBulk) SetWeeklyImageLimitCount(v int) *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.SetWeeklyLimitCount(v)
+		s.SetWeeklyImageLimitCount(v)
 	})
 }
 
-// AddWeeklyLimitCount adds v to the "weekly_limit_count" field.
-func (u *UserSubscriptionUpsertBulk) AddWeeklyLimitCount(v int) *UserSubscriptionUpsertBulk {
+// AddWeeklyImageLimitCount adds v to the "weekly_image_limit_count" field.
+func (u *UserSubscriptionUpsertBulk) AddWeeklyImageLimitCount(v int) *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.AddWeeklyLimitCount(v)
+		s.AddWeeklyImageLimitCount(v)
 	})
 }
 
-// UpdateWeeklyLimitCount sets the "weekly_limit_count" field to the value that was provided on create.
-func (u *UserSubscriptionUpsertBulk) UpdateWeeklyLimitCount() *UserSubscriptionUpsertBulk {
+// UpdateWeeklyImageLimitCount sets the "weekly_image_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateWeeklyImageLimitCount() *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.UpdateWeeklyLimitCount()
+		s.UpdateWeeklyImageLimitCount()
 	})
 }
 
-// SetMonthlyLimitCount sets the "monthly_limit_count" field.
-func (u *UserSubscriptionUpsertBulk) SetMonthlyLimitCount(v int) *UserSubscriptionUpsertBulk {
+// SetMonthlyImageLimitCount sets the "monthly_image_limit_count" field.
+func (u *UserSubscriptionUpsertBulk) SetMonthlyImageLimitCount(v int) *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.SetMonthlyLimitCount(v)
+		s.SetMonthlyImageLimitCount(v)
 	})
 }
 
-// AddMonthlyLimitCount adds v to the "monthly_limit_count" field.
-func (u *UserSubscriptionUpsertBulk) AddMonthlyLimitCount(v int) *UserSubscriptionUpsertBulk {
+// AddMonthlyImageLimitCount adds v to the "monthly_image_limit_count" field.
+func (u *UserSubscriptionUpsertBulk) AddMonthlyImageLimitCount(v int) *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.AddMonthlyLimitCount(v)
+		s.AddMonthlyImageLimitCount(v)
 	})
 }
 
-// UpdateMonthlyLimitCount sets the "monthly_limit_count" field to the value that was provided on create.
-func (u *UserSubscriptionUpsertBulk) UpdateMonthlyLimitCount() *UserSubscriptionUpsertBulk {
+// UpdateMonthlyImageLimitCount sets the "monthly_image_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateMonthlyImageLimitCount() *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
-		s.UpdateMonthlyLimitCount()
+		s.UpdateMonthlyImageLimitCount()
+	})
+}
+
+// SetDailyVideoLimitCount sets the "daily_video_limit_count" field.
+func (u *UserSubscriptionUpsertBulk) SetDailyVideoLimitCount(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetDailyVideoLimitCount(v)
+	})
+}
+
+// AddDailyVideoLimitCount adds v to the "daily_video_limit_count" field.
+func (u *UserSubscriptionUpsertBulk) AddDailyVideoLimitCount(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddDailyVideoLimitCount(v)
+	})
+}
+
+// UpdateDailyVideoLimitCount sets the "daily_video_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateDailyVideoLimitCount() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateDailyVideoLimitCount()
+	})
+}
+
+// SetWeeklyVideoLimitCount sets the "weekly_video_limit_count" field.
+func (u *UserSubscriptionUpsertBulk) SetWeeklyVideoLimitCount(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetWeeklyVideoLimitCount(v)
+	})
+}
+
+// AddWeeklyVideoLimitCount adds v to the "weekly_video_limit_count" field.
+func (u *UserSubscriptionUpsertBulk) AddWeeklyVideoLimitCount(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddWeeklyVideoLimitCount(v)
+	})
+}
+
+// UpdateWeeklyVideoLimitCount sets the "weekly_video_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateWeeklyVideoLimitCount() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateWeeklyVideoLimitCount()
+	})
+}
+
+// SetMonthlyVideoLimitCount sets the "monthly_video_limit_count" field.
+func (u *UserSubscriptionUpsertBulk) SetMonthlyVideoLimitCount(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetMonthlyVideoLimitCount(v)
+	})
+}
+
+// AddMonthlyVideoLimitCount adds v to the "monthly_video_limit_count" field.
+func (u *UserSubscriptionUpsertBulk) AddMonthlyVideoLimitCount(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddMonthlyVideoLimitCount(v)
+	})
+}
+
+// UpdateMonthlyVideoLimitCount sets the "monthly_video_limit_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateMonthlyVideoLimitCount() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateMonthlyVideoLimitCount()
 	})
 }
 

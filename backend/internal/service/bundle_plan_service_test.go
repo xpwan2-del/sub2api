@@ -196,9 +196,9 @@ func TestCreatePlan_PersistsCountLimits(t *testing.T) {
 			{
 				GroupID:           10,
 				QuotaScope:        QuotaScopePlatform,
-				DailyLimitCount:   50,
-				WeeklyLimitCount:  200,
-				MonthlyLimitCount: 500,
+				DailyImageLimitCount:   50,
+				WeeklyImageLimitCount:  200,
+				MonthlyImageLimitCount: 500,
 			},
 		},
 	}
@@ -209,9 +209,9 @@ func TestCreatePlan_PersistsCountLimits(t *testing.T) {
 	require.NotNil(t, plan)
 	require.Len(t, plan.GroupQuotas, 1)
 	// count limits must be persisted onto the returned plan.
-	require.Equal(t, 50, plan.GroupQuotas[0].DailyLimitCount)
-	require.Equal(t, 200, plan.GroupQuotas[0].WeeklyLimitCount)
-	require.Equal(t, 500, plan.GroupQuotas[0].MonthlyLimitCount)
+	require.Equal(t, 50, plan.GroupQuotas[0].DailyImageLimitCount)
+	require.Equal(t, 200, plan.GroupQuotas[0].WeeklyImageLimitCount)
+	require.Equal(t, 500, plan.GroupQuotas[0].MonthlyImageLimitCount)
 }
 
 func TestBundlePlanService_CreatePlan_NilRequest(t *testing.T) {
@@ -300,9 +300,9 @@ func TestBundlePlanService_UpdatePlan_PersistsCountLimits(t *testing.T) {
 		{
 			GroupID:           20,
 			QuotaScope:        QuotaScopePlatform,
-			DailyLimitCount:   7,
-			WeeklyLimitCount:  35,
-			MonthlyLimitCount: 140,
+			DailyImageLimitCount:   7,
+			WeeklyImageLimitCount:  35,
+			MonthlyImageLimitCount: 140,
 		},
 	}
 	req := &UpdateBundlePlanRequest{GroupQuotas: &newQuotas}
@@ -312,9 +312,9 @@ func TestBundlePlanService_UpdatePlan_PersistsCountLimits(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, plan)
 	require.Len(t, stub.updated.GroupQuotas, 1)
-	require.Equal(t, 7, stub.updated.GroupQuotas[0].DailyLimitCount)
-	require.Equal(t, 35, stub.updated.GroupQuotas[0].WeeklyLimitCount)
-	require.Equal(t, 140, stub.updated.GroupQuotas[0].MonthlyLimitCount)
+	require.Equal(t, 7, stub.updated.GroupQuotas[0].DailyImageLimitCount)
+	require.Equal(t, 35, stub.updated.GroupQuotas[0].WeeklyImageLimitCount)
+	require.Equal(t, 140, stub.updated.GroupQuotas[0].MonthlyImageLimitCount)
 }
 
 func TestBundlePlanService_UpdatePlan_PlanNotFound(t *testing.T) {

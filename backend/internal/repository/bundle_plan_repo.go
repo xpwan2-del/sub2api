@@ -66,9 +66,9 @@ func (r *bundlePlanRepository) Create(ctx context.Context, plan *service.BundleP
 				SetDailyLimitUsd(gq.DailyLimitUSD).
 				SetWeeklyLimitUsd(gq.WeeklyLimitUSD).
 				SetMonthlyLimitUsd(gq.MonthlyLimitUSD).
-				SetDailyLimitCount(gq.DailyLimitCount).
-				SetWeeklyLimitCount(gq.WeeklyLimitCount).
-				SetMonthlyLimitCount(gq.MonthlyLimitCount)
+				SetDailyImageLimitCount(gq.DailyImageLimitCount).
+				SetWeeklyImageLimitCount(gq.WeeklyImageLimitCount).
+				SetMonthlyImageLimitCount(gq.MonthlyImageLimitCount)
 			builders = append(builders, b)
 		}
 		createdQuotas, err := client.BundlePlanGroupQuota.CreateBulk(builders...).Save(ctx)
@@ -134,9 +134,9 @@ func (r *bundlePlanRepository) Update(ctx context.Context, plan *service.BundleP
 				SetDailyLimitUsd(gq.DailyLimitUSD).
 				SetWeeklyLimitUsd(gq.WeeklyLimitUSD).
 				SetMonthlyLimitUsd(gq.MonthlyLimitUSD).
-				SetDailyLimitCount(gq.DailyLimitCount).
-				SetWeeklyLimitCount(gq.WeeklyLimitCount).
-				SetMonthlyLimitCount(gq.MonthlyLimitCount)
+				SetDailyImageLimitCount(gq.DailyImageLimitCount).
+				SetWeeklyImageLimitCount(gq.WeeklyImageLimitCount).
+				SetMonthlyImageLimitCount(gq.MonthlyImageLimitCount)
 			builders = append(builders, b)
 		}
 		createdQuotas, err := client.BundlePlanGroupQuota.CreateBulk(builders...).Save(ctx)
@@ -318,9 +318,9 @@ func bundlePlanGroupQuotaToService(src *dbent.BundlePlanGroupQuota) service.Bund
 		DailyLimitUSD:     src.DailyLimitUsd,
 		WeeklyLimitUSD:    src.WeeklyLimitUsd,
 		MonthlyLimitUSD:   src.MonthlyLimitUsd,
-		DailyLimitCount:   src.DailyLimitCount,
-		WeeklyLimitCount:  src.WeeklyLimitCount,
-		MonthlyLimitCount: src.MonthlyLimitCount,
+		DailyImageLimitCount:   src.DailyImageLimitCount,
+		WeeklyImageLimitCount:  src.WeeklyImageLimitCount,
+		MonthlyImageLimitCount: src.MonthlyImageLimitCount,
 	}
 }
 

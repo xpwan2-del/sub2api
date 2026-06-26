@@ -32,27 +32,27 @@ func (f *fakeUsageRepo) IncrementUsage(_ context.Context, _ int64, costUSD float
 	// 复刻 repo 的窗口语义：过期窗口 Set（重置为本次值），未过期窗口 Add（累加）。
 	if roll.Daily {
 		f.usage.DailyUsageUSD = costUSD
-		f.usage.DailyUsageCount = count
+		f.usage.DailyImageUsageCount = count
 		f.usage.DailyWindowStart = roll.NewDailyStart
 	} else {
 		f.usage.DailyUsageUSD += costUSD
-		f.usage.DailyUsageCount += count
+		f.usage.DailyImageUsageCount += count
 	}
 	if roll.Weekly {
 		f.usage.WeeklyUsageUSD = costUSD
-		f.usage.WeeklyUsageCount = count
+		f.usage.WeeklyImageUsageCount = count
 		f.usage.WeeklyWindowStart = roll.NewWeeklyStart
 	} else {
 		f.usage.WeeklyUsageUSD += costUSD
-		f.usage.WeeklyUsageCount += count
+		f.usage.WeeklyImageUsageCount += count
 	}
 	if roll.Monthly {
 		f.usage.MonthlyUsageUSD = costUSD
-		f.usage.MonthlyUsageCount = count
+		f.usage.MonthlyImageUsageCount = count
 		f.usage.MonthlyWindowStart = roll.NewMonthlyStart
 	} else {
 		f.usage.MonthlyUsageUSD += costUSD
-		f.usage.MonthlyUsageCount += count
+		f.usage.MonthlyImageUsageCount += count
 	}
 	return nil
 }
@@ -119,12 +119,12 @@ func TestCheckQuotaEligibility_CountLimitExceeded(t *testing.T) {
 	plan := &BundlePlan{
 		GroupQuotas: []BundlePlanGroupQuota{{
 			GroupID:           groupID,
-			MonthlyLimitCount: 10,
+			MonthlyImageLimitCount: 10,
 			MonthlyLimitUSD:   100,
 		}},
 	}
 	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
-	usage := &BundleSubscriptionUsage{MonthlyUsageCount: 10}
+	usage := &BundleSubscriptionUsage{MonthlyImageUsageCount: 10}
 
 	svc := newSvcWith(plan, sub, usage)
 	res, err := svc.CheckQuotaEligibility(context.Background(), 1, groupID)
@@ -144,12 +144,12 @@ func TestCheckQuotaEligibility_CountZeroNoLimit(t *testing.T) {
 	plan := &BundlePlan{
 		GroupQuotas: []BundlePlanGroupQuota{{
 			GroupID:           groupID,
-			MonthlyLimitCount: 0, // 0 = 不限次数
+			MonthlyImageLimitCount: 0, // 0 = 不限次数
 			MonthlyLimitUSD:   0, // 0 = 不限额度
 		}},
 	}
 	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
-	usage := &BundleSubscriptionUsage{MonthlyUsageCount: 999}
+	usage := &BundleSubscriptionUsage{MonthlyImageUsageCount: 999}
 
 	svc := newSvcWith(plan, sub, usage)
 	res, err := svc.CheckQuotaEligibility(context.Background(), 1, groupID)
@@ -175,10 +175,10 @@ func TestAccumulateUsage_RollsExpiredDailyWindow(t *testing.T) {
 		GroupID:            groupID,
 		DailyWindowStart:   now.Add(-25 * time.Hour), // 超过 24h → 日窗口过期
 		DailyUsageUSD:      1.0,
-		DailyUsageCount:    5,
+		DailyImageUsageCount:    5,
 		MonthlyWindowStart: now.Add(-1 * time.Hour), // 1h < 30d → 月窗口未过期
 		MonthlyUsageUSD:    10.0,
-		MonthlyUsageCount:  3,
+		MonthlyImageUsageCount:  3,
 	}
 	repo := &fakeUsageRepo{usage: usage}
 	svc := NewBundleUsageService(repo, &fakeSubRepo{sub: sub}, &fakePlanRepo{plan: plan})
@@ -187,15 +187,15 @@ func TestAccumulateUsage_RollsExpiredDailyWindow(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	// 日窗口过期 → 重置为本次值（而非累加历史值）。
-	if usage.DailyUsageCount != 2 {
-		t.Errorf("daily count: expired window should reset to 2, got %d", usage.DailyUsageCount)
+	if usage.DailyImageUsageCount != 2 {
+		t.Errorf("daily count: expired window should reset to 2, got %d", usage.DailyImageUsageCount)
 	}
 	if usage.DailyUsageUSD != 0.5 {
 		t.Errorf("daily usd: expired window should reset to 0.5, got %v", usage.DailyUsageUSD)
 	}
 	// 月窗口未过期 → 在原值上累加。
-	if usage.MonthlyUsageCount != 5 {
-		t.Errorf("monthly count: active window should accumulate 3+2=5, got %d", usage.MonthlyUsageCount)
+	if usage.MonthlyImageUsageCount != 5 {
+		t.Errorf("monthly count: active window should accumulate 3+2=5, got %d", usage.MonthlyImageUsageCount)
 	}
 	if usage.MonthlyUsageUSD != 10.5 {
 		t.Errorf("monthly usd: active window should accumulate 10+0.5=10.5, got %v", usage.MonthlyUsageUSD)

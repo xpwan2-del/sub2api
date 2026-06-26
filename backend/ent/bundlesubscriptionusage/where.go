@@ -99,19 +99,34 @@ func MonthlyWindowStart(v time.Time) predicate.BundleSubscriptionUsage {
 	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldMonthlyWindowStart, v))
 }
 
-// DailyUsageCount applies equality check predicate on the "daily_usage_count" field. It's identical to DailyUsageCountEQ.
-func DailyUsageCount(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldDailyUsageCount, v))
+// DailyImageUsageCount applies equality check predicate on the "daily_image_usage_count" field. It's identical to DailyImageUsageCountEQ.
+func DailyImageUsageCount(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldDailyImageUsageCount, v))
 }
 
-// WeeklyUsageCount applies equality check predicate on the "weekly_usage_count" field. It's identical to WeeklyUsageCountEQ.
-func WeeklyUsageCount(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldWeeklyUsageCount, v))
+// WeeklyImageUsageCount applies equality check predicate on the "weekly_image_usage_count" field. It's identical to WeeklyImageUsageCountEQ.
+func WeeklyImageUsageCount(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldWeeklyImageUsageCount, v))
 }
 
-// MonthlyUsageCount applies equality check predicate on the "monthly_usage_count" field. It's identical to MonthlyUsageCountEQ.
-func MonthlyUsageCount(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldMonthlyUsageCount, v))
+// MonthlyImageUsageCount applies equality check predicate on the "monthly_image_usage_count" field. It's identical to MonthlyImageUsageCountEQ.
+func MonthlyImageUsageCount(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldMonthlyImageUsageCount, v))
+}
+
+// DailyVideoUsageCount applies equality check predicate on the "daily_video_usage_count" field. It's identical to DailyVideoUsageCountEQ.
+func DailyVideoUsageCount(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldDailyVideoUsageCount, v))
+}
+
+// WeeklyVideoUsageCount applies equality check predicate on the "weekly_video_usage_count" field. It's identical to WeeklyVideoUsageCountEQ.
+func WeeklyVideoUsageCount(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldWeeklyVideoUsageCount, v))
+}
+
+// MonthlyVideoUsageCount applies equality check predicate on the "monthly_video_usage_count" field. It's identical to MonthlyVideoUsageCountEQ.
+func MonthlyVideoUsageCount(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldMonthlyVideoUsageCount, v))
 }
 
 // BundleSubscriptionIDEQ applies the EQ predicate on the "bundle_subscription_id" field.
@@ -499,124 +514,244 @@ func MonthlyWindowStartLTE(v time.Time) predicate.BundleSubscriptionUsage {
 	return predicate.BundleSubscriptionUsage(sql.FieldLTE(FieldMonthlyWindowStart, v))
 }
 
-// DailyUsageCountEQ applies the EQ predicate on the "daily_usage_count" field.
-func DailyUsageCountEQ(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldDailyUsageCount, v))
+// DailyImageUsageCountEQ applies the EQ predicate on the "daily_image_usage_count" field.
+func DailyImageUsageCountEQ(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldDailyImageUsageCount, v))
 }
 
-// DailyUsageCountNEQ applies the NEQ predicate on the "daily_usage_count" field.
-func DailyUsageCountNEQ(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldNEQ(FieldDailyUsageCount, v))
+// DailyImageUsageCountNEQ applies the NEQ predicate on the "daily_image_usage_count" field.
+func DailyImageUsageCountNEQ(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldNEQ(FieldDailyImageUsageCount, v))
 }
 
-// DailyUsageCountIn applies the In predicate on the "daily_usage_count" field.
-func DailyUsageCountIn(vs ...int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldIn(FieldDailyUsageCount, vs...))
+// DailyImageUsageCountIn applies the In predicate on the "daily_image_usage_count" field.
+func DailyImageUsageCountIn(vs ...int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldIn(FieldDailyImageUsageCount, vs...))
 }
 
-// DailyUsageCountNotIn applies the NotIn predicate on the "daily_usage_count" field.
-func DailyUsageCountNotIn(vs ...int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldNotIn(FieldDailyUsageCount, vs...))
+// DailyImageUsageCountNotIn applies the NotIn predicate on the "daily_image_usage_count" field.
+func DailyImageUsageCountNotIn(vs ...int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldNotIn(FieldDailyImageUsageCount, vs...))
 }
 
-// DailyUsageCountGT applies the GT predicate on the "daily_usage_count" field.
-func DailyUsageCountGT(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldGT(FieldDailyUsageCount, v))
+// DailyImageUsageCountGT applies the GT predicate on the "daily_image_usage_count" field.
+func DailyImageUsageCountGT(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldGT(FieldDailyImageUsageCount, v))
 }
 
-// DailyUsageCountGTE applies the GTE predicate on the "daily_usage_count" field.
-func DailyUsageCountGTE(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldGTE(FieldDailyUsageCount, v))
+// DailyImageUsageCountGTE applies the GTE predicate on the "daily_image_usage_count" field.
+func DailyImageUsageCountGTE(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldGTE(FieldDailyImageUsageCount, v))
 }
 
-// DailyUsageCountLT applies the LT predicate on the "daily_usage_count" field.
-func DailyUsageCountLT(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldLT(FieldDailyUsageCount, v))
+// DailyImageUsageCountLT applies the LT predicate on the "daily_image_usage_count" field.
+func DailyImageUsageCountLT(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldLT(FieldDailyImageUsageCount, v))
 }
 
-// DailyUsageCountLTE applies the LTE predicate on the "daily_usage_count" field.
-func DailyUsageCountLTE(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldLTE(FieldDailyUsageCount, v))
+// DailyImageUsageCountLTE applies the LTE predicate on the "daily_image_usage_count" field.
+func DailyImageUsageCountLTE(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldLTE(FieldDailyImageUsageCount, v))
 }
 
-// WeeklyUsageCountEQ applies the EQ predicate on the "weekly_usage_count" field.
-func WeeklyUsageCountEQ(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldWeeklyUsageCount, v))
+// WeeklyImageUsageCountEQ applies the EQ predicate on the "weekly_image_usage_count" field.
+func WeeklyImageUsageCountEQ(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldWeeklyImageUsageCount, v))
 }
 
-// WeeklyUsageCountNEQ applies the NEQ predicate on the "weekly_usage_count" field.
-func WeeklyUsageCountNEQ(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldNEQ(FieldWeeklyUsageCount, v))
+// WeeklyImageUsageCountNEQ applies the NEQ predicate on the "weekly_image_usage_count" field.
+func WeeklyImageUsageCountNEQ(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldNEQ(FieldWeeklyImageUsageCount, v))
 }
 
-// WeeklyUsageCountIn applies the In predicate on the "weekly_usage_count" field.
-func WeeklyUsageCountIn(vs ...int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldIn(FieldWeeklyUsageCount, vs...))
+// WeeklyImageUsageCountIn applies the In predicate on the "weekly_image_usage_count" field.
+func WeeklyImageUsageCountIn(vs ...int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldIn(FieldWeeklyImageUsageCount, vs...))
 }
 
-// WeeklyUsageCountNotIn applies the NotIn predicate on the "weekly_usage_count" field.
-func WeeklyUsageCountNotIn(vs ...int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldNotIn(FieldWeeklyUsageCount, vs...))
+// WeeklyImageUsageCountNotIn applies the NotIn predicate on the "weekly_image_usage_count" field.
+func WeeklyImageUsageCountNotIn(vs ...int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldNotIn(FieldWeeklyImageUsageCount, vs...))
 }
 
-// WeeklyUsageCountGT applies the GT predicate on the "weekly_usage_count" field.
-func WeeklyUsageCountGT(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldGT(FieldWeeklyUsageCount, v))
+// WeeklyImageUsageCountGT applies the GT predicate on the "weekly_image_usage_count" field.
+func WeeklyImageUsageCountGT(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldGT(FieldWeeklyImageUsageCount, v))
 }
 
-// WeeklyUsageCountGTE applies the GTE predicate on the "weekly_usage_count" field.
-func WeeklyUsageCountGTE(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldGTE(FieldWeeklyUsageCount, v))
+// WeeklyImageUsageCountGTE applies the GTE predicate on the "weekly_image_usage_count" field.
+func WeeklyImageUsageCountGTE(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldGTE(FieldWeeklyImageUsageCount, v))
 }
 
-// WeeklyUsageCountLT applies the LT predicate on the "weekly_usage_count" field.
-func WeeklyUsageCountLT(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldLT(FieldWeeklyUsageCount, v))
+// WeeklyImageUsageCountLT applies the LT predicate on the "weekly_image_usage_count" field.
+func WeeklyImageUsageCountLT(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldLT(FieldWeeklyImageUsageCount, v))
 }
 
-// WeeklyUsageCountLTE applies the LTE predicate on the "weekly_usage_count" field.
-func WeeklyUsageCountLTE(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldLTE(FieldWeeklyUsageCount, v))
+// WeeklyImageUsageCountLTE applies the LTE predicate on the "weekly_image_usage_count" field.
+func WeeklyImageUsageCountLTE(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldLTE(FieldWeeklyImageUsageCount, v))
 }
 
-// MonthlyUsageCountEQ applies the EQ predicate on the "monthly_usage_count" field.
-func MonthlyUsageCountEQ(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldMonthlyUsageCount, v))
+// MonthlyImageUsageCountEQ applies the EQ predicate on the "monthly_image_usage_count" field.
+func MonthlyImageUsageCountEQ(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldMonthlyImageUsageCount, v))
 }
 
-// MonthlyUsageCountNEQ applies the NEQ predicate on the "monthly_usage_count" field.
-func MonthlyUsageCountNEQ(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldNEQ(FieldMonthlyUsageCount, v))
+// MonthlyImageUsageCountNEQ applies the NEQ predicate on the "monthly_image_usage_count" field.
+func MonthlyImageUsageCountNEQ(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldNEQ(FieldMonthlyImageUsageCount, v))
 }
 
-// MonthlyUsageCountIn applies the In predicate on the "monthly_usage_count" field.
-func MonthlyUsageCountIn(vs ...int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldIn(FieldMonthlyUsageCount, vs...))
+// MonthlyImageUsageCountIn applies the In predicate on the "monthly_image_usage_count" field.
+func MonthlyImageUsageCountIn(vs ...int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldIn(FieldMonthlyImageUsageCount, vs...))
 }
 
-// MonthlyUsageCountNotIn applies the NotIn predicate on the "monthly_usage_count" field.
-func MonthlyUsageCountNotIn(vs ...int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldNotIn(FieldMonthlyUsageCount, vs...))
+// MonthlyImageUsageCountNotIn applies the NotIn predicate on the "monthly_image_usage_count" field.
+func MonthlyImageUsageCountNotIn(vs ...int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldNotIn(FieldMonthlyImageUsageCount, vs...))
 }
 
-// MonthlyUsageCountGT applies the GT predicate on the "monthly_usage_count" field.
-func MonthlyUsageCountGT(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldGT(FieldMonthlyUsageCount, v))
+// MonthlyImageUsageCountGT applies the GT predicate on the "monthly_image_usage_count" field.
+func MonthlyImageUsageCountGT(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldGT(FieldMonthlyImageUsageCount, v))
 }
 
-// MonthlyUsageCountGTE applies the GTE predicate on the "monthly_usage_count" field.
-func MonthlyUsageCountGTE(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldGTE(FieldMonthlyUsageCount, v))
+// MonthlyImageUsageCountGTE applies the GTE predicate on the "monthly_image_usage_count" field.
+func MonthlyImageUsageCountGTE(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldGTE(FieldMonthlyImageUsageCount, v))
 }
 
-// MonthlyUsageCountLT applies the LT predicate on the "monthly_usage_count" field.
-func MonthlyUsageCountLT(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldLT(FieldMonthlyUsageCount, v))
+// MonthlyImageUsageCountLT applies the LT predicate on the "monthly_image_usage_count" field.
+func MonthlyImageUsageCountLT(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldLT(FieldMonthlyImageUsageCount, v))
 }
 
-// MonthlyUsageCountLTE applies the LTE predicate on the "monthly_usage_count" field.
-func MonthlyUsageCountLTE(v int) predicate.BundleSubscriptionUsage {
-	return predicate.BundleSubscriptionUsage(sql.FieldLTE(FieldMonthlyUsageCount, v))
+// MonthlyImageUsageCountLTE applies the LTE predicate on the "monthly_image_usage_count" field.
+func MonthlyImageUsageCountLTE(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldLTE(FieldMonthlyImageUsageCount, v))
+}
+
+// DailyVideoUsageCountEQ applies the EQ predicate on the "daily_video_usage_count" field.
+func DailyVideoUsageCountEQ(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldDailyVideoUsageCount, v))
+}
+
+// DailyVideoUsageCountNEQ applies the NEQ predicate on the "daily_video_usage_count" field.
+func DailyVideoUsageCountNEQ(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldNEQ(FieldDailyVideoUsageCount, v))
+}
+
+// DailyVideoUsageCountIn applies the In predicate on the "daily_video_usage_count" field.
+func DailyVideoUsageCountIn(vs ...int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldIn(FieldDailyVideoUsageCount, vs...))
+}
+
+// DailyVideoUsageCountNotIn applies the NotIn predicate on the "daily_video_usage_count" field.
+func DailyVideoUsageCountNotIn(vs ...int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldNotIn(FieldDailyVideoUsageCount, vs...))
+}
+
+// DailyVideoUsageCountGT applies the GT predicate on the "daily_video_usage_count" field.
+func DailyVideoUsageCountGT(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldGT(FieldDailyVideoUsageCount, v))
+}
+
+// DailyVideoUsageCountGTE applies the GTE predicate on the "daily_video_usage_count" field.
+func DailyVideoUsageCountGTE(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldGTE(FieldDailyVideoUsageCount, v))
+}
+
+// DailyVideoUsageCountLT applies the LT predicate on the "daily_video_usage_count" field.
+func DailyVideoUsageCountLT(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldLT(FieldDailyVideoUsageCount, v))
+}
+
+// DailyVideoUsageCountLTE applies the LTE predicate on the "daily_video_usage_count" field.
+func DailyVideoUsageCountLTE(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldLTE(FieldDailyVideoUsageCount, v))
+}
+
+// WeeklyVideoUsageCountEQ applies the EQ predicate on the "weekly_video_usage_count" field.
+func WeeklyVideoUsageCountEQ(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldWeeklyVideoUsageCount, v))
+}
+
+// WeeklyVideoUsageCountNEQ applies the NEQ predicate on the "weekly_video_usage_count" field.
+func WeeklyVideoUsageCountNEQ(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldNEQ(FieldWeeklyVideoUsageCount, v))
+}
+
+// WeeklyVideoUsageCountIn applies the In predicate on the "weekly_video_usage_count" field.
+func WeeklyVideoUsageCountIn(vs ...int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldIn(FieldWeeklyVideoUsageCount, vs...))
+}
+
+// WeeklyVideoUsageCountNotIn applies the NotIn predicate on the "weekly_video_usage_count" field.
+func WeeklyVideoUsageCountNotIn(vs ...int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldNotIn(FieldWeeklyVideoUsageCount, vs...))
+}
+
+// WeeklyVideoUsageCountGT applies the GT predicate on the "weekly_video_usage_count" field.
+func WeeklyVideoUsageCountGT(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldGT(FieldWeeklyVideoUsageCount, v))
+}
+
+// WeeklyVideoUsageCountGTE applies the GTE predicate on the "weekly_video_usage_count" field.
+func WeeklyVideoUsageCountGTE(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldGTE(FieldWeeklyVideoUsageCount, v))
+}
+
+// WeeklyVideoUsageCountLT applies the LT predicate on the "weekly_video_usage_count" field.
+func WeeklyVideoUsageCountLT(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldLT(FieldWeeklyVideoUsageCount, v))
+}
+
+// WeeklyVideoUsageCountLTE applies the LTE predicate on the "weekly_video_usage_count" field.
+func WeeklyVideoUsageCountLTE(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldLTE(FieldWeeklyVideoUsageCount, v))
+}
+
+// MonthlyVideoUsageCountEQ applies the EQ predicate on the "monthly_video_usage_count" field.
+func MonthlyVideoUsageCountEQ(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldEQ(FieldMonthlyVideoUsageCount, v))
+}
+
+// MonthlyVideoUsageCountNEQ applies the NEQ predicate on the "monthly_video_usage_count" field.
+func MonthlyVideoUsageCountNEQ(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldNEQ(FieldMonthlyVideoUsageCount, v))
+}
+
+// MonthlyVideoUsageCountIn applies the In predicate on the "monthly_video_usage_count" field.
+func MonthlyVideoUsageCountIn(vs ...int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldIn(FieldMonthlyVideoUsageCount, vs...))
+}
+
+// MonthlyVideoUsageCountNotIn applies the NotIn predicate on the "monthly_video_usage_count" field.
+func MonthlyVideoUsageCountNotIn(vs ...int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldNotIn(FieldMonthlyVideoUsageCount, vs...))
+}
+
+// MonthlyVideoUsageCountGT applies the GT predicate on the "monthly_video_usage_count" field.
+func MonthlyVideoUsageCountGT(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldGT(FieldMonthlyVideoUsageCount, v))
+}
+
+// MonthlyVideoUsageCountGTE applies the GTE predicate on the "monthly_video_usage_count" field.
+func MonthlyVideoUsageCountGTE(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldGTE(FieldMonthlyVideoUsageCount, v))
+}
+
+// MonthlyVideoUsageCountLT applies the LT predicate on the "monthly_video_usage_count" field.
+func MonthlyVideoUsageCountLT(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldLT(FieldMonthlyVideoUsageCount, v))
+}
+
+// MonthlyVideoUsageCountLTE applies the LTE predicate on the "monthly_video_usage_count" field.
+func MonthlyVideoUsageCountLTE(v int) predicate.BundleSubscriptionUsage {
+	return predicate.BundleSubscriptionUsage(sql.FieldLTE(FieldMonthlyVideoUsageCount, v))
 }
 
 // And groups predicates with the AND operator between them.
