@@ -188,46 +188,88 @@
                       ${{ item.monthly_usage_usd.toFixed(2) }} / ${{ item.monthly_limit_usd.toFixed(2) }}
                     </span>
                   </div>
-                  <!-- Daily Count -->
+                  <!-- Daily Image Count -->
                   <div class="flex items-center gap-2 text-xs">
-                    <span class="w-12 text-gray-500 dark:text-gray-400">{{ t('bundles.admin.dailyCount') }}</span>
+                    <span class="w-20 text-gray-500 dark:text-gray-400">{{ t('bundles.admin.dailyCount') }} ({{ t('bundles.admin.imageUnit') }})</span>
                     <div class="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-dark-600">
                       <div
                         class="h-1.5 rounded-full transition-all"
-                        :class="getProgressClass(item.daily_usage_count, item.daily_limit_count)"
-                        :style="{ width: getProgressWidth(item.daily_usage_count, item.daily_limit_count) }"
+                        :class="getProgressClass(item.daily_image_usage_count, item.daily_image_limit_count)"
+                        :style="{ width: getProgressWidth(item.daily_image_usage_count, item.daily_image_limit_count) }"
                       ></div>
                     </div>
                     <span class="w-28 text-right text-gray-600 dark:text-gray-300">
-                      {{ item.daily_usage_count }} / {{ item.daily_limit_count || '∞' }}
+                      {{ item.daily_image_usage_count }} / {{ item.daily_image_limit_count || '∞' }}
                     </span>
                   </div>
-                  <!-- Weekly Count -->
+                  <!-- Daily Video Count -->
                   <div class="flex items-center gap-2 text-xs">
-                    <span class="w-12 text-gray-500 dark:text-gray-400">{{ t('bundles.admin.weeklyCount') }}</span>
+                    <span class="w-20 text-gray-500 dark:text-gray-400">{{ t('bundles.admin.dailyCount') }} ({{ t('bundles.admin.videoUnit') }})</span>
                     <div class="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-dark-600">
                       <div
                         class="h-1.5 rounded-full transition-all"
-                        :class="getProgressClass(item.weekly_usage_count, item.weekly_limit_count)"
-                        :style="{ width: getProgressWidth(item.weekly_usage_count, item.weekly_limit_count) }"
+                        :class="getProgressClass(item.daily_video_usage_count, item.daily_video_limit_count)"
+                        :style="{ width: getProgressWidth(item.daily_video_usage_count, item.daily_video_limit_count) }"
                       ></div>
                     </div>
                     <span class="w-28 text-right text-gray-600 dark:text-gray-300">
-                      {{ item.weekly_usage_count }} / {{ item.weekly_limit_count || '∞' }}
+                      {{ item.daily_video_usage_count }} / {{ item.daily_video_limit_count || '∞' }}
                     </span>
                   </div>
-                  <!-- Monthly Count -->
+                  <!-- Weekly Image Count -->
                   <div class="flex items-center gap-2 text-xs">
-                    <span class="w-12 text-gray-500 dark:text-gray-400">{{ t('bundles.admin.monthlyCount') }}</span>
+                    <span class="w-20 text-gray-500 dark:text-gray-400">{{ t('bundles.admin.weeklyCount') }} ({{ t('bundles.admin.imageUnit') }})</span>
                     <div class="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-dark-600">
                       <div
                         class="h-1.5 rounded-full transition-all"
-                        :class="getProgressClass(item.monthly_usage_count, item.monthly_limit_count)"
-                        :style="{ width: getProgressWidth(item.monthly_usage_count, item.monthly_limit_count) }"
+                        :class="getProgressClass(item.weekly_image_usage_count, item.weekly_image_limit_count)"
+                        :style="{ width: getProgressWidth(item.weekly_image_usage_count, item.weekly_image_limit_count) }"
                       ></div>
                     </div>
                     <span class="w-28 text-right text-gray-600 dark:text-gray-300">
-                      {{ item.monthly_usage_count }} / {{ item.monthly_limit_count || '∞' }}
+                      {{ item.weekly_image_usage_count }} / {{ item.weekly_image_limit_count || '∞' }}
+                    </span>
+                  </div>
+                  <!-- Weekly Video Count -->
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="w-20 text-gray-500 dark:text-gray-400">{{ t('bundles.admin.weeklyCount') }} ({{ t('bundles.admin.videoUnit') }})</span>
+                    <div class="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-dark-600">
+                      <div
+                        class="h-1.5 rounded-full transition-all"
+                        :class="getProgressClass(item.weekly_video_usage_count, item.weekly_video_limit_count)"
+                        :style="{ width: getProgressWidth(item.weekly_video_usage_count, item.weekly_video_limit_count) }"
+                      ></div>
+                    </div>
+                    <span class="w-28 text-right text-gray-600 dark:text-gray-300">
+                      {{ item.weekly_video_usage_count }} / {{ item.weekly_video_limit_count || '∞' }}
+                    </span>
+                  </div>
+                  <!-- Monthly Image Count -->
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="w-20 text-gray-500 dark:text-gray-400">{{ t('bundles.admin.monthlyCount') }} ({{ t('bundles.admin.imageUnit') }})</span>
+                    <div class="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-dark-600">
+                      <div
+                        class="h-1.5 rounded-full transition-all"
+                        :class="getProgressClass(item.monthly_image_usage_count, item.monthly_image_limit_count)"
+                        :style="{ width: getProgressWidth(item.monthly_image_usage_count, item.monthly_image_limit_count) }"
+                      ></div>
+                    </div>
+                    <span class="w-28 text-right text-gray-600 dark:text-gray-300">
+                      {{ item.monthly_image_usage_count }} / {{ item.monthly_image_limit_count || '∞' }}
+                    </span>
+                  </div>
+                  <!-- Monthly Video Count -->
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="w-20 text-gray-500 dark:text-gray-400">{{ t('bundles.admin.monthlyCount') }} ({{ t('bundles.admin.videoUnit') }})</span>
+                    <div class="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-dark-600">
+                      <div
+                        class="h-1.5 rounded-full transition-all"
+                        :class="getProgressClass(item.monthly_video_usage_count, item.monthly_video_limit_count)"
+                        :style="{ width: getProgressWidth(item.monthly_video_usage_count, item.monthly_video_limit_count) }"
+                      ></div>
+                    </div>
+                    <span class="w-28 text-right text-gray-600 dark:text-gray-300">
+                      {{ item.monthly_video_usage_count }} / {{ item.monthly_video_limit_count || '∞' }}
                     </span>
                   </div>
                 </div>

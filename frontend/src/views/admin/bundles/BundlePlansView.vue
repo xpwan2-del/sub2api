@@ -209,23 +209,43 @@
                 </button>
               </div>
             </div>
-            <!-- Daily / Weekly / Monthly Count Limits (次) -->
+            <!-- Daily / Weekly / Monthly Image Count Limits (图片 张) -->
             <div class="mt-2 grid grid-cols-12 gap-3 border-t border-gray-100 pt-2 dark:border-dark-700">
               <div class="col-span-3 text-xs text-gray-500 dark:text-gray-400">
-                {{ t('bundles.admin.countLimitHint') }}
+                {{ t('bundles.admin.imageCountLimitHint') }}
               </div>
               <div class="col-span-4"></div>
               <div class="col-span-1">
                 <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.daily') }} ({{ t('bundles.admin.countUnit') }})</label>
-                <input v-model.number="quota.daily_limit_count" type="number" step="1" min="0" class="input mt-1" :placeholder="t('bundles.admin.countPlaceholder')" />
+                <input v-model.number="quota.daily_image_limit_count" type="number" step="1" min="0" class="input mt-1" :placeholder="t('bundles.admin.countPlaceholder')" />
               </div>
               <div class="col-span-1">
                 <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.weekly') }} ({{ t('bundles.admin.countUnit') }})</label>
-                <input v-model.number="quota.weekly_limit_count" type="number" step="1" min="0" class="input mt-1" :placeholder="t('bundles.admin.countPlaceholder')" />
+                <input v-model.number="quota.weekly_image_limit_count" type="number" step="1" min="0" class="input mt-1" :placeholder="t('bundles.admin.countPlaceholder')" />
               </div>
               <div class="col-span-1">
                 <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.monthly') }} ({{ t('bundles.admin.countUnit') }})</label>
-                <input v-model.number="quota.monthly_limit_count" type="number" step="1" min="0" class="input mt-1" :placeholder="t('bundles.admin.countPlaceholder')" />
+                <input v-model.number="quota.monthly_image_limit_count" type="number" step="1" min="0" class="input mt-1" :placeholder="t('bundles.admin.countPlaceholder')" />
+              </div>
+              <div class="col-span-2"></div>
+            </div>
+            <!-- Daily / Weekly / Monthly Video Count Limits (视频 段) -->
+            <div class="mt-2 grid grid-cols-12 gap-3 border-t border-gray-100 pt-2 dark:border-dark-700">
+              <div class="col-span-3 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('bundles.admin.videoCountLimitHint') }}
+              </div>
+              <div class="col-span-4"></div>
+              <div class="col-span-1">
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.daily') }} ({{ t('bundles.admin.countUnit') }})</label>
+                <input v-model.number="quota.daily_video_limit_count" type="number" step="1" min="0" class="input mt-1" :placeholder="t('bundles.admin.countPlaceholder')" />
+              </div>
+              <div class="col-span-1">
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.weekly') }} ({{ t('bundles.admin.countUnit') }})</label>
+                <input v-model.number="quota.weekly_video_limit_count" type="number" step="1" min="0" class="input mt-1" :placeholder="t('bundles.admin.countPlaceholder')" />
+              </div>
+              <div class="col-span-1">
+                <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.monthly') }} ({{ t('bundles.admin.countUnit') }})</label>
+                <input v-model.number="quota.monthly_video_limit_count" type="number" step="1" min="0" class="input mt-1" :placeholder="t('bundles.admin.countPlaceholder')" />
               </div>
               <div class="col-span-2"></div>
             </div>
@@ -440,9 +460,12 @@ function openPlanEdit(plan: BundlePlan | null) {
         daily_limit_usd: q.daily_limit_usd || 0,
         weekly_limit_usd: q.weekly_limit_usd || 0,
         monthly_limit_usd: q.monthly_limit_usd || 0,
-        daily_limit_count: q.daily_limit_count || 0,
-        weekly_limit_count: q.weekly_limit_count || 0,
-        monthly_limit_count: q.monthly_limit_count || 0,
+        daily_image_limit_count: q.daily_image_limit_count || 0,
+        weekly_image_limit_count: q.weekly_image_limit_count || 0,
+        monthly_image_limit_count: q.monthly_image_limit_count || 0,
+        daily_video_limit_count: q.daily_video_limit_count || 0,
+        weekly_video_limit_count: q.weekly_video_limit_count || 0,
+        monthly_video_limit_count: q.monthly_video_limit_count || 0,
       })),
     })
     featuresText.value = (plan.features || []).join('\n')
@@ -485,9 +508,12 @@ function confirmAddGroupQuota() {
     daily_limit_usd: 0,
     weekly_limit_usd: 0,
     monthly_limit_usd: 0,
-    daily_limit_count: 0,
-    weekly_limit_count: 0,
-    monthly_limit_count: 0,
+    daily_image_limit_count: 0,
+    weekly_image_limit_count: 0,
+    monthly_image_limit_count: 0,
+    daily_video_limit_count: 0,
+    weekly_video_limit_count: 0,
+    monthly_video_limit_count: 0,
   })
   showGroupSelector.value = false
   selectedNewGroupId.value = null
