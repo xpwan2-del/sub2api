@@ -137,6 +137,7 @@ docs/*
 !docs/OPS_MODEL_STATUS_PLAN.md
 !docs/CANVAS_INTEGRATION_PLAN.md
 !docs/SECURITY_AUDIT_REPORT.md
+!docs/IMAGE_VIDEO_SPLIT_QUOTA_DESIGN.md
 !docs/legal/
 !docs/legal/*.md
 .serena/
