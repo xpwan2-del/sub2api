@@ -1003,4 +1003,12 @@ Expected: 后端无 `DailyLimitCount`/`DailyUsageCount`(应全为 `*Image*`);`Ou
 
 **3. Type consistency:** `UsageModality`/`ModalityImage|Video|Any` 在 Task 4 定义、Task 4 中间件使用,一致。`AccumulateUsage(..., imageCount, videoCount)` 在 Task 2 定义、Task 3 调用,一致。`postUsageBillingParams.ImageCount/VideoCount` 在 Task 3 定义并使用,一致。ent 字段名 `*ImageLimitCount`/`*VideoLimitCount`/`*ImageUsageCount`/`*VideoUsageCount` 全程一致。
 
-**依赖顺序:** Task 1 → (Task 2 + Task 3 连续) → Task 4 → Task 5 → Task 6 → Task 7。Task 6(前端)可与后端并行。
+**执行单元(subagent dispatch):** 因 `AccumulateUsage` 签名变更的编译依赖,Task 2 与 Task 3 必须由同一 implementer 连续完成、在 Task 3 Step 6 合并 commit、task review 基于该合并 commit 一次。dispatch 单元:
+- **Unit A = Task 1**(数据模型重命名,多文件 + 编译驱动)
+- **Unit B = Task 2 + Task 3**(计费链路拆分,合并 commit)
+- **Unit C = Task 4**(校验 + modality)
+- **Unit D = Task 5**(快照 + UsageLog)
+- **Unit E = Task 6**(前端)
+- **Unit F = Task 7**(全量验证)
+
+顺序: A → B → C → D → E → F。
