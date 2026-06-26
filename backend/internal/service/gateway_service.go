@@ -8858,8 +8858,9 @@ type postUsageBillingParams struct {
 	AccountRateMultiplier float64
 	APIKeyService         APIKeyQuotaUpdater
 	Platform              string // 来自 APIKey 关联 Group 的平台标识
-	// OutputCount 媒体产出数（图片张数+视频段数），用于套餐按次累加。
-	OutputCount int
+	// ImageCount/VideoCount 媒体产出数，用于套餐按次累加（图片张数 / 视频段数）。
+	ImageCount int
+	VideoCount int
 }
 
 // PlatformFromAPIKey 从 APIKey 关联的 Group 推导 platform 名称。
@@ -8899,14 +8900,14 @@ func (p *postUsageBillingParams) shouldUpdateAccountQuota() bool {
 }
 
 // shouldAccumulateBundleUsage 判断是否需要累加套餐用量（bundle subsystem）。
-// 按次计费与成本解耦：只要有成本（ActualCost>0）或媒体产出（OutputCount>0）即累加，
+// 按次计费与成本解耦：只要有成本（ActualCost>0）或媒体产出（ImageCount/VideoCount>0）即累加，
 // 否则 ActualCost=0 的免费/低价媒体（如 0 定价图片/视频）不会计数 → 次数限额失效。
 func (p *postUsageBillingParams) shouldAccumulateBundleUsage() bool {
 	if p.Cost == nil || p.Subscription == nil {
 		return false
 	}
 	return p.Subscription.BundleSubscriptionID != nil && *p.Subscription.BundleSubscriptionID > 0 &&
-		p.Subscription.GroupID > 0 && (p.Cost.ActualCost > 0 || p.OutputCount > 0)
+		p.Subscription.GroupID > 0 && (p.Cost.ActualCost > 0 || p.ImageCount > 0 || p.VideoCount > 0)
 }
 
 // postUsageBilling is the legacy fallback billing path used when the unified
@@ -8929,7 +8930,7 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 		// Bundle usage accumulation: also track usage in the bundle subsystem
 		// when this subscription is bridged from a bundle plan.
 		if deps.bundleUsageService != nil && p.shouldAccumulateBundleUsage() {
-			if err := deps.bundleUsageService.AccumulateUsage(billingCtx, *p.Subscription.BundleSubscriptionID, p.Subscription.GroupID, cost.ActualCost, p.OutputCount); err != nil {
+			if err := deps.bundleUsageService.AccumulateUsage(billingCtx, *p.Subscription.BundleSubscriptionID, p.Subscription.GroupID, cost.ActualCost, p.ImageCount, p.VideoCount); err != nil {
 				slog.Error("accumulate bundle usage failed", "bundle_subscription_id", *p.Subscription.BundleSubscriptionID, "group_id", p.Subscription.GroupID, "error", err)
 			}
 		}
@@ -9121,7 +9122,7 @@ func finalizePostUsageBilling(ctx context.Context, p *postUsageBillingParams, de
 		// Mirrors the logic in postUsageBilling (legacy path) so that the
 		// production repo.Apply() path also accumulates bundle usage.
 		if deps.bundleUsageService != nil && p.shouldAccumulateBundleUsage() {
-			if err := deps.bundleUsageService.AccumulateUsage(ctx, *p.Subscription.BundleSubscriptionID, p.Subscription.GroupID, p.Cost.ActualCost, p.OutputCount); err != nil {
+			if err := deps.bundleUsageService.AccumulateUsage(ctx, *p.Subscription.BundleSubscriptionID, p.Subscription.GroupID, p.Cost.ActualCost, p.ImageCount, p.VideoCount); err != nil {
 				slog.Error("accumulate bundle usage failed (finalize)", "bundle_subscription_id", *p.Subscription.BundleSubscriptionID, "group_id", p.Subscription.GroupID, "error", err)
 			}
 		}
@@ -9524,9 +9525,10 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 		AccountRateMultiplier: accountRateMultiplier,
 		APIKeyService:         input.APIKeyService,
 		Platform:              quotaPlatform,
-		// 媒体产出数 = 图片张数 + 视频段数。视频通常经 OpenAI 网关（/videos → ForwardVideos），
-		// 通用网关亦支持：视频转发层（Veo 等走 Gemini 路径时）负责填充 ForwardResult.VideoCount。
-		OutputCount: result.ImageCount + result.VideoCount,
+		// 媒体产出数:图片张数 + 视频段数分开传递。视频通常经 OpenAI 网关(/videos),
+		// 通用网关亦支持:视频转发层(Veo 等走 Gemini 路径时)填充 ForwardResult.VideoCount。
+		ImageCount: result.ImageCount,
+		VideoCount: result.VideoCount,
 	}, s.billingDeps(), s.usageBillingRepo)
 
 	if billingErr != nil {

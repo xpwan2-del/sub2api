@@ -66,11 +66,12 @@ func BundleResolvedQuotaFromContext(ctx context.Context) *BundlePlanGroupQuota {
 	return nil
 }
 
-// AccumulateUsage 累加套餐订阅在指定渠道组上的用量（USD + 次数）
-// AccumulateUsage increments the usage counters (USD and request count) for a
-// bundle subscription + group. count is the number of billable media outputs
-// (e.g. generated images / video segments) produced by this request.
-func (s *BundleUsageService) AccumulateUsage(ctx context.Context, bundleSubID, groupID int64, costUSD float64, count int) error {
+// AccumulateUsage 累加套餐订阅在指定渠道组上的用量（USD + 图片/视频次数）
+// AccumulateUsage increments the usage counters (USD, image count, video count)
+// for a bundle subscription + group. imageCount/videoCount are the number of
+// billable media outputs (generated images / video segments) produced by this
+// request, tracked independently so image/video limits apply separately.
+func (s *BundleUsageService) AccumulateUsage(ctx context.Context, bundleSubID, groupID int64, costUSD float64, imageCount, videoCount int) error {
 	// 定位 usage 的 ModelPattern：优先复用路由中间件已解析的 quota（ctx 携带，省去重复 load plan），
 	// 未注入（测试 / 直接调用）时 fallback 到 resolveMatchingQuota。模型级套餐必须用正确 pattern 才能命中。
 	pattern := ""
@@ -104,7 +105,7 @@ func (s *BundleUsageService) AccumulateUsage(ctx context.Context, bundleSubID, g
 		NewWeeklyStart:  now,
 		NewMonthlyStart: now,
 	}
-	if err := s.usageRepo.IncrementUsage(ctx, usage.ID, costUSD, count, roll); err != nil {
+	if err := s.usageRepo.IncrementUsage(ctx, usage.ID, costUSD, imageCount, videoCount, roll); err != nil {
 		return fmt.Errorf("increment bundle usage: %w", err)
 	}
 	return nil

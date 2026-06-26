@@ -24,35 +24,42 @@ func (f *fakeUsageRepo) GetBySubscriptionAndGroup(_ context.Context, _, _ int64,
 	return f.usage, nil
 }
 func (f *fakeUsageRepo) Create(_ context.Context, _ *BundleSubscriptionUsage) error { return nil }
-func (f *fakeUsageRepo) IncrementUsage(_ context.Context, _ int64, costUSD float64, count int, roll WindowRoll) error {
+func (f *fakeUsageRepo) IncrementUsage(_ context.Context, _ int64, costUSD float64, imageCount, videoCount int, roll WindowRoll) error {
 	f.lastRoll = roll
 	if f.usage == nil {
 		return nil
 	}
 	// 复刻 repo 的窗口语义：过期窗口 Set（重置为本次值），未过期窗口 Add（累加）。
+	// 图片/视频两个维度对称处理。
 	if roll.Daily {
 		f.usage.DailyUsageUSD = costUSD
-		f.usage.DailyImageUsageCount = count
+		f.usage.DailyImageUsageCount = imageCount
+		f.usage.DailyVideoUsageCount = videoCount
 		f.usage.DailyWindowStart = roll.NewDailyStart
 	} else {
 		f.usage.DailyUsageUSD += costUSD
-		f.usage.DailyImageUsageCount += count
+		f.usage.DailyImageUsageCount += imageCount
+		f.usage.DailyVideoUsageCount += videoCount
 	}
 	if roll.Weekly {
 		f.usage.WeeklyUsageUSD = costUSD
-		f.usage.WeeklyImageUsageCount = count
+		f.usage.WeeklyImageUsageCount = imageCount
+		f.usage.WeeklyVideoUsageCount = videoCount
 		f.usage.WeeklyWindowStart = roll.NewWeeklyStart
 	} else {
 		f.usage.WeeklyUsageUSD += costUSD
-		f.usage.WeeklyImageUsageCount += count
+		f.usage.WeeklyImageUsageCount += imageCount
+		f.usage.WeeklyVideoUsageCount += videoCount
 	}
 	if roll.Monthly {
 		f.usage.MonthlyUsageUSD = costUSD
-		f.usage.MonthlyImageUsageCount = count
+		f.usage.MonthlyImageUsageCount = imageCount
+		f.usage.MonthlyVideoUsageCount = videoCount
 		f.usage.MonthlyWindowStart = roll.NewMonthlyStart
 	} else {
 		f.usage.MonthlyUsageUSD += costUSD
-		f.usage.MonthlyImageUsageCount += count
+		f.usage.MonthlyImageUsageCount += imageCount
+		f.usage.MonthlyVideoUsageCount += videoCount
 	}
 	return nil
 }
@@ -183,7 +190,7 @@ func TestAccumulateUsage_RollsExpiredDailyWindow(t *testing.T) {
 	repo := &fakeUsageRepo{usage: usage}
 	svc := NewBundleUsageService(repo, &fakeSubRepo{sub: sub}, &fakePlanRepo{plan: plan})
 
-	if err := svc.AccumulateUsage(context.Background(), 1, groupID, 0.5, 2); err != nil {
+	if err := svc.AccumulateUsage(context.Background(), 1, groupID, 0.5, 2, 0); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	// 日窗口过期 → 重置为本次值（而非累加历史值）。
@@ -223,7 +230,7 @@ func TestAccumulateUsage_UsesModelPatternToLocateUsage(t *testing.T) {
 	repo := &fakeUsageRepo{usage: usage}
 	svc := NewBundleUsageService(repo, &fakeSubRepo{sub: sub}, &fakePlanRepo{plan: plan})
 
-	if err := svc.AccumulateUsage(context.Background(), 1, groupID, 0.5, 2); err != nil {
+	if err := svc.AccumulateUsage(context.Background(), 1, groupID, 0.5, 2, 0); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if repo.lastPattern != "gpt-image*" {
@@ -246,7 +253,7 @@ func TestAccumulateUsage_ReusesResolvedQuotaFromContext(t *testing.T) {
 	ctxQuota := &BundlePlanGroupQuota{GroupID: groupID, ModelPattern: "gpt-image*"}
 	ctx := context.WithValue(context.Background(), ctxkey.BundleResolvedQuota, ctxQuota)
 
-	if err := svc.AccumulateUsage(ctx, 1, groupID, 0.5, 2); err != nil {
+	if err := svc.AccumulateUsage(ctx, 1, groupID, 0.5, 2, 0); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if planRepo.getByIDCalls != 0 {
@@ -269,7 +276,7 @@ func TestAccumulateUsage_FallsBackToPlanLoadWithoutCtxQuota(t *testing.T) {
 	svc := NewBundleUsageService(repo, &fakeSubRepo{sub: sub}, planRepo)
 
 	// 无 ctx quota → fallback 解析 plan。
-	if err := svc.AccumulateUsage(context.Background(), 1, groupID, 0.5, 2); err != nil {
+	if err := svc.AccumulateUsage(context.Background(), 1, groupID, 0.5, 2, 0); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if planRepo.getByIDCalls != 1 {
@@ -277,5 +284,39 @@ func TestAccumulateUsage_FallsBackToPlanLoadWithoutCtxQuota(t *testing.T) {
 	}
 	if repo.lastPattern != "gpt-image*" {
 		t.Errorf("pattern should come from loaded plan, got %q", repo.lastPattern)
+	}
+}
+
+// TestAccumulateUsage_SplitsImageAndVideoCounts 验证按次累加将图片/视频分别写入各自的计数维度，
+// 而非合并为单一 count。图片/视频独立限额（视频更稀缺）要求两维度分别累加，否则一个维度会用尽另一维度的配额。
+func TestAccumulateUsage_SplitsImageAndVideoCounts(t *testing.T) {
+	const groupID int64 = 100
+	plan := &BundlePlan{GroupQuotas: []BundlePlanGroupQuota{{GroupID: groupID}}}
+	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
+	usage := &BundleSubscriptionUsage{ID: 50, BundleSubscriptionID: 1, GroupID: groupID}
+	repo := &fakeUsageRepo{usage: usage}
+	svc := NewBundleUsageService(repo, &fakeSubRepo{sub: sub}, &fakePlanRepo{plan: plan})
+
+	// 本次产出 3 张图 + 1 段视频
+	if err := svc.AccumulateUsage(context.Background(), 1, groupID, 1.0, 3, 1); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if usage.DailyImageUsageCount != 3 {
+		t.Errorf("daily image count: want 3, got %d", usage.DailyImageUsageCount)
+	}
+	if usage.DailyVideoUsageCount != 1 {
+		t.Errorf("daily video count: want 1, got %d", usage.DailyVideoUsageCount)
+	}
+	if usage.WeeklyImageUsageCount != 3 {
+		t.Errorf("weekly image count: want 3, got %d", usage.WeeklyImageUsageCount)
+	}
+	if usage.WeeklyVideoUsageCount != 1 {
+		t.Errorf("weekly video count: want 1, got %d", usage.WeeklyVideoUsageCount)
+	}
+	if usage.MonthlyImageUsageCount != 3 {
+		t.Errorf("monthly image count: want 3, got %d", usage.MonthlyImageUsageCount)
+	}
+	if usage.MonthlyVideoUsageCount != 1 {
+		t.Errorf("monthly video count: want 1, got %d", usage.MonthlyVideoUsageCount)
 	}
 }

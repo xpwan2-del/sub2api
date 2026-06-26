@@ -207,12 +207,15 @@ func bundleSubscriptionUsageToService(src *dbent.BundleSubscriptionUsage) servic
 		DailyUsageUSD:        src.DailyUsageUsd,
 		DailyWindowStart:     src.DailyWindowStart,
 		DailyImageUsageCount:      src.DailyImageUsageCount,
+		DailyVideoUsageCount:      src.DailyVideoUsageCount,
 		WeeklyUsageUSD:       src.WeeklyUsageUsd,
 		WeeklyWindowStart:    src.WeeklyWindowStart,
 		WeeklyImageUsageCount:     src.WeeklyImageUsageCount,
+		WeeklyVideoUsageCount:     src.WeeklyVideoUsageCount,
 		MonthlyUsageUSD:      src.MonthlyUsageUsd,
 		MonthlyWindowStart:   src.MonthlyWindowStart,
 		MonthlyImageUsageCount:    src.MonthlyImageUsageCount,
+		MonthlyVideoUsageCount:    src.MonthlyVideoUsageCount,
 	}
 }
 

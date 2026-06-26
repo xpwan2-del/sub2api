@@ -50,7 +50,7 @@ func (bundleUsageRepoNoop) GetBySubscriptionAndGroup(context.Context, int64, int
 func (bundleUsageRepoNoop) Create(context.Context, *BundleSubscriptionUsage) error {
 	panic("unexpected Create call")
 }
-func (bundleUsageRepoNoop) IncrementUsage(context.Context, int64, float64, int, WindowRoll) error {
+func (bundleUsageRepoNoop) IncrementUsage(context.Context, int64, float64, int, int, WindowRoll) error {
 	panic("unexpected IncrementUsage call")
 }
 func (bundleUsageRepoNoop) ResetDailyWindow(context.Context, int64, time.Time) error {
@@ -242,10 +242,11 @@ type accumulateUsageRepoStub struct {
 	getErr       error
 	incrementErr error
 
-	lastIncrementID    int64
-	lastIncrementCost  float64
-	lastIncrementCount int
-	incrementCalls     int
+	lastIncrementID       int64
+	lastIncrementCost     float64
+	lastIncrementImageCnt int
+	lastIncrementVideoCnt int
+	incrementCalls        int
 }
 
 func (s *accumulateUsageRepoStub) GetBySubscriptionAndGroup(_ context.Context, _, _ int64, _ string) (*BundleSubscriptionUsage, error) {
@@ -259,13 +260,14 @@ func (s *accumulateUsageRepoStub) GetBySubscriptionAndGroup(_ context.Context, _
 	return &cp, nil
 }
 
-func (s *accumulateUsageRepoStub) IncrementUsage(_ context.Context, id int64, costUSD float64, count int, _ WindowRoll) error {
+func (s *accumulateUsageRepoStub) IncrementUsage(_ context.Context, id int64, costUSD float64, imageCount, videoCount int, _ WindowRoll) error {
 	if s.incrementErr != nil {
 		return s.incrementErr
 	}
 	s.lastIncrementID = id
 	s.lastIncrementCost = costUSD
-	s.lastIncrementCount = count
+	s.lastIncrementImageCnt = imageCount
+	s.lastIncrementVideoCnt = videoCount
 	s.incrementCalls++
 	return nil
 }
@@ -278,13 +280,14 @@ func TestAccumulateUsage_IncrementsCount(t *testing.T) {
 	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
 	svc := NewBundleUsageService(usageRepo, &fakeSubRepo{sub: sub}, &fakePlanRepo{plan: plan})
 
-	// Act: accumulate with costUSD=0 and count=3.
-	err := svc.AccumulateUsage(context.Background(), 1 /*subID*/, 10 /*groupID*/, 0.0, 3)
+	// Act: accumulate with costUSD=0, 3 images, 0 videos.
+	err := svc.AccumulateUsage(context.Background(), 1 /*subID*/, 10 /*groupID*/, 0.0, 3, 0)
 	require.NoError(t, err)
 
-	// Assert: IncrementUsage was called once with count==3.
+	// Assert: IncrementUsage was called once with imageCount==3.
 	require.Equal(t, 1, usageRepo.incrementCalls, "IncrementUsage should be called exactly once")
-	require.Equal(t, 3, usageRepo.lastIncrementCount, "IncrementUsage count argument must equal 3")
+	require.Equal(t, 3, usageRepo.lastIncrementImageCnt, "IncrementUsage imageCount argument must equal 3")
+	require.Equal(t, 0, usageRepo.lastIncrementVideoCnt, "IncrementUsage videoCount argument must equal 0")
 	require.Equal(t, int64(777), usageRepo.lastIncrementID, "IncrementUsage id argument must match the pre-existing record ID")
 }
 

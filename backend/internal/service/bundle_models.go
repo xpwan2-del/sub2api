@@ -74,15 +74,18 @@ type BundleSubscriptionUsage struct {
 	BundleSubscriptionID int64     `json:"bundle_subscription_id"`
 	GroupID              int64     `json:"group_id"`
 	ModelPattern         string    `json:"model_pattern"`
-	DailyUsageUSD        float64   `json:"daily_usage_usd"`
-	DailyWindowStart     time.Time `json:"daily_window_start"`
-	DailyImageUsageCount      int       `json:"daily_image_usage_count"`
-	WeeklyImageUsageCount     int       `json:"weekly_image_usage_count"`
-	MonthlyImageUsageCount    int       `json:"monthly_image_usage_count"`
-	WeeklyUsageUSD       float64   `json:"weekly_usage_usd"`
-	WeeklyWindowStart    time.Time `json:"weekly_window_start"`
-	MonthlyUsageUSD      float64   `json:"monthly_usage_usd"`
-	MonthlyWindowStart   time.Time `json:"monthly_window_start"`
+	DailyUsageUSD         float64   `json:"daily_usage_usd"`
+	DailyWindowStart      time.Time `json:"daily_window_start"`
+	DailyImageUsageCount  int       `json:"daily_image_usage_count"`
+	DailyVideoUsageCount  int       `json:"daily_video_usage_count"`
+	WeeklyImageUsageCount int       `json:"weekly_image_usage_count"`
+	WeeklyVideoUsageCount int       `json:"weekly_video_usage_count"`
+	MonthlyImageUsageCount int      `json:"monthly_image_usage_count"`
+	MonthlyVideoUsageCount int      `json:"monthly_video_usage_count"`
+	WeeklyUsageUSD        float64   `json:"weekly_usage_usd"`
+	WeeklyWindowStart     time.Time `json:"weekly_window_start"`
+	MonthlyUsageUSD       float64   `json:"monthly_usage_usd"`
+	MonthlyWindowStart    time.Time `json:"monthly_window_start"`
 }
 
 // CreateBundlePlanRequest 创建套餐计划的请求 DTO
