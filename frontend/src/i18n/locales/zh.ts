@@ -7728,7 +7728,6 @@ export default {
       daily: '日额度',
       weekly: '周额度',
       monthly: '月额度',
-      countLimitHint: '图片/视频分组填次数，留空=不限',
       countUnit: '次',
       countPlaceholder: '不限',
       imageCountLimitHint: '图片次数上限（按张，0=不限）',

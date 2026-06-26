@@ -59,15 +59,18 @@ func (s *BundlePlanService) CreatePlan(ctx context.Context, req *CreateBundlePla
 
 	for _, gq := range req.GroupQuotas {
 		plan.GroupQuotas = append(plan.GroupQuotas, BundlePlanGroupQuota{
-			GroupID:           gq.GroupID,
-			QuotaScope:        gq.QuotaScope,
-			ModelPattern:      gq.ModelPattern,
-			DailyLimitUSD:     gq.DailyLimitUSD,
-			WeeklyLimitUSD:    gq.WeeklyLimitUSD,
-			MonthlyLimitUSD:   gq.MonthlyLimitUSD,
+			GroupID:                gq.GroupID,
+			QuotaScope:             gq.QuotaScope,
+			ModelPattern:           gq.ModelPattern,
+			DailyLimitUSD:          gq.DailyLimitUSD,
+			WeeklyLimitUSD:         gq.WeeklyLimitUSD,
+			MonthlyLimitUSD:        gq.MonthlyLimitUSD,
 			DailyImageLimitCount:   gq.DailyImageLimitCount,
 			WeeklyImageLimitCount:  gq.WeeklyImageLimitCount,
 			MonthlyImageLimitCount: gq.MonthlyImageLimitCount,
+			DailyVideoLimitCount:   gq.DailyVideoLimitCount,
+			WeeklyVideoLimitCount:  gq.WeeklyVideoLimitCount,
+			MonthlyVideoLimitCount: gq.MonthlyVideoLimitCount,
 		})
 	}
 
@@ -140,16 +143,19 @@ func (s *BundlePlanService) UpdatePlan(ctx context.Context, planID int64, req *U
 		quotas := make([]BundlePlanGroupQuota, 0, len(*req.GroupQuotas))
 		for _, gq := range *req.GroupQuotas {
 			quotas = append(quotas, BundlePlanGroupQuota{
-				PlanID:            planID,
-				GroupID:           gq.GroupID,
-				QuotaScope:        gq.QuotaScope,
-				ModelPattern:      gq.ModelPattern,
-				DailyLimitUSD:     gq.DailyLimitUSD,
-				WeeklyLimitUSD:    gq.WeeklyLimitUSD,
-				MonthlyLimitUSD:   gq.MonthlyLimitUSD,
+				PlanID:                 planID,
+				GroupID:                gq.GroupID,
+				QuotaScope:             gq.QuotaScope,
+				ModelPattern:           gq.ModelPattern,
+				DailyLimitUSD:          gq.DailyLimitUSD,
+				WeeklyLimitUSD:         gq.WeeklyLimitUSD,
+				MonthlyLimitUSD:        gq.MonthlyLimitUSD,
 				DailyImageLimitCount:   gq.DailyImageLimitCount,
 				WeeklyImageLimitCount:  gq.WeeklyImageLimitCount,
 				MonthlyImageLimitCount: gq.MonthlyImageLimitCount,
+				DailyVideoLimitCount:   gq.DailyVideoLimitCount,
+				WeeklyVideoLimitCount:  gq.WeeklyVideoLimitCount,
+				MonthlyVideoLimitCount: gq.MonthlyVideoLimitCount,
 			})
 		}
 		existing.GroupQuotas = quotas

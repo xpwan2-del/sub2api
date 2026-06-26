@@ -165,4 +165,10 @@ type BundleUsageProgress struct {
 	MonthlyUsageUSD        float64 `json:"monthly_usage_usd"`
 	MonthlyImageLimitCount int     `json:"monthly_image_limit_count"`
 	MonthlyLimitUSD        float64 `json:"monthly_limit_usd"`
+	DailyVideoUsageCount   int     `json:"daily_video_usage_count"`
+	DailyVideoLimitCount   int     `json:"daily_video_limit_count"`
+	WeeklyVideoUsageCount  int     `json:"weekly_video_usage_count"`
+	WeeklyVideoLimitCount  int     `json:"weekly_video_limit_count"`
+	MonthlyVideoUsageCount int     `json:"monthly_video_usage_count"`
+	MonthlyVideoLimitCount int     `json:"monthly_video_limit_count"`
 }

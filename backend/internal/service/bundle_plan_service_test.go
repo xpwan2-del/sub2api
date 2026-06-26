@@ -194,11 +194,14 @@ func TestCreatePlan_PersistsCountLimits(t *testing.T) {
 		ValidityDays: 30,
 		GroupQuotas: []CreateGroupQuotaRequest{
 			{
-				GroupID:           10,
-				QuotaScope:        QuotaScopePlatform,
+				GroupID:                10,
+				QuotaScope:             QuotaScopePlatform,
 				DailyImageLimitCount:   50,
 				WeeklyImageLimitCount:  200,
 				MonthlyImageLimitCount: 500,
+				DailyVideoLimitCount:   10,
+				WeeklyVideoLimitCount:  50,
+				MonthlyVideoLimitCount: 200,
 			},
 		},
 	}
@@ -212,6 +215,9 @@ func TestCreatePlan_PersistsCountLimits(t *testing.T) {
 	require.Equal(t, 50, plan.GroupQuotas[0].DailyImageLimitCount)
 	require.Equal(t, 200, plan.GroupQuotas[0].WeeklyImageLimitCount)
 	require.Equal(t, 500, plan.GroupQuotas[0].MonthlyImageLimitCount)
+	require.Equal(t, 10, plan.GroupQuotas[0].DailyVideoLimitCount)
+	require.Equal(t, 50, plan.GroupQuotas[0].WeeklyVideoLimitCount)
+	require.Equal(t, 200, plan.GroupQuotas[0].MonthlyVideoLimitCount)
 }
 
 func TestBundlePlanService_CreatePlan_NilRequest(t *testing.T) {
@@ -298,11 +304,14 @@ func TestBundlePlanService_UpdatePlan_PersistsCountLimits(t *testing.T) {
 
 	newQuotas := []CreateGroupQuotaRequest{
 		{
-			GroupID:           20,
-			QuotaScope:        QuotaScopePlatform,
+			GroupID:                20,
+			QuotaScope:             QuotaScopePlatform,
 			DailyImageLimitCount:   7,
 			WeeklyImageLimitCount:  35,
 			MonthlyImageLimitCount: 140,
+			DailyVideoLimitCount:   3,
+			WeeklyVideoLimitCount:  15,
+			MonthlyVideoLimitCount: 60,
 		},
 	}
 	req := &UpdateBundlePlanRequest{GroupQuotas: &newQuotas}
@@ -315,6 +324,9 @@ func TestBundlePlanService_UpdatePlan_PersistsCountLimits(t *testing.T) {
 	require.Equal(t, 7, stub.updated.GroupQuotas[0].DailyImageLimitCount)
 	require.Equal(t, 35, stub.updated.GroupQuotas[0].WeeklyImageLimitCount)
 	require.Equal(t, 140, stub.updated.GroupQuotas[0].MonthlyImageLimitCount)
+	require.Equal(t, 3, stub.updated.GroupQuotas[0].DailyVideoLimitCount)
+	require.Equal(t, 15, stub.updated.GroupQuotas[0].WeeklyVideoLimitCount)
+	require.Equal(t, 60, stub.updated.GroupQuotas[0].MonthlyVideoLimitCount)
 }
 
 func TestBundlePlanService_UpdatePlan_PlanNotFound(t *testing.T) {

@@ -62,6 +62,9 @@ func (r *userSubscriptionRepository) Create(ctx context.Context, sub *service.Us
 	builder.SetDailyImageLimitCount(sub.DailyImageLimitCount)
 	builder.SetWeeklyImageLimitCount(sub.WeeklyImageLimitCount)
 	builder.SetMonthlyImageLimitCount(sub.MonthlyImageLimitCount)
+	builder.SetDailyVideoLimitCount(sub.DailyVideoLimitCount)
+	builder.SetWeeklyVideoLimitCount(sub.WeeklyVideoLimitCount)
+	builder.SetMonthlyVideoLimitCount(sub.MonthlyVideoLimitCount)
 
 	created, err := builder.Save(ctx)
 	if err == nil {
@@ -476,6 +479,9 @@ func userSubscriptionEntityToService(m *dbent.UserSubscription) *service.UserSub
 	out.DailyImageLimitCount = m.DailyImageLimitCount
 	out.WeeklyImageLimitCount = m.WeeklyImageLimitCount
 	out.MonthlyImageLimitCount = m.MonthlyImageLimitCount
+	out.DailyVideoLimitCount = m.DailyVideoLimitCount
+	out.WeeklyVideoLimitCount = m.WeeklyVideoLimitCount
+	out.MonthlyVideoLimitCount = m.MonthlyVideoLimitCount
 	return out
 }
 
@@ -503,6 +509,9 @@ func applyUserSubscriptionEntityToService(dst *service.UserSubscription, src *db
 	dst.DailyImageLimitCount = src.DailyImageLimitCount
 	dst.WeeklyImageLimitCount = src.WeeklyImageLimitCount
 	dst.MonthlyImageLimitCount = src.MonthlyImageLimitCount
+	dst.DailyVideoLimitCount = src.DailyVideoLimitCount
+	dst.WeeklyVideoLimitCount = src.WeeklyVideoLimitCount
+	dst.MonthlyVideoLimitCount = src.MonthlyVideoLimitCount
 }
 
 // ExpireBridgedSubscriptionsForExpiredBundles expires UserSubscriptions that are

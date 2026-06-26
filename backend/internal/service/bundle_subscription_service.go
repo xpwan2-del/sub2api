@@ -133,25 +133,25 @@ func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *Act
 		// Bridge: create UserSubscription linked to this bundle.
 		bundleSubID := bundleSub.ID
 		userSub := &UserSubscription{
-			UserID:               req.UserID,
-			GroupID:              gq.GroupID,
-			StartsAt:             now,
-			ExpiresAt:            expiresAt,
-			Status:               domain.SubscriptionStatusActive,
-			DailyUsageUSD:        0,
-			WeeklyUsageUSD:       0,
-			MonthlyUsageUSD:      0,
-			BundleSubscriptionID: &bundleSubID,
-			DailyLimitUSD:        gq.DailyLimitUSD,
-			WeeklyLimitUSD:       gq.WeeklyLimitUSD,
-			MonthlyLimitUSD:      gq.MonthlyLimitUSD,
-			DailyImageLimitCount:      gq.DailyImageLimitCount,
-			WeeklyImageLimitCount:     gq.WeeklyImageLimitCount,
-			MonthlyImageLimitCount:    gq.MonthlyImageLimitCount,
-			DailyVideoLimitCount:      gq.DailyVideoLimitCount,
-			WeeklyVideoLimitCount:     gq.WeeklyVideoLimitCount,
-			MonthlyVideoLimitCount:    gq.MonthlyVideoLimitCount,
-			Notes:                fmt.Sprintf("Bridged from bundle plan %q (ID:%d)", plan.Name, plan.ID),
+			UserID:                 req.UserID,
+			GroupID:                gq.GroupID,
+			StartsAt:               now,
+			ExpiresAt:              expiresAt,
+			Status:                 domain.SubscriptionStatusActive,
+			DailyUsageUSD:          0,
+			WeeklyUsageUSD:         0,
+			MonthlyUsageUSD:        0,
+			BundleSubscriptionID:   &bundleSubID,
+			DailyLimitUSD:          gq.DailyLimitUSD,
+			WeeklyLimitUSD:         gq.WeeklyLimitUSD,
+			MonthlyLimitUSD:        gq.MonthlyLimitUSD,
+			DailyImageLimitCount:   gq.DailyImageLimitCount,
+			WeeklyImageLimitCount:  gq.WeeklyImageLimitCount,
+			MonthlyImageLimitCount: gq.MonthlyImageLimitCount,
+			DailyVideoLimitCount:   gq.DailyVideoLimitCount,
+			WeeklyVideoLimitCount:  gq.WeeklyVideoLimitCount,
+			MonthlyVideoLimitCount: gq.MonthlyVideoLimitCount,
+			Notes:                  fmt.Sprintf("Bridged from bundle plan %q (ID:%d)", plan.Name, plan.ID),
 		}
 		if err := s.userSubRepo.Create(ctx, userSub); err != nil {
 			return nil, fmt.Errorf("bridge user subscription for group %d: %w", gq.GroupID, err)
@@ -266,14 +266,17 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 	// Both USD and count limits are read from the UserSubscription snapshot (consistency with activation time);
 	// changing the plan after subscription does not affect already-subscribed users.
 	type groupMeta struct {
-		dailyLimit        float64
-		weeklyLimit       float64
-		monthlyLimit      float64
-		dailyLimitCount   int
-		weeklyLimitCount  int
-		monthlyLimitCount int
-		groupName         string
-		platform          string
+		dailyLimit             float64
+		weeklyLimit            float64
+		monthlyLimit           float64
+		dailyLimitCount        int
+		weeklyLimitCount       int
+		monthlyLimitCount      int
+		dailyVideoLimitCount   int
+		weeklyVideoLimitCount  int
+		monthlyVideoLimitCount int
+		groupName              string
+		platform               string
 	}
 	metaMap := make(map[int64]groupMeta)
 	for _, sub := range userSubs {
@@ -284,14 +287,17 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 				platform = sub.Group.Platform
 			}
 			metaMap[sub.GroupID] = groupMeta{
-				dailyLimit:        sub.DailyLimitUSD,
-				weeklyLimit:       sub.WeeklyLimitUSD,
-				monthlyLimit:      sub.MonthlyLimitUSD,
-				dailyLimitCount:   sub.DailyImageLimitCount,
-				weeklyLimitCount:  sub.WeeklyImageLimitCount,
-				monthlyLimitCount: sub.MonthlyImageLimitCount,
-				groupName:         name,
-				platform:          platform,
+				dailyLimit:             sub.DailyLimitUSD,
+				weeklyLimit:            sub.WeeklyLimitUSD,
+				monthlyLimit:           sub.MonthlyLimitUSD,
+				dailyLimitCount:        sub.DailyImageLimitCount,
+				weeklyLimitCount:       sub.WeeklyImageLimitCount,
+				monthlyLimitCount:      sub.MonthlyImageLimitCount,
+				dailyVideoLimitCount:   sub.DailyVideoLimitCount,
+				weeklyVideoLimitCount:  sub.WeeklyVideoLimitCount,
+				monthlyVideoLimitCount: sub.MonthlyVideoLimitCount,
+				groupName:              name,
+				platform:               platform,
 			}
 		}
 	}
@@ -303,22 +309,28 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 			meta = groupMeta{} // zero limits = unlimited
 		}
 		progress = append(progress, BundleUsageProgress{
-			GroupID:           usage.GroupID,
-			GroupName:         meta.groupName,
-			Platform:          meta.platform,
-			ModelPattern:      usage.ModelPattern,
+			GroupID:                usage.GroupID,
+			GroupName:              meta.groupName,
+			Platform:               meta.platform,
+			ModelPattern:           usage.ModelPattern,
 			DailyImageUsageCount:   usage.DailyImageUsageCount,
-			DailyUsageUSD:     usage.DailyUsageUSD,
+			DailyUsageUSD:          usage.DailyUsageUSD,
 			DailyImageLimitCount:   meta.dailyLimitCount,
-			DailyLimitUSD:     meta.dailyLimit,
+			DailyLimitUSD:          meta.dailyLimit,
 			WeeklyImageUsageCount:  usage.WeeklyImageUsageCount,
-			WeeklyUsageUSD:    usage.WeeklyUsageUSD,
+			WeeklyUsageUSD:         usage.WeeklyUsageUSD,
 			WeeklyImageLimitCount:  meta.weeklyLimitCount,
-			WeeklyLimitUSD:    meta.weeklyLimit,
+			WeeklyLimitUSD:         meta.weeklyLimit,
 			MonthlyImageUsageCount: usage.MonthlyImageUsageCount,
-			MonthlyUsageUSD:   usage.MonthlyUsageUSD,
+			MonthlyUsageUSD:        usage.MonthlyUsageUSD,
 			MonthlyImageLimitCount: meta.monthlyLimitCount,
-			MonthlyLimitUSD:   meta.monthlyLimit,
+			MonthlyLimitUSD:        meta.monthlyLimit,
+			DailyVideoUsageCount:   usage.DailyVideoUsageCount,
+			DailyVideoLimitCount:   meta.dailyVideoLimitCount,
+			WeeklyVideoUsageCount:  usage.WeeklyVideoUsageCount,
+			WeeklyVideoLimitCount:  meta.weeklyVideoLimitCount,
+			MonthlyVideoUsageCount: usage.MonthlyVideoUsageCount,
+			MonthlyVideoLimitCount: meta.monthlyVideoLimitCount,
 		})
 	}
 	return progress, nil

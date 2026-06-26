@@ -7546,7 +7546,6 @@ export default {
       daily: 'Daily',
       weekly: 'Weekly',
       monthly: 'Monthly',
-      countLimitHint: 'For image/video groups, set request count; empty = unlimited',
       countUnit: 'count',
       countPlaceholder: 'Unlimited',
       imageCountLimitHint: 'Image count limit (per image, 0=unlimited)',
