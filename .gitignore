@@ -138,6 +138,7 @@ docs/*
 !docs/CANVAS_INTEGRATION_PLAN.md
 !docs/SECURITY_AUDIT_REPORT.md
 !docs/IMAGE_VIDEO_SPLIT_QUOTA_DESIGN.md
+!docs/IMAGE_VIDEO_SPLIT_QUOTA_PLAN.md
 !docs/legal/
 !docs/legal/*.md
 .serena/
