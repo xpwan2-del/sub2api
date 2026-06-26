@@ -68,7 +68,10 @@ func (r *bundlePlanRepository) Create(ctx context.Context, plan *service.BundleP
 				SetMonthlyLimitUsd(gq.MonthlyLimitUSD).
 				SetDailyImageLimitCount(gq.DailyImageLimitCount).
 				SetWeeklyImageLimitCount(gq.WeeklyImageLimitCount).
-				SetMonthlyImageLimitCount(gq.MonthlyImageLimitCount)
+				SetMonthlyImageLimitCount(gq.MonthlyImageLimitCount).
+				SetDailyVideoLimitCount(gq.DailyVideoLimitCount).
+				SetWeeklyVideoLimitCount(gq.WeeklyVideoLimitCount).
+				SetMonthlyVideoLimitCount(gq.MonthlyVideoLimitCount)
 			builders = append(builders, b)
 		}
 		createdQuotas, err := client.BundlePlanGroupQuota.CreateBulk(builders...).Save(ctx)
@@ -136,7 +139,10 @@ func (r *bundlePlanRepository) Update(ctx context.Context, plan *service.BundleP
 				SetMonthlyLimitUsd(gq.MonthlyLimitUSD).
 				SetDailyImageLimitCount(gq.DailyImageLimitCount).
 				SetWeeklyImageLimitCount(gq.WeeklyImageLimitCount).
-				SetMonthlyImageLimitCount(gq.MonthlyImageLimitCount)
+				SetMonthlyImageLimitCount(gq.MonthlyImageLimitCount).
+				SetDailyVideoLimitCount(gq.DailyVideoLimitCount).
+				SetWeeklyVideoLimitCount(gq.WeeklyVideoLimitCount).
+				SetMonthlyVideoLimitCount(gq.MonthlyVideoLimitCount)
 			builders = append(builders, b)
 		}
 		createdQuotas, err := client.BundlePlanGroupQuota.CreateBulk(builders...).Save(ctx)
@@ -310,17 +316,20 @@ func bundlePlanToService(src *dbent.BundlePlan) *service.BundlePlan {
 // bundlePlanGroupQuotaToService converts an Ent BundlePlanGroupQuota entity to a service-layer model.
 func bundlePlanGroupQuotaToService(src *dbent.BundlePlanGroupQuota) service.BundlePlanGroupQuota {
 	return service.BundlePlanGroupQuota{
-		ID:                src.ID,
-		PlanID:            src.PlanID,
-		GroupID:           src.GroupID,
-		QuotaScope:        src.QuotaScope,
-		ModelPattern:      src.ModelPattern,
-		DailyLimitUSD:     src.DailyLimitUsd,
-		WeeklyLimitUSD:    src.WeeklyLimitUsd,
-		MonthlyLimitUSD:   src.MonthlyLimitUsd,
+		ID:                     src.ID,
+		PlanID:                 src.PlanID,
+		GroupID:                src.GroupID,
+		QuotaScope:             src.QuotaScope,
+		ModelPattern:           src.ModelPattern,
+		DailyLimitUSD:          src.DailyLimitUsd,
+		WeeklyLimitUSD:         src.WeeklyLimitUsd,
+		MonthlyLimitUSD:        src.MonthlyLimitUsd,
 		DailyImageLimitCount:   src.DailyImageLimitCount,
 		WeeklyImageLimitCount:  src.WeeklyImageLimitCount,
 		MonthlyImageLimitCount: src.MonthlyImageLimitCount,
+		DailyVideoLimitCount:   src.DailyVideoLimitCount,
+		WeeklyVideoLimitCount:  src.WeeklyVideoLimitCount,
+		MonthlyVideoLimitCount: src.MonthlyVideoLimitCount,
 	}
 }
 

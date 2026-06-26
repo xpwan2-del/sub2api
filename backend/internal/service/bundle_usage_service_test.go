@@ -125,24 +125,24 @@ func TestCheckQuotaEligibility_CountLimitExceeded(t *testing.T) {
 	const groupID int64 = 100
 	plan := &BundlePlan{
 		GroupQuotas: []BundlePlanGroupQuota{{
-			GroupID:           groupID,
+			GroupID:                groupID,
 			MonthlyImageLimitCount: 10,
-			MonthlyLimitUSD:   100,
+			MonthlyLimitUSD:        100,
 		}},
 	}
 	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
 	usage := &BundleSubscriptionUsage{MonthlyImageUsageCount: 10}
 
 	svc := newSvcWith(plan, sub, usage)
-	res, err := svc.CheckQuotaEligibility(context.Background(), 1, groupID)
+	res, err := svc.CheckQuotaEligibility(context.Background(), 1, groupID, ModalityImage)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if res.Eligible {
 		t.Fatalf("expected Eligible=false when monthly count exhausted, got true")
 	}
-	if res.MonthlyRemainingCount > 0 {
-		t.Fatalf("expected MonthlyRemainingCount<=0, got %d", res.MonthlyRemainingCount)
+	if res.MonthlyRemainingImageCount > 0 {
+		t.Fatalf("expected MonthlyRemainingImageCount<=0, got %d", res.MonthlyRemainingImageCount)
 	}
 }
 
@@ -150,21 +150,63 @@ func TestCheckQuotaEligibility_CountZeroNoLimit(t *testing.T) {
 	const groupID int64 = 100
 	plan := &BundlePlan{
 		GroupQuotas: []BundlePlanGroupQuota{{
-			GroupID:           groupID,
+			GroupID:                groupID,
 			MonthlyImageLimitCount: 0, // 0 = 不限次数
-			MonthlyLimitUSD:   0, // 0 = 不限额度
+			MonthlyLimitUSD:        0, // 0 = 不限额度
 		}},
 	}
 	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
 	usage := &BundleSubscriptionUsage{MonthlyImageUsageCount: 999}
 
 	svc := newSvcWith(plan, sub, usage)
-	res, err := svc.CheckQuotaEligibility(context.Background(), 1, groupID)
+	res, err := svc.CheckQuotaEligibility(context.Background(), 1, groupID, ModalityImage)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if !res.Eligible {
 		t.Fatalf("expected Eligible=true when count limit is 0 (unlimited), got false")
+	}
+}
+
+func TestCheckQuotaEligibility_ImageExceededBlocksImageOnly(t *testing.T) {
+	const groupID int64 = 100
+	plan := &BundlePlan{GroupQuotas: []BundlePlanGroupQuota{{
+		GroupID:                groupID,
+		MonthlyImageLimitCount: 10,
+		MonthlyVideoLimitCount: 10,
+		MonthlyLimitUSD:        100,
+	}}}
+	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
+	usage := &BundleSubscriptionUsage{MonthlyImageUsageCount: 10, MonthlyVideoUsageCount: 0}
+
+	svc := newSvcWith(plan, sub, usage)
+	// 图片请求:图片额度耗尽 → 不可用
+	res, _ := svc.CheckQuotaEligibility(context.Background(), 1, groupID, ModalityImage)
+	if res.Eligible {
+		t.Fatalf("image request should be blocked when image quota exhausted")
+	}
+	// 视频请求:视频额度未耗尽 → 可用(图片耗尽不应波及视频)
+	res2, _ := svc.CheckQuotaEligibility(context.Background(), 1, groupID, ModalityVideo)
+	if !res2.Eligible {
+		t.Fatalf("video request should be eligible when only image quota exhausted")
+	}
+}
+
+func TestCheckQuotaEligibility_ModalityAnySkipsCountCheck(t *testing.T) {
+	const groupID int64 = 100
+	plan := &BundlePlan{GroupQuotas: []BundlePlanGroupQuota{{
+		GroupID:                groupID,
+		MonthlyImageLimitCount: 1,
+		MonthlyLimitUSD:        0, // USD 不限
+	}}}
+	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
+	usage := &BundleSubscriptionUsage{MonthlyImageUsageCount: 99} // 图片已超额
+
+	svc := newSvcWith(plan, sub, usage)
+	// 文本请求(ModalityAny):不应被图片 count 限额误拒
+	res, _ := svc.CheckQuotaEligibility(context.Background(), 1, groupID, ModalityAny)
+	if !res.Eligible {
+		t.Fatalf("text request (ModalityAny) must not be blocked by image count limit")
 	}
 }
 
@@ -177,15 +219,15 @@ func TestAccumulateUsage_RollsExpiredDailyWindow(t *testing.T) {
 	plan := &BundlePlan{GroupQuotas: []BundlePlanGroupQuota{{GroupID: groupID}}}
 	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
 	usage := &BundleSubscriptionUsage{
-		ID:                 50,
-		BundleSubscriptionID: 1,
-		GroupID:            groupID,
-		DailyWindowStart:   now.Add(-25 * time.Hour), // 超过 24h → 日窗口过期
-		DailyUsageUSD:      1.0,
-		DailyImageUsageCount:    5,
-		MonthlyWindowStart: now.Add(-1 * time.Hour), // 1h < 30d → 月窗口未过期
-		MonthlyUsageUSD:    10.0,
-		MonthlyImageUsageCount:  3,
+		ID:                     50,
+		BundleSubscriptionID:   1,
+		GroupID:                groupID,
+		DailyWindowStart:       now.Add(-25 * time.Hour), // 超过 24h → 日窗口过期
+		DailyUsageUSD:          1.0,
+		DailyImageUsageCount:   5,
+		MonthlyWindowStart:     now.Add(-1 * time.Hour), // 1h < 30d → 月窗口未过期
+		MonthlyUsageUSD:        10.0,
+		MonthlyImageUsageCount: 3,
 	}
 	repo := &fakeUsageRepo{usage: usage}
 	svc := NewBundleUsageService(repo, &fakeSubRepo{sub: sub}, &fakePlanRepo{plan: plan})

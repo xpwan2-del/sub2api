@@ -142,9 +142,9 @@ func TestBundleResolver_QuotaExceededReturns429(t *testing.T) {
 	plan := &service.BundlePlan{
 		ID: 1,
 		GroupQuotas: []service.BundlePlanGroupQuota{{
-			GroupID:           groupID,
-			QuotaScope:        service.QuotaScopeModel,
-			ModelPattern:      "gpt-4o",
+			GroupID:                groupID,
+			QuotaScope:             service.QuotaScopeModel,
+			ModelPattern:           "gpt-4o",
 			MonthlyImageLimitCount: 5,
 		}},
 	}
@@ -175,7 +175,8 @@ func TestBundleResolver_QuotaExceededReturns429(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewReader(body))
+	// 路径含 /images → 推断为 ModalityImage → 触发 image count 校验(已耗尽)。
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/images/generations", bytes.NewReader(body))
 	c.Request.Header.Set("Content-Type", "application/json")
 	c.Set(string(ContextKeyAPIKey), apiKey)
 

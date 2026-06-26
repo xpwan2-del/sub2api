@@ -32,19 +32,22 @@ type BundlePlan struct {
 // BundlePlanGroupQuota 套餐计划中单个渠道组的额度配置
 // BundlePlanGroupQuota is the service-layer model for per-group quota within a plan.
 type BundlePlanGroupQuota struct {
-	ID                int64   `json:"id"`
-	PlanID            int64   `json:"plan_id"`
-	GroupID           int64   `json:"group_id"`
-	GroupName         string  `json:"group_name,omitempty"`
-	GroupPlatform     string  `json:"group_platform,omitempty"`
-	QuotaScope        string  `json:"quota_scope"`
-	ModelPattern      string  `json:"model_pattern"`
-	DailyLimitUSD     float64 `json:"daily_limit_usd"`
-	WeeklyLimitUSD    float64 `json:"weekly_limit_usd"`
-	MonthlyLimitUSD   float64 `json:"monthly_limit_usd"`
+	ID                     int64   `json:"id"`
+	PlanID                 int64   `json:"plan_id"`
+	GroupID                int64   `json:"group_id"`
+	GroupName              string  `json:"group_name,omitempty"`
+	GroupPlatform          string  `json:"group_platform,omitempty"`
+	QuotaScope             string  `json:"quota_scope"`
+	ModelPattern           string  `json:"model_pattern"`
+	DailyLimitUSD          float64 `json:"daily_limit_usd"`
+	WeeklyLimitUSD         float64 `json:"weekly_limit_usd"`
+	MonthlyLimitUSD        float64 `json:"monthly_limit_usd"`
 	DailyImageLimitCount   int     `json:"daily_image_limit_count"`
 	WeeklyImageLimitCount  int     `json:"weekly_image_limit_count"`
 	MonthlyImageLimitCount int     `json:"monthly_image_limit_count"`
+	DailyVideoLimitCount   int     `json:"daily_video_limit_count"`
+	WeeklyVideoLimitCount  int     `json:"weekly_video_limit_count"`
+	MonthlyVideoLimitCount int     `json:"monthly_video_limit_count"`
 }
 
 // BundleSubscription 用户套餐订阅实例，包含订阅状态、时间范围和用量数据
@@ -70,22 +73,22 @@ type BundleSubscription struct {
 // BundleSubscriptionUsage 套餐订阅的用量跟踪记录，按渠道组和时间窗口统计
 // BundleSubscriptionUsage is the service-layer model for usage tracking per subscription + group.
 type BundleSubscriptionUsage struct {
-	ID                   int64     `json:"id"`
-	BundleSubscriptionID int64     `json:"bundle_subscription_id"`
-	GroupID              int64     `json:"group_id"`
-	ModelPattern         string    `json:"model_pattern"`
-	DailyUsageUSD         float64   `json:"daily_usage_usd"`
-	DailyWindowStart      time.Time `json:"daily_window_start"`
-	DailyImageUsageCount  int       `json:"daily_image_usage_count"`
-	DailyVideoUsageCount  int       `json:"daily_video_usage_count"`
-	WeeklyImageUsageCount int       `json:"weekly_image_usage_count"`
-	WeeklyVideoUsageCount int       `json:"weekly_video_usage_count"`
-	MonthlyImageUsageCount int      `json:"monthly_image_usage_count"`
-	MonthlyVideoUsageCount int      `json:"monthly_video_usage_count"`
-	WeeklyUsageUSD        float64   `json:"weekly_usage_usd"`
-	WeeklyWindowStart     time.Time `json:"weekly_window_start"`
-	MonthlyUsageUSD       float64   `json:"monthly_usage_usd"`
-	MonthlyWindowStart    time.Time `json:"monthly_window_start"`
+	ID                     int64     `json:"id"`
+	BundleSubscriptionID   int64     `json:"bundle_subscription_id"`
+	GroupID                int64     `json:"group_id"`
+	ModelPattern           string    `json:"model_pattern"`
+	DailyUsageUSD          float64   `json:"daily_usage_usd"`
+	DailyWindowStart       time.Time `json:"daily_window_start"`
+	DailyImageUsageCount   int       `json:"daily_image_usage_count"`
+	DailyVideoUsageCount   int       `json:"daily_video_usage_count"`
+	WeeklyImageUsageCount  int       `json:"weekly_image_usage_count"`
+	WeeklyVideoUsageCount  int       `json:"weekly_video_usage_count"`
+	MonthlyImageUsageCount int       `json:"monthly_image_usage_count"`
+	MonthlyVideoUsageCount int       `json:"monthly_video_usage_count"`
+	WeeklyUsageUSD         float64   `json:"weekly_usage_usd"`
+	WeeklyWindowStart      time.Time `json:"weekly_window_start"`
+	MonthlyUsageUSD        float64   `json:"monthly_usage_usd"`
+	MonthlyWindowStart     time.Time `json:"monthly_window_start"`
 }
 
 // CreateBundlePlanRequest 创建套餐计划的请求 DTO
@@ -109,15 +112,18 @@ type CreateBundlePlanRequest struct {
 // CreateGroupQuotaRequest 创建渠道组额度条目的请求 DTO
 // CreateGroupQuotaRequest is the DTO for creating a group quota entry within a plan.
 type CreateGroupQuotaRequest struct {
-	GroupID           int64   `json:"group_id" binding:"required"`
-	QuotaScope        string  `json:"quota_scope" binding:"required,oneof=platform model"`
-	ModelPattern      string  `json:"model_pattern"`
-	DailyLimitUSD     float64 `json:"daily_limit_usd"`
-	WeeklyLimitUSD    float64 `json:"weekly_limit_usd"`
-	MonthlyLimitUSD   float64 `json:"monthly_limit_usd"`
+	GroupID                int64   `json:"group_id" binding:"required"`
+	QuotaScope             string  `json:"quota_scope" binding:"required,oneof=platform model"`
+	ModelPattern           string  `json:"model_pattern"`
+	DailyLimitUSD          float64 `json:"daily_limit_usd"`
+	WeeklyLimitUSD         float64 `json:"weekly_limit_usd"`
+	MonthlyLimitUSD        float64 `json:"monthly_limit_usd"`
 	DailyImageLimitCount   int     `json:"daily_image_limit_count"`
 	WeeklyImageLimitCount  int     `json:"weekly_image_limit_count"`
 	MonthlyImageLimitCount int     `json:"monthly_image_limit_count"`
+	DailyVideoLimitCount   int     `json:"daily_video_limit_count"`
+	WeeklyVideoLimitCount  int     `json:"weekly_video_limit_count"`
+	MonthlyVideoLimitCount int     `json:"monthly_video_limit_count"`
 }
 
 // UpdateBundlePlanRequest 更新套餐计划的请求 DTO，所有字段为指针类型支持部分更新
@@ -142,21 +148,21 @@ type UpdateBundlePlanRequest struct {
 // BundleUsageProgress 单个额度作用域的用量进度（已用/上限）
 // BundleUsageProgress represents the current usage against limits for a single quota scope.
 type BundleUsageProgress struct {
-	GroupID           int64   `json:"group_id"`
-	GroupName         string  `json:"group_name"`
-	Platform          string  `json:"platform"`
-	QuotaScope        string  `json:"quota_scope"`
-	ModelPattern      string  `json:"model_pattern"`
+	GroupID                int64   `json:"group_id"`
+	GroupName              string  `json:"group_name"`
+	Platform               string  `json:"platform"`
+	QuotaScope             string  `json:"quota_scope"`
+	ModelPattern           string  `json:"model_pattern"`
 	DailyImageUsageCount   int     `json:"daily_image_usage_count"`
-	DailyUsageUSD     float64 `json:"daily_usage_usd"`
+	DailyUsageUSD          float64 `json:"daily_usage_usd"`
 	DailyImageLimitCount   int     `json:"daily_image_limit_count"`
-	DailyLimitUSD     float64 `json:"daily_limit_usd"`
+	DailyLimitUSD          float64 `json:"daily_limit_usd"`
 	WeeklyImageUsageCount  int     `json:"weekly_image_usage_count"`
-	WeeklyUsageUSD    float64 `json:"weekly_usage_usd"`
+	WeeklyUsageUSD         float64 `json:"weekly_usage_usd"`
 	WeeklyImageLimitCount  int     `json:"weekly_image_limit_count"`
-	WeeklyLimitUSD    float64 `json:"weekly_limit_usd"`
+	WeeklyLimitUSD         float64 `json:"weekly_limit_usd"`
 	MonthlyImageUsageCount int     `json:"monthly_image_usage_count"`
-	MonthlyUsageUSD   float64 `json:"monthly_usage_usd"`
+	MonthlyUsageUSD        float64 `json:"monthly_usage_usd"`
 	MonthlyImageLimitCount int     `json:"monthly_image_limit_count"`
-	MonthlyLimitUSD   float64 `json:"monthly_limit_usd"`
+	MonthlyLimitUSD        float64 `json:"monthly_limit_usd"`
 }

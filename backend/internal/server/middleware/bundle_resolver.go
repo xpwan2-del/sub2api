@@ -187,7 +187,19 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 		// not block requests. Concurrent over-issuance is acceptable here
 		// (see spec 10.1) — strictness is enforced post-billing.
 		if m.usageSvc != nil {
-			elig, qErr := m.usageSvc.CheckQuotaEligibility(c.Request.Context(), resolved.BundleSubID, resolved.GroupID)
+			// 按请求路径粗略推断媒体维度,决定 pre-flight 校验哪条 count 轨道。
+			// fail-open:推断不精确也安全(严格扣减在 post-billing)。
+			path := c.Request.URL.Path
+			var modality service.UsageModality
+			switch {
+			case strings.Contains(path, "/videos"):
+				modality = service.ModalityVideo
+			case strings.Contains(path, "/images"):
+				modality = service.ModalityImage
+			default:
+				modality = service.ModalityAny
+			}
+			elig, qErr := m.usageSvc.CheckQuotaEligibility(c.Request.Context(), resolved.BundleSubID, resolved.GroupID, modality)
 			if qErr != nil {
 				slog.Warn("bundle quota check failed, allowing (fail-open)",
 					"bundle_sub_id", resolved.BundleSubID, "error", qErr)

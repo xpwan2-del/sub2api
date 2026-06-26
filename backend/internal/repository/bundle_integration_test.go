@@ -266,7 +266,7 @@ func (s *BundleSubscriptionLifecycleSuite) TestCheckQuotaEligibility_WithinLimit
 	// Stay under the daily limit
 	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 5.0, 1, 0, service.WindowRoll{}))
 
-	result, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, group.ID)
+	result, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, group.ID, service.ModalityAny)
 	s.Require().NoError(err, "should pass when under limits")
 	s.Require().True(result.Eligible, "should be eligible under daily limit")
 }
@@ -292,7 +292,7 @@ func (s *BundleSubscriptionLifecycleSuite) TestCheckQuotaEligibility_ExceedsDail
 	// Exceed daily limit
 	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 5.01, 1, 0, service.WindowRoll{}))
 
-	result, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, group.ID)
+	result, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, group.ID, service.ModalityAny)
 	s.Require().NoError(err)
 	s.Require().False(result.Eligible, "should NOT be eligible when limit exceeded")
 }
@@ -316,7 +316,7 @@ func (s *BundleSubscriptionLifecycleSuite) TestCheckQuotaEligibility_ExceedsWeek
 	s.Require().NoError(err)
 	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 10.01, 1, 0, service.WindowRoll{}))
 
-	result, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, group.ID)
+	result, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, group.ID, service.ModalityAny)
 	s.Require().NoError(err)
 	s.Require().False(result.Eligible, "should NOT be eligible when limit exceeded")
 }
@@ -607,12 +607,12 @@ func (s *BundleRouteResolverSuite) TestResolveGroup_IndependentQuotaPerGroup() {
 	s.Require().Equal(float64(0), anthroUsage.MonthlyUsageUSD)
 
 	// Openai usage = 8.0 (still under limit of 10)
-	res, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, openaiGroup.ID)
+	res, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, openaiGroup.ID, service.ModalityAny)
 	s.Require().NoError(err, "openai still under daily limit")
 	s.Require().True(res.Eligible, "openai should be eligible")
 
 	// Anthro should also pass (0 usage)
-	res, err = s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, anthroGroup.ID)
+	res, err = s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, anthroGroup.ID, service.ModalityAny)
 	s.Require().NoError(err, "anthropic should have no usage")
 	s.Require().True(res.Eligible, "anthropic should be eligible")
 }

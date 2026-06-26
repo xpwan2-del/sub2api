@@ -111,22 +111,39 @@ func (s *BundleUsageService) AccumulateUsage(ctx context.Context, bundleSubID, g
 	return nil
 }
 
-// QuotaEligibilityResult 额度检查结果，包含是否可用和各周期剩余额度
+// UsageModality 标识本次请求消耗的媒体维度，决定 pre-flight 校验哪些 count 限额。
+// UsageModality identifies the media dimension a request consumes and decides which
+// count limits the pre-flight eligibility check enforces.
+type UsageModality string
+
+const (
+	ModalityImage UsageModality = "image" // 图片请求:校验 image count
+	ModalityVideo UsageModality = "video" // 视频请求:校验 video count
+	ModalityAny   UsageModality = "any"   // 文本/不确定:仅校验 USD,不校验 count
+)
+
+// QuotaEligibilityResult 额度检查结果，包含是否可用和各周期剩余额度。
+// count 维度按 image/video 分别暴露剩余，便于上层展示与按 modality 校验。
 // QuotaEligibilityResult holds the result of a quota eligibility check.
 type QuotaEligibilityResult struct {
-	Eligible              bool
-	DailyRemaining        float64
-	DailyRemainingCount   int
-	WeeklyRemaining       float64
-	WeeklyRemainingCount  int
-	MonthlyRemaining      float64
-	MonthlyRemainingCount int
+	Eligible                   bool
+	DailyRemaining             float64
+	WeeklyRemaining            float64
+	MonthlyRemaining           float64
+	DailyRemainingImageCount   int
+	WeeklyRemainingImageCount  int
+	MonthlyRemainingImageCount int
+	DailyRemainingVideoCount   int
+	WeeklyRemainingVideoCount  int
+	MonthlyRemainingVideoCount int
 }
 
-// CheckQuotaEligibility 检查套餐订阅在指定渠道组上是否还有剩余额度
+// CheckQuotaEligibility 检查套餐订阅在指定渠道组上是否还有剩余额度。
+// USD 维度对所有请求都校验；count 维度按 modality 校验对应轨道
+// (ModalityImage→image, ModalityVideo→video, ModalityAny→不校验 count)。
 // CheckQuotaEligibility checks whether the bundle subscription has remaining quota
 // for the given group. Returns eligibility result with remaining amounts.
-func (s *BundleUsageService) CheckQuotaEligibility(ctx context.Context, bundleSubID, groupID int64) (*QuotaEligibilityResult, error) {
+func (s *BundleUsageService) CheckQuotaEligibility(ctx context.Context, bundleSubID, groupID int64, modality UsageModality) (*QuotaEligibilityResult, error) {
 	bundleSub, matchingQuota, err := s.resolveMatchingQuota(ctx, bundleSubID, groupID)
 	if err != nil {
 		return nil, err
@@ -144,47 +161,63 @@ func (s *BundleUsageService) CheckQuotaEligibility(ctx context.Context, bundleSu
 		return nil, fmt.Errorf("load bundle usage: %w", err)
 	}
 
-	result := &QuotaEligibilityResult{
-		Eligible: true,
-	}
+	result := &QuotaEligibilityResult{Eligible: true}
 
 	if usage != nil {
 		result.DailyRemaining = matchingQuota.DailyLimitUSD - usage.DailyUsageUSD
 		result.WeeklyRemaining = matchingQuota.WeeklyLimitUSD - usage.WeeklyUsageUSD
 		result.MonthlyRemaining = matchingQuota.MonthlyLimitUSD - usage.MonthlyUsageUSD
-
-		result.DailyRemainingCount = matchingQuota.DailyImageLimitCount - usage.DailyImageUsageCount
-		result.WeeklyRemainingCount = matchingQuota.WeeklyImageLimitCount - usage.WeeklyImageUsageCount
-		result.MonthlyRemainingCount = matchingQuota.MonthlyImageLimitCount - usage.MonthlyImageUsageCount
-
-		// 0 means unlimited — only enforce limits that are explicitly set (>0).
-		if matchingQuota.DailyLimitUSD > 0 && result.DailyRemaining <= 0 {
-			result.Eligible = false
-		}
-		if matchingQuota.WeeklyLimitUSD > 0 && result.WeeklyRemaining <= 0 {
-			result.Eligible = false
-		}
-		if matchingQuota.MonthlyLimitUSD > 0 && result.MonthlyRemaining <= 0 {
-			result.Eligible = false
-		}
-		if matchingQuota.DailyImageLimitCount > 0 && result.DailyRemainingCount <= 0 {
-			result.Eligible = false
-		}
-		if matchingQuota.WeeklyImageLimitCount > 0 && result.WeeklyRemainingCount <= 0 {
-			result.Eligible = false
-		}
-		if matchingQuota.MonthlyImageLimitCount > 0 && result.MonthlyRemainingCount <= 0 {
-			result.Eligible = false
-		}
+		result.DailyRemainingImageCount = matchingQuota.DailyImageLimitCount - usage.DailyImageUsageCount
+		result.WeeklyRemainingImageCount = matchingQuota.WeeklyImageLimitCount - usage.WeeklyImageUsageCount
+		result.MonthlyRemainingImageCount = matchingQuota.MonthlyImageLimitCount - usage.MonthlyImageUsageCount
+		result.DailyRemainingVideoCount = matchingQuota.DailyVideoLimitCount - usage.DailyVideoUsageCount
+		result.WeeklyRemainingVideoCount = matchingQuota.WeeklyVideoLimitCount - usage.WeeklyVideoUsageCount
+		result.MonthlyRemainingVideoCount = matchingQuota.MonthlyVideoLimitCount - usage.MonthlyVideoUsageCount
 	} else {
 		// No usage record yet means full quota is available.
 		result.DailyRemaining = matchingQuota.DailyLimitUSD
 		result.WeeklyRemaining = matchingQuota.WeeklyLimitUSD
 		result.MonthlyRemaining = matchingQuota.MonthlyLimitUSD
+		result.DailyRemainingImageCount = matchingQuota.DailyImageLimitCount
+		result.WeeklyRemainingImageCount = matchingQuota.WeeklyImageLimitCount
+		result.MonthlyRemainingImageCount = matchingQuota.MonthlyImageLimitCount
+		result.DailyRemainingVideoCount = matchingQuota.DailyVideoLimitCount
+		result.WeeklyRemainingVideoCount = matchingQuota.WeeklyVideoLimitCount
+		result.MonthlyRemainingVideoCount = matchingQuota.MonthlyVideoLimitCount
+	}
 
-		result.DailyRemainingCount = matchingQuota.DailyImageLimitCount
-		result.WeeklyRemainingCount = matchingQuota.WeeklyImageLimitCount
-		result.MonthlyRemainingCount = matchingQuota.MonthlyImageLimitCount
+	// USD 维度:所有请求都校验(0=不限,>0 才校验)。
+	if matchingQuota.DailyLimitUSD > 0 && result.DailyRemaining <= 0 {
+		result.Eligible = false
+	}
+	if matchingQuota.WeeklyLimitUSD > 0 && result.WeeklyRemaining <= 0 {
+		result.Eligible = false
+	}
+	if matchingQuota.MonthlyLimitUSD > 0 && result.MonthlyRemaining <= 0 {
+		result.Eligible = false
+	}
+	// count 维度:仅按 modality 校验对应轨道。ModalityAny 不校验 count(文本请求不被媒体限额误拒)。
+	if modality == ModalityImage {
+		if matchingQuota.DailyImageLimitCount > 0 && result.DailyRemainingImageCount <= 0 {
+			result.Eligible = false
+		}
+		if matchingQuota.WeeklyImageLimitCount > 0 && result.WeeklyRemainingImageCount <= 0 {
+			result.Eligible = false
+		}
+		if matchingQuota.MonthlyImageLimitCount > 0 && result.MonthlyRemainingImageCount <= 0 {
+			result.Eligible = false
+		}
+	}
+	if modality == ModalityVideo {
+		if matchingQuota.DailyVideoLimitCount > 0 && result.DailyRemainingVideoCount <= 0 {
+			result.Eligible = false
+		}
+		if matchingQuota.WeeklyVideoLimitCount > 0 && result.WeeklyRemainingVideoCount <= 0 {
+			result.Eligible = false
+		}
+		if matchingQuota.MonthlyVideoLimitCount > 0 && result.MonthlyRemainingVideoCount <= 0 {
+			result.Eligible = false
+		}
 	}
 
 	return result, nil
