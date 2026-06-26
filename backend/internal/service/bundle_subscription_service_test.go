@@ -223,7 +223,7 @@ func sampleActivePlan() *BundlePlan {
 		ForSale:          true,
 		Status:           domain.StatusActive,
 		GroupQuotas: []BundlePlanGroupQuota{
-			{GroupID: 10, QuotaScope: QuotaScopePlatform, DailyLimitUSD: 5.0, WeeklyLimitUSD: 25.0, MonthlyLimitUSD: 100.0, DailyImageLimitCount: 50, WeeklyImageLimitCount: 250, MonthlyImageLimitCount: 1000},
+			{GroupID: 10, QuotaScope: QuotaScopePlatform, DailyLimitUSD: 5.0, WeeklyLimitUSD: 25.0, MonthlyLimitUSD: 100.0, DailyImageLimitCount: 50, WeeklyImageLimitCount: 250, MonthlyImageLimitCount: 1000, DailyVideoLimitCount: 5, WeeklyVideoLimitCount: 25, MonthlyVideoLimitCount: 100},
 			{GroupID: 20, QuotaScope: QuotaScopeModel, ModelPattern: "gpt-4*", DailyLimitUSD: 3.0, WeeklyLimitUSD: 15.0, MonthlyLimitUSD: 60.0, DailyImageLimitCount: 30, WeeklyImageLimitCount: 150, MonthlyImageLimitCount: 600},
 		},
 	}
@@ -337,6 +337,10 @@ func TestBundleSubscriptionService_ActivateBundle_Success(t *testing.T) {
 	require.Equal(t, 250, userSubRepo.createdSubs[0].WeeklyImageLimitCount)
 	require.Equal(t, 1000, userSubRepo.createdSubs[0].MonthlyImageLimitCount)
 	require.Equal(t, 30, userSubRepo.createdSubs[1].DailyImageLimitCount)
+	// video limit snapshotted symmetrically with image limit.
+	require.Equal(t, 5, userSubRepo.createdSubs[0].DailyVideoLimitCount, "daily video limit must be snapshotted from plan quota")
+	require.Equal(t, 25, userSubRepo.createdSubs[0].WeeklyVideoLimitCount)
+	require.Equal(t, 100, userSubRepo.createdSubs[0].MonthlyVideoLimitCount)
 }
 
 func TestBundleSubscriptionService_ActivateBundle_ConflictExistingBundle(t *testing.T) {

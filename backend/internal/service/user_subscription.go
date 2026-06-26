@@ -31,6 +31,9 @@ type UserSubscription struct {
 	DailyImageLimitCount      int `json:"daily_image_limit_count"`
 	WeeklyImageLimitCount     int `json:"weekly_image_limit_count"`
 	MonthlyImageLimitCount    int `json:"monthly_image_limit_count"`
+	DailyVideoLimitCount      int `json:"daily_video_limit_count"`
+	WeeklyVideoLimitCount     int `json:"weekly_video_limit_count"`
+	MonthlyVideoLimitCount    int `json:"monthly_video_limit_count"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

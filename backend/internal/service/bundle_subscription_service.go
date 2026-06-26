@@ -148,6 +148,9 @@ func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *Act
 			DailyImageLimitCount:      gq.DailyImageLimitCount,
 			WeeklyImageLimitCount:     gq.WeeklyImageLimitCount,
 			MonthlyImageLimitCount:    gq.MonthlyImageLimitCount,
+			DailyVideoLimitCount:      gq.DailyVideoLimitCount,
+			WeeklyVideoLimitCount:     gq.WeeklyVideoLimitCount,
+			MonthlyVideoLimitCount:    gq.MonthlyVideoLimitCount,
 			Notes:                fmt.Sprintf("Bridged from bundle plan %q (ID:%d)", plan.Name, plan.ID),
 		}
 		if err := s.userSubRepo.Create(ctx, userSub); err != nil {

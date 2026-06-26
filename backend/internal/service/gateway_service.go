@@ -9717,6 +9717,7 @@ func (s *GatewayService) buildRecordUsageLog(
 		DurationMs:            &durationMs,
 		FirstTokenMs:          result.FirstTokenMs,
 		ImageCount:            result.ImageCount,
+		VideoCount:            result.VideoCount,
 		ImageSize:             optionalTrimmedStringPtr(result.ImageSize),
 		ImageInputSize:        optionalTrimmedStringPtr(result.ImageInputSize),
 		ImageOutputSize:       optionalTrimmedStringPtr(result.ImageOutputSize),
