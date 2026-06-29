@@ -194,7 +194,8 @@ type SettingService struct {
 	proxyRepo                   ProxyRepository // for resolving websearch provider proxy URLs
 	cfg                         *config.Config
 	onUpdate                    func() // Callback when settings are updated (for cache invalidation)
-	version                     string // Application version
+	version                     string // Application version (自研发布号 CalVer，主显示)
+	baseVersion                 string // 上游 sub2api 基线版本号（副显示）
 	webSearchManagerBuilder     WebSearchManagerBuilder
 	antigravityUAVersionCache   atomic.Value // *cachedAntigravityUserAgentVersion
 	antigravityUAVersionSF      singleflight.Group
@@ -1190,9 +1191,14 @@ func (s *SettingService) SetOnUpdateCallback(callback func()) {
 	s.onUpdate = callback
 }
 
-// SetVersion sets the application version for injection into public settings
+// SetVersion sets the application version (自研发布号 CalVer) for injection into public settings.
 func (s *SettingService) SetVersion(version string) {
 	s.version = version
+}
+
+// SetBaseVersion sets the upstream sub2api baseline version for injection into public settings.
+func (s *SettingService) SetBaseVersion(baseVersion string) {
+	s.baseVersion = baseVersion
 }
 
 // PublicSettingsInjectionPayload is the JSON shape embedded into HTML as
@@ -1250,6 +1256,7 @@ type PublicSettingsInjectionPayload struct {
 	BackendModeEnabled               bool                     `json:"backend_mode_enabled"`
 	PaymentEnabled                   bool                     `json:"payment_enabled"`
 	Version                          string                   `json:"version"`
+	BaseVersion                      string                   `json:"base_version"`
 	BalanceLowNotifyEnabled          bool                     `json:"balance_low_notify_enabled"`
 	AccountQuotaNotifyEnabled        bool                     `json:"account_quota_notify_enabled"`
 	BalanceLowNotifyThreshold        float64                  `json:"balance_low_notify_threshold"`
@@ -1316,6 +1323,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		BackendModeEnabled:               settings.BackendModeEnabled,
 		PaymentEnabled:                   settings.PaymentEnabled,
 		Version:                          s.version,
+		BaseVersion:                      s.baseVersion,
 		BalanceLowNotifyEnabled:          settings.BalanceLowNotifyEnabled,
 		AccountQuotaNotifyEnabled:        settings.AccountQuotaNotifyEnabled,
 		BalanceLowNotifyThreshold:        settings.BalanceLowNotifyThreshold,
