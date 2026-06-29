@@ -38,6 +38,23 @@ const (
 	maxDownloadSize = 500 * 1024 * 1024
 )
 
+// updatesEnabled 控制是否启用内置更新检查（默认禁用 = 本项目自研 fork 止血）。
+//
+// 背景：内置更新检查指向上游官方仓库（githubRepo = "Wei-Shaw/sub2api"），对 fork
+// 有两个问题：
+//  1. HasUpdate 用「上游基线版本 vs 上游最新 GitHub release」比较，只要上游发了
+//     新 release 就恒为 true —— 左上角永远橙色警报，自研版本号被「最新版本」
+//     抢占视觉焦点。
+//  2. 「立即更新」(PerformUpdate) 会从上游下载官方二进制并原子覆盖自研二进制，
+//     导致全部 fork 改动丢失。
+//
+// Docker 部署的更新方式本就是重新构建/拉取镜像，无需内置更新。故在切到自有发布源
+// （Phase 2）前禁用：CheckUpdate 恒返回「已是最新」，左上角稳定显示自研版本号，
+// PerformUpdate 因 HasUpdate=false 直接拒绝。
+//
+// 恢复方式：置 true，并把 githubRepo 指向自有发布源（同时校准 HasUpdate 比较基准）。
+var updatesEnabled = false
+
 // UpdateCache defines cache operations for update service
 type UpdateCache interface {
 	GetUpdateInfo(ctx context.Context) (string, error)
@@ -126,6 +143,17 @@ type GitHubAsset struct {
 
 // CheckUpdate checks for available updates
 func (s *UpdateService) CheckUpdate(ctx context.Context, force bool) (*UpdateInfo, error) {
+	// Fork 止血：updatesEnabled=false 时禁用上游更新检查，恒返回「已是最新」。
+	// 详见 updatesEnabled 注释。
+	if !updatesEnabled {
+		return &UpdateInfo{
+			CurrentVersion: s.currentVersion,
+			LatestVersion:  s.currentVersion,
+			HasUpdate:      false,
+			BuildType:      s.buildType,
+		}, nil
+	}
+
 	// Try cache first
 	if !force {
 		if cached, err := s.getFromCache(ctx); err == nil && cached != nil {
