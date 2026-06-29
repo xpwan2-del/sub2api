@@ -471,8 +471,13 @@ func ProvideOpsService(
 }
 
 // ProvideSettingService wires SettingService with group reader and proxy repo.
-func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupRepository, proxyRepo ProxyRepository, cfg *config.Config) *SettingService {
+func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupRepository, proxyRepo ProxyRepository, cfg *config.Config, buildInfo BuildInfo) *SettingService {
 	svc := NewSettingService(settingRepo, cfg)
+	// version（主显示）= 自研发布号 Build；baseVersion（副显示）= 上游基线 Version。
+	// 注入到 SettingService，供 GetPublicSettingsForInjection 写入 window.__APP_CONFIG__，
+	// 否则前端首屏走 SSR 注入快路径时主版本号永远为空。
+	svc.SetVersion(buildInfo.Build)
+	svc.SetBaseVersion(buildInfo.Version)
 	svc.SetDefaultSubscriptionGroupReader(groupRepo)
 	svc.SetProxyRepository(proxyRepo)
 	if err := svc.LoadAPIKeyACLTrustForwardedIPSetting(context.Background()); err != nil {
