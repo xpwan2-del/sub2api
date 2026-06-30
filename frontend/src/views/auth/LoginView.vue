@@ -66,12 +66,12 @@
               <Icon v-else name="eye" size="md" />
             </button>
           </div>
-          <div class="mt-1 flex items-center justify-between">
+          <div class="flex items-center justify-between mt-1">
             <span></span>
             <router-link
               v-if="passwordResetEnabled && !backendModeEnabled"
               to="/forgot-password"
-              class="text-sm font-medium text-primary-600 transition-colors hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+              class="text-sm font-medium transition-colors text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
             >
               {{ t('auth.forgotPassword') }}
             </router-link>
@@ -93,11 +93,11 @@
         <button
           type="submit"
           :disabled="authActionDisabled || (turnstileEnabled && !turnstileToken)"
-          class="btn btn-primary w-full"
+          class="w-full btn btn-primary"
         >
           <svg
             v-if="isLoading"
-            class="-ml-1 mr-2 h-4 w-4 animate-spin text-white"
+            class="w-4 h-4 mr-2 -ml-1 text-white animate-spin"
             fill="none"
             viewBox="0 0 24 24"
           >
@@ -131,13 +131,13 @@
           @open="showAgreementModal = true"
         />
 
-        <div v-if="showOAuthLogin" class="space-y-3 pt-1">
+        <div v-if="showOAuthLogin" class="pt-1 space-y-3">
           <div class="flex items-center gap-3">
-            <div class="h-px flex-1 bg-gray-200 dark:bg-dark-700"></div>
+            <div class="flex-1 h-px bg-gray-200 dark:bg-dark-700"></div>
             <span class="text-xs text-gray-500 dark:text-dark-400">
               {{ t('auth.oauthOrContinue') }}
             </span>
-            <div class="h-px flex-1 bg-gray-200 dark:bg-dark-700"></div>
+            <div class="flex-1 h-px bg-gray-200 dark:bg-dark-700"></div>
           </div>
 
           <EmailOAuthButtons
@@ -178,7 +178,7 @@
         {{ t('auth.dontHaveAccount') }}
         <router-link
           to="/register"
-          class="font-medium text-primary-600 transition-colors hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+          class="font-medium transition-colors text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
         >
           {{ t('auth.signUp') }}
         </router-link>
@@ -466,7 +466,8 @@ function validateForm(): boolean {
 
 async function redirectAfterLogin(): Promise<void> {
   const redirectTo = (router.currentRoute.value.query.redirect as string) || '/dashboard'
-  if (redirectTo.startsWith('/apps/canvas')) {
+  // if (redirectTo.startsWith('/apps/canvas')) {
+  if (redirectTo.startsWith('https://canvas.best')) {
     window.location.assign(redirectTo)
     return
   }

@@ -672,7 +672,8 @@ function buildSelfNavItems(withDashboard: boolean): NavItem[] {
     items.push({ path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon })
   }
   items.push(
-    { path: '/apps/canvas', label: t('nav.canvas'), icon: GlobeIcon, external: true },
+    // { path: '/apps/canvas', label: t('nav.canvas'), icon: GlobeIcon, external: true },
+    { path: 'https://canvas.best/', label: t('nav.canvas'), icon: GlobeIcon, external: true },
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
     { path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels },
@@ -794,7 +795,8 @@ const adminNavItems = computed((): NavItem[] => {
   // 简单模式下，在系统设置前插入 API密钥
   if (authStore.isSimpleMode) {
     const filtered = visible.filter(item => !item.hideInSimpleMode)
-    filtered.push({ path: '/apps/canvas', label: t('nav.canvas'), icon: GlobeIcon, external: true })
+    // filtered.push({ path: '/apps/canvas', label: t('nav.canvas'), icon: GlobeIcon, external: true })
+    filtered.push({ path: 'https://canvas.best/', label: t('nav.canvas'), icon: GlobeIcon, external: true })
     filtered.push({ path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon })
     filtered.push({ path: '/admin/settings', label: t('nav.settings'), icon: CogIcon })
     for (const cm of customMenuItemsForAdmin.value) {

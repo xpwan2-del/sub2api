@@ -85,7 +85,8 @@ const route = useRoute()
 const authStore = useAuthStore()
 const { appStore, siteName, siteSubtitle, brandLogo, docLink, isExternalDocUrl } = usePublicBranding()
 
-const canvasPath = '/apps/canvas'
+// const canvasPath = '/apps/canvas'
+const canvasPath = 'https://canvas.best'
 const displaySubtitle = computed(() => siteSubtitle.value || 'Pioneers of AI')
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
