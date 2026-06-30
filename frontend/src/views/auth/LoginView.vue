@@ -466,8 +466,8 @@ function validateForm(): boolean {
 
 async function redirectAfterLogin(): Promise<void> {
   const redirectTo = (router.currentRoute.value.query.redirect as string) || '/dashboard'
-  // if (redirectTo.startsWith('/apps/canvas')) {
-  if (redirectTo.startsWith('https://canvas.best')) {
+  if (redirectTo.startsWith('/apps/canvas')) {
+  // if (redirectTo.startsWith('https://canvas.best')) {
     window.location.assign(redirectTo)
     return
   }
