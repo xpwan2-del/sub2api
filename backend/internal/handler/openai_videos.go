@@ -46,6 +46,13 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 		return
 	}
 
+	isGET := c.Request.Method == http.MethodGet
+	endpoint := openAIVideoEndpoint(c)
+	var taskID string
+	if isGET {
+		taskID = extractVideoTaskID(endpoint)
+	}
+
 	body, contentType, reqModel, err := readOpenAIVideoGatewayRequest(c)
 	if err != nil {
 		if maxErr, ok := extractMaxBytesError(err); ok {
@@ -55,12 +62,28 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", err.Error())
 		return
 	}
-	if reqModel == "" {
-		reqModel = strings.TrimSpace(c.Query("model"))
-	}
-	if reqModel == "" {
-		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "model is required")
-		return
+
+	if isGET {
+		// GET 查询进度 / 取内容：上游 GET 本不需要 model，
+		// 从创建时写入的绑定恢复 model（同时粘性命中创建账号）。
+		if taskID == "" {
+			h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "video task id is required")
+			return
+		}
+		model, ok := h.gatewayService.GetVideoTaskModel(c.Request.Context(), apiKey.GroupID, taskID)
+		if !ok {
+			h.errorResponse(c, http.StatusNotFound, "invalid_request_error", "video task session expired or not found, please recreate the task")
+			return
+		}
+		reqModel = model
+	} else {
+		if reqModel == "" {
+			reqModel = strings.TrimSpace(c.Query("model"))
+		}
+		if reqModel == "" {
+			h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "model is required")
+			return
+		}
 	}
 
 	reqLog = reqLog.With(zap.String("model", reqModel))
@@ -96,13 +119,17 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 	if maxAccountSwitches <= 0 {
 		maxAccountSwitches = 3
 	}
+	sessionHash := ""
+	if isGET {
+		sessionHash = service.VideoTaskSessionHash(taskID)
+	}
 	routingStart := time.Now()
 	for {
 		selection, _, err := h.gatewayService.SelectAccountWithSchedulerForCapability(
 			c.Request.Context(),
 			apiKey.GroupID,
 			"",
-			"",
+			sessionHash,
 			reqModel,
 			failedAccountIDs,
 			service.OpenAIUpstreamTransportHTTPSSE,
@@ -144,7 +171,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 					accountReleaseFunc()
 				}
 			}()
-			return h.gatewayService.ForwardVideos(c.Request.Context(), c, account, c.Request.Method, openAIVideoEndpoint(c), body, contentType, reqModel, channelMapping.MappedModel)
+			return h.gatewayService.ForwardVideos(c.Request.Context(), c, account, c.Request.Method, endpoint, body, contentType, reqModel, channelMapping.MappedModel)
 		}()
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()
 		upstreamLatencyMs, _ := getContextInt64(c, service.OpsUpstreamLatencyMsKey)
@@ -181,6 +208,22 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 		}
 
 		h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, true, nil)
+
+		if err == nil && result != nil {
+			if isGET {
+				// GET 查询：到达终态或内容已取回则清理绑定
+				isContent := strings.HasSuffix(strings.TrimRight(endpoint, "/"), "/content")
+				if service.IsTerminalOpenAIVideosTaskStatus(result.TaskStatus) || isContent {
+					h.gatewayService.UnbindVideoTask(c.Request.Context(), apiKey.GroupID, taskID)
+				}
+			} else if strings.TrimSpace(result.TaskID) != "" {
+				// POST 创建成功：写入 task→{account,model} 绑定 + 粘性账号
+				if bindErr := h.gatewayService.BindVideoTask(c.Request.Context(), apiKey.GroupID, result.TaskID, account.ID, reqModel, service.VideoTaskBindingTTL); bindErr != nil {
+					reqLog.Warn("openai.videos.bind_task_failed", zap.Error(bindErr), zap.String("task_id", result.TaskID))
+				}
+			}
+		}
+
 		if c.Request.Method == http.MethodPost && result != nil {
 			userAgent := canvasUsageUserAgent(c.GetHeader("User-Agent"), c.GetHeader("X-Canvas-Source"))
 			clientIP := ip.GetClientIP(c)
@@ -267,4 +310,31 @@ func openAIVideoEndpoint(c *gin.Context) string {
 		return "/v1" + path[index:]
 	}
 	return "/v1/videos"
+}
+
+// extractVideoTaskID 从 videos endpoint 路径解析 taskID。
+// endpoint 形如 "/v1/videos/<id>" 或 "/v1/videos/<id>/content"。
+// 当路径不含 task id（如 "/v1/videos/"）时返回空串。
+func extractVideoTaskID(endpoint string) string {
+	trimmed := strings.TrimRight(strings.TrimSpace(endpoint), "/")
+	if trimmed == "" {
+		return ""
+	}
+	trimmed = strings.TrimSuffix(trimmed, "/content")
+	trimmed = strings.TrimRight(trimmed, "/")
+	// 去掉 "/v1/videos" 前缀以拿到 id 段；找不到前缀时退回最后一段。
+	prefixIdx := strings.Index(trimmed, "/v1/videos")
+	var idSegment string
+	if prefixIdx >= 0 {
+		idSegment = strings.TrimPrefix(trimmed[prefixIdx:], "/v1/videos")
+		idSegment = strings.Trim(idSegment, "/")
+	} else {
+		idx := strings.LastIndex(trimmed, "/")
+		if idx < 0 {
+			idSegment = strings.TrimSpace(trimmed)
+		} else {
+			idSegment = strings.TrimSpace(trimmed[idx+1:])
+		}
+	}
+	return idSegment
 }
