@@ -233,6 +233,12 @@ type OpenAIForwardResult struct {
 	// UpstreamModel is the actual model sent to the upstream provider after mapping.
 	// Empty when no mapping was applied (requested model was used as-is).
 	UpstreamModel string
+	// TaskID 是视频任务创建成功后上游返回的任务 ID（仅 videos 创建路径填充），
+	// 用于建立 task→{account,model} 绑定以供后续查询。
+	TaskID string
+	// TaskStatus 是视频任务查询返回的状态（仅 videos 查询路径填充），
+	// 用于判断是否到达终态并清理绑定。
+	TaskStatus string
 	// ServiceTier records the OpenAI Responses API service tier, e.g. "priority" / "flex".
 	// Nil means the request did not specify a recognized tier.
 	ServiceTier *string

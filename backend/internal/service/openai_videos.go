@@ -167,6 +167,8 @@ func (s *OpenAIGatewayService) ForwardVideos(
 		Model:           originalModel,
 		BillingModel:    billingModel,
 		UpstreamModel:   upstreamModel,
+		TaskID:          openAIVideosTaskID(respBody),
+		TaskStatus:      openAIVideosTaskStatus(respBody),
 		ResponseHeaders: resp.Header.Clone(),
 		Stream:          false,
 		Duration:        time.Since(startTime),
@@ -268,6 +270,11 @@ func openAIVideosTaskEndpointFromContent(endpoint string) (string, bool) {
 	}
 	taskEndpoint := strings.TrimSuffix(trimmed, "/content")
 	return taskEndpoint, strings.TrimSpace(taskEndpoint) != ""
+}
+
+// openAIVideosTaskID 从视频任务响应体解析任务 ID。
+func openAIVideosTaskID(body []byte) string {
+	return strings.TrimSpace(gjson.GetBytes(body, "id").String())
 }
 
 func openAIVideosTaskStatus(body []byte) string {
