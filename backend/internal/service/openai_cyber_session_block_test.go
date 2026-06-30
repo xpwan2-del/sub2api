@@ -133,6 +133,15 @@ func (c *comboCacheAndStore) RefreshSessionTTL(_ context.Context, _ int64, _ str
 func (c *comboCacheAndStore) DeleteSessionAccountID(_ context.Context, _ int64, _ string) error {
 	return nil
 }
+func (c *comboCacheAndStore) SetVideoTaskBinding(_ context.Context, _ int64, _ string, _ VideoTaskBinding, _ time.Duration) error {
+	return nil
+}
+func (c *comboCacheAndStore) GetVideoTaskBinding(_ context.Context, _ int64, _ string) (VideoTaskBinding, error) {
+	return VideoTaskBinding{}, errors.New("stub")
+}
+func (c *comboCacheAndStore) DeleteVideoTaskBinding(_ context.Context, _ int64, _ string) error {
+	return nil
+}
 func (c *comboCacheAndStore) SetCyberSessionBlocked(ctx context.Context, key string, ttl time.Duration) error {
 	return c.store.SetCyberSessionBlocked(ctx, key, ttl)
 }

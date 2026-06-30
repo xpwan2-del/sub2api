@@ -443,6 +443,15 @@ var allowedHeaders = map[string]bool{
 	"x-client-request-id":                       true,
 }
 
+// VideoTaskBinding 记录视频任务创建时选中的上游账号与模型，
+// 供 GET 查询进度时恢复模型并粘性命中同一上游账号。
+// Records the upstream account and model chosen when a video task was
+// created, so GET polling can recover the model and stick to the same account.
+type VideoTaskBinding struct {
+	AccountID int64  `json:"account_id"`
+	Model     string `json:"model"`
+}
+
 // GatewayCache 定义网关服务的缓存操作接口。
 // 提供粘性会话（Sticky Session）的存储、查询、刷新和删除功能。
 //
@@ -461,6 +470,15 @@ type GatewayCache interface {
 	// DeleteSessionAccountID 删除粘性会话绑定，用于账号不可用时主动清理
 	// Delete sticky session binding, used to proactively clean up when account becomes unavailable
 	DeleteSessionAccountID(ctx context.Context, groupID int64, sessionHash string) error
+	// SetVideoTaskBinding 保存视频任务绑定（创建成功后写入）。
+	// Set video task binding (written after task creation succeeds).
+	SetVideoTaskBinding(ctx context.Context, groupID int64, taskID string, binding VideoTaskBinding, ttl time.Duration) error
+	// GetVideoTaskBinding 读取视频任务绑定；未命中返回零值与 redis.Nil。
+	// Read video task binding; returns zero value and redis.Nil when missing.
+	GetVideoTaskBinding(ctx context.Context, groupID int64, taskID string) (VideoTaskBinding, error)
+	// DeleteVideoTaskBinding 删除视频任务绑定（任务终态后清理）。
+	// Delete video task binding (cleaned up after task reaches terminal state).
+	DeleteVideoTaskBinding(ctx context.Context, groupID int64, taskID string) error
 }
 
 // derefGroupID safely dereferences *int64 to int64, returning 0 if nil
