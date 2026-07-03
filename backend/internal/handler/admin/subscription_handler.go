@@ -29,13 +29,13 @@ func toResponsePagination(p *pagination.PaginationResult) *response.PaginationRe
 // SubscriptionHandler handles admin subscription management
 type SubscriptionHandler struct {
 	subscriptionService *service.SubscriptionService
-	bundleSubSvc *service.BundleSubscriptionService
+	bundleSubSvc        *service.BundleSubscriptionService
 }
 
 // NewSubscriptionHandler creates a new admin subscription handler
 func NewSubscriptionHandler(subscriptionService *service.SubscriptionService, bundleSubSvc *service.BundleSubscriptionService) *SubscriptionHandler {
 	return &SubscriptionHandler{
-		bundleSubSvc: bundleSubSvc,
+		bundleSubSvc:        bundleSubSvc,
 		subscriptionService: subscriptionService,
 	}
 }
@@ -326,7 +326,6 @@ func getAdminIDFromContext(c *gin.Context) int64 {
 	}
 	return subject.UserID
 }
-
 
 // enrichBundleInfoForAdmin fills BundlePlanTier and BundlePlanName for admin subscription DTOs.
 func enrichBundleInfoForAdmin(subs []dto.AdminUserSubscription, svc *service.BundleSubscriptionService, ctx context.Context) {

@@ -295,6 +295,16 @@ func (m *mockGatewayCacheForGemini) DeleteSessionAccountID(ctx context.Context, 
 	return nil
 }
 
+func (m *mockGatewayCacheForGemini) SetVideoTaskBinding(_ context.Context, _ int64, _ string, _ VideoTaskBinding, _ time.Duration) error {
+	return nil
+}
+func (m *mockGatewayCacheForGemini) GetVideoTaskBinding(_ context.Context, _ int64, _ string) (VideoTaskBinding, error) {
+	return VideoTaskBinding{}, errors.New("not found")
+}
+func (m *mockGatewayCacheForGemini) DeleteVideoTaskBinding(_ context.Context, _ int64, _ string) error {
+	return nil
+}
+
 // TestGeminiMessagesCompatService_SelectAccountForModelWithExclusions_GeminiPlatform 测试 Gemini 单平台选择
 func TestGeminiMessagesCompatService_SelectAccountForModelWithExclusions_GeminiPlatform(t *testing.T) {
 	ctx := context.Background()

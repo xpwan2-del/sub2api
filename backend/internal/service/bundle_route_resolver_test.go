@@ -28,7 +28,7 @@ func TestResolveModelPlatform(t *testing.T) {
 		{"deepseek-chat", domain.PlatformAnthropic},
 		{"deepseek-reasoner", domain.PlatformAnthropic},
 		{"unknown-model", domain.PlatformAnthropic}, // default fallback
-		{"GPT-4O", domain.PlatformOpenAI},         // case insensitive
+		{"GPT-4O", domain.PlatformOpenAI},           // case insensitive
 		{"Claude-Opus-4", domain.PlatformAnthropic},
 	}
 

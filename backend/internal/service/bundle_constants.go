@@ -47,14 +47,14 @@ const (
 // 缓存键前缀和 TTL，用于套餐计划、订阅、用量的 Redis 缓存
 // Cache key patterns and TTL for bundle-related caching.
 const (
-	BundleCacheKeyPlanPrefix    = "bundle:plan:"
-	BundleCacheKeySubPrefix     = "bundle:sub:"
-	BundleCacheKeyUsagePrefix   = "bundle:usage:"
-	BundleCacheKeyUserBundles   = "bundle:user:"
+	BundleCacheKeyPlanPrefix  = "bundle:plan:"
+	BundleCacheKeySubPrefix   = "bundle:sub:"
+	BundleCacheKeyUsagePrefix = "bundle:usage:"
+	BundleCacheKeyUserBundles = "bundle:user:"
 
-	BundlePlanCacheTTL    = 5 * time.Minute
-	BundleSubCacheTTL     = 3 * time.Minute
-	BundleUsageCacheTTL   = 1 * time.Minute
+	BundlePlanCacheTTL  = 5 * time.Minute
+	BundleSubCacheTTL   = 3 * time.Minute
+	BundleUsageCacheTTL = 1 * time.Minute
 )
 
 // 用量统计窗口时长：日/周/月。与 subscription_service 的 24h / 7d / 30d 口径对齐。

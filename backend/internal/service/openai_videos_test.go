@@ -129,6 +129,20 @@ func TestExtractOpenAIVideosContentURL(t *testing.T) {
 	}
 }
 
+func TestOpenAIVideosTaskID(t *testing.T) {
+	cases := map[string]string{
+		`{"id":"528af40e-9d31-91a9-9e1f-605a06cc6cd6","status":"queued"}`: "528af40e-9d31-91a9-9e1f-605a06cc6cd6",
+		`{"status":"queued"}`:  "",
+		`{}`:                   "",
+		`{"id":"  trim-me  "}`: "trim-me",
+		`not-json`:             "",
+	}
+	for body, want := range cases {
+		got := openAIVideosTaskID([]byte(body))
+		require.Equalf(t, want, got, "body=%s", body)
+	}
+}
+
 func newOpenAIVideosTestService(upstream *httpUpstreamRecorder) *OpenAIGatewayService {
 	return &OpenAIGatewayService{
 		cfg:          &config.Config{},

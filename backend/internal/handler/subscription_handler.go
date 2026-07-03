@@ -34,14 +34,14 @@ type SubscriptionProgressInfo struct {
 // SubscriptionHandler handles user subscription operations
 type SubscriptionHandler struct {
 	subscriptionService *service.SubscriptionService
-	bundleSubSvc *service.BundleSubscriptionService
+	bundleSubSvc        *service.BundleSubscriptionService
 }
 
 // NewSubscriptionHandler creates a new user subscription handler
 func NewSubscriptionHandler(subscriptionService *service.SubscriptionService, bundleSubSvc *service.BundleSubscriptionService) *SubscriptionHandler {
 	return &SubscriptionHandler{
 		subscriptionService: subscriptionService,
-		bundleSubSvc: bundleSubSvc,
+		bundleSubSvc:        bundleSubSvc,
 	}
 }
 
@@ -246,4 +246,3 @@ func enrichBundleInfo(subs []dto.UserSubscription, svc *service.BundleSubscripti
 		sub.BundlePlanName = &info.name
 	}
 }
-

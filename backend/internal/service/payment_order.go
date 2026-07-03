@@ -85,7 +85,7 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		orderAmount = planPrice // keep full price as order amount
 	}
 	_ = balanceDeduct // used below in createOrderInTx
-
+	// 订阅套餐 price 是直付价，余额充值倍率只影响余额充值到账，不参与订阅 pay_amount 计算。
 	payAmountStr, payAmount, err := calculateCreateOrderPayAmount(limitAmount, feeRate, methodCurrency)
 	if err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req C
 		SetPaymentTradeNo("").
 		SetOrderType(req.OrderType).
 		SetStatus(OrderStatusPaid).
-		SetPaidAt(time.Now()). // mark payment time for dashboard stats
+		SetPaidAt(time.Now()).                        // mark payment time for dashboard stats
 		SetExpiresAt(time.Now().Add(24 * time.Hour)). // already paid, set far-future expiry
 		SetClientIP(req.ClientIP).
 		SetSrcHost(req.SrcHost).

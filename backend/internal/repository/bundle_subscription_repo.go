@@ -200,22 +200,22 @@ func bundleSubscriptionToService(src *dbent.BundleSubscription) *service.BundleS
 // bundleSubscriptionUsageToService converts an Ent BundleSubscriptionUsage entity to a service-layer model.
 func bundleSubscriptionUsageToService(src *dbent.BundleSubscriptionUsage) service.BundleSubscriptionUsage {
 	return service.BundleSubscriptionUsage{
-		ID:                   src.ID,
-		BundleSubscriptionID: src.BundleSubscriptionID,
-		GroupID:              src.GroupID,
-		ModelPattern:         src.ModelPattern,
-		DailyUsageUSD:        src.DailyUsageUsd,
-		DailyWindowStart:     src.DailyWindowStart,
-		DailyImageUsageCount:      src.DailyImageUsageCount,
-		DailyVideoUsageCount:      src.DailyVideoUsageCount,
-		WeeklyUsageUSD:       src.WeeklyUsageUsd,
-		WeeklyWindowStart:    src.WeeklyWindowStart,
-		WeeklyImageUsageCount:     src.WeeklyImageUsageCount,
-		WeeklyVideoUsageCount:     src.WeeklyVideoUsageCount,
-		MonthlyUsageUSD:      src.MonthlyUsageUsd,
-		MonthlyWindowStart:   src.MonthlyWindowStart,
-		MonthlyImageUsageCount:    src.MonthlyImageUsageCount,
-		MonthlyVideoUsageCount:    src.MonthlyVideoUsageCount,
+		ID:                     src.ID,
+		BundleSubscriptionID:   src.BundleSubscriptionID,
+		GroupID:                src.GroupID,
+		ModelPattern:           src.ModelPattern,
+		DailyUsageUSD:          src.DailyUsageUsd,
+		DailyWindowStart:       src.DailyWindowStart,
+		DailyImageUsageCount:   src.DailyImageUsageCount,
+		DailyVideoUsageCount:   src.DailyVideoUsageCount,
+		WeeklyUsageUSD:         src.WeeklyUsageUsd,
+		WeeklyWindowStart:      src.WeeklyWindowStart,
+		WeeklyImageUsageCount:  src.WeeklyImageUsageCount,
+		WeeklyVideoUsageCount:  src.WeeklyVideoUsageCount,
+		MonthlyUsageUSD:        src.MonthlyUsageUsd,
+		MonthlyWindowStart:     src.MonthlyWindowStart,
+		MonthlyImageUsageCount: src.MonthlyImageUsageCount,
+		MonthlyVideoUsageCount: src.MonthlyVideoUsageCount,
 	}
 }
 

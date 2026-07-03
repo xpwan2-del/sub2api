@@ -25,6 +25,7 @@ import (
 type mockUserRepo struct {
 	updateBalanceErr        error
 	updateBalanceFn         func(ctx context.Context, id int64, amount float64) error
+	deductBalanceFn         func(ctx context.Context, id int64, amount float64) error
 	getByIDUser             *User
 	getByIDErr              error
 	identities              []UserAuthIdentityRecord
@@ -193,7 +194,12 @@ func (m *mockUserRepo) UpdateUserLastActiveAt(_ context.Context, userID int64, a
 	m.updateLastActiveAt = append(m.updateLastActiveAt, activeAt)
 	return m.updateLastActiveErr
 }
-func (m *mockUserRepo) DeductBalance(context.Context, int64, float64) error { return nil }
+func (m *mockUserRepo) DeductBalance(ctx context.Context, id int64, amount float64) error {
+	if m.deductBalanceFn != nil {
+		return m.deductBalanceFn(ctx, id, amount)
+	}
+	return nil
+}
 func (m *mockUserRepo) UpdateConcurrency(context.Context, int64, int) error { return nil }
 func (m *mockUserRepo) ExistsByEmail(context.Context, string) (bool, error) { return false, nil }
 func (m *mockUserRepo) RemoveGroupFromAllowedGroups(context.Context, int64) (int64, error) {
@@ -365,8 +371,8 @@ func (m *mockBillingCache) SetBundlePlansForSaleCache(context.Context, []byte, t
 func (m *mockBillingCache) InvalidateBundlePlansForSaleCache(context.Context) error {
 	return nil
 }
-// Bundle cache methods (added for BillingCache interface extension)
 
+// Bundle cache methods (added for BillingCache interface extension)
 
 // --- 测试 ---
 

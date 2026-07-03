@@ -162,12 +162,12 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 	}
 
 	svcReq := service.CreateAPIKeyRequest{
-		Name:                req.Name,
-		GroupID:             req.GroupID,
-		CustomKey:           req.CustomKey,
-		IPWhitelist:         req.IPWhitelist,
-		IPBlacklist:         req.IPBlacklist,
-		ExpiresInDays:       req.ExpiresInDays,
+		Name:                 req.Name,
+		GroupID:              req.GroupID,
+		CustomKey:            req.CustomKey,
+		IPWhitelist:          req.IPWhitelist,
+		IPBlacklist:          req.IPBlacklist,
+		ExpiresInDays:        req.ExpiresInDays,
 		BundleSubscriptionID: req.BundleSubscriptionID,
 	}
 	if req.Quota != nil {

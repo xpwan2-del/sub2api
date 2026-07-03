@@ -242,6 +242,16 @@ func (m *mockGatewayCacheForPlatform) DeleteSessionAccountID(ctx context.Context
 	return nil
 }
 
+func (m *mockGatewayCacheForPlatform) SetVideoTaskBinding(_ context.Context, _ int64, _ string, _ VideoTaskBinding, _ time.Duration) error {
+	return nil
+}
+func (m *mockGatewayCacheForPlatform) GetVideoTaskBinding(_ context.Context, _ int64, _ string) (VideoTaskBinding, error) {
+	return VideoTaskBinding{}, errors.New("not found")
+}
+func (m *mockGatewayCacheForPlatform) DeleteVideoTaskBinding(_ context.Context, _ int64, _ string) error {
+	return nil
+}
+
 type mockGroupRepoForGateway struct {
 	groups           map[int64]*Group
 	getByIDCalls     int

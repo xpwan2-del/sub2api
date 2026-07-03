@@ -162,4 +162,6 @@ func TestSubscriptionExpiryService_ExpiryReminderSettingReadErrorFailsClosed(t *
 
 	require.False(t, svc.expiryReminderEnabled(context.Background()))
 }
-func (s *subscriptionExpiryRepoStub) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) { return 0, nil }
+func (s *subscriptionExpiryRepoStub) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) {
+	return 0, nil
+}

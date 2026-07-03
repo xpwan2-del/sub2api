@@ -143,12 +143,12 @@ func (h *BundleHandler) Checkout(c *gin.Context) {
 		return
 	}
 
-		// Validate ReturnURL: only allow relative paths (starting with "/" and not "//")
-		// to prevent open redirect attacks. Empty URLs are allowed.
-		if req.ReturnURL != "" && !isValidReturnURL(req.ReturnURL) {
-			response.BadRequest(c, "Invalid return_url: only relative paths are allowed")
-			return
-		}
+	// Validate ReturnURL: only allow relative paths (starting with "/" and not "//")
+	// to prevent open redirect attacks. Empty URLs are allowed.
+	if req.ReturnURL != "" && !isValidReturnURL(req.ReturnURL) {
+		response.BadRequest(c, "Invalid return_url: only relative paths are allowed")
+		return
+	}
 
 	// Load plan to validate and get price.
 	plan, err := h.bundlePlanService.GetPlanDetail(c.Request.Context(), req.PlanID)

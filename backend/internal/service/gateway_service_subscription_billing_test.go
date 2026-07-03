@@ -97,16 +97,16 @@ func TestPostUsageBillingParams_ShouldAccumulateBundleUsage(t *testing.T) {
 	plainSub := &UserSubscription{ID: 1, GroupID: groupID} // 非 bundle 订阅
 
 	tests := []struct {
-		name        string
-		sub         *UserSubscription
-		actualCost  float64
-		imageCount  int
-		videoCount  int
-		want        bool
+		name       string
+		sub        *UserSubscription
+		actualCost float64
+		imageCount int
+		videoCount int
+		want       bool
 	}{
 		{"cost only", bundleSub, 1.0, 0, 0, true},
-		{"image count only (free media)", bundleSub, 0.0, 2, 0, true},   // Bug3 核心
-		{"video count only (free media)", bundleSub, 0.0, 0, 1, true},   // 视频维度同理解耦
+		{"image count only (free media)", bundleSub, 0.0, 2, 0, true}, // Bug3 核心
+		{"video count only (free media)", bundleSub, 0.0, 0, 1, true}, // 视频维度同理解耦
 		{"both cost and image count", bundleSub, 1.5, 3, 0, true},
 		{"both image and video count", bundleSub, 0.0, 2, 1, true},
 		{"neither cost nor count", bundleSub, 0.0, 0, 0, false},

@@ -605,8 +605,8 @@ func (c *billingCache) BatchGetUserPlatformQuotaCache(ctx context.Context, keys 
 // ==================== Bundle Cache Methods ====================
 
 const (
-	bundleSubKeyPrefix     = "bundle:sub:"
-	bundlePlansForSaleKey  = "bundle:plan:for_sale"
+	bundleSubKeyPrefix    = "bundle:sub:"
+	bundlePlansForSaleKey = "bundle:plan:for_sale"
 )
 
 const (

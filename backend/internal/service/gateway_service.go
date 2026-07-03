@@ -443,6 +443,15 @@ var allowedHeaders = map[string]bool{
 	"x-client-request-id":                       true,
 }
 
+// VideoTaskBinding 记录视频任务创建时选中的上游账号与模型，
+// 供 GET 查询进度时恢复模型并粘性命中同一上游账号。
+// Records the upstream account and model chosen when a video task was
+// created, so GET polling can recover the model and stick to the same account.
+type VideoTaskBinding struct {
+	AccountID int64  `json:"account_id"`
+	Model     string `json:"model"`
+}
+
 // GatewayCache 定义网关服务的缓存操作接口。
 // 提供粘性会话（Sticky Session）的存储、查询、刷新和删除功能。
 //
@@ -461,6 +470,15 @@ type GatewayCache interface {
 	// DeleteSessionAccountID 删除粘性会话绑定，用于账号不可用时主动清理
 	// Delete sticky session binding, used to proactively clean up when account becomes unavailable
 	DeleteSessionAccountID(ctx context.Context, groupID int64, sessionHash string) error
+	// SetVideoTaskBinding 保存视频任务绑定（创建成功后写入）。
+	// Set video task binding (written after task creation succeeds).
+	SetVideoTaskBinding(ctx context.Context, groupID int64, taskID string, binding VideoTaskBinding, ttl time.Duration) error
+	// GetVideoTaskBinding 读取视频任务绑定；未命中返回零值与 redis.Nil。
+	// Read video task binding; returns zero value and redis.Nil when missing.
+	GetVideoTaskBinding(ctx context.Context, groupID int64, taskID string) (VideoTaskBinding, error)
+	// DeleteVideoTaskBinding 删除视频任务绑定（任务终态后清理）。
+	// Delete video task binding (cleaned up after task reaches terminal state).
+	DeleteVideoTaskBinding(ctx context.Context, groupID int64, taskID string) error
 }
 
 // derefGroupID safely dereferences *int64 to int64, returning 0 if nil
@@ -8938,6 +8956,10 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 		if cost.ActualCost > 0 {
 			if err := deps.userRepo.DeductBalance(billingCtx, p.User.ID, cost.ActualCost); err != nil {
 				slog.Error("deduct balance failed", "user_id", p.User.ID, "error", err)
+			} else if deps.billingCacheService != nil {
+				if err := deps.billingCacheService.InvalidateUserBalance(billingCtx, p.User.ID); err != nil {
+					slog.Warn("invalidate balance cache after legacy deduction failed", "user_id", p.User.ID, "error", err)
+				}
 			}
 		}
 	}
@@ -9127,7 +9149,7 @@ func finalizePostUsageBilling(ctx context.Context, p *postUsageBillingParams, de
 			}
 		}
 	} else if p.Cost.ActualCost > 0 && p.User != nil {
-		deps.billingCacheService.QueueDeductBalance(p.User.ID, p.Cost.ActualCost)
+		syncBalanceCacheAfterDeduction(ctx, p, deps, result)
 	}
 
 	if p.Cost.ActualCost > 0 && p.APIKey != nil && p.APIKey.HasRateLimits() {
@@ -9174,6 +9196,24 @@ func finalizePostUsageBilling(ctx context.Context, p *postUsageBillingParams, de
 	// no dependency on the request context or upstream connection.
 	go notifyBalanceLow(p, deps, result)
 	go notifyAccountQuota(p, deps, result)
+}
+
+func syncBalanceCacheAfterDeduction(ctx context.Context, p *postUsageBillingParams, deps *billingDeps, result *UsageBillingApplyResult) {
+	if p == nil || p.Cost == nil || p.User == nil || deps == nil || deps.billingCacheService == nil {
+		return
+	}
+	if result != nil && result.NewBalance != nil && deps.billingCacheService.balanceBelowEligibilityThreshold(*result.NewBalance) {
+		if err := deps.billingCacheService.InvalidateUserBalance(ctx, p.User.ID); err != nil {
+			slog.Warn("invalidate balance cache after exhausted deduction failed",
+				"user_id", p.User.ID,
+				"new_balance", *result.NewBalance,
+				"balance_overdrafted", result.BalanceOverdrafted,
+				"error", err,
+			)
+		}
+		return
+	}
+	deps.billingCacheService.QueueDeductBalance(p.User.ID, p.Cost.ActualCost)
 }
 
 // notifyBalanceLow sends balance low notification after deduction.

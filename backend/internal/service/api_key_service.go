@@ -158,9 +158,8 @@ type CreateAPIKeyRequest struct {
 	IPWhitelist []string `json:"ip_whitelist"` // IP 白名单
 	IPBlacklist []string `json:"ip_blacklist"` // IP 黑名单
 
-
-		// Bundle subscription ID for universal bundle keys (no group_id).
-		BundleSubscriptionID *int64 `json:"bundle_subscription_id"`
+	// Bundle subscription ID for universal bundle keys (no group_id).
+	BundleSubscriptionID *int64 `json:"bundle_subscription_id"`
 	// Quota fields
 	Quota         float64 `json:"quota"`           // Quota limit in USD (0 = unlimited)
 	ExpiresInDays *int    `json:"expires_in_days"` // Days until expiry (nil = never expires)
@@ -408,19 +407,19 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 
 	// 创建API Key记录
 	apiKey := &APIKey{
-		UserID:      userID,
-		Key:         key,
-		Name:        html.EscapeString(req.Name),
-		GroupID:     req.GroupID,
-			BundleSubscriptionID: req.BundleSubscriptionID,
-		Status:      StatusActive,
-		IPWhitelist: req.IPWhitelist,
-		IPBlacklist: req.IPBlacklist,
-		Quota:       req.Quota,
-		QuotaUsed:   0,
-		RateLimit5h: req.RateLimit5h,
-		RateLimit1d: req.RateLimit1d,
-		RateLimit7d: req.RateLimit7d,
+		UserID:               userID,
+		Key:                  key,
+		Name:                 html.EscapeString(req.Name),
+		GroupID:              req.GroupID,
+		BundleSubscriptionID: req.BundleSubscriptionID,
+		Status:               StatusActive,
+		IPWhitelist:          req.IPWhitelist,
+		IPBlacklist:          req.IPBlacklist,
+		Quota:                req.Quota,
+		QuotaUsed:            0,
+		RateLimit5h:          req.RateLimit5h,
+		RateLimit1d:          req.RateLimit1d,
+		RateLimit7d:          req.RateLimit7d,
 	}
 
 	// Set expiration time if specified
@@ -597,8 +596,8 @@ func (s *APIKeyService) Update(ctx context.Context, id int64, userID int64, req 
 	// Update quota fields
 	if req.Quota != nil {
 		apiKey.Quota = *req.Quota
-		// If quota is increased and status was quota_exhausted, reactivate
-		if apiKey.Status == StatusAPIKeyQuotaExhausted && *req.Quota > apiKey.QuotaUsed {
+		// If quota now has room, or is changed to unlimited, reactivate exhausted keys.
+		if apiKey.Status == StatusAPIKeyQuotaExhausted && (*req.Quota <= 0 || *req.Quota > apiKey.QuotaUsed) {
 			apiKey.Status = StatusActive
 		}
 	}

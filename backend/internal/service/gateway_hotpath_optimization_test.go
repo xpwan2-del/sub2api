@@ -144,6 +144,16 @@ func (s *stickyGatewayCacheHotpathStub) DeleteSessionAccountID(ctx context.Conte
 	return nil
 }
 
+func (s *stickyGatewayCacheHotpathStub) SetVideoTaskBinding(_ context.Context, _ int64, _ string, _ VideoTaskBinding, _ time.Duration) error {
+	return nil
+}
+func (s *stickyGatewayCacheHotpathStub) GetVideoTaskBinding(_ context.Context, _ int64, _ string) (VideoTaskBinding, error) {
+	return VideoTaskBinding{}, errors.New("not found")
+}
+func (s *stickyGatewayCacheHotpathStub) DeleteVideoTaskBinding(_ context.Context, _ int64, _ string) error {
+	return nil
+}
+
 func (s *modelsListAccountRepoStub) ListSchedulableByGroupID(ctx context.Context, groupID int64) ([]Account, error) {
 	s.listByGroupCalls.Add(1)
 	if s.err != nil {

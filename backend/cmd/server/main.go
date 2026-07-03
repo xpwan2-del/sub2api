@@ -36,7 +36,7 @@ var (
 	// Build 自研发布版本号（CalVer，如 2026.06.24-abc12345），由构建时从
 	// git commit date + short SHA 推导，经 ldflags -X main.Build 注入。
 	// 本地 go run 未注入时为空 → init 中置为 "dev"。
-	Build = ""
+	Build     = ""
 	Commit    = "unknown"
 	Date      = "unknown"
 	BuildType = "source" // "source" for manual builds, "release" for CI builds (set by ldflags)
