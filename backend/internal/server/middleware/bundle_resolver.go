@@ -101,9 +101,10 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 			status := http.StatusForbidden
 			errType := "bundle_error"
 			msg := err.Error()
-			if err == service.ErrBundleExpired {
+			switch err {
+			case service.ErrBundleExpired:
 				errType = "bundle_expired"
-			} else if err == service.ErrBundleModelNotIncluded {
+			case service.ErrBundleModelNotIncluded:
 				status = http.StatusBadRequest
 				errType = "bundle_model_not_included"
 			}

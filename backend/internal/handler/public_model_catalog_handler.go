@@ -455,30 +455,6 @@ func providerLabel(platform string) string {
 	return strings.TrimSpace(platform)
 }
 
-func inferPublicModelPlatform(name string) string {
-	text := strings.ToLower(strings.TrimSpace(name))
-	switch {
-	case containsAny(text, "claude", "sonnet", "opus", "haiku"):
-		return service.PlatformAnthropic
-	case containsAny(text, "gemini", "imagen", "veo"):
-		return service.PlatformGemini
-	case containsAny(text, "grok", "xai"):
-		return "xai"
-	case containsAny(text, "deepseek"):
-		return "deepseek"
-	case containsAny(text, "qwen"):
-		return "qwen"
-	case containsAny(text, "glm"):
-		return "zhipu"
-	case containsAny(text, "kimi"):
-		return "kimi"
-	case containsAny(text, "doubao", "seedream", "seedance"):
-		return "volcengine"
-	default:
-		return service.PlatformOpenAI
-	}
-}
-
 func publicModelCapabilities(name, platform string, pricing *service.ChannelModelPricing) []string {
 	text := strings.ToLower(strings.TrimSpace(name) + " " + strings.TrimSpace(platform))
 	capabilities := make([]string, 0, len(capabilityOrderForPublicCatalog()))
