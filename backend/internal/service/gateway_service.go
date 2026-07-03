@@ -10664,19 +10664,19 @@ func (s *GatewayService) initDebugGatewayBodyFile(path string) {
 	}
 
 	// 如果 path 指向一个已存在的目录，自动追加默认文件名
-	if info, err := os.Stat(path); err == nil && info.IsDir() {
+	if info, err := os.Stat(path); err == nil && info.IsDir() { //nolint:gosec // path 来自管理员调试配置，非用户输入
 		path = filepath.Join(path, debugGatewayBodyDefaultFilename)
 	}
 
 	// 确保父目录存在
 	if dir := filepath.Dir(path); dir != "." {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0755); err != nil { //nolint:gosec // dir 来自管理员配置路径的父目录
 			slog.Error("failed to create gateway debug log directory", "dir", dir, "error", err)
 			return
 		}
 	}
 
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644) //nolint:gosec // path 来自管理员调试配置，非用户输入
 	if err != nil {
 		slog.Error("failed to open gateway debug log file", "path", path, "error", err)
 		return

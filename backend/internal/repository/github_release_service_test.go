@@ -29,7 +29,7 @@ type testTransport struct {
 func (t *testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Rewrite the URL to point to our test server
 	testURL := t.testServerURL + req.URL.Path
-	newReq, err := http.NewRequestWithContext(req.Context(), req.Method, testURL, req.Body)
+	newReq, err := http.NewRequestWithContext(req.Context(), req.Method, testURL, req.Body) //nolint:gosec // 测试桩 RoundTrip：重定向到 httptest 本地服务器，非真实 SSRF
 	if err != nil {
 		return nil, err
 	}

@@ -55,7 +55,6 @@ func (r *opsRepository) GetModelTrafficStats(ctx context.Context, filter *servic
 		args = append(args, like)
 		usageClauses = append(usageClauses, fmt.Sprintf("LOWER(COALESCE(NULLIF(ul.requested_model,''), NULLIF(ul.model,''), NULLIF(ul.upstream_model,''))) LIKE $%d", idx))
 		errorClauses = append(errorClauses, fmt.Sprintf("LOWER(COALESCE(NULLIF(oe.requested_model,''), NULLIF(oe.model,''), NULLIF(oe.upstream_model,''))) LIKE $%d", idx))
-		idx++
 	}
 
 	q := `
@@ -209,7 +208,6 @@ func (r *opsRepository) GetModelHealthBuckets(ctx context.Context, filter *servi
 		args = append(args, like)
 		usageClauses = append(usageClauses, fmt.Sprintf("LOWER(COALESCE(NULLIF(ul.requested_model,''), NULLIF(ul.model,''), NULLIF(ul.upstream_model,''))) LIKE $%d", idx))
 		errorClauses = append(errorClauses, fmt.Sprintf("LOWER(COALESCE(NULLIF(oe.requested_model,''), NULLIF(oe.model,''), NULLIF(oe.upstream_model,''))) LIKE $%d", idx))
-		idx++
 	}
 
 	q := `
@@ -362,7 +360,6 @@ func (r *opsRepository) GetGatewayRouteHealth(ctx context.Context, filter *servi
 		args = append(args, like)
 		usageClauses = append(usageClauses, fmt.Sprintf("LOWER(COALESCE(NULLIF(ul.requested_model,''), NULLIF(ul.model,''), NULLIF(ul.upstream_model,''))) LIKE $%d", idx))
 		errorClauses = append(errorClauses, fmt.Sprintf("LOWER(COALESCE(NULLIF(oe.requested_model,''), NULLIF(oe.model,''), NULLIF(oe.upstream_model,''))) LIKE $%d", idx))
-		idx++
 	}
 	args = append(args, limit)
 
