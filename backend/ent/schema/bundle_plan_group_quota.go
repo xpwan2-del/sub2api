@@ -6,6 +6,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
@@ -31,9 +32,15 @@ func (BundlePlanGroupQuota) Fields() []ent.Field {
 		field.Int64("group_id").Comment("→ Group（复用现有 Group）"),
 		field.String("quota_scope").Default("platform").Comment("额度粒度: platform/model"),
 		field.String("model_pattern").Default("").Comment("仅 model 级别生效，glob 模式"),
-		field.Float("daily_limit_usd").Default(0).Comment("日额度（0=不限）"),
-		field.Float("weekly_limit_usd").Default(0).Comment("周额度（0=不限）"),
-		field.Float("monthly_limit_usd").Default(0).Comment("月额度（0=不限）"),
+		field.Float("daily_limit_usd").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Default(0).Comment("日额度（0=不限）"),
+		field.Float("weekly_limit_usd").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Default(0).Comment("周额度（0=不限）"),
+		field.Float("monthly_limit_usd").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Default(0).Comment("月额度（0=不限）"),
 		field.Int("daily_image_limit_count").Default(0).Comment("日图片次数上限（0=不限）"),
 		field.Int("weekly_image_limit_count").Default(0).Comment("周图片次数上限（0=不限）"),
 		field.Int("monthly_image_limit_count").Default(0).Comment("月图片次数上限（0=不限）"),

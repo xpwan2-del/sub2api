@@ -166,6 +166,23 @@ func (h *BundleHandler) Checkout(c *gin.Context) {
 		return
 	}
 
+	// 预检冲突：套餐暂不支持退款，若用户已有活跃套餐则在下单前拦截，
+	// 避免付款成功后激活阶段返回 ErrBundleConflict 导致资金损失。
+	activeBundles, err := h.bundleSubscriptionService.GetUserActiveBundle(c.Request.Context(), subject.UserID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	if len(activeBundles) > 0 {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": gin.H{
+				"type":    "bundle_conflict",
+				"message": "您已有生效中的套餐，无法重复购买",
+			},
+		})
+		return
+	}
+
 	// Create payment order via PaymentService.
 	result, err := h.paymentService.CreateOrder(c.Request.Context(), service.CreateOrderRequest{
 		UserID:      subject.UserID,

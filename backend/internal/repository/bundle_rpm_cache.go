@@ -75,3 +75,25 @@ func (c *bundleRPMCacheImpl) GetBundleRPM(ctx context.Context, bundleSubID int64
 	}
 	return val, nil
 }
+
+// DecrementBundleRPM 递减套餐订阅当前分钟的 RPM 计数（被拒请求归还占用槽位），Lua 防负数。
+func (c *bundleRPMCacheImpl) DecrementBundleRPM(ctx context.Context, bundleSubID int64) error {
+	minute, err := c.minuteTS(ctx)
+	if err != nil {
+		return err
+	}
+	key := fmt.Sprintf("%s%d:%d", bundleRPMKeyPrefix, bundleSubID, minute)
+	// 复用并发计数器的 Lua 防负模式：DECR 后若 <0 则重置为 0。
+	script := redis.NewScript(`
+		local v = redis.call('DECR', KEYS[1])
+		if v < 0 then
+			redis.call('SET', KEYS[1], 0)
+			v = 0
+		end
+		return v
+	`)
+	if _, err := script.Run(ctx, c.rdb, []string{key}).Int64(); err != nil {
+		return fmt.Errorf("bundle rpm decrement: %w", err)
+	}
+	return nil
+}

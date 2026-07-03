@@ -7782,6 +7782,8 @@ export default {
     browsePlans: '浏览套餐',
     usageByGroup: '各 Group 用量',
     noUsageData: '暂无用量数据',
+    image: '图片',
+    video: '视频',
     unlimited: '不限额度',
     viewUsageRecords: '使用记录',
     backToBundles: '返回套餐',

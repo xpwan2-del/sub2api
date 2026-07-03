@@ -33,8 +33,12 @@ func (BundlePlan) Fields() []ent.Field {
 		field.String("name").NotEmpty().Comment("套餐名称"),
 		field.String("description").Default("").Comment("套餐描述"),
 		field.String("tier").NotEmpty().Comment("套餐层级: starter/pro/enterprise"),
-		field.Float("price").Default(0).Comment("售价"),
-		field.Float("original_price").Default(0).Comment("原价（划线价）"),
+		field.Float("price").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,2)"}).
+			Default(0).Comment("售价"),
+		field.Float("original_price").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,2)"}).
+			Default(0).Comment("原价（划线价）"),
 		field.String("currency").Default("USD").Comment("货币: USD/CNY"),
 		field.Int("validity_days").Default(30).Positive().Comment("有效天数"),
 		field.Int("concurrency_limit").Default(0).NonNegative().Comment("并发上限（0=不限）"),

@@ -53,7 +53,7 @@ func (s *BundleSubscriptionLifecycleSuite) SetupTest() {
 	s.groupRepo = NewGroupRepository(s.client, integrationDB)
 
 	s.planSvc = service.NewBundlePlanService(s.planRepo, nil)
-	s.subSvc = service.NewBundleSubscriptionService(s.subRepo, s.planRepo, s.usageRepo, s.userSubRepo, nil)
+	s.subSvc = service.NewBundleSubscriptionService(s.subRepo, s.planRepo, s.usageRepo, s.userSubRepo, nil, s.client)
 	s.usageSvc = service.NewBundleUsageService(s.usageRepo, s.subRepo, s.planRepo)
 }
 
@@ -394,7 +394,7 @@ func (s *BundleRouteResolverSuite) SetupTest() {
 	s.groupRepo = NewGroupRepository(s.client, integrationDB)
 
 	s.planSvc = service.NewBundlePlanService(s.planRepo, nil)
-	s.subSvc = service.NewBundleSubscriptionService(s.subRepo, s.planRepo, s.usageRepo, s.userSubRepo, nil)
+	s.subSvc = service.NewBundleSubscriptionService(s.subRepo, s.planRepo, s.usageRepo, s.userSubRepo, nil, s.client)
 	s.usageSvc = service.NewBundleUsageService(s.usageRepo, s.subRepo, s.planRepo)
 	s.resolver = service.NewBundleRouteResolver(s.subRepo, s.planRepo, s.groupRepo)
 }
@@ -649,7 +649,7 @@ func (s *BundleExpiryIntegrationSuite) SetupTest() {
 	s.groupRepo = NewGroupRepository(s.client, integrationDB)
 
 	s.planSvc = service.NewBundlePlanService(s.planRepo, nil)
-	s.subSvc = service.NewBundleSubscriptionService(s.subRepo, s.planRepo, s.usageRepo, s.userSubRepo, nil)
+	s.subSvc = service.NewBundleSubscriptionService(s.subRepo, s.planRepo, s.usageRepo, s.userSubRepo, nil, s.client)
 	s.resolver = service.NewBundleRouteResolver(s.subRepo, s.planRepo, s.groupRepo)
 }
 

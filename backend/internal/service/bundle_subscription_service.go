@@ -7,9 +7,12 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
+	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
@@ -22,6 +25,7 @@ type BundleSubscriptionService struct {
 	usageRepo     BundleUsageRepository
 	userSubRepo   UserSubscriptionRepository
 	cache         BillingCache
+	entClient     *dbent.Client
 }
 
 // NewBundleSubscriptionService 创建套餐订阅服务实例
@@ -32,6 +36,7 @@ func NewBundleSubscriptionService(
 	usageRepo BundleUsageRepository,
 	userSubRepo UserSubscriptionRepository,
 	cache BillingCache,
+	entClient *dbent.Client,
 ) *BundleSubscriptionService {
 	return &BundleSubscriptionService{
 		bundleSubRepo: bundleSubRepo,
@@ -39,7 +44,37 @@ func NewBundleSubscriptionService(
 		usageRepo:     usageRepo,
 		userSubRepo:   userSubRepo,
 		cache:         cache,
+		entClient:     entClient,
 	}
+}
+
+// withActivationTx 在数据库事务中执行套餐激活的写操作，保证 BundleSubscription +
+// 各 group 的 usage + 桥接 UserSubscription 原子提交，任一失败整体回滚，杜绝半激活残留。
+// entClient 为 nil 时（单元测试）退化为无事务直执行。
+// withActivationTx runs the activation writes inside a DB transaction so partial
+// failures roll back cleanly. Falls back to direct execution when entClient is nil.
+func (s *BundleSubscriptionService) withActivationTx(ctx context.Context, fn func(context.Context) error) error {
+	if s.entClient == nil {
+		return fn(ctx)
+	}
+	tx, err := s.entClient.Tx(ctx)
+	if err != nil {
+		// entClient 已处于一个事务中（如集成测试的隔离事务 / 外层调用方的事务）：
+		// 复用当前 ctx 不再嵌套开事务，repo 通过 clientFromContext 自动 join 既有事务。
+		if errors.Is(err, dbent.ErrTxStarted) {
+			return fn(ctx)
+		}
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	txCtx := dbent.NewTxContext(ctx, tx)
+	if err := fn(txCtx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+	return nil
 }
 
 // ActivateBundleRequest 激活套餐的输入 DTO
@@ -50,115 +85,127 @@ type ActivateBundleRequest struct {
 	Source string // purchase, redeem, admin_assign
 }
 
-// ActivateBundle 激活套餐：检查冲突 → 加载计划 → 创建订阅 → 桥接 UserSubscription
+// ActivateBundle 激活套餐：检查冲突 → 加载计划 → 创建订阅 → 桥接 UserSubscription。
+// 全流程在单个数据库事务内完成（withActivationTx），任一步失败整体回滚，杜绝半激活残留；
+// 缓存失效在事务提交后执行，避免回滚后脏失效。
 // ActivateBundle creates a bundle subscription and bridges per-group UserSubscriptions.
 func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *ActivateBundleRequest) (*BundleSubscription, error) {
 	if req == nil {
 		return nil, ErrBundleNotFound
 	}
 
-	// 1. Check user has no active bundle subscription.
-	// Admin assignments bypass the conflict check: revoke existing active bundles first.
-	activeBundles, err := s.bundleSubRepo.GetActiveByUserID(ctx, req.UserID)
-	if err != nil {
-		return nil, fmt.Errorf("check active bundles: %w", err)
-	}
-	if len(activeBundles) > 0 {
-		if req.Source == BundleSourceAdminAssign {
-			// Revoke all existing active bundles before activating the new one.
-			for _, existing := range activeBundles {
-				if err := s.RevokeBundle(ctx, existing.ID); err != nil {
-					return nil, fmt.Errorf("revoke existing bundle %d for admin assign: %w", existing.ID, err)
-				}
-			}
-		} else {
-			return nil, ErrBundleConflict
+	var activated *BundleSubscription
+	if err := s.withActivationTx(ctx, func(txCtx context.Context) error {
+		// 1. Check user has no active bundle subscription.
+		// Admin assignments bypass the conflict check: revoke existing active bundles first.
+		activeBundles, err := s.bundleSubRepo.GetActiveByUserID(txCtx, req.UserID)
+		if err != nil {
+			return fmt.Errorf("check active bundles: %w", err)
 		}
+		if len(activeBundles) > 0 {
+			if req.Source == BundleSourceAdminAssign {
+				// Revoke all existing active bundles before activating the new one.
+				// Pass txCtx so revoke + activate share one transaction.
+				for _, existing := range activeBundles {
+					if err := s.RevokeBundle(txCtx, existing.ID); err != nil {
+						return fmt.Errorf("revoke existing bundle %d for admin assign: %w", existing.ID, err)
+					}
+				}
+			} else {
+				return ErrBundleConflict
+			}
+		}
+
+		// 2. Load plan and validate.
+		plan, err := s.planRepo.GetByID(txCtx, req.PlanID)
+		if err != nil {
+			return fmt.Errorf("load bundle plan: %w", err)
+		}
+		// Admin assignments can use any active plan, even if not publicly for sale.
+		if req.Source != BundleSourceAdminAssign && (!plan.ForSale || plan.Status != domain.StatusActive) {
+			return ErrBundlePlanDisabled
+		}
+		if plan.Status != domain.StatusActive {
+			return ErrBundlePlanDisabled
+		}
+
+		// 3. Create BundleSubscription with snapshot concurrency/rpm.
+		now := time.Now()
+		expiresAt := now.AddDate(0, 0, plan.ValidityDays)
+
+		bundleSub := &BundleSubscription{
+			UserID:           req.UserID,
+			PlanID:           req.PlanID,
+			Status:           BundleStatusActive,
+			StartsAt:         now,
+			ExpiresAt:        expiresAt,
+			ConcurrencyLimit: plan.ConcurrencyLimit,
+			RPMLimit:         plan.RPMLimit,
+			Source:           req.Source,
+			Usages:           make([]BundleSubscriptionUsage, 0, len(plan.GroupQuotas)),
+		}
+
+		if err := s.bundleSubRepo.Create(txCtx, bundleSub); err != nil {
+			return fmt.Errorf("create bundle subscription: %w", err)
+		}
+
+		// 4. For each GroupQuota, create BundleSubscriptionUsage + bridge UserSubscription.
+		for _, gq := range plan.GroupQuotas {
+			// Create usage tracker.
+			usage := &BundleSubscriptionUsage{
+				BundleSubscriptionID: bundleSub.ID,
+				GroupID:              gq.GroupID,
+				ModelPattern:         gq.ModelPattern,
+				DailyWindowStart:     now,
+				WeeklyWindowStart:    now,
+				MonthlyWindowStart:   now,
+			}
+			if err := s.usageRepo.Create(txCtx, usage); err != nil {
+				return fmt.Errorf("create bundle usage for group %d: %w", gq.GroupID, err)
+			}
+			bundleSub.Usages = append(bundleSub.Usages, *usage)
+
+			// Bridge: create UserSubscription linked to this bundle.
+			bundleSubID := bundleSub.ID
+			userSub := &UserSubscription{
+				UserID:                 req.UserID,
+				GroupID:                gq.GroupID,
+				StartsAt:               now,
+				ExpiresAt:              expiresAt,
+				Status:                 domain.SubscriptionStatusActive,
+				DailyUsageUSD:          0,
+				WeeklyUsageUSD:         0,
+				MonthlyUsageUSD:        0,
+				BundleSubscriptionID:   &bundleSubID,
+				DailyLimitUSD:          gq.DailyLimitUSD,
+				WeeklyLimitUSD:         gq.WeeklyLimitUSD,
+				MonthlyLimitUSD:        gq.MonthlyLimitUSD,
+				DailyImageLimitCount:   gq.DailyImageLimitCount,
+				WeeklyImageLimitCount:  gq.WeeklyImageLimitCount,
+				MonthlyImageLimitCount: gq.MonthlyImageLimitCount,
+				DailyVideoLimitCount:   gq.DailyVideoLimitCount,
+				WeeklyVideoLimitCount:  gq.WeeklyVideoLimitCount,
+				MonthlyVideoLimitCount: gq.MonthlyVideoLimitCount,
+				Notes:                  fmt.Sprintf("Bridged from bundle plan %q (ID:%d)", plan.Name, plan.ID),
+			}
+			if err := s.userSubRepo.Create(txCtx, userSub); err != nil {
+				return fmt.Errorf("bridge user subscription for group %d: %w", gq.GroupID, err)
+			}
+		}
+
+		activated = bundleSub
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
-	// 2. Load plan and validate.
-	plan, err := s.planRepo.GetByID(ctx, req.PlanID)
-	if err != nil {
-		return nil, fmt.Errorf("load bundle plan: %w", err)
-	}
-	// Admin assignments can use any active plan, even if not publicly for sale.
-	if req.Source != BundleSourceAdminAssign && (!plan.ForSale || plan.Status != domain.StatusActive) {
-		return nil, ErrBundlePlanDisabled
-	}
-	if plan.Status != domain.StatusActive {
-		return nil, ErrBundlePlanDisabled
-	}
-
-	// 3. Create BundleSubscription with snapshot concurrency/rpm.
-	now := time.Now()
-	expiresAt := now.AddDate(0, 0, plan.ValidityDays)
-
-	bundleSub := &BundleSubscription{
-		UserID:           req.UserID,
-		PlanID:           req.PlanID,
-		Status:           BundleStatusActive,
-		StartsAt:         now,
-		ExpiresAt:        expiresAt,
-		ConcurrencyLimit: plan.ConcurrencyLimit,
-		RPMLimit:         plan.RPMLimit,
-		Source:           req.Source,
-		Usages:           make([]BundleSubscriptionUsage, 0, len(plan.GroupQuotas)),
-	}
-
-	if err := s.bundleSubRepo.Create(ctx, bundleSub); err != nil {
-		return nil, fmt.Errorf("create bundle subscription: %w", err)
-	}
-
-	// Invalidate user bundle cache after activation.
+	// Invalidate user bundle cache after the transaction commits (avoid dirty
+	// invalidation if the transaction rolled back).
 	if s.cache != nil {
 		_ = s.cache.InvalidateBundleSubscriptionCache(ctx, req.UserID)
 	}
 
-	// 4. For each GroupQuota, create BundleSubscriptionUsage + bridge UserSubscription.
-	for _, gq := range plan.GroupQuotas {
-		// Create usage tracker.
-		usage := &BundleSubscriptionUsage{
-			BundleSubscriptionID: bundleSub.ID,
-			GroupID:              gq.GroupID,
-			ModelPattern:         gq.ModelPattern,
-			DailyWindowStart:     now,
-			WeeklyWindowStart:    now,
-			MonthlyWindowStart:   now,
-		}
-		if err := s.usageRepo.Create(ctx, usage); err != nil {
-			return nil, fmt.Errorf("create bundle usage for group %d: %w", gq.GroupID, err)
-		}
-		bundleSub.Usages = append(bundleSub.Usages, *usage)
-
-		// Bridge: create UserSubscription linked to this bundle.
-		bundleSubID := bundleSub.ID
-		userSub := &UserSubscription{
-			UserID:                 req.UserID,
-			GroupID:                gq.GroupID,
-			StartsAt:               now,
-			ExpiresAt:              expiresAt,
-			Status:                 domain.SubscriptionStatusActive,
-			DailyUsageUSD:          0,
-			WeeklyUsageUSD:         0,
-			MonthlyUsageUSD:        0,
-			BundleSubscriptionID:   &bundleSubID,
-			DailyLimitUSD:          gq.DailyLimitUSD,
-			WeeklyLimitUSD:         gq.WeeklyLimitUSD,
-			MonthlyLimitUSD:        gq.MonthlyLimitUSD,
-			DailyImageLimitCount:   gq.DailyImageLimitCount,
-			WeeklyImageLimitCount:  gq.WeeklyImageLimitCount,
-			MonthlyImageLimitCount: gq.MonthlyImageLimitCount,
-			DailyVideoLimitCount:   gq.DailyVideoLimitCount,
-			WeeklyVideoLimitCount:  gq.WeeklyVideoLimitCount,
-			MonthlyVideoLimitCount: gq.MonthlyVideoLimitCount,
-			Notes:                  fmt.Sprintf("Bridged from bundle plan %q (ID:%d)", plan.Name, plan.ID),
-		}
-		if err := s.userSubRepo.Create(ctx, userSub); err != nil {
-			return nil, fmt.Errorf("bridge user subscription for group %d: %w", gq.GroupID, err)
-		}
-	}
-
-	return bundleSub, nil
+	return activated, nil
 }
 
 // RevokeBundle 撤销套餐订阅，同时撤销关联的桥接 UserSubscription
@@ -177,9 +224,12 @@ func (s *BundleSubscriptionService) RevokeBundle(ctx context.Context, bundleSubI
 	}
 
 	// Sync: revoke bridged UserSubscriptions.
-	s.syncBridgedUserSubscriptions(ctx, bundleSub.UserID, bundleSubID, func(sub *UserSubscription) error {
+	if err := s.syncBridgedUserSubscriptions(ctx, bundleSub.UserID, bundleSubID, func(sub *UserSubscription) error {
 		return s.userSubRepo.UpdateStatus(ctx, sub.ID, domain.SubscriptionStatusExpired)
-	})
+	}); err != nil {
+		slog.Warn("revoke bundle: sync bridged user subscriptions had errors",
+			"bundle_sub_id", bundleSubID, "error", err)
+	}
 
 	// Invalidate cache after revocation.
 	if s.cache != nil {
@@ -201,7 +251,7 @@ func (s *BundleSubscriptionService) GetUserActiveBundle(ctx context.Context, use
 				UserID:           userID,
 				PlanID:           cached.PlanID,
 				Status:           cached.Status,
-				StartsAt:         time.Now(), // approx, cache does not store starts_at
+				StartsAt:         time.Unix(cached.StartsAt, 0),
 				ExpiresAt:        time.Unix(cached.ExpiresAt, 0),
 				ConcurrencyLimit: cached.ConcurrencyLimit,
 				RPMLimit:         cached.RPMLimit,
@@ -235,6 +285,7 @@ func (s *BundleSubscriptionService) GetUserActiveBundle(ctx context.Context, use
 			PlanName:         planName,
 			Tier:             tier,
 			Status:           sub.Status,
+			StartsAt:         sub.StartsAt.Unix(),
 			ExpiresAt:        sub.ExpiresAt.Unix(),
 			ConcurrencyLimit: sub.ConcurrencyLimit,
 			RPMLimit:         sub.RPMLimit,
@@ -302,6 +353,14 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 		}
 	}
 
+	// Load plan to resolve quota_scope per (group, pattern); usage records don't store scope.
+	scopeMap := make(map[string]string)
+	if plan, pErr := s.planRepo.GetByID(ctx, bundleSub.PlanID); pErr == nil && plan != nil {
+		for _, gq := range plan.GroupQuotas {
+			scopeMap[fmt.Sprintf("%d|%s", gq.GroupID, gq.ModelPattern)] = gq.QuotaScope
+		}
+	}
+
 	progress := make([]BundleUsageProgress, 0, len(bundleSub.Usages))
 	for _, usage := range bundleSub.Usages {
 		meta, hasMeta := metaMap[usage.GroupID]
@@ -312,6 +371,7 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 			GroupID:                usage.GroupID,
 			GroupName:              meta.groupName,
 			Platform:               meta.platform,
+			QuotaScope:             scopeMap[fmt.Sprintf("%d|%s", usage.GroupID, usage.ModelPattern)],
 			ModelPattern:           usage.ModelPattern,
 			DailyImageUsageCount:   usage.DailyImageUsageCount,
 			DailyUsageUSD:          usage.DailyUsageUSD,
@@ -384,10 +444,13 @@ func (s *BundleSubscriptionService) ExtendBundle(ctx context.Context, bundleSubI
 	}
 
 	// Sync: extend bridged UserSubscriptions' expiry.
-	s.syncBridgedUserSubscriptions(ctx, bundleSub.UserID, bundleSubID, func(sub *UserSubscription) error {
+	if err := s.syncBridgedUserSubscriptions(ctx, bundleSub.UserID, bundleSubID, func(sub *UserSubscription) error {
 		extendedExpiry := sub.ExpiresAt.AddDate(0, 0, days)
 		return s.userSubRepo.ExtendExpiry(ctx, sub.ID, extendedExpiry)
-	})
+	}); err != nil {
+		slog.Warn("extend bundle: sync bridged user subscriptions had errors",
+			"bundle_sub_id", bundleSubID, "error", err)
+	}
 
 	// Invalidate cache after extension.
 	if s.cache != nil {
@@ -417,15 +480,21 @@ func (s *BundleSubscriptionService) GetBundleByID(ctx context.Context, bundleSub
 // syncBridgedUserSubscriptions 查找并批量操作某套餐关联的所有桥接 UserSubscription
 // syncBridgedUserSubscriptions finds all bridged UserSubscriptions for a bundle
 // and applies the given mutation function to each one.
-func (s *BundleSubscriptionService) syncBridgedUserSubscriptions(ctx context.Context, userID, bundleSubID int64, mutFn func(*UserSubscription) error) {
+// syncBridgedUserSubscriptions 查找并批量操作某套餐关联的所有桥接 UserSubscription，
+// 返回首个错误（不中断后续操作，但暴露不一致给调用方记录）。
+func (s *BundleSubscriptionService) syncBridgedUserSubscriptions(ctx context.Context, userID, bundleSubID int64, mutFn func(*UserSubscription) error) error {
 	userSubs, err := s.userSubRepo.ListByUserID(ctx, userID)
 	if err != nil {
-		return
+		return fmt.Errorf("list user subscriptions for sync: %w", err)
 	}
+	var firstErr error
 	for i := range userSubs {
 		sub := &userSubs[i]
 		if sub.BundleSubscriptionID != nil && *sub.BundleSubscriptionID == bundleSubID {
-			_ = mutFn(sub)
+			if err := mutFn(sub); err != nil && firstErr == nil {
+				firstErr = err
+			}
 		}
 	}
+	return firstErr
 }

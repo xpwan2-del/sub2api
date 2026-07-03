@@ -101,9 +101,10 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 			status := http.StatusForbidden
 			errType := "bundle_error"
 			msg := err.Error()
-			if err == service.ErrBundleExpired {
+			switch err {
+			case service.ErrBundleExpired:
 				errType = "bundle_expired"
-			} else if err == service.ErrBundleModelNotIncluded {
+			case service.ErrBundleModelNotIncluded:
 				status = http.StatusBadRequest
 				errType = "bundle_model_not_included"
 			}
@@ -117,9 +118,43 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 			return
 		}
 
-		// 把路由解析的 quota 注入请求 ctx，供计费层 AccumulateUsage 复用其 ModelPattern，
-		// 避免累加用量时重复 load bundleSub + plan。detachedBillingContext 用 WithoutCancel 保留 values，计费 worker 可读。
-		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), ctxkey.BundleResolvedQuota, &resolved.Quota))
+		// 先加载桥接 UserSubscription：既供下游计费进入订阅扣减路径，又用其激活时快照的
+		// limit 构造注入 ctx 的 quota —— 使 pre-flight 额度检查、post 计费累加、用量进度展示
+		// 三处 limit 同源（激活快照），admin 后续修改 plan 额度不影响已购用户。
+		var bridgedSub *service.UserSubscription
+		if m.subscriptionSvc != nil && apiKey.User != nil && resolved.Group != nil && resolved.Group.IsSubscriptionType() {
+			sub, subErr := m.subscriptionSvc.GetActiveSubscription(c.Request.Context(), apiKey.User.ID, resolved.GroupID)
+			if subErr != nil {
+				slog.Error("bundle resolver: failed to load bridged subscription",
+					"user_id", apiKey.User.ID,
+					"group_id", resolved.GroupID,
+					"bundle_sub_id", resolved.BundleSubID,
+					"error", subErr,
+				)
+				// Do not abort — the request can still proceed via balance billing.
+			} else {
+				bridgedSub = sub
+				c.Set(string(ContextKeySubscription), sub)
+			}
+		}
+
+		// 构造注入 ctx 的 quota：ModelPattern 取路由 glob 命中的正确 pattern（避免
+		// CheckQuotaEligibility 的 resolveMatchingQuota 按 GroupID 取首条导致取错），
+		// limit 优先取桥接 userSub 的激活快照；无快照时回退 plan 当前值。
+		// detachedBillingContext 用 WithoutCancel 保留 values，计费 worker 可读。
+		resolvedQuota := resolved.Quota
+		if bridgedSub != nil {
+			resolvedQuota.DailyLimitUSD = bridgedSub.DailyLimitUSD
+			resolvedQuota.WeeklyLimitUSD = bridgedSub.WeeklyLimitUSD
+			resolvedQuota.MonthlyLimitUSD = bridgedSub.MonthlyLimitUSD
+			resolvedQuota.DailyImageLimitCount = bridgedSub.DailyImageLimitCount
+			resolvedQuota.WeeklyImageLimitCount = bridgedSub.WeeklyImageLimitCount
+			resolvedQuota.MonthlyImageLimitCount = bridgedSub.MonthlyImageLimitCount
+			resolvedQuota.DailyVideoLimitCount = bridgedSub.DailyVideoLimitCount
+			resolvedQuota.WeeklyVideoLimitCount = bridgedSub.WeeklyVideoLimitCount
+			resolvedQuota.MonthlyVideoLimitCount = bridgedSub.MonthlyVideoLimitCount
+		}
+		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), ctxkey.BundleResolvedQuota, &resolvedQuota))
 
 		// --- Bundle-level concurrency check ---
 		// Fail-closed: concurrency limits protect backend resources from overload.
@@ -170,6 +205,10 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 				slog.Warn("bundle rpm check failed, allowing request (fail-open)",
 					"bundle_sub_id", resolved.BundleSubID, "error", rpmErr)
 			} else if rpmCount > resolved.RPMLimit {
+				// 被拒请求归还其占用的 RPM 槽位，避免持续打满时压榨合法请求配额。
+				if decErr := m.rpmCache.DecrementBundleRPM(c.Request.Context(), resolved.BundleSubID); decErr != nil {
+					slog.Warn("bundle rpm decrement failed on reject", "bundle_sub_id", resolved.BundleSubID, "error", decErr)
+				}
 				c.JSON(http.StatusTooManyRequests, gin.H{
 					"error": gin.H{
 						"type":    "bundle_rpm_exceeded",
@@ -227,37 +266,7 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 			setGroupContext(c, resolved.Group)
 		}
 
-		// Load the bridged UserSubscription for the resolved group.
-		// For general bundle keys (GroupID==nil), the APIKeyAuth middleware skips
-		// subscription loading because apiKey.Group is nil at that point. We must
-		// load it here so that downstream billing enters the subscription path and
-		// accumulates bundle usage correctly.
-		if m.subscriptionSvc != nil && apiKey.User != nil && apiKey.GroupID != nil && resolved.Group != nil {
-			if resolved.Group.IsSubscriptionType() {
-				sub, subErr := m.subscriptionSvc.GetActiveSubscription(
-					c.Request.Context(),
-					apiKey.User.ID,
-					resolved.GroupID,
-				)
-				if subErr != nil {
-					slog.Error("bundle resolver: failed to load bridged subscription",
-						"user_id", apiKey.User.ID,
-						"group_id", resolved.GroupID,
-						"bundle_sub_id", resolved.BundleSubID,
-						"error", subErr,
-					)
-					// Do not abort — the request can still proceed via balance billing.
-					// The bundle usage will be lost for this request but the user is not blocked.
-				} else {
-					c.Set(string(ContextKeySubscription), sub)
-					slog.Debug("bundle resolver: loaded bridged subscription",
-						"subscription_id", sub.ID,
-						"bundle_sub_id", resolved.BundleSubID,
-						"group_id", resolved.GroupID,
-					)
-				}
-			}
-		}
+		// (桥接 UserSubscription 已在上方提前加载并注入 ctx，供额度检查与下游计费复用。)
 
 		c.Next()
 	}
@@ -266,6 +275,10 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 // extractModelFromRequest 从请求 query 参数或 body 中提取模型名称
 func extractModelFromRequest(c *gin.Context) string {
 	if model := c.Query("model"); model != "" {
+		return model
+	}
+	// Gemini 原生等入口的 model 在 URL path（/models/{model}:action）。
+	if model := extractModelFromPath(c.Request.URL.Path); model != "" {
 		return model
 	}
 	if c.Request.Body == nil {
@@ -284,4 +297,22 @@ func extractModelFromRequest(c *gin.Context) string {
 		return ""
 	}
 	return req.Model
+}
+
+// extractModelFromPath 从 URL path 提取模型名，支持 Gemini 风格 /models/{model}:action
+// 与 /models/{model}（取冒号 / 斜杠前的片段）。找不到返回空。
+func extractModelFromPath(path string) string {
+	const prefix = "/models/"
+	idx := strings.Index(path, prefix)
+	if idx < 0 {
+		return ""
+	}
+	rest := path[idx+len(prefix):]
+	if colon := strings.Index(rest, ":"); colon >= 0 {
+		rest = rest[:colon]
+	}
+	if slash := strings.Index(rest, "/"); slash >= 0 {
+		rest = rest[:slash]
+	}
+	return rest
 }

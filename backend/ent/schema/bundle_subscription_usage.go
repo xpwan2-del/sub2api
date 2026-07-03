@@ -32,11 +32,17 @@ func (BundleSubscriptionUsage) Fields() []ent.Field {
 		field.Int64("bundle_subscription_id").Comment("→ BundleSubscription"),
 		field.Int64("group_id").Comment("→ Group"),
 		field.String("model_pattern").Default("").Comment("空=平台级，有值=模型级"),
-		field.Float("daily_usage_usd").Default(0).Comment("当日已用"),
+		field.Float("daily_usage_usd").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,10)"}).
+			Default(0).Comment("当日已用"),
 		field.Time("daily_window_start").Default(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)).SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).Comment("日窗口起点"),
-		field.Float("weekly_usage_usd").Default(0).Comment("当周已用"),
+		field.Float("weekly_usage_usd").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,10)"}).
+			Default(0).Comment("当周已用"),
 		field.Time("weekly_window_start").Default(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)).SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).Comment("周窗口起点"),
-		field.Float("monthly_usage_usd").Default(0).Comment("当月已用"),
+		field.Float("monthly_usage_usd").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,10)"}).
+			Default(0).Comment("当月已用"),
 		field.Time("monthly_window_start").Default(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)).SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).Comment("月窗口起点"),
 		field.Int("daily_image_usage_count").Default(0).Comment("当日已用图片次数"),
 		field.Int("weekly_image_usage_count").Default(0).Comment("当周已用图片次数"),

@@ -735,13 +735,21 @@ func (s *PaymentService) doBundle(ctx context.Context, o *dbent.PaymentOrder) er
 	}
 	// Activate the bundle via BundleSubscriptionService.
 	source := "purchase"
-	_, err := s.bundleSubscriptionSvc.ActivateBundle(ctx, &ActivateBundleRequest{
+	bundleSub, err := s.bundleSubscriptionSvc.ActivateBundle(ctx, &ActivateBundleRequest{
 		UserID: o.UserID,
 		PlanID: *o.PlanID,
 		Source: source,
 	})
 	if err != nil {
 		return fmt.Errorf("activate bundle: %w", err)
+	}
+	// 回写套餐订阅 ID 到订单，便于财务对账与追溯（当前套餐不支持退款，仍保留关联）。
+	if bundleSub != nil {
+		if _, uErr := s.entClient.PaymentOrder.UpdateOneID(o.ID).
+			SetBundleSubscriptionID(bundleSub.ID).
+			Save(ctx); uErr != nil {
+			slog.Warn("bundle order: write back bundle_subscription_id failed", "orderID", o.ID, "error", uErr)
+		}
 	}
 	return s.markCompleted(ctx, o, "BUNDLE_ACTIVATION_SUCCESS")
 }

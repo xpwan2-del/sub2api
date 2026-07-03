@@ -131,7 +131,7 @@ type CreateGroupQuotaRequest struct {
 type UpdateBundlePlanRequest struct {
 	Name             *string                    `json:"name"`
 	Description      *string                    `json:"description"`
-	Tier             *string                    `json:"tier"`
+	Tier             *string                    `json:"tier" binding:"omitempty,oneof=starter pro enterprise"`
 	Price            *float64                   `json:"price"`
 	OriginalPrice    *float64                   `json:"original_price"`
 	Currency         *string                    `json:"currency"`

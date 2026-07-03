@@ -712,8 +712,9 @@ func ProvideChannelMonitorRunner(svc *ChannelMonitorService, settingService *Set
 }
 
 // ProvideBundleExpiryService creates and starts BundleExpiryService.
-func ProvideBundleExpiryService(bundleUsageRepo BundleUsageRepository, bundleSubRepo BundleSubscriptionRepository, userSubRepo UserSubscriptionRepository) *BundleExpiryService {
+func ProvideBundleExpiryService(bundleUsageRepo BundleUsageRepository, bundleSubRepo BundleSubscriptionRepository, userSubRepo UserSubscriptionRepository, lockCache LeaderLockCache, db *sql.DB) *BundleExpiryService {
 	svc := NewBundleExpiryService(bundleUsageRepo, bundleSubRepo, userSubRepo, time.Minute)
+	svc.SetLeaderLock(lockCache, db)
 	svc.Start()
 	return svc
 }

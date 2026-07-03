@@ -14,4 +14,7 @@ type BundleRPMCache interface {
 
 	// GetBundleRPM 获取当前分钟已用 RPM（只读，不递增）。
 	GetBundleRPM(ctx context.Context, bundleSubID int64) (count int, err error)
+
+	// DecrementBundleRPM 递减当前分钟的 RPM 计数，用于被 RPM 限制拒绝的请求归还占用槽位。
+	DecrementBundleRPM(ctx context.Context, bundleSubID int64) error
 }

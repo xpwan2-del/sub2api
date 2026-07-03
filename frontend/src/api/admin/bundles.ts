@@ -85,19 +85,6 @@ export async function getPlanDetail(id: number): Promise<BundlePlan> {
   return data
 }
 
-/** 停用（软删除）套餐计划 */
-/**
- * Disable (soft-delete) a bundle plan
- * @param id - Plan ID
- * @returns Success confirmation
- */
-export async function disablePlan(id: number): Promise<{ message: string }> {
-  const { data } = await apiClient.delete<{ message: string }>(
-    `/admin/bundle/plans/${id}`
-  )
-  return data
-}
-
 /** 分页查询套餐订阅列表，支持状态和用户ID过滤 */
 /**
  * List all bundle subscriptions with optional filters
@@ -173,7 +160,6 @@ export const bundlesAPI = {
   updatePlan,
   listPlans,
   getPlanDetail,
-  disablePlan,
   listSubscriptions,
   revokeSubscription,
   extendSubscription,

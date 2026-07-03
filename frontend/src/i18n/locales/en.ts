@@ -7600,6 +7600,8 @@ export default {
     browsePlans: 'Browse Plans',
     usageByGroup: 'Usage by Group',
     noUsageData: 'No usage data',
+    image: 'Image',
+    video: 'Video',
     unlimited: 'Unlimited',
     viewUsageRecords: 'Usage Records',
     backToBundles: 'Back to Bundles',

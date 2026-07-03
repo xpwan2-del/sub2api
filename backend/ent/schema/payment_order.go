@@ -85,6 +85,10 @@ func (PaymentOrder) Fields() []ent.Field {
 		field.Int64("plan_id").
 			Optional().
 			Nillable(),
+		field.Int64("bundle_subscription_id").
+			Optional().
+			Nillable().
+			Comment("套餐订单激活后回写的 BundleSubscription ID，便于对账"),
 		field.Int64("subscription_group_id").
 			Optional().
 			Nillable(),

@@ -63,37 +63,6 @@ export interface BundleSubscription {
   user_email?: string
 }
 
-/** 套餐订阅用量 — 按渠道组统计的日/周/月用量 */
-export interface BundleSubscriptionUsage {
-  id: number
-  bundle_subscription_id: number
-  group_id: number
-  group?: {
-    id: number
-    name: string
-    platform: string
-  }
-  model_pattern: string
-  daily_usage_usd: number
-  weekly_usage_usd: number
-  monthly_usage_usd: number
-  daily_limit_usd: number
-  weekly_limit_usd: number
-  monthly_limit_usd: number
-  daily_image_usage_count: number
-  weekly_image_usage_count: number
-  monthly_image_usage_count: number
-  daily_video_usage_count: number
-  weekly_video_usage_count: number
-  monthly_video_usage_count: number
-  daily_image_limit_count: number
-  weekly_image_limit_count: number
-  monthly_image_limit_count: number
-  daily_video_limit_count: number
-  weekly_video_limit_count: number
-  monthly_video_limit_count: number
-}
-
 /** 套餐用量进度 — 单个渠道组的用量与限额对比 */
 export interface BundleUsageProgress {
   group_id: number

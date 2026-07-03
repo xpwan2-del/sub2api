@@ -24,6 +24,7 @@ type BundleSubscriptionCacheData struct {
 	PlanName         string
 	Tier             string
 	Status           string
+	StartsAt         int64 // unix seconds
 	ExpiresAt        int64 // unix seconds
 	ConcurrencyLimit int
 	RPMLimit         int

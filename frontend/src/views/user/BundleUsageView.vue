@@ -170,9 +170,51 @@
                     </div>
                   </div>
 
+                  <!-- Image count usage -->
+                  <template v-if="hasImageLimit(usage)">
+                    <div class="border-t border-gray-100 pt-2 dark:border-dark-700"></div>
+                    <div class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.image') }}</div>
+                    <template v-for="m in countMetrics(usage, 'image')" :key="m.key">
+                      <div v-if="m.limit > 0" class="space-y-1">
+                        <div class="flex items-center justify-between text-[11px]">
+                          <span class="text-gray-500 dark:text-gray-400">{{ m.label }}</span>
+                          <span class="text-gray-500 dark:text-gray-400">{{ m.used }} / {{ m.limit }}</span>
+                        </div>
+                        <div class="relative h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                          <div
+                            class="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
+                            :class="progressBarClass(m.used, m.limit)"
+                            :style="{ width: progressWidth(m.used, m.limit) }"
+                          ></div>
+                        </div>
+                      </div>
+                    </template>
+                  </template>
+
+                  <!-- Video count usage -->
+                  <template v-if="hasVideoLimit(usage)">
+                    <div class="border-t border-gray-100 pt-2 dark:border-dark-700"></div>
+                    <div class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.video') }}</div>
+                    <template v-for="m in countMetrics(usage, 'video')" :key="'video-' + m.key">
+                      <div v-if="m.limit > 0" class="space-y-1">
+                        <div class="flex items-center justify-between text-[11px]">
+                          <span class="text-gray-500 dark:text-gray-400">{{ m.label }}</span>
+                          <span class="text-gray-500 dark:text-gray-400">{{ m.used }} / {{ m.limit }}</span>
+                        </div>
+                        <div class="relative h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                          <div
+                            class="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
+                            :class="progressBarClass(m.used, m.limit)"
+                            :style="{ width: progressWidth(m.used, m.limit) }"
+                          ></div>
+                        </div>
+                      </div>
+                    </template>
+                  </template>
+
                   <!-- No limits -->
                   <div
-                    v-if="usage.daily_limit_usd === 0 && usage.weekly_limit_usd === 0 && usage.monthly_limit_usd === 0"
+                    v-if="!hasAnyUsageLimit(usage)"
                     class="flex items-center justify-center rounded-lg bg-emerald-50 py-3 dark:bg-emerald-900/20"
                   >
                     <span class="text-sm text-emerald-600 dark:text-emerald-400">∞ {{ t('bundles.unlimited') }}</span>
@@ -255,6 +297,33 @@ function progressBarClass(used: number, limit: number): string {
   if (pct >= 100) return 'bg-red-500'
   if (pct >= 80) return 'bg-orange-500'
   return 'bg-green-500'
+}
+
+// 是否配置了图片/视频次数限额
+function hasImageLimit(u: BundleUsageProgress): boolean {
+  return u.daily_image_limit_count > 0 || u.weekly_image_limit_count > 0 || u.monthly_image_limit_count > 0
+}
+function hasVideoLimit(u: BundleUsageProgress): boolean {
+  return u.daily_video_limit_count > 0 || u.weekly_video_limit_count > 0 || u.monthly_video_limit_count > 0
+}
+// 是否有任何限额（USD 或 count）；全为 0 时显示"不限"
+function hasAnyUsageLimit(u: BundleUsageProgress): boolean {
+  return u.daily_limit_usd > 0 || u.weekly_limit_usd > 0 || u.monthly_limit_usd > 0 || hasImageLimit(u) || hasVideoLimit(u)
+}
+// 拼装某类（image/video）的日/周/月 count 指标，供模板 v-for 渲染
+function countMetrics(u: BundleUsageProgress, kind: 'image' | 'video') {
+  if (kind === 'image') {
+    return [
+      { key: 'daily', label: t('bundles.daily'), used: u.daily_image_usage_count, limit: u.daily_image_limit_count },
+      { key: 'weekly', label: t('bundles.weekly'), used: u.weekly_image_usage_count, limit: u.weekly_image_limit_count },
+      { key: 'monthly', label: t('bundles.monthly'), used: u.monthly_image_usage_count, limit: u.monthly_image_limit_count },
+    ]
+  }
+  return [
+    { key: 'daily', label: t('bundles.daily'), used: u.daily_video_usage_count, limit: u.daily_video_limit_count },
+    { key: 'weekly', label: t('bundles.weekly'), used: u.weekly_video_usage_count, limit: u.weekly_video_limit_count },
+    { key: 'monthly', label: t('bundles.monthly'), used: u.monthly_video_usage_count, limit: u.monthly_video_limit_count },
+  ]
 }
 
 function formatExpirationDate(expiresAt: string): string {

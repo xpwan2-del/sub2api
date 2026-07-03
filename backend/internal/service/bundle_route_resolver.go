@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
@@ -61,6 +62,19 @@ func (r *BundleRouteResolver) ResolveGroup(ctx context.Context, modelName string
 		slog.Warn("bundle route resolver: subscription not active",
 			"bundle_sub_id", bundleSubID,
 			"status", bundleSub.Status,
+			"model", modelName,
+		)
+		return nil, ErrBundleExpired
+	}
+	// 实时过期兜底：后台 BundleExpiryService 约 1 分钟一轮翻转 status。若扫描器延迟或故障，
+	// 仍按 ExpiresAt 拦截，避免过期套餐在下次扫描前继续放行。
+	// Real-time expiry fallback: gate on ExpiresAt so an expired bundle cannot keep
+	// serving if the background scanner lags or stalls. Skip when ExpiresAt is zero
+	// (test-only); ActivateBundle always sets a future expiry in production.
+	if !bundleSub.ExpiresAt.IsZero() && time.Now().After(bundleSub.ExpiresAt) {
+		slog.Warn("bundle route resolver: subscription past expiry",
+			"bundle_sub_id", bundleSubID,
+			"expires_at", bundleSub.ExpiresAt,
 			"model", modelName,
 		)
 		return nil, ErrBundleExpired
@@ -145,13 +159,20 @@ func makeResolvedGroup(gq BundlePlanGroupQuota, platform string, bundleSubID int
 // resolveModelPlatform maps a model name prefix to a platform constant.
 func resolveModelPlatform(modelName string) string {
 	prefixes := map[string]string{
-		"gpt-":     domain.PlatformOpenAI,
-		"o1-":      domain.PlatformOpenAI,
-		"o3-":      domain.PlatformOpenAI,
-		"chatgpt-": domain.PlatformOpenAI,
-		"dall-":    domain.PlatformOpenAI,
-		"claude-":  domain.PlatformAnthropic,
-		"gemini-":  domain.PlatformGemini,
+		"gpt-":            domain.PlatformOpenAI,
+		"o1-":             domain.PlatformOpenAI,
+		"o3-":             domain.PlatformOpenAI,
+		"o4-":             domain.PlatformOpenAI,
+		"chatgpt-":        domain.PlatformOpenAI,
+		"dall-":           domain.PlatformOpenAI,
+		"gpt-image-":      domain.PlatformOpenAI,
+		"sora-":           domain.PlatformOpenAI,
+		"text-embedding-": domain.PlatformOpenAI,
+		"embedding-":      domain.PlatformOpenAI,
+		"claude-":         domain.PlatformAnthropic,
+		"gemini-":         domain.PlatformGemini,
+		"veo-":            domain.PlatformGemini,
+		"imagen-":         domain.PlatformGemini,
 	}
 
 	lower := strings.ToLower(modelName)

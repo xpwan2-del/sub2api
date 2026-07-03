@@ -119,6 +119,8 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	}
 	order, err := s.createOrderInTx(ctx, req, user, plan, cfg, orderAmount, limitAmount, feeRate, payAmount, balanceDeduct, sel)
 	if err != nil {
+		// 混合支付已扣余额但下单失败：回滚余额，避免资金损失（撤销未生效扣减，非退款）。
+		s.rollbackBalanceDeduct(ctx, user.ID, balanceDeduct, "createOrderInTx")
 		return nil, err
 	}
 	resp, err := s.invokeProvider(ctx, order, req, cfg, limitAmount, payAmountStr, payAmount, plan, sel)
@@ -126,9 +128,21 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		_, _ = s.entClient.PaymentOrder.UpdateOneID(order.ID).
 			SetStatus(OrderStatusFailed).
 			Save(ctx)
+		s.rollbackBalanceDeduct(ctx, user.ID, balanceDeduct, "invokeProvider")
 		return nil, err
 	}
 	return resp, nil
+}
+
+// rollbackBalanceDeduct 回滚混合套餐支付中已扣的余额（仅当下单或调起支付失败时调用）。
+// 这是撤销"未生效的扣减"，不是订单退款（套餐暂不支持退款）。
+func (s *PaymentService) rollbackBalanceDeduct(ctx context.Context, userID int64, amount float64, stage string) {
+	if amount <= 0 {
+		return
+	}
+	if err := s.userRepo.UpdateBalance(ctx, userID, amount); err != nil {
+		slog.Error("rollback balance deduct failed", "stage", stage, "userID", userID, "amount", amount, "error", err)
+	}
 }
 
 func (s *PaymentService) validateOrderInput(ctx context.Context, req CreateOrderRequest, cfg *PaymentConfig) (*dbent.SubscriptionPlan, error) {
@@ -206,6 +220,11 @@ func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req C
 	// Fulfill the bundle immediately
 	if err := s.ExecuteBundleFulfillment(ctx, order.ID); err != nil {
 		slog.Error("bundle fulfillment failed after pure balance payment", "orderID", order.ID, "error", err)
+		// 套餐暂不支持退款，但激活失败时必须回滚已扣余额，避免用户付款却未拿到套餐。
+		// (This rolls back an intermediate deduction for an order that never fulfilled —
+		// it is not a refund of a completed order.)
+		s.rollbackBalanceDeduct(ctx, user.ID, orderAmount, "pureBalanceFulfillment")
+		_, _ = s.entClient.PaymentOrder.UpdateOneID(order.ID).SetStatus(OrderStatusFailed).Save(ctx)
 		return nil, fmt.Errorf("activate bundle: %w", err)
 	}
 	// Re-read order to get updated status

@@ -148,7 +148,18 @@ func (s *BundleUsageService) CheckQuotaEligibility(ctx context.Context, bundleSu
 	if err != nil {
 		return nil, err
 	}
+	// 优先用路由中间件注入的 quota（glob 命中的正确 pattern + 激活快照 limit），覆盖
+	// resolveMatchingQuota 按 GroupID 取首条可能取错的 quota（同一 group 配多条 quota 的场景）。
+	if q := BundleResolvedQuotaFromContext(ctx); q != nil {
+		matchingQuota = q
+	}
 	if bundleSub.Status != BundleStatusActive {
+		return nil, ErrBundleExpired
+	}
+	// 实时过期兜底：与 ResolveGroup 一致，按 ExpiresAt 拦截，避免依赖后台扫描周期。
+	// ExpiresAt 零值（仅测试构造场景）跳过；生产中 ActivateBundle 总设未来时间。
+	// Real-time expiry fallback aligned with ResolveGroup.
+	if !bundleSub.ExpiresAt.IsZero() && time.Now().After(bundleSub.ExpiresAt) {
 		return nil, ErrBundleExpired
 	}
 	if matchingQuota == nil {
