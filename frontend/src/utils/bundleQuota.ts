@@ -55,3 +55,16 @@ export const quotaSegments = (gq: BundlePlanGroupQuota): QuotaSegment[] => {
 /** Format a single quota value with its unit: `$10` for USD, `100次` for counts. */
 export const formatSegmentValue = (kind: QuotaKind, value: number): string =>
   kind === 'usd' ? `$${value}` : `${value}次`
+
+/**
+ * Split a comma-separated model_pattern string into individual pattern chips.
+ * Trims whitespace and drops empty segments. Returns [] for empty/null/undefined.
+ * Used by the tag input + display components to share one parsing rule.
+ */
+export const splitModelPatterns = (pattern: string | null | undefined): string[] => {
+  if (!pattern) return []
+  return pattern
+    .split(',')
+    .map(p => p.trim())
+    .filter(p => p.length > 0)
+}

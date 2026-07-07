@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatSegmentValue, hasAnyQuotaLimit, quotaSegments } from '@/utils/bundleQuota'
+import { formatSegmentValue, hasAnyQuotaLimit, quotaSegments, splitModelPatterns } from '@/utils/bundleQuota'
 import type { BundlePlanGroupQuota } from '@/types/bundle'
 
 const baseGq = (overrides: Partial<BundlePlanGroupQuota> = {}): BundlePlanGroupQuota => ({
@@ -76,6 +76,26 @@ describe('bundleQuota utils', () => {
     })
     it('appends 次 for video counts', () => {
       expect(formatSegmentValue('video', 50)).toBe('50次')
+    })
+  })
+
+  describe('splitModelPatterns', () => {
+    it('returns empty for null/undefined/empty', () => {
+      expect(splitModelPatterns(null)).toEqual([])
+      expect(splitModelPatterns(undefined)).toEqual([])
+      expect(splitModelPatterns('')).toEqual([])
+    })
+    it('splits comma-separated patterns', () => {
+      expect(splitModelPatterns('gpt-4o,claude-3-opus')).toEqual(['gpt-4o', 'claude-3-opus'])
+    })
+    it('trims whitespace', () => {
+      expect(splitModelPatterns(' gpt-4* , claude-3-opus ')).toEqual(['gpt-4*', 'claude-3-opus'])
+    })
+    it('drops empty segments', () => {
+      expect(splitModelPatterns('gpt-4o,,claude-3-opus,')).toEqual(['gpt-4o', 'claude-3-opus'])
+    })
+    it('single pattern returns one element', () => {
+      expect(splitModelPatterns('gpt-4*')).toEqual(['gpt-4*'])
     })
   })
 })
