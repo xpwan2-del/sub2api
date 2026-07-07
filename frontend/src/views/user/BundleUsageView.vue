@@ -120,9 +120,13 @@
                   <span :class="['rounded-md border px-2 py-0.5 text-[11px] font-medium', platformBadgeLightClass(usage.platform)]">
                     {{ platformLabel(usage.platform) }}
                   </span>
-                  <span v-if="usage.model_pattern" class="ml-auto rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500 dark:bg-dark-700 dark:text-gray-400">
-                    {{ usage.model_pattern }}
-                  </span>
+                  <div v-if="usage.model_pattern" class="ml-auto flex flex-wrap items-center justify-end gap-1">
+                    <span
+                      v-for="(p, i) in splitModelPatterns(usage.model_pattern)"
+                      :key="i"
+                      class="inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-700 dark:bg-dark-700 dark:text-gray-200"
+                    >{{ p }}</span>
+                  </div>
                 </div>
 
                 <!-- Progress Bars -->
@@ -244,6 +248,7 @@ import Icon from '@/components/icons/Icon.vue'
 import { platformBadgeLightClass, platformBorderClass, platformLabel } from '@/utils/platformColors'
 import { getTierTheme, getTierI18nKey } from '@/constants/bundleTiers'
 import { formatDateOnly } from '@/utils/format'
+import { splitModelPatterns } from '@/utils/bundleQuota'
 
 // ==================== BundleUsageView：用户套餐用量页 ====================
 // 展示用户当前套餐的各渠道组用量进度（日/周/月），

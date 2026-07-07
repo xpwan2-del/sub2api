@@ -142,8 +142,13 @@
                     {{ item.platform || '' }}
                   </span>
                 </div>
-                <div v-if="item.model_pattern" class="mb-2 text-xs text-gray-500 dark:text-gray-400">
-                  Model: {{ item.model_pattern }}
+                <div v-if="item.model_pattern" class="mb-2 flex flex-wrap items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                  <span>Model:</span>
+                  <span
+                    v-for="(p, i) in splitModelPatterns(item.model_pattern)"
+                    :key="i"
+                    class="inline-block rounded bg-gray-100 px-1.5 py-0.5 text-gray-700 dark:bg-dark-700 dark:text-gray-200"
+                  >{{ p }}</span>
                 </div>
                 <div class="space-y-1.5">
                   <!-- Daily -->
@@ -355,6 +360,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { bundlesAPI } from '@/api/admin/bundles'
 import { extractApiErrorMessage } from '@/utils/apiError'
+import { splitModelPatterns } from '@/utils/bundleQuota'
 import type { BundleSubscription, BundleUsageProgress } from '@/types/bundle'
 import type { Column } from '@/components/common/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
