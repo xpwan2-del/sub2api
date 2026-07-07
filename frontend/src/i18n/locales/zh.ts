@@ -7881,6 +7881,9 @@ export default {
       usage: '用量',
       groupUsageDetails: 'Group 用量详情',
       noGroupUsage: '暂无用量数据',
+      costLimitLabel: '金额限额',
+      imageCountLabel: '图片次数限额',
+      videoCountLabel: '视频次数限额',
     },
     // 用户
     user: {

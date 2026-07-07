@@ -7699,6 +7699,9 @@ export default {
       usage: 'Usage',
       groupUsageDetails: 'Group Usage Details',
       noGroupUsage: 'No usage data available',
+      costLimitLabel: 'Cost Limit',
+      imageCountLabel: 'Image Count Limit',
+      videoCountLabel: 'Video Count Limit',
     },
     // User
     user: {
