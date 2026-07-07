@@ -181,13 +181,13 @@
               <!-- Model Pattern (only for model scope) -->
               <div class="col-span-2">
                 <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.admin.modelPattern') }}</label>
-                <input
+                <ModelPatternTagInput
                   v-model="quota.model_pattern"
-                  type="text"
-                  class="input mt-1"
+                  class="mt-1"
                   :disabled="quota.quota_scope !== 'model'"
-                  :placeholder="quota.quota_scope === 'model' ? 'gpt-4*' : '-'"
+                  :placeholder="t('bundles.admin.modelPatternPlaceholder')"
                 />
+                <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ t('bundles.admin.modelPatternHint') }}</p>
               </div>
               <!-- Daily / Weekly / Monthly USD Limits -->
               <div class="col-span-1">
@@ -286,6 +286,7 @@ import DataTable from '@/components/common/DataTable.vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Select from '@/components/common/Select.vue'
 import Icon from '@/components/icons/Icon.vue'
+import ModelPatternTagInput from '@/components/common/ModelPatternTagInput.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()

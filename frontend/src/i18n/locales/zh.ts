@@ -7820,6 +7820,8 @@ export default {
       scopePlatform: '按平台',
       scopeModel: '按模型',
       modelPattern: '模型匹配',
+      modelPatternPlaceholder: 'gpt-4*, claude-3-opus',
+      modelPatternHint: '多个模型共享本行额度(逗号分隔,支持 * 通配)',
       dailyLimit: '日额度 (USD)',
       weeklyLimit: '周额度 (USD)',
       monthlyLimit: '月额度 (USD)',

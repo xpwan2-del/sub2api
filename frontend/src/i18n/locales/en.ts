@@ -7638,6 +7638,8 @@ export default {
       scopePlatform: 'By Platform',
       scopeModel: 'By Model',
       modelPattern: 'Model Pattern',
+      modelPatternPlaceholder: 'gpt-4*, claude-3-opus',
+      modelPatternHint: 'Multiple models share this quota (comma-separated, * wildcard supported)',
       dailyLimit: 'Daily Limit (USD)',
       weeklyLimit: 'Weekly Limit (USD)',
       monthlyLimit: 'Monthly Limit (USD)',
