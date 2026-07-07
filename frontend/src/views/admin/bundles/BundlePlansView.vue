@@ -187,7 +187,7 @@
                   :disabled="quota.quota_scope !== 'model'"
                   :placeholder="t('bundles.admin.modelPatternPlaceholder')"
                 />
-                <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ t('bundles.admin.modelPatternHint') }}</p>
+                <p v-if="quota.quota_scope === 'model'" class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ t('bundles.admin.modelPatternHint') }}</p>
               </div>
               <!-- Daily / Weekly / Monthly USD Limits -->
               <div class="col-span-1">

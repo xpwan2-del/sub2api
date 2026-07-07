@@ -17,7 +17,6 @@
       >×</button>
     </span>
     <input
-      ref="inputEl"
       v-model="text"
       type="text"
       :disabled="disabled"

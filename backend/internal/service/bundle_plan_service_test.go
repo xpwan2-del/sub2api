@@ -503,3 +503,20 @@ func TestCreatePlan_RejectsInvalidModelPattern(t *testing.T) {
 	_, err := svc.CreatePlan(context.Background(), req)
 	require.Error(t, err)
 }
+
+// ──────────────────────────────────────────────────────
+// Tests: UpdatePlan model_pattern rejection (service-level)
+// ──────────────────────────────────────────────────────
+
+func TestUpdatePlan_RejectsInvalidModelPattern(t *testing.T) {
+	existing := samplePlan() // platform-scope quota; UpdatePlan needs GetByID to succeed
+	stub := &bundlePlanUpdateStub{existing: existing}
+	req := &UpdateBundlePlanRequest{
+		GroupQuotas: &[]CreateGroupQuotaRequest{
+			{GroupID: 1, QuotaScope: QuotaScopeModel, ModelPattern: ""}, // 空 pattern 应被拒
+		},
+	}
+	svc := newBundlePlanSvc(stub)
+	_, err := svc.UpdatePlan(context.Background(), existing.ID, req)
+	require.Error(t, err)
+}
