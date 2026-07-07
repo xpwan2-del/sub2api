@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -450,3 +451,55 @@ func TestBundlePlanService_ListForSale_RepoError(t *testing.T) {
 // ──────────────────────────────────────────────────────
 
 func ptrBool(v bool) *bool { return &v }
+
+// ──────────────────────────────────────────────────────
+// Tests: validateModelPattern (pure function)
+// ──────────────────────────────────────────────────────
+
+func TestValidateModelPattern(t *testing.T) {
+	tests := []struct {
+		name    string
+		scope   string
+		pattern string
+		wantErr bool
+	}{
+		{"platform scope pass regardless", QuotaScopePlatform, "", false},
+		{"model single", QuotaScopeModel, "gpt-4o", false},
+		{"model multi", QuotaScopeModel, "gpt-4o,claude-3-opus", false},
+		{"model glob", QuotaScopeModel, "gpt-4*", false},
+		{"model empty rejected", QuotaScopeModel, "", true},
+		{"model only commas rejected", QuotaScopeModel, ",,,", true},
+		{"model too many segments", QuotaScopeModel, strings.Repeat("m,", 50) + "m", true},
+		{"model segment too long", QuotaScopeModel, strings.Repeat("a", 129), true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateModelPattern(tt.scope, tt.pattern)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+// ──────────────────────────────────────────────────────
+// Tests: CreatePlan model_pattern rejection (service-level)
+// ──────────────────────────────────────────────────────
+
+func TestCreatePlan_RejectsInvalidModelPattern(t *testing.T) {
+	req := &CreateBundlePlanRequest{
+		Name:         "X",
+		Tier:         BundleTierPro,
+		Price:        1,
+		Currency:     "USD",
+		ValidityDays: 30,
+		GroupQuotas: []CreateGroupQuotaRequest{
+			{GroupID: 1, QuotaScope: QuotaScopeModel, ModelPattern: ""}, // 空 pattern 应被拒
+		},
+	}
+	svc := NewBundlePlanService(&bundlePlanCreateStub{}, nil)
+	_, err := svc.CreatePlan(context.Background(), req)
+	require.Error(t, err)
+}

@@ -8,9 +8,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+)
+
+// model_pattern 校验上限:逗号分隔的子规则数与单条长度,防滥用。
+const (
+	maxModelPatternSegments = 50
+	maxModelPatternSegLen   = 128
 )
 
 // BundlePlanService 套餐计划服务，封装计划管理的业务逻辑
@@ -58,6 +65,9 @@ func (s *BundlePlanService) CreatePlan(ctx context.Context, req *CreateBundlePla
 	}
 
 	for _, gq := range req.GroupQuotas {
+		if err := validateModelPattern(gq.QuotaScope, gq.ModelPattern); err != nil {
+			return nil, fmt.Errorf("invalid group quota for group %d: %w", gq.GroupID, err)
+		}
 		plan.GroupQuotas = append(plan.GroupQuotas, BundlePlanGroupQuota{
 			GroupID:                gq.GroupID,
 			QuotaScope:             gq.QuotaScope,
@@ -142,6 +152,9 @@ func (s *BundlePlanService) UpdatePlan(ctx context.Context, planID int64, req *U
 	if req.GroupQuotas != nil {
 		quotas := make([]BundlePlanGroupQuota, 0, len(*req.GroupQuotas))
 		for _, gq := range *req.GroupQuotas {
+			if err := validateModelPattern(gq.QuotaScope, gq.ModelPattern); err != nil {
+				return nil, fmt.Errorf("invalid group quota for group %d: %w", gq.GroupID, err)
+			}
 			quotas = append(quotas, BundlePlanGroupQuota{
 				PlanID:                 planID,
 				GroupID:                gq.GroupID,
@@ -219,4 +232,30 @@ func (s *BundlePlanService) ListForSale(ctx context.Context) ([]BundlePlan, erro
 	}
 
 	return plans, nil
+}
+
+// validateModelPattern 校验 model_scope 下的 model_pattern 字段(逗号分隔多 glob)。
+// platform_scope 下 pattern 应为空,直接放行。返回聚合错误信息。
+func validateModelPattern(scope, pattern string) error {
+	if scope != QuotaScopeModel {
+		return nil
+	}
+	count := 0
+	for i, seg := range strings.Split(pattern, ",") {
+		seg = strings.TrimSpace(seg)
+		if seg == "" {
+			continue
+		}
+		count++
+		if len(seg) > maxModelPatternSegLen {
+			return fmt.Errorf("model pattern rule #%d exceeds %d chars: %q", i+1, maxModelPatternSegLen, seg)
+		}
+	}
+	if count == 0 {
+		return fmt.Errorf("model scope quota requires at least one model pattern")
+	}
+	if count > maxModelPatternSegments {
+		return fmt.Errorf("model pattern rules count %d exceeds limit %d", count, maxModelPatternSegments)
+	}
+	return nil
 }
