@@ -132,7 +132,9 @@
                       <h3 class="truncate text-base font-bold text-gray-900 dark:text-white">{{ plan.name }}</h3>
                       <span :class="tierBadgeClass(plan.tier)">{{ tierLabel(plan.tier) }}</span>
                     </div>
-                    <p v-if="plan.description" class="mt-0.5 line-clamp-2 text-xs leading-relaxed text-gray-500 dark:text-dark-400">
+                    <p v-if="plan.description"
+                      class="mt-0.5 line-clamp-2 text-xs leading-relaxed text-gray-500 dark:text-dark-400"
+                      :title="plan.description">
                       {{ plan.description }}
                     </p>
                   </div>

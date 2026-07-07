@@ -42,7 +42,9 @@
                     {{ t('bundles.active') }}
                   </span>
                 </div>
-                <p v-if="activePlan?.description" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                <p v-if="activePlan?.description"
+                  class="mt-0.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400"
+                  :title="activePlan.description">
                   {{ activePlan.description }}
                 </p>
               </div>

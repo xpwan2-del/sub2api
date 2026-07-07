@@ -110,7 +110,9 @@
                   <span class="text-sm text-gray-500 dark:text-gray-400">/ {{ planValiditySuffix }}</span>
                 </div>
                 <!-- Description -->
-                <p v-if="selectedPlan.description" class="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+                <p v-if="selectedPlan.description"
+                  class="mt-2 line-clamp-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400"
+                  :title="selectedPlan.description">
                   {{ selectedPlan.description }}
                 </p>
                 <!-- Rate + Limits grid -->
@@ -224,7 +226,9 @@
                 <span class="text-sm text-gray-500 dark:text-gray-400">/ {{ bundlePlan.validity_days }}{{ t('bundles.days') }}</span>
               </div>
               <!-- Description -->
-              <p v-if="bundlePlan.description" class="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+              <p v-if="bundlePlan.description"
+                class="mt-2 line-clamp-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400"
+                :title="bundlePlan.description">
                 {{ bundlePlan.description }}
               </p>
               <!-- Concurrency / RPM -->
