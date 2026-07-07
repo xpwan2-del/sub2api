@@ -992,6 +992,14 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 func (h *GatewayHandler) Models(c *gin.Context) {
 	apiKey, _ := middleware2.GetAPIKeyFromContext(c)
 
+	// 套餐 Key（无固定 group，靠按 model 动态解析路由）：返回该套餐所有 group 的可用模型并集，
+	// 而非全系统模型。普通未分组 Key 已被 RequireGroupAssignment 中间件拦截，不会到达此处。
+	if apiKey != nil && apiKey.GroupID == nil && apiKey.BundleSubscriptionID != nil {
+		models := h.gatewayService.GetBundleAvailableModels(c.Request.Context(), *apiKey.BundleSubscriptionID)
+		writeModelsList(c, models)
+		return
+	}
+
 	var groupID *int64
 	var platform string
 

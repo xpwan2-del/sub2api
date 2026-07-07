@@ -646,6 +646,47 @@ func TestRequireGroupAssignmentMarksUngroupedKeyBusinessLimited(t *testing.T) {
 	require.Equal(t, service.OpsClientBusinessLimitedReasonAPIKeyGroupUnassigned, businessLimitedReason)
 }
 
+// TestRequireGroupAssignment_AllowsBundleKeyWithoutResolvedGroup 验证套餐 Key（无固定 group，
+// BundleResolver 在 GET /v1/models 这类无 model 字段的端点上未解析出 group）不被当作未分组 Key 拦截。
+func TestRequireGroupAssignment_AllowsBundleKeyWithoutResolvedGroup(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	settingService := service.NewSettingService(fakeSettingRepo{
+		values: map[string]string{
+			service.SettingKeyAllowUngroupedKeyScheduling: "false",
+		},
+	}, &config.Config{})
+	bundleSubID := int64(55)
+	apiKey := &service.APIKey{
+		ID:                   100,
+		Key:                  "bundle-key",
+		Status:               service.StatusActive,
+		BundleSubscriptionID: &bundleSubID, // GroupID 保持 nil（套餐 Key 无固定 group）
+	}
+
+	router := gin.New()
+	var markedBusinessLimited bool
+	router.Use(func(c *gin.Context) {
+		c.Next()
+		markedBusinessLimited = service.HasOpsClientBusinessLimited(c)
+	})
+	router.Use(func(c *gin.Context) {
+		c.Set(string(ContextKeyAPIKey), apiKey)
+		c.Next()
+	})
+	router.Use(RequireGroupAssignment(settingService, AnthropicErrorWriter))
+	router.GET("/t", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/t", nil)
+	router.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	require.False(t, markedBusinessLimited, "套餐 Key 不应被标记为业务受限")
+}
+
 func TestAPIKeyAuthIPRestrictionDoesNotTrustForwardedClientIPByDefault(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

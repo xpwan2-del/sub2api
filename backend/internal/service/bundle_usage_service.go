@@ -54,6 +54,25 @@ func (s *BundleUsageService) resolveMatchingQuota(ctx context.Context, bundleSub
 	return bundleSub, nil, nil
 }
 
+// GetBundlePlan 加载套餐订阅对应的计划（含全部 GroupQuotas 及每个 group 的 platform）。
+// 供网关 /v1/models 等只读端点枚举套餐可用模型使用。订阅不存在时返回 ErrBundleNotFound，
+// 不 panic。
+// GetBundlePlan loads the bundle plan (with all group quotas) for a subscription.
+func (s *BundleUsageService) GetBundlePlan(ctx context.Context, bundleSubID int64) (*BundlePlan, error) {
+	bundleSub, err := s.bundleSubRepo.GetByID(ctx, bundleSubID)
+	if err != nil {
+		return nil, fmt.Errorf("load bundle subscription: %w", err)
+	}
+	if bundleSub == nil {
+		return nil, ErrBundleNotFound
+	}
+	plan, err := s.planRepo.GetByID(ctx, bundleSub.PlanID)
+	if err != nil {
+		return nil, fmt.Errorf("load bundle plan: %w", err)
+	}
+	return plan, nil
+}
+
 // BundleResolvedQuotaFromContext 从 ctx 读取路由中间件已解析的套餐分组额度（含 ModelPattern）。
 // 命中时 AccumulateUsage 复用之、跳过 plan 查询；未命中（测试 / 直接调用）则 fallback 到 resolveMatchingQuota。
 func BundleResolvedQuotaFromContext(ctx context.Context) *BundlePlanGroupQuota {

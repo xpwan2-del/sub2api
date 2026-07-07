@@ -115,6 +115,13 @@ func RequireGroupAssignment(settingService *service.SettingService, writeError G
 			c.Next()
 			return
 		}
+		// 已认证的套餐 Key（无固定 group，靠按 model 动态解析路由）在无 model 字段的只读端点
+		//（如 GET /v1/models、GET /v1beta/models）上无法解析出 group，不应被当作「未分组普通 Key」拦截。
+		// 普通未分组 Key（BundleSubscriptionID==nil）仍走下面的系统设置检查 / 403。
+		if apiKey.BundleSubscriptionID != nil {
+			c.Next()
+			return
+		}
 		// Bundle key: group resolved by middleware, allow through
 		if _, exists := c.Get("bundle_resolved_group_id"); exists {
 			c.Next()

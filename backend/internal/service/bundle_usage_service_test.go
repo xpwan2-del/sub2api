@@ -121,6 +121,41 @@ func newSvcWith(plan *BundlePlan, sub *BundleSubscription, usage *BundleSubscrip
 	)
 }
 
+func TestGetBundlePlan_ReturnsPlanWithAllGroupQuotas(t *testing.T) {
+	plan := &BundlePlan{
+		ID: 7,
+		GroupQuotas: []BundlePlanGroupQuota{
+			{GroupID: 100, GroupPlatform: PlatformOpenAI, QuotaScope: QuotaScopePlatform},
+			{GroupID: 200, GroupPlatform: PlatformAnthropic, QuotaScope: QuotaScopeModel, ModelPattern: "claude-*"},
+		},
+	}
+	sub := &BundleSubscription{ID: 3, PlanID: 7, Status: BundleStatusActive}
+
+	svc := newSvcWith(plan, sub, nil)
+	got, err := svc.GetBundlePlan(context.Background(), 3)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got == nil || got.ID != 7 {
+		t.Fatalf("expected plan ID 7, got %+v", got)
+	}
+	if len(got.GroupQuotas) != 2 {
+		t.Fatalf("expected 2 group quotas, got %d", len(got.GroupQuotas))
+	}
+}
+
+func TestGetBundlePlan_NilSubscriptionReturnsError(t *testing.T) {
+	// 订阅不存在（GetByID 返回 nil sub）时不应 panic，应返回 error。
+	svc := newSvcWith(nil, nil, nil)
+	got, err := svc.GetBundlePlan(context.Background(), 999)
+	if err == nil {
+		t.Fatal("expected error when subscription is nil")
+	}
+	if got != nil {
+		t.Fatalf("expected nil plan on error, got %+v", got)
+	}
+}
+
 func TestCheckQuotaEligibility_CountLimitExceeded(t *testing.T) {
 	const groupID int64 = 100
 	plan := &BundlePlan{

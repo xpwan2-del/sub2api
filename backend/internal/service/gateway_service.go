@@ -10601,6 +10601,42 @@ func (s *GatewayService) GetAvailableModels(ctx context.Context, groupID *int64,
 	return cloneStringSlice(models)
 }
 
+// GetBundleAvailableModels 返回套餐订阅可用的所有模型：遍历 plan 所有 group quota，
+// 对每个 group 复用 GetAvailableModels 取该 group 上游账号的模型并集（享 15s 缓存），
+// model 级别 quota 再用 model_pattern 收窄（与计费路由 ResolveGroup 同源 matchAnyGlob），
+// 最后去重排序。供 /v1/models 等只读端点向套餐 Key 返回其套餐范围内的模型列表，
+// 而非全系统模型。订阅缺失/无 quota 时返回 nil。
+// GetBundleAvailableModels returns all models available to a bundle subscription.
+func (s *GatewayService) GetBundleAvailableModels(ctx context.Context, bundleSubID int64) []string {
+	plan, err := s.bundleUsageService.GetBundlePlan(ctx, bundleSubID)
+	if err != nil || plan == nil || len(plan.GroupQuotas) == 0 {
+		return nil
+	}
+	set := make(map[string]struct{})
+	for _, gq := range plan.GroupQuotas {
+		groupID := gq.GroupID
+		models := s.GetAvailableModels(ctx, &groupID, gq.GroupPlatform)
+		if gq.QuotaScope == QuotaScopeModel && gq.ModelPattern != "" {
+			filtered := models[:0]
+			for _, m := range models {
+				if matchAnyGlob(gq.ModelPattern, m) {
+					filtered = append(filtered, m)
+				}
+			}
+			models = filtered
+		}
+		for _, m := range models {
+			set[m] = struct{}{}
+		}
+	}
+	out := make([]string, 0, len(set))
+	for m := range set {
+		out = append(out, m)
+	}
+	sort.Strings(out)
+	return out
+}
+
 func (s *GatewayService) InvalidateAvailableModelsCache(groupID *int64, platform string) {
 	if s == nil || s.modelsListCache == nil {
 		return
