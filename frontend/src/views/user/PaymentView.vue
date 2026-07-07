@@ -266,12 +266,14 @@
                       {{ platformLabel(gq.group_platform || '') }}
                     </span>
                     <!-- Hover tooltip with quota details -->
-                    <div v-if="gq.daily_limit_usd || gq.weekly_limit_usd || gq.monthly_limit_usd"
+                    <div v-if="hasAnyQuotaLimit(gq)"
                       class="absolute z-10 px-3 py-2 mt-1 transition-opacity -translate-x-1/2 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 pointer-events-none left-1/2 top-full group-hover/Chip:opacity-100 dark:border-dark-600 dark:bg-dark-800">
                       <div class="flex gap-3 whitespace-nowrap text-[11px]">
-                        <span v-if="gq.daily_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.daily') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.daily_limit_usd }}</span></span>
-                        <span v-if="gq.weekly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.weekly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.weekly_limit_usd }}</span></span>
-                        <span v-if="gq.monthly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.monthly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.monthly_limit_usd }}</span></span>
+                        <template v-for="seg in quotaSegments(gq)" :key="seg.kind">
+                          <span v-if="seg.daily"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.daily') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">{{ formatSegmentValue(seg.kind, seg.daily) }}</span></span>
+                          <span v-if="seg.weekly"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.weekly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">{{ formatSegmentValue(seg.kind, seg.weekly) }}</span></span>
+                          <span v-if="seg.monthly"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.monthly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">{{ formatSegmentValue(seg.kind, seg.monthly) }}</span></span>
+                        </template>
                       </div>
                     </div>
                   </div>
@@ -432,6 +434,7 @@ import { getPlanDetail, checkout as bundleCheckout } from '@/api/bundles'
 import type { BundlePlan } from '@/types/bundle'
 import { getTierTheme, getTierI18nKey } from '@/constants/bundleTiers'
 import { extractApiErrorMessage, extractI18nErrorMessage } from '@/utils/apiError'
+import { formatSegmentValue, hasAnyQuotaLimit, quotaSegments } from '@/utils/bundleQuota'
 import { isMobileDevice } from '@/utils/device'
 import type { SubscriptionPlan, CheckoutInfoResponse, CreateOrderResult, OrderType } from '@/types/payment'
 import AppLayout from '@/components/layout/AppLayout.vue'
