@@ -75,3 +75,32 @@ func TestMatchGlob(t *testing.T) {
 		})
 	}
 }
+
+func TestMatchAnyGlob(t *testing.T) {
+	tests := []struct {
+		name    string
+		pattern string
+		s       string
+		match   bool
+	}{
+		{"single exact hit", "gpt-4o", "gpt-4o", true},
+		{"single exact miss", "gpt-4o", "gpt-4o-mini", false},
+		{"single glob hit", "gpt-4*", "gpt-4o", true},
+		{"multi exact hit first", "gpt-4o,claude-3-opus", "gpt-4o", true},
+		{"multi exact hit second", "gpt-4o,claude-3-opus", "claude-3-opus", true},
+		{"multi miss", "gpt-4o,claude-3-opus", "gemini-pro", false},
+		{"multi with glob", "gpt-4*,claude-3-*", "claude-3-haiku", true},
+		{"multi with surrounding spaces", " gpt-4* , claude-3-opus ", "claude-3-opus", true},
+		{"empty field", "", "anything", false},
+		{"only commas", ",,,", "gpt-4o", false},
+		{"comma and spaces", " , , ", "gpt-4o", false},
+		{"trailing comma", "gpt-4o,", "gpt-4o", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.match, matchAnyGlob(tt.pattern, tt.s),
+				"matchAnyGlob(%q, %q)", tt.pattern, tt.s)
+		})
+	}
+}

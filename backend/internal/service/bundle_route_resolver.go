@@ -93,7 +93,7 @@ func (r *BundleRouteResolver) ResolveGroup(ctx context.Context, modelName string
 		if gq.QuotaScope != QuotaScopeModel || gq.ModelPattern == "" {
 			continue
 		}
-		if matchGlob(gq.ModelPattern, modelName) {
+		if matchAnyGlob(gq.ModelPattern, modelName) {
 			resolved := makeResolvedGroup(gq, platform, bundleSubID, bundleSub)
 			// 加载完整 Group 对象，供下游 handler 做路由决策
 			group, groupErr := r.groupRepo.GetByIDLite(ctx, gq.GroupID)
@@ -221,4 +221,25 @@ func matchGlob(pattern, s string) bool {
 		return strings.HasSuffix(s, segments[len(segments)-1])
 	}
 	return true
+}
+
+// matchAnyGlob 按逗号拆分 pattern 字段为多个 glob 子模式,任一命中即返回 true。
+// 空字段返回 false(语义「未配置」,由 ResolveGroup 的 ModelPattern=="" guard 拦截,
+// 该路径下本函数不会被空串调用);纯逗号/全空格拆分后无有效段亦返回 false;
+// 单 pattern 等价于旧 matchGlob。与旧 matchGlob("")==true 不同,本函数空串返回 false,
+// 这是刻意设计以避免空配置意外匹配全部模型。resolve 路径靠外层 guard 保证兼容。
+func matchAnyGlob(patternField, s string) bool {
+	if patternField == "" {
+		return false
+	}
+	for _, p := range strings.Split(patternField, ",") {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		if matchGlob(p, s) {
+			return true
+		}
+	}
+	return false
 }

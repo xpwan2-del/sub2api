@@ -44,7 +44,7 @@
           <div class="relative" ref="columnDropdownRef">
             <button
               @click="showColumnDropdown = !showColumnDropdown"
-              class="btn btn-secondary px-2 md:px-3"
+              class="px-2 btn btn-secondary md:px-3"
               :title="t('keys.columnSettings')"
             >
               <svg class="h-4 w-4 md:mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
@@ -54,13 +54,13 @@
             </button>
             <div
               v-if="showColumnDropdown"
-              class="absolute right-0 top-full z-50 mt-1 max-h-80 w-48 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-dark-600 dark:bg-dark-800"
+              class="absolute right-0 z-50 w-48 py-1 mt-1 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg top-full max-h-80 dark:border-dark-600 dark:bg-dark-800"
             >
               <button
                 v-for="col in toggleableColumns"
                 :key="col.key"
                 @click="toggleColumn(col.key)"
-                class="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700"
+                class="flex items-center justify-between w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700"
               >
                 <span>{{ col.label }}</span>
                 <Icon
@@ -92,12 +92,12 @@
         >
           <template #cell-key="{ value, row }">
             <div class="flex items-center gap-2">
-              <code class="code text-xs">
+              <code class="text-xs code">
                 {{ maskApiKey(value) }}
               </code>
               <button
                 @click="copyToClipboard(value, row.id)"
-                class="rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-dark-700"
+                class="p-1 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700"
                 :class="
                   copiedKeyId === row.id
                     ? 'text-green-500'
@@ -137,11 +137,11 @@
 
           <template #cell-group="{ row }">
             <!-- Normal key: allow inline group change -->
-            <div v-if="getKeyMode(row) === 'normal'" class="group/dropdown relative">
+            <div v-if="getKeyMode(row) === 'normal'" class="relative group/dropdown">
               <button
                 :ref="(el) => setGroupButtonRef(row.id, el)"
                 @click="openGroupSelector(row)"
-                class="-mx-2 -my-1 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-dark-700"
+                class="flex items-center gap-2 px-2 py-1 -mx-2 -my-1 transition-all duration-200 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-700"
                 :title="t('keys.clickToChangeGroup')"
               >
                 <GroupBadge
@@ -244,7 +244,7 @@
                     ${{ row.usage_5h?.toFixed(2) || '0.00' }}/${{ row.rate_limit_5h?.toFixed(2) }}
                   </span>
                 </div>
-                <div class="h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                <div class="w-full h-1 overflow-hidden bg-gray-200 rounded-full dark:bg-dark-600">
                   <div
                     :class="[
                       'h-full rounded-full transition-all',
@@ -272,7 +272,7 @@
                     ${{ row.usage_1d?.toFixed(2) || '0.00' }}/${{ row.rate_limit_1d?.toFixed(2) }}
                   </span>
                 </div>
-                <div class="h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                <div class="w-full h-1 overflow-hidden bg-gray-200 rounded-full dark:bg-dark-600">
                   <div
                     :class="[
                       'h-full rounded-full transition-all',
@@ -300,7 +300,7 @@
                     ${{ row.usage_7d?.toFixed(2) || '0.00' }}/${{ row.rate_limit_7d?.toFixed(2) }}
                   </span>
                 </div>
-                <div class="h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                <div class="w-full h-1 overflow-hidden bg-gray-200 rounded-full dark:bg-dark-600">
                   <div
                     :class="[
                       'h-full rounded-full transition-all',
@@ -462,33 +462,33 @@
           <div v-if="hasActiveBundle" class="mb-4">
             <label class="input-label">{{ t('bundles.keyMode') }}</label>
             <div class="mt-2 space-y-2">
-              <!-- Universal Key -->
+              <!-- 标准 Key（默认，绑定普通分组，按量计费） -->
               <label
-                class="flex cursor-pointer items-start gap-3 rounded-lg border-2 p-3 transition-colors"
-                :class="keyMode === 'universal'
+                class="flex items-start gap-3 p-3 transition-colors border-2 rounded-lg cursor-pointer"
+                :class="keyMode === 'normal'
                   ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-900/20'
                   : 'border-gray-200 hover:border-gray-300 dark:border-dark-600 dark:hover:border-dark-500'"
               >
                 <input
                   type="radio"
                   v-model="keyMode"
-                  value="universal"
+                  value="normal"
                   class="mt-0.5"
                 />
                 <div class="flex-1">
                   <div class="text-sm font-medium text-gray-900 dark:text-white">
-                    {{ t('bundles.keyModeUniversal') }}
+                    {{ t('bundles.keyModeNormal') }}
                   </div>
                   <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    {{ t('bundles.keyModeUniversalDesc') }}
+                    {{ t('bundles.keyModeNormalDesc') }}
                   </div>
                 </div>
               </label>
-              <!-- Dedicated Key 选项已隐藏（代码注释保留，未删除）。
-                   如需恢复“专用 Key（指定平台）”模式，移除下方 HTML 注释即可。 -->
+              <!-- 指定平台 Key（绑定套餐内某个特定平台的订阅分组） 选项已隐藏（代码注释保留，未删除）。
+                        如需恢复“专用 Key（指定平台）”模式，移除下方 HTML 注释即可。 -->
               <!--
               <label
-                class="flex cursor-pointer items-start gap-3 rounded-lg border-2 p-3 transition-colors"
+                class="flex items-start gap-3 p-3 transition-colors border-2 rounded-lg cursor-pointer"
                 :class="keyMode === 'dedicated'
                   ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-900/20'
                   : 'border-gray-200 hover:border-gray-300 dark:border-dark-600 dark:hover:border-dark-500'"
@@ -509,25 +509,25 @@
                 </div>
               </label>
               -->
-              <!-- Normal Key -->
+              <!-- 通用 Key（自动路由，使用套餐配额） -->
               <label
-                class="flex cursor-pointer items-start gap-3 rounded-lg border-2 p-3 transition-colors"
-                :class="keyMode === 'normal'
+                class="flex items-start gap-3 p-3 transition-colors border-2 rounded-lg cursor-pointer"
+                :class="keyMode === 'universal'
                   ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-900/20'
                   : 'border-gray-200 hover:border-gray-300 dark:border-dark-600 dark:hover:border-dark-500'"
               >
                 <input
                   type="radio"
                   v-model="keyMode"
-                  value="normal"
+                  value="universal"
                   class="mt-0.5"
                 />
                 <div class="flex-1">
                   <div class="text-sm font-medium text-gray-900 dark:text-white">
-                    {{ t('bundles.keyModeNormal') }}
+                    {{ t('bundles.keyModeUniversal') }}
                   </div>
                   <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    {{ t('bundles.keyModeNormalDesc') }}
+                    {{ t('bundles.keyModeUniversalDesc') }}
                   </div>
                 </div>
               </label>
@@ -580,7 +580,7 @@
         <!-- Custom Key Section (only for create) -->
         <div v-if="!showEditModal" class="space-y-3">
           <div class="flex items-center justify-between">
-            <label class="input-label mb-0">{{ t('keys.customKeyLabel') }}</label>
+            <label class="mb-0 input-label">{{ t('keys.customKeyLabel') }}</label>
             <button
               type="button"
               @click="formData.use_custom_key = !formData.use_custom_key"
@@ -601,7 +601,7 @@
             <input
               v-model="formData.custom_key"
               type="text"
-              class="input font-mono"
+              class="font-mono input"
               :placeholder="t('keys.customKeyPlaceholder')"
               :class="{ 'border-red-500 dark:border-red-500': customKeyError }"
             />
@@ -622,7 +622,7 @@
         <!-- IP Restriction Section -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
-            <label class="input-label mb-0">{{ t('keys.ipRestriction') }}</label>
+            <label class="mb-0 input-label">{{ t('keys.ipRestriction') }}</label>
             <button
               type="button"
               @click="formData.enable_ip_restriction = !formData.enable_ip_restriction"
@@ -640,13 +640,13 @@
             </button>
           </div>
 
-          <div v-if="formData.enable_ip_restriction" class="space-y-4 pt-2">
+          <div v-if="formData.enable_ip_restriction" class="pt-2 space-y-4">
             <div>
               <label class="input-label">{{ t('keys.ipWhitelist') }}</label>
               <textarea
                 v-model="formData.ip_whitelist"
                 rows="3"
-                class="input font-mono text-sm"
+                class="font-mono text-sm input"
                 :placeholder="t('keys.ipWhitelistPlaceholder')"
               />
               <p class="input-hint">{{ t('keys.ipWhitelistHint') }}</p>
@@ -657,7 +657,7 @@
               <textarea
                 v-model="formData.ip_blacklist"
                 rows="3"
-                class="input font-mono text-sm"
+                class="font-mono text-sm input"
                 :placeholder="t('keys.ipBlacklistPlaceholder')"
               />
               <p class="input-hint">{{ t('keys.ipBlacklistHint') }}</p>
@@ -670,7 +670,7 @@
           <label class="input-label">{{ t('keys.quotaLimit') }}</label>
           <!-- Switch commented out - always show input, 0 = unlimited
           <div class="flex items-center justify-between">
-            <label class="input-label mb-0">{{ t('keys.quotaLimit') }}</label>
+            <label class="mb-0 input-label">{{ t('keys.quotaLimit') }}</label>
             <button
               type="button"
               @click="formData.enable_quota = !formData.enable_quota"
@@ -692,7 +692,7 @@
           <div class="space-y-4">
             <div>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span class="absolute text-gray-500 -translate-y-1/2 left-3 top-1/2">$</span>
                 <input
                   v-model.number="formData.quota"
                   type="number"
@@ -709,7 +709,7 @@
             <div v-if="showEditModal && selectedKey && selectedKey.quota > 0">
               <label class="input-label">{{ t('keys.quotaUsed') }}</label>
               <div class="flex items-center gap-2">
-                <div class="flex-1 rounded-lg bg-gray-100 px-3 py-2 dark:bg-dark-700">
+                <div class="flex-1 px-3 py-2 bg-gray-100 rounded-lg dark:bg-dark-700">
                   <span class="font-medium text-gray-900 dark:text-white">
                     ${{ selectedKey.quota_used?.toFixed(4) || '0.0000' }}
                   </span>
@@ -721,7 +721,7 @@
                 <button
                   type="button"
                   @click="confirmResetQuota"
-                  class="btn btn-secondary text-sm"
+                  class="text-sm btn btn-secondary"
                   :title="t('keys.resetQuotaUsed')"
                 >
                   {{ t('keys.reset') }}
@@ -734,7 +734,7 @@
         <!-- Rate Limit Section（通用 Key 自动路由模式下隐藏，标准 Key 正常显示） -->
         <div v-if="!(hasActiveBundle && keyMode === 'universal')" class="space-y-3">
           <div class="flex items-center justify-between">
-            <label class="input-label mb-0">{{ t('keys.rateLimitSection') }}</label>
+            <label class="mb-0 input-label">{{ t('keys.rateLimitSection') }}</label>
             <button
               type="button"
               @click="formData.enable_rate_limit = !formData.enable_rate_limit"
@@ -752,13 +752,13 @@
             </button>
           </div>
 
-          <div v-if="formData.enable_rate_limit" class="space-y-4 pt-2">
-            <p class="input-hint -mt-2">{{ t('keys.rateLimitHint') }}</p>
+          <div v-if="formData.enable_rate_limit" class="pt-2 space-y-4">
+            <p class="-mt-2 input-hint">{{ t('keys.rateLimitHint') }}</p>
             <!-- 5-Hour Limit -->
             <div>
               <label class="input-label">{{ t('keys.rateLimit5h') }}</label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span class="absolute text-gray-500 -translate-y-1/2 left-3 top-1/2">$</span>
                 <input
                   v-model.number="formData.rate_limit_5h"
                   type="number"
@@ -771,7 +771,7 @@
               <!-- Usage info (edit mode only) -->
               <div v-if="showEditModal && selectedKey && selectedKey.rate_limit_5h > 0" class="mt-2">
                 <div class="flex items-center gap-2">
-                  <div class="flex-1 rounded-lg bg-gray-100 px-3 py-2 dark:bg-dark-700 text-sm">
+                  <div class="flex-1 px-3 py-2 text-sm bg-gray-100 rounded-lg dark:bg-dark-700">
                     <span :class="[
                       'font-medium',
                       selectedKey.usage_5h >= selectedKey.rate_limit_5h ? 'text-red-500' :
@@ -804,7 +804,7 @@
             <div>
               <label class="input-label">{{ t('keys.rateLimit1d') }}</label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span class="absolute text-gray-500 -translate-y-1/2 left-3 top-1/2">$</span>
                 <input
                   v-model.number="formData.rate_limit_1d"
                   type="number"
@@ -817,7 +817,7 @@
               <!-- Usage info (edit mode only) -->
               <div v-if="showEditModal && selectedKey && selectedKey.rate_limit_1d > 0" class="mt-2">
                 <div class="flex items-center gap-2">
-                  <div class="flex-1 rounded-lg bg-gray-100 px-3 py-2 dark:bg-dark-700 text-sm">
+                  <div class="flex-1 px-3 py-2 text-sm bg-gray-100 rounded-lg dark:bg-dark-700">
                     <span :class="[
                       'font-medium',
                       selectedKey.usage_1d >= selectedKey.rate_limit_1d ? 'text-red-500' :
@@ -850,7 +850,7 @@
             <div>
               <label class="input-label">{{ t('keys.rateLimit7d') }}</label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span class="absolute text-gray-500 -translate-y-1/2 left-3 top-1/2">$</span>
                 <input
                   v-model.number="formData.rate_limit_7d"
                   type="number"
@@ -863,7 +863,7 @@
               <!-- Usage info (edit mode only) -->
               <div v-if="showEditModal && selectedKey && selectedKey.rate_limit_7d > 0" class="mt-2">
                 <div class="flex items-center gap-2">
-                  <div class="flex-1 rounded-lg bg-gray-100 px-3 py-2 dark:bg-dark-700 text-sm">
+                  <div class="flex-1 px-3 py-2 text-sm bg-gray-100 rounded-lg dark:bg-dark-700">
                     <span :class="[
                       'font-medium',
                       selectedKey.usage_7d >= selectedKey.rate_limit_7d ? 'text-red-500' :
@@ -897,7 +897,7 @@
               <button
                 type="button"
                 @click="confirmResetRateLimit"
-                class="btn btn-secondary text-sm"
+                class="text-sm btn btn-secondary"
               >
                 {{ t('keys.resetRateLimitUsage') }}
               </button>
@@ -908,7 +908,7 @@
         <!-- Expiration Section -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
-            <label class="input-label mb-0">{{ t('keys.expiration') }}</label>
+            <label class="mb-0 input-label">{{ t('keys.expiration') }}</label>
             <button
               type="button"
               @click="formData.enable_expiration = !formData.enable_expiration"
@@ -926,7 +926,7 @@
             </button>
           </div>
 
-          <div v-if="formData.enable_expiration" class="space-y-4 pt-2">
+          <div v-if="formData.enable_expiration" class="pt-2 space-y-4">
             <!-- Quick select buttons (for both create and edit mode) -->
             <div class="flex flex-wrap gap-2">
               <button
@@ -992,7 +992,7 @@
           >
             <svg
               v-if="submitting"
-              class="-ml-1 mr-2 h-4 w-4 animate-spin"
+              class="w-4 h-4 mr-2 -ml-1 animate-spin"
               fill="none"
               viewBox="0 0 24 24"
             >
@@ -1083,7 +1083,7 @@
 	        <div class="grid grid-cols-2 gap-3">
 	          <button
 	            @click="handleCcsClientSelect('claude')"
-	            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all"
+	            class="flex flex-col items-center gap-2 p-4 transition-all border-2 border-gray-200 rounded-xl dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20"
 	          >
 	            <Icon name="terminal" size="xl" class="text-gray-600 dark:text-gray-400" />
 	            <span class="font-medium text-gray-900 dark:text-white">{{
@@ -1095,7 +1095,7 @@
 	          </button>
 	          <button
 	            @click="handleCcsClientSelect('gemini')"
-	            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all"
+	            class="flex flex-col items-center gap-2 p-4 transition-all border-2 border-gray-200 rounded-xl dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20"
 	          >
 	            <Icon name="sparkles" size="xl" class="text-gray-600 dark:text-gray-400" />
 	            <span class="font-medium text-gray-900 dark:text-white">{{
@@ -1130,7 +1130,7 @@
         }"
       >
         <!-- Search box -->
-        <div class="border-b border-gray-100 p-2 dark:border-dark-700">
+        <div class="p-2 border-b border-gray-100 dark:border-dark-700">
           <div class="relative">
             <svg class="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1174,7 +1174,7 @@
             />
           </button>
           <!-- Empty state when search has no results -->
-          <div v-if="filteredGroupOptions.length === 0" class="py-4 text-center text-sm text-gray-400 dark:text-gray-500">
+          <div v-if="filteredGroupOptions.length === 0" class="py-4 text-sm text-center text-gray-400 dark:text-gray-500">
             {{ t('keys.noGroupFound') }}
           </div>
         </div>
@@ -1639,6 +1639,10 @@ const bundleGroupOptions = computed(() => {
 const effectiveGroupOptions = computed(() => {
   if (hasActiveBundle.value && keyMode.value === 'dedicated') {
     return bundleGroupOptions.value
+  }
+  // 标准 Key 不允许使用订阅分组，仅保留普通（standard）分组
+  if (keyMode.value === 'normal') {
+    return groupOptions.value.filter((g) => g.subscriptionType !== 'subscription')
   }
   return groupOptions.value
 })
