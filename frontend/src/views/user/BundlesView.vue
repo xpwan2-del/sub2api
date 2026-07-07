@@ -25,7 +25,9 @@
                   {{ t('bundles.active') }}
                 </span>
               </div>
-              <p v-if="activePlan?.description" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              <p v-if="activePlan?.description"
+                class="mt-0.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400"
+                :title="activePlan.description">
                 {{ activePlan.description }}
               </p>
             </div>
@@ -69,12 +71,14 @@
                   {{ platformLabel(gq.group_platform || '') }}
                 </span>
                 <!-- Hover tooltip with quota details -->
-                <div v-if="gq.daily_limit_usd || gq.weekly_limit_usd || gq.monthly_limit_usd"
+                <div v-if="hasAnyQuotaLimit(gq)"
                   class="pointer-events-none absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-gray-200 bg-white px-3 py-2 opacity-0 shadow-lg transition-opacity group-hover/Chip:opacity-100 dark:border-dark-600 dark:bg-dark-800">
                   <div class="flex gap-3 whitespace-nowrap text-[11px]">
-                    <span v-if="gq.daily_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.daily') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.daily_limit_usd }}</span></span>
-                    <span v-if="gq.weekly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.weekly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.weekly_limit_usd }}</span></span>
-                    <span v-if="gq.monthly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.monthly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.monthly_limit_usd }}</span></span>
+                    <template v-for="seg in quotaSegments(gq)" :key="seg.kind">
+                      <span v-if="seg.daily"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.daily') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">{{ formatSegmentValue(seg.kind, seg.daily) }}</span></span>
+                      <span v-if="seg.weekly"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.weekly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">{{ formatSegmentValue(seg.kind, seg.weekly) }}</span></span>
+                      <span v-if="seg.monthly"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.monthly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">{{ formatSegmentValue(seg.kind, seg.monthly) }}</span></span>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -176,12 +180,14 @@
                         {{ platformLabel(gq.group_platform || '') }}
                       </span>
                       <!-- Hover tooltip with quota details -->
-                      <div v-if="gq.daily_limit_usd || gq.weekly_limit_usd || gq.monthly_limit_usd"
+                      <div v-if="hasAnyQuotaLimit(gq)"
                         class="pointer-events-none absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-gray-200 bg-white px-3 py-2 opacity-0 shadow-lg transition-opacity group-hover/Chip:opacity-100 dark:border-dark-600 dark:bg-dark-800">
                         <div class="flex gap-3 whitespace-nowrap text-[11px]">
-                          <span v-if="gq.daily_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.daily') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.daily_limit_usd }}</span></span>
-                          <span v-if="gq.weekly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.weekly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.weekly_limit_usd }}</span></span>
-                          <span v-if="gq.monthly_limit_usd"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.monthly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">${{ gq.monthly_limit_usd }}</span></span>
+                          <template v-for="seg in quotaSegments(gq)" :key="seg.kind">
+                            <span v-if="seg.daily"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.daily') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">{{ formatSegmentValue(seg.kind, seg.daily) }}</span></span>
+                            <span v-if="seg.weekly"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.weekly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">{{ formatSegmentValue(seg.kind, seg.weekly) }}</span></span>
+                            <span v-if="seg.monthly"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.monthly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">{{ formatSegmentValue(seg.kind, seg.monthly) }}</span></span>
+                          </template>
                         </div>
                       </div>
                     </div>
@@ -238,6 +244,7 @@ import Icon from '@/components/icons/Icon.vue'
 import { platformBadgeLightClass, platformLabel } from '@/utils/platformColors'
 import { getTierTheme, getTierI18nKey } from '@/constants/bundleTiers'
 import { formatDateOnly } from '@/utils/format'
+import { formatSegmentValue, hasAnyQuotaLimit, quotaSegments } from '@/utils/bundleQuota'
 
 // ==================== BundlesView：用户套餐浏览页 ====================
 // 展示用户当前活跃套餐 + 可购买的套餐计划列表
