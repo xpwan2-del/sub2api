@@ -484,7 +484,9 @@
                   </div>
                 </div>
               </label>
-              <!-- Dedicated Key -->
+              <!-- Dedicated Key 选项已隐藏（代码注释保留，未删除）。
+                   如需恢复“专用 Key（指定平台）”模式，移除下方 HTML 注释即可。 -->
+              <!--
               <label
                 class="flex cursor-pointer items-start gap-3 rounded-lg border-2 p-3 transition-colors"
                 :class="keyMode === 'dedicated'
@@ -506,6 +508,7 @@
                   </div>
                 </div>
               </label>
+              -->
               <!-- Normal Key -->
               <label
                 class="flex cursor-pointer items-start gap-3 rounded-lg border-2 p-3 transition-colors"
@@ -662,8 +665,8 @@
           </div>
         </div>
 
-        <!-- Quota Limit Section -->
-        <div class="space-y-3">
+        <!-- Quota Limit Section（通用 Key 自动路由模式下隐藏，标准 Key 正常显示） -->
+        <div v-if="!(hasActiveBundle && keyMode === 'universal')" class="space-y-3">
           <label class="input-label">{{ t('keys.quotaLimit') }}</label>
           <!-- Switch commented out - always show input, 0 = unlimited
           <div class="flex items-center justify-between">
@@ -728,8 +731,8 @@
           </div>
         </div>
 
-        <!-- Rate Limit Section -->
-        <div class="space-y-3">
+        <!-- Rate Limit Section（通用 Key 自动路由模式下隐藏，标准 Key 正常显示） -->
+        <div v-if="!(hasActiveBundle && keyMode === 'universal')" class="space-y-3">
           <div class="flex items-center justify-between">
             <label class="input-label mb-0">{{ t('keys.rateLimitSection') }}</label>
             <button
@@ -1802,8 +1805,11 @@ const handleSubmit = async () => {
   const ipWhitelist = formData.value.enable_ip_restriction ? parseIPList(formData.value.ip_whitelist) : []
   const ipBlacklist = formData.value.enable_ip_restriction ? parseIPList(formData.value.ip_blacklist) : []
 
+  // Universal/auto-route mode uses bundle quota — ignore any stale per-key quota/rate_limit
+  // values left in the form when the user previously filled them under standard mode.
+  const isUniversalMode = hasActiveBundle.value && keyMode.value === 'universal'
   // Calculate quota value (null/empty/0 = unlimited, stored as 0)
-  const quota = formData.value.quota && formData.value.quota > 0 ? formData.value.quota : 0
+  const quota = isUniversalMode ? 0 : (formData.value.quota && formData.value.quota > 0 ? formData.value.quota : 0)
 
   // Calculate expiration
   let expiresInDays: number | undefined
@@ -1824,8 +1830,8 @@ const handleSubmit = async () => {
     expiresAt = ''
   }
 
-  // Calculate rate limit values (send 0 when toggle is off)
-  const rateLimitData = formData.value.enable_rate_limit ? {
+  // Calculate rate limit values (send 0 when toggle is off or universal/auto-route mode)
+  const rateLimitData = (!isUniversalMode && formData.value.enable_rate_limit) ? {
     rate_limit_5h: formData.value.rate_limit_5h && formData.value.rate_limit_5h > 0 ? formData.value.rate_limit_5h : 0,
     rate_limit_1d: formData.value.rate_limit_1d && formData.value.rate_limit_1d > 0 ? formData.value.rate_limit_1d : 0,
     rate_limit_7d: formData.value.rate_limit_7d && formData.value.rate_limit_7d > 0 ? formData.value.rate_limit_7d : 0,
