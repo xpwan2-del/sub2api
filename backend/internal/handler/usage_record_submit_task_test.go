@@ -189,3 +189,37 @@ func TestOpenAIGatewayHandlerSubmitOpenAIUsageRecordTask_ImageResultUsesMandator
 
 	require.True(t, called.Load(), "image usage task must be mandatory when async submit is dropped")
 }
+
+// TestOpenAIGatewayHandlerSubmitOpenAIUsageRecordTask_VideoResultUsesMandatoryFallback
+// 复现 H3：纯视频请求（VideoCount>0, ImageCount==0）的计费任务同样不可被 worker 池丢弃——
+// 视频是单位成本最高的请求，计费丢失会让 video_count 永不增长 → 视频次数/额度限额失效。
+// 当前实现仅对 ImageCount>0 走 mandatory，视频走可丢弃的 submitUsageRecordTask，故此用例先红。
+func TestOpenAIGatewayHandlerSubmitOpenAIUsageRecordTask_VideoResultUsesMandatoryFallback(t *testing.T) {
+	pool := service.NewUsageRecordWorkerPoolWithOptions(service.UsageRecordWorkerPoolOptions{
+		WorkerCount:           1,
+		QueueSize:             1,
+		TaskTimeout:           time.Second,
+		OverflowPolicy:        "drop",
+		OverflowSamplePercent: 0,
+		AutoScaleEnabled:      false,
+	})
+	t.Cleanup(pool.Stop)
+	h := &OpenAIGatewayHandler{usageRecordWorkerPool: pool}
+
+	block := make(chan struct{})
+	release := make(chan struct{})
+	pool.Submit(func(ctx context.Context) {
+		close(block)
+		<-release
+	})
+	<-block
+	pool.Submit(func(ctx context.Context) {})
+
+	var called atomic.Bool
+	h.submitOpenAIUsageRecordTask(context.Background(), &service.OpenAIForwardResult{VideoCount: 1}, func(ctx context.Context) {
+		called.Store(true)
+	})
+	close(release)
+
+	require.True(t, called.Load(), "video usage task must be mandatory when async submit is dropped")
+}
