@@ -135,6 +135,9 @@ func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *Act
 
 		// 3. Create BundleSubscription with snapshot concurrency/rpm.
 		now := time.Now()
+		// 窗口起点对齐到激活日（购买日）0 点：周/月滚动窗口锚定购买日，重置落在
+		// 「购买日 + N 天」的 0 点（如周一买→下周一 0 点、1 号买→31 号 0 点）。
+		windowStart := BundleWindowStart(now)
 		expiresAt := now.AddDate(0, 0, plan.ValidityDays)
 
 		bundleSub := &BundleSubscription{
@@ -160,9 +163,9 @@ func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *Act
 				BundleSubscriptionID: bundleSub.ID,
 				GroupID:              gq.GroupID,
 				ModelPattern:         gq.ModelPattern,
-				DailyWindowStart:     now,
-				WeeklyWindowStart:    now,
-				MonthlyWindowStart:   now,
+				DailyWindowStart:     windowStart,
+				WeeklyWindowStart:    windowStart,
+				MonthlyWindowStart:   windowStart,
 			}
 			if err := s.usageRepo.Create(txCtx, usage); err != nil {
 				return fmt.Errorf("create bundle usage for group %d: %w", gq.GroupID, err)
@@ -367,7 +370,11 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 	}
 
 	progress := make([]BundleUsageProgress, 0, len(bundleSub.Usages))
-	for _, usage := range bundleSub.Usages {
+	now := time.Now()
+	for _, raw := range bundleSub.Usages {
+		// 读时归零：已过期窗口的累计不展示（与 CheckQuotaEligibility / IncrementUsage 同语义），
+		// 避免前端看到昨天的陈旧累计误以为今天已达限额。
+		usage := rolledBundleUsage(&raw, now)
 		meta, hasMeta := metaMap[usage.GroupID]
 		if !hasMeta {
 			meta = groupMeta{} // zero limits = unlimited

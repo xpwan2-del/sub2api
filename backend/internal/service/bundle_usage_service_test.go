@@ -11,6 +11,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 )
 
 // fakeUsageRepo 内存实现的 BundleUsageRepository，仅覆盖测试需要的子集。
@@ -36,19 +37,20 @@ func (f *fakeUsageRepo) IncrementUsage(_ context.Context, _ int64, costUSD float
 	if f.usage == nil {
 		return nil
 	}
-	f.applyWindow(&f.usage.DailyUsageUSD, &f.usage.DailyImageUsageCount, &f.usage.DailyVideoUsageCount, &f.usage.DailyWindowStart, now, BundleDailyWindow, costUSD, imageCount, videoCount)
-	f.applyWindow(&f.usage.WeeklyUsageUSD, &f.usage.WeeklyImageUsageCount, &f.usage.WeeklyVideoUsageCount, &f.usage.WeeklyWindowStart, now, BundleWeeklyWindow, costUSD, imageCount, videoCount)
-	f.applyWindow(&f.usage.MonthlyUsageUSD, &f.usage.MonthlyImageUsageCount, &f.usage.MonthlyVideoUsageCount, &f.usage.MonthlyWindowStart, now, BundleMonthlyWindow, costUSD, imageCount, videoCount)
+	f.applyWindow(&f.usage.DailyUsageUSD, &f.usage.DailyImageUsageCount, &f.usage.DailyVideoUsageCount, &f.usage.DailyWindowStart, now, BundleDailyWindowDays, costUSD, imageCount, videoCount)
+	f.applyWindow(&f.usage.WeeklyUsageUSD, &f.usage.WeeklyImageUsageCount, &f.usage.WeeklyVideoUsageCount, &f.usage.WeeklyWindowStart, now, BundleWeeklyWindowDays, costUSD, imageCount, videoCount)
+	f.applyWindow(&f.usage.MonthlyUsageUSD, &f.usage.MonthlyImageUsageCount, &f.usage.MonthlyVideoUsageCount, &f.usage.MonthlyWindowStart, now, BundleMonthlyWindowDays, costUSD, imageCount, videoCount)
 	return nil
 }
 
-// applyWindow 模拟 rollBundleWindow：过期（now-start>=dur）置为本次值并推进起点，否则累加。
-func (f *fakeUsageRepo) applyWindow(usd *float64, img, vid *int, start *time.Time, now time.Time, dur time.Duration, costUSD float64, ic, vc int) {
-	if now.Sub(*start) >= dur {
+// applyWindow 模拟 rollBundleWindow（自然日 0 点对齐）：过期（BundleWindowExpired）置为本次值
+// 并把起点推进到当天 0 点，否则累加。与生产 bundleUsageRepository.IncrementUsage 同语义。
+func (f *fakeUsageRepo) applyWindow(usd *float64, img, vid *int, start *time.Time, now time.Time, windowDays int, costUSD float64, ic, vc int) {
+	if BundleWindowExpired(*start, now, windowDays) {
 		*usd = costUSD
 		*img = ic
 		*vid = vc
-		*start = now
+		*start = BundleWindowStart(now)
 		return
 	}
 	*usd += costUSD
@@ -180,7 +182,10 @@ func TestCheckQuotaEligibility_CountLimitExceeded(t *testing.T) {
 		}},
 	}
 	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
-	usage := &BundleSubscriptionUsage{MonthlyImageUsageCount: 10}
+	usage := &BundleSubscriptionUsage{
+		MonthlyWindowStart:     timezone.StartOfDay(time.Now()), // 本月内累计有效
+		MonthlyImageUsageCount: 10,
+	}
 
 	svc := newSvcWith(plan, sub, usage)
 	res, err := svc.CheckQuotaEligibility(context.Background(), 1, groupID, ModalityImage)
@@ -226,7 +231,11 @@ func TestCheckQuotaEligibility_ImageExceededBlocksImageOnly(t *testing.T) {
 		MonthlyLimitUSD:        100,
 	}}}
 	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
-	usage := &BundleSubscriptionUsage{MonthlyImageUsageCount: 10, MonthlyVideoUsageCount: 0}
+	usage := &BundleSubscriptionUsage{
+		MonthlyWindowStart:     timezone.StartOfDay(time.Now()), // 本月内累计有效
+		MonthlyImageUsageCount: 10,
+		MonthlyVideoUsageCount: 0,
+	}
 
 	svc := newSvcWith(plan, sub, usage)
 	// 图片请求:图片额度耗尽 → 不可用
@@ -476,5 +485,60 @@ func TestAccumulateUsage_SplitsImageAndVideoCounts(t *testing.T) {
 	}
 	if usage.MonthlyVideoUsageCount != 1 {
 		t.Errorf("monthly video count: want 1, got %d", usage.MonthlyVideoUsageCount)
+	}
+}
+
+// TestCheckQuotaEligibility_DailyQuotaResetsNextDay 守护死锁回归：昨天已用满日限额，
+// 今天（跨过 0 点）读路径必须把昨天的累计归零、恢复额度并放行（Eligible=true）。
+// 旧实现读路径不认窗口过期，直接拿昨天满值判定 → Eligible=false → 请求被 pre-flight 拒绝 →
+// 永远进不到写路径 → 窗口永不重置，形成自锁。读时归零（rolledBundleUsage）解除该死锁。
+func TestCheckQuotaEligibility_DailyQuotaResetsNextDay(t *testing.T) {
+	const groupID int64 = 100
+	plan := &BundlePlan{GroupQuotas: []BundlePlanGroupQuota{{
+		GroupID:       groupID,
+		DailyLimitUSD: 10,
+	}}}
+	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
+	// 昨天已用满日限额（10/10），window_start 在昨天 → 今天应判日窗口过期。
+	usage := &BundleSubscriptionUsage{
+		DailyWindowStart: time.Now().AddDate(0, 0, -1),
+		DailyUsageUSD:    10.0,
+	}
+
+	svc := newSvcWith(plan, sub, usage)
+	res, err := svc.CheckQuotaEligibility(context.Background(), 1, groupID, ModalityAny)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !res.Eligible {
+		t.Fatalf("daily quota must reset next day: expected Eligible=true, got false (deadlock regression)")
+	}
+	if res.DailyRemaining != 10.0 {
+		t.Fatalf("daily remaining should be full 10 after reset, got %v", res.DailyRemaining)
+	}
+}
+
+// TestCheckQuotaEligibility_BlocksWhenSameDayQuotaExhausted 互补回归：今天的用量仍超额时
+// 必须照常拦截（读时归零不能误把今天有效累计也清掉）。window_start 在今天、用量达上限 → Eligible=false。
+func TestCheckQuotaEligibility_BlocksWhenSameDayQuotaExhausted(t *testing.T) {
+	const groupID int64 = 100
+	today0 := timezone.StartOfDay(time.Now())
+	plan := &BundlePlan{GroupQuotas: []BundlePlanGroupQuota{{
+		GroupID:       groupID,
+		DailyLimitUSD: 10,
+	}}}
+	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
+	usage := &BundleSubscriptionUsage{
+		DailyWindowStart: today0, // 今天 → 日窗口未过期
+		DailyUsageUSD:    10.0,   // 今天已用满
+	}
+
+	svc := newSvcWith(plan, sub, usage)
+	res, err := svc.CheckQuotaEligibility(context.Background(), 1, groupID, ModalityAny)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.Eligible {
+		t.Fatalf("same-day exhausted quota must be blocked, got Eligible=true")
 	}
 }

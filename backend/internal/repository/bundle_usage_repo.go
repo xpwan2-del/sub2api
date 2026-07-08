@@ -50,8 +50,8 @@ func (r *bundleUsageRepository) GetBySubscriptionAndGroup(ctx context.Context, s
 }
 
 // GetOrCreateUsage 获取或自愈创建用量记录（修复 H2）。事务内查询 (subscriptionID,groupID,modelPattern)：
-// 存在则原样返回（不修改累计值）；不存在则用 now 初始化空 usage。并发安全——并发自愈请求各自
-// INSERT 时，唯一约束 (subscription_id,group_id,model_pattern) 使其中一个冲突，冲突方重查返回已建行。
+// 存在则原样返回（不修改累计值）；不存在则用 now 所在自然日 0 点初始化空 usage 的 window_start。并发安全
+// ——并发自愈请求各自 INSERT 时，唯一约束 (subscription_id,group_id,model_pattern) 使其中一个冲突，冲突方重查返回已建行。
 func (r *bundleUsageRepository) GetOrCreateUsage(ctx context.Context, bundleSubscriptionID, groupID int64, modelPattern string, now time.Time) (*service.BundleSubscriptionUsage, error) {
 	var result *service.BundleSubscriptionUsage
 	if err := r.withTx(ctx, func(txCtx context.Context, txClient *dbent.Client) error {
@@ -80,8 +80,10 @@ func (r *bundleUsageRepository) GetOrCreateUsage(ctx context.Context, bundleSubs
 			 daily_window_start, weekly_window_start, monthly_window_start)
 			VALUES ($1, $2, $3, $4, $4, $4)
 			ON CONFLICT (bundle_subscription_id, group_id, model_pattern) DO NOTHING`
+		// window_start 对齐到自然日 0 点（与 rollBundleWindow 重置语义一致），保证 DB 值语义清晰。
+		windowStart := service.BundleWindowStart(now)
 		if _, err := txClient.ExecContext(txCtx, insertSQL,
-			bundleSubscriptionID, groupID, modelPattern, now,
+			bundleSubscriptionID, groupID, modelPattern, windowStart,
 		); err != nil {
 			return translatePersistenceError(err, nil, nil)
 		}
@@ -157,9 +159,9 @@ func (r *bundleUsageRepository) IncrementUsage(ctx context.Context, id int64, co
 			return translatePersistenceError(err, service.ErrBundleNotFound, nil)
 		}
 
-		dUSD, dImg, dVid, dStart := rollBundleWindow(existing.DailyUsageUsd, existing.DailyImageUsageCount, existing.DailyVideoUsageCount, existing.DailyWindowStart, now, service.BundleDailyWindow, costUSD, imageCount, videoCount)
-		wUSD, wImg, wVid, wStart := rollBundleWindow(existing.WeeklyUsageUsd, existing.WeeklyImageUsageCount, existing.WeeklyVideoUsageCount, existing.WeeklyWindowStart, now, service.BundleWeeklyWindow, costUSD, imageCount, videoCount)
-		mUSD, mImg, mVid, mStart := rollBundleWindow(existing.MonthlyUsageUsd, existing.MonthlyImageUsageCount, existing.MonthlyVideoUsageCount, existing.MonthlyWindowStart, now, service.BundleMonthlyWindow, costUSD, imageCount, videoCount)
+		dUSD, dImg, dVid, dStart := rollBundleWindow(existing.DailyUsageUsd, existing.DailyImageUsageCount, existing.DailyVideoUsageCount, existing.DailyWindowStart, now, service.BundleDailyWindowDays, costUSD, imageCount, videoCount)
+		wUSD, wImg, wVid, wStart := rollBundleWindow(existing.WeeklyUsageUsd, existing.WeeklyImageUsageCount, existing.WeeklyVideoUsageCount, existing.WeeklyWindowStart, now, service.BundleWeeklyWindowDays, costUSD, imageCount, videoCount)
+		mUSD, mImg, mVid, mStart := rollBundleWindow(existing.MonthlyUsageUsd, existing.MonthlyImageUsageCount, existing.MonthlyVideoUsageCount, existing.MonthlyWindowStart, now, service.BundleMonthlyWindowDays, costUSD, imageCount, videoCount)
 
 		_, err = existing.Update().
 			SetDailyUsageUsd(dUSD).SetDailyImageUsageCount(dImg).SetDailyVideoUsageCount(dVid).SetDailyWindowStart(dStart).
@@ -200,12 +202,12 @@ func (r *bundleUsageRepository) withTx(ctx context.Context, fn func(txCtx contex
 }
 
 // rollBundleWindow 计算单个滚动窗口累加后的 (USD, imageCount, videoCount, windowStart)。
-// 过期条件：now - prevStart >= duration（prevStart 为零值/历史默认时同样判为过期）。
-// 过期 → 重置为本次值并以 now 为新窗口起点；未过期 → 在原值上累加并保留原起点。
-// 纯函数，供 IncrementUsage 在事务锁内调用，保证「判断 + 写入」原子。
-func rollBundleWindow(prevUSD float64, prevImg, prevVid int, prevStart, now time.Time, duration time.Duration, costUSD float64, img, vid int) (float64, int, int, time.Time) {
-	if now.Sub(prevStart) >= duration {
-		return costUSD, img, vid, now
+// 自然日 0 点对齐语义：过期判定委托 service.BundleWindowExpired（与读路径 rolledBundleUsage 逐字一致），
+// 过期 → 重置为本次值并以 now 所在自然日 0 点为新窗口起点；未过期 → 在原值上累加并保留原起点。
+// 纯函数，供 IncrementUsage 在事务锁内调用，保证「判断 + 写入」原子（修复历史并发丢累加 bug H1）。
+func rollBundleWindow(prevUSD float64, prevImg, prevVid int, prevStart, now time.Time, windowDays int, costUSD float64, img, vid int) (float64, int, int, time.Time) {
+	if service.BundleWindowExpired(prevStart, now, windowDays) {
+		return costUSD, img, vid, service.BundleWindowStart(now)
 	}
 	return prevUSD + costUSD, prevImg + img, prevVid + vid, prevStart
 }

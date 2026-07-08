@@ -157,7 +157,10 @@ func TestBundleResolver_QuotaExceededReturns429(t *testing.T) {
 	}
 	sub := &service.BundleSubscription{ID: bundleSubID, PlanID: 1, Status: service.BundleStatusActive}
 	// Usage already at limit -> count exhausted.
-	usage := &service.BundleSubscriptionUsage{MonthlyImageUsageCount: 5}
+	usage := &service.BundleSubscriptionUsage{
+		MonthlyWindowStart:     time.Now(), // 本月内累计有效（窗口未过期）
+		MonthlyImageUsageCount: 5,
+	}
 	group := &service.Group{ID: groupID, Platform: "openai"}
 
 	resolver := service.NewBundleRouteResolver(
@@ -474,7 +477,10 @@ func TestBundleResolver_GETVideosSkipsQuotaCheckWhenExhausted(t *testing.T) {
 	sub := &service.BundleSubscription{ID: bundleSubID, PlanID: 1, Status: service.BundleStatusActive}
 	group := &service.Group{ID: groupID, Platform: "openai"}
 	// video count 已达上限 → ModalityVideo 轨道耗尽，pre-check 本应拒绝。
-	usage := &service.BundleSubscriptionUsage{MonthlyVideoUsageCount: 5}
+	usage := &service.BundleSubscriptionUsage{
+		MonthlyWindowStart:     time.Now(), // 本月内累计有效（窗口未过期）
+		MonthlyVideoUsageCount: 5,
+	}
 
 	owningSub := bundleSubID
 	cache := mwFakeVideoCache{bindings: map[string]service.VideoTaskBinding{
@@ -525,7 +531,10 @@ func TestBundleResolver_GETVideosContentSkipsQuotaCheckWhenExhausted(t *testing.
 	}
 	sub := &service.BundleSubscription{ID: bundleSubID, PlanID: 1, Status: service.BundleStatusActive}
 	group := &service.Group{ID: groupID, Platform: "openai"}
-	usage := &service.BundleSubscriptionUsage{MonthlyVideoUsageCount: 5}
+	usage := &service.BundleSubscriptionUsage{
+		MonthlyWindowStart:     time.Now(), // 本月内累计有效（窗口未过期）
+		MonthlyVideoUsageCount: 5,
+	}
 
 	owningSub := bundleSubID
 	cache := mwFakeVideoCache{bindings: map[string]service.VideoTaskBinding{
@@ -578,7 +587,10 @@ func TestBundleResolver_GETVideosWithModelParamStillChecksQuota(t *testing.T) {
 	}
 	sub := &service.BundleSubscription{ID: bundleSubID, PlanID: 1, Status: service.BundleStatusActive}
 	group := &service.Group{ID: groupID, Platform: "openai"}
-	usage := &service.BundleSubscriptionUsage{MonthlyVideoUsageCount: 5}
+	usage := &service.BundleSubscriptionUsage{
+		MonthlyWindowStart:     time.Now(), // 本月内累计有效（窗口未过期）
+		MonthlyVideoUsageCount: 5,
+	}
 
 	owningSub := bundleSubID
 	cache := mwFakeVideoCache{bindings: map[string]service.VideoTaskBinding{
