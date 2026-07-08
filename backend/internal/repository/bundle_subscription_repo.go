@@ -35,7 +35,7 @@ func (r *bundleSubscriptionRepository) Create(ctx context.Context, sub *service.
 
 	client := clientFromContext(ctx, r.client)
 
-	created, err := client.BundleSubscription.Create().
+	b := client.BundleSubscription.Create().
 		SetUserID(sub.UserID).
 		SetPlanID(sub.PlanID).
 		SetStatus(sub.Status).
@@ -43,8 +43,12 @@ func (r *bundleSubscriptionRepository) Create(ctx context.Context, sub *service.
 		SetExpiresAt(sub.ExpiresAt).
 		SetConcurrencyLimit(sub.ConcurrencyLimit).
 		SetRpmLimit(sub.RPMLimit).
-		SetSource(sub.Source).
-		Save(ctx)
+		SetSource(sub.Source)
+	// upgraded_from_id 为可选字段，仅升级产生的新订阅有值；零值时保留 NULL 语义。
+	if sub.UpgradedFromID != 0 {
+		b = b.SetUpgradedFromID(sub.UpgradedFromID)
+	}
+	created, err := b.Save(ctx)
 	if err != nil {
 		return translatePersistenceError(err, nil, service.ErrBundleConflict)
 	}
@@ -200,6 +204,7 @@ func bundleSubscriptionToService(src *dbent.BundleSubscription) *service.BundleS
 		ConcurrencyLimit: src.ConcurrencyLimit,
 		RPMLimit:         src.RpmLimit,
 		Source:           src.Source,
+		UpgradedFromID:   src.UpgradedFromID,
 		CreatedAt:        src.CreatedAt,
 		UpdatedAt:        src.UpdatedAt,
 		DeletedAt:        src.DeletedAt,

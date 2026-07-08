@@ -4,7 +4,10 @@
 
 package service
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 // BundlePlan 套餐计划服务层模型，包含计划属性和关联的渠道组额度列表
 // BundlePlan is the service-layer model for a bundle plan.
@@ -62,6 +65,7 @@ type BundleSubscription struct {
 	ConcurrencyLimit int        `json:"concurrency_limit"`
 	RPMLimit         int        `json:"rpm_limit"`
 	Source           string     `json:"source"`
+	UpgradedFromID   int64      `json:"upgraded_from_id,omitempty"`
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at"`
 	DeletedAt        *time.Time `json:"deleted_at,omitempty"`
@@ -171,4 +175,30 @@ type BundleUsageProgress struct {
 	WeeklyVideoLimitCount  int     `json:"weekly_video_limit_count"`
 	MonthlyVideoUsageCount int     `json:"monthly_video_usage_count"`
 	MonthlyVideoLimitCount int     `json:"monthly_video_limit_count"`
+}
+
+// PaymentOrderReader 读支付订单（升级 credit 反查实付金额用），解耦 service 对 payment_orders 的访问。
+// 实现位于 repository 层，避免 service 直接依赖 ent。
+type PaymentOrderReader interface {
+	// GetPaidAmountByBundleSub 返回该 bundle 订阅对应的已完成购买订单实付金额（取最早一笔）。
+	// 找不到订单（兑换/赠送来源）返回 0,nil，不视作错误。
+	GetPaidAmountByBundleSub(ctx context.Context, bundleSubID int64) (float64, error)
+}
+
+// UpgradePreview 升级预览（给前端展示差价）
+type UpgradePreview struct {
+	Credit       float64 `json:"credit"`
+	TargetPrice  float64 `json:"target_price"`
+	DueAmount    float64 `json:"due_amount"`
+	ValidityDays int     `json:"validity_days"`
+	Upgradeable  bool    `json:"upgradeable"`
+	OldPlanName  string  `json:"old_plan_name"`
+	NewPlanName  string  `json:"new_plan_name"`
+}
+
+// UpgradeBundleRequest 升级切换请求（履约时调用）
+type UpgradeBundleRequest struct {
+	UserID       int64
+	SourceSubID  int64
+	TargetPlanID int64
 }
