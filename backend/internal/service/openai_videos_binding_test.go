@@ -116,7 +116,7 @@ func TestBindAndGetVideoTaskModel(t *testing.T) {
 	svc := newBindingService(cache)
 	groupID := int64(3)
 
-	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "t1"); ok {
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "t1", nil); ok {
 		t.Fatal("expected miss before bind")
 	}
 
@@ -124,7 +124,7 @@ func TestBindAndGetVideoTaskModel(t *testing.T) {
 		t.Fatalf("bind: %v", err)
 	}
 
-	model, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "t1")
+	model, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "t1", nil)
 	if !ok || model != "sora-2" {
 		t.Fatalf("expected hit sora-2, got %q ok=%v", model, ok)
 	}
@@ -139,7 +139,7 @@ func TestBindAndGetVideoTaskModel(t *testing.T) {
 func TestGetVideoTaskModel_EmptyTaskID(t *testing.T) {
 	svc := newBindingService(newFakeVideoCache())
 	groupID := int64(3)
-	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "  "); ok {
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "  ", nil); ok {
 		t.Fatal("empty taskID should miss")
 	}
 }
@@ -152,10 +152,51 @@ func TestUnbindVideoTask(t *testing.T) {
 
 	svc.UnbindVideoTask(context.Background(), &groupID, "t2")
 
-	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "t2"); ok {
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "t2", nil); ok {
 		t.Fatal("expected miss after unbind")
 	}
 	if _, err := cache.GetSessionAccountID(context.Background(), groupID, stickySessionKey("t2")); !errors.Is(err, redis.Nil) {
 		t.Fatal("expected sticky cleared after unbind")
+	}
+}
+
+// TestGetVideoTaskModel_BundleOwnershipIDOR 验证 bundle key 查询视频 task 时的归属校验：
+// 订阅 B 不得读取订阅 A 创建的视频任务（防跨订阅 IDOR）。该校验补齐了带 ?model= 的 GET
+// 走 model 路由路径的缺口——中间件 ResolveGroup 不校验 task 归属，handler 统一把关，
+// 与无 model 反查路径（ResolveGroupByVideoTask）语义一致。
+func TestGetVideoTaskModel_BundleOwnershipIDOR(t *testing.T) {
+	cache := newFakeVideoCache()
+	svc := newBindingService(cache)
+	groupID := int64(3)
+	subA := int64(100)
+	subB := int64(200)
+
+	// 订阅 A 创建 task（同一 group，模拟两订阅共享上游账号池的常见配置）。
+	if err := svc.BindVideoTask(context.Background(), &groupID, "taskX", 99, "sora-2", &subA, time.Minute); err != nil {
+		t.Fatalf("bind: %v", err)
+	}
+
+	// 归属订阅 A 查询 → 命中。
+	if model, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskX", &subA); !ok || model != "sora-2" {
+		t.Fatalf("owner subscription should hit, got model=%q ok=%v", model, ok)
+	}
+
+	// 订阅 B 查询同一 task → 必须拒绝（跨订阅 IDOR）。
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskX", &subB); ok {
+		t.Fatal("non-owner bundle subscription must not read another subscription's video task (IDOR)")
+	}
+
+	// bundle key 查询标准 key 创建的 task（binding.BundleSubID=nil）→ 拒绝：
+	// bundle key 只能查本订阅创建的 task。
+	if err := svc.BindVideoTask(context.Background(), &groupID, "taskStd", 7, "sora-2", nil, time.Minute); err != nil {
+		t.Fatalf("bind std: %v", err)
+	}
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskStd", &subA); ok {
+		t.Fatal("bundle key must not read a task created by a standard key")
+	}
+
+	// 标准 key（bundleSubID=nil）查询保持原行为：不校验归属（其固定 groupID 天然隔离）。
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskX", nil); !ok {
+		t.Fatal("standard key (nil bundleSubID) should still read via groupID isolation")
 	}
 }

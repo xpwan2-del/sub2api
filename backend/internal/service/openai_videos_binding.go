@@ -54,13 +54,26 @@ func (s *OpenAIGatewayService) BindVideoTask(ctx context.Context, groupID *int64
 }
 
 // GetVideoTaskModel 读取视频任务创建时记录的 model；未命中返回 ("", false)。
-func (s *OpenAIGatewayService) GetVideoTaskModel(ctx context.Context, groupID *int64, taskID string) (string, bool) {
+// bundleSubID 非 nil 时（bundle key GET 查询）校验归属：binding.BundleSubID 必须与
+// 之一致，否则视为未命中（跨订阅 IDOR 拦截）。bundleSubID 为 nil（标准 key）时不校验，
+// 其固定 groupID 已天然隔离。
+//
+// 该归属校验补齐了带 ?model= 的 GET 走 model 路由路径（中间件 ResolveGroup 不校验
+// task 归属）的缺口，与无 model 反查路径（ResolveGroupByVideoTask）语义统一。
+func (s *OpenAIGatewayService) GetVideoTaskModel(ctx context.Context, groupID *int64, taskID string, bundleSubID *int64) (string, bool) {
 	if s == nil || s.cache == nil {
 		return "", false
 	}
 	binding, err := s.cache.GetVideoTaskBinding(ctx, derefGroupID(groupID), strings.TrimSpace(taskID))
 	if err != nil || strings.TrimSpace(binding.Model) == "" {
 		return "", false
+	}
+	if bundleSubID != nil {
+		// bundle key 只能查询本订阅创建的 task：binding 必须归属同一订阅。
+		// binding.BundleSubID 为 nil（标准 key 创建）或不匹配 → 视为未命中，拦截跨订阅 IDOR。
+		if binding.BundleSubID == nil || *binding.BundleSubID != *bundleSubID {
+			return "", false
+		}
 	}
 	return strings.TrimSpace(binding.Model), true
 }

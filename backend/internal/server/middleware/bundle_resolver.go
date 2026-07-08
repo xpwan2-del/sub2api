@@ -403,5 +403,33 @@ func isReadOnlyVideoTaskQuery(method, path, modelName string) bool {
 	if strings.TrimSpace(modelName) != "" {
 		return false
 	}
-	return strings.Contains(path, "/videos/") && extractVideoTaskIDFromPath(path) != ""
+	return videoTaskQueryID(path) != ""
+}
+
+// videoTaskQueryID 精确提取只读视频查询的 taskID：仅接受 ".../videos/{id}" 与
+// ".../videos/{id}/content" 两种形态，拒绝额外 segment（如 ".../videos/{id}/extra"），
+// 避免未来 wildcard 路由复用时扩大配额豁免面。与 extractVideoTaskIDFromPath 的宽泛截断
+// （供 task 反查用，路由层已过滤不可达路径）不同，此函数用于配额豁免门控，必须严格。
+func videoTaskQueryID(path string) string {
+	const marker = "/videos/"
+	idx := strings.Index(path, marker)
+	if idx < 0 {
+		return ""
+	}
+	rest := strings.Trim(path[idx+len(marker):], "/")
+	if rest == "" {
+		return ""
+	}
+	segments := strings.Split(rest, "/")
+	switch len(segments) {
+	case 1:
+		return segments[0]
+	case 2:
+		if segments[1] == "content" {
+			return segments[0]
+		}
+		return ""
+	default:
+		return ""
+	}
 }

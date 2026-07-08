@@ -67,7 +67,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 			h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "video task id is required")
 			return
 		}
-		model, ok := h.gatewayService.GetVideoTaskModel(c.Request.Context(), apiKey.GroupID, taskID)
+		model, ok := h.gatewayService.GetVideoTaskModel(c.Request.Context(), apiKey.GroupID, taskID, apiKey.BundleSubscriptionID)
 		if !ok {
 			h.errorResponse(c, http.StatusNotFound, "invalid_request_error", "video task session expired or not found, please recreate the task")
 			return

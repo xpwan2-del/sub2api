@@ -629,3 +629,35 @@ func TestExtractVideoTaskIDFromPath(t *testing.T) {
 		}
 	}
 }
+
+// TestIsReadOnlyVideoTaskQuery 保护只读视频查询豁免的精确判断：仅 GET、无 model 参数、
+// 且路径精确为 /videos/{id} 或 /videos/{id}/content 才豁免。带 model、POST、无 taskID、
+// 额外 segment、非 videos 路径一律不豁免。
+func TestIsReadOnlyVideoTaskQuery(t *testing.T) {
+	cases := []struct {
+		name      string
+		method    string
+		path      string
+		modelName string
+		want      bool
+	}{
+		{"progress query", http.MethodGet, "/v1/videos/task-abc", "", true},
+		{"content query", http.MethodGet, "/v1/videos/task-abc/content", "", true},
+		{"progress trailing slash", http.MethodGet, "/v1/videos/task-abc/", "", true},
+		{"bare videos prefix", http.MethodGet, "/videos/task-abc", "", true},
+		{"with model param -> not exempt", http.MethodGet, "/v1/videos/task-abc", "sora-2", false},
+		{"POST create", http.MethodPost, "/v1/videos", "sora-2", false},
+		{"POST poll forbidden", http.MethodPost, "/v1/videos/task-abc", "", false},
+		{"no task id", http.MethodGet, "/v1/videos/", "", false},
+		{"videos without slash", http.MethodGet, "/v1/videos", "", false},
+		{"extra segment rejected", http.MethodGet, "/v1/videos/task-abc/extra", "", false},
+		{"non-videos images", http.MethodGet, "/v1/images/task-abc", "", false},
+		{"non-videos chat", http.MethodGet, "/v1/chat/completions", "", false},
+	}
+	for _, tc := range cases {
+		if got := isReadOnlyVideoTaskQuery(tc.method, tc.path, tc.modelName); got != tc.want {
+			t.Errorf("%s: isReadOnlyVideoTaskQuery(%q,%q,%q)=%v, want %v",
+				tc.name, tc.method, tc.path, tc.modelName, got, tc.want)
+		}
+	}
+}
