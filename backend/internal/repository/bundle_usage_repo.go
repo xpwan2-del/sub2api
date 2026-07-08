@@ -177,7 +177,7 @@ func (r *bundleUsageRepository) IncrementUsage(ctx context.Context, id int64, co
 }
 
 // withTx 在数据库事务中执行 fn；若 ctx 已携带外层事务（集成测试隔离事务 / 上层事务）
-// 则直接复用，不再嵌套开事务。与 BundleSubscriptionService.withActivationTx 同范式：
+// 则直接复用，不再嵌套开事务。与 BundleSubscriptionService.withTx 同范式：
 // r.client 已处于事务中时 Tx() 返回 ErrTxStarted，此时复用既有 client，fn 内的
 // FOR UPDATE/Update 仍在该事务内执行。
 func (r *bundleUsageRepository) withTx(ctx context.Context, fn func(txCtx context.Context, txClient *dbent.Client) error) error {

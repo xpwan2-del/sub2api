@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
@@ -48,12 +47,12 @@ func NewBundleSubscriptionService(
 	}
 }
 
-// withActivationTx 在数据库事务中执行套餐激活的写操作，保证 BundleSubscription +
-// 各 group 的 usage + 桥接 UserSubscription 原子提交，任一失败整体回滚，杜绝半激活残留。
+// withTx 在数据库事务中执行套餐写操作（激活 / 撤销 / 延期），保证 BundleSubscription 状态变更
+// 与桥接 UserSubscription 同步原子提交，任一失败整体回滚，杜绝状态不一致残留。
 // entClient 为 nil 时（单元测试）退化为无事务直执行。
-// withActivationTx runs the activation writes inside a DB transaction so partial
-// failures roll back cleanly. Falls back to direct execution when entClient is nil.
-func (s *BundleSubscriptionService) withActivationTx(ctx context.Context, fn func(context.Context) error) error {
+// withTx runs the bundle writes inside a DB transaction so partial failures roll back cleanly.
+// Falls back to direct execution when entClient is nil.
+func (s *BundleSubscriptionService) withTx(ctx context.Context, fn func(context.Context) error) error {
 	if s.entClient == nil {
 		return fn(ctx)
 	}
@@ -95,7 +94,7 @@ func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *Act
 	}
 
 	var activated *BundleSubscription
-	if err := s.withActivationTx(ctx, func(txCtx context.Context) error {
+	if err := s.withTx(ctx, func(txCtx context.Context) error {
 		// 1. Check user has no active bundle subscription.
 		// Admin assignments bypass the conflict check: revoke existing active bundles first.
 		activeBundles, err := s.bundleSubRepo.GetActiveByUserID(txCtx, req.UserID)
@@ -219,19 +218,20 @@ func (s *BundleSubscriptionService) RevokeBundle(ctx context.Context, bundleSubI
 		return ErrBundleExpired
 	}
 
-	if err := s.bundleSubRepo.UpdateStatus(ctx, bundleSubID, BundleStatusRevoked); err != nil {
-		return fmt.Errorf("revoke bundle subscription: %w", err)
-	}
-
-	// Sync: revoke bridged UserSubscriptions.
-	if err := s.syncBridgedUserSubscriptions(ctx, bundleSub.UserID, bundleSubID, func(sub *UserSubscription) error {
-		return s.userSubRepo.UpdateStatus(ctx, sub.ID, domain.SubscriptionStatusExpired)
+	// 事务化：bundle 状态翻转 + 桥接 UserSubscription 同步原子提交，任一失败回滚，
+	// 杜绝「bundle 已 revoked 但桥接 userSub 仍 active」的状态不一致（历史 bug L2）。
+	if err := s.withTx(ctx, func(txCtx context.Context) error {
+		if err := s.bundleSubRepo.UpdateStatus(txCtx, bundleSubID, BundleStatusRevoked); err != nil {
+			return fmt.Errorf("revoke bundle subscription: %w", err)
+		}
+		return s.syncBridgedUserSubscriptions(txCtx, bundleSub.UserID, bundleSubID, func(sub *UserSubscription) error {
+			return s.userSubRepo.UpdateStatus(txCtx, sub.ID, domain.SubscriptionStatusExpired)
+		})
 	}); err != nil {
-		slog.Warn("revoke bundle: sync bridged user subscriptions had errors",
-			"bundle_sub_id", bundleSubID, "error", err)
+		return err
 	}
 
-	// Invalidate cache after revocation.
+	// Invalidate cache after revocation (after tx commits — avoid dirty invalidation on rollback).
 	if s.cache != nil {
 		_ = s.cache.InvalidateBundleSubscriptionCache(ctx, bundleSub.UserID)
 	}
@@ -439,20 +439,21 @@ func (s *BundleSubscriptionService) ExtendBundle(ctx context.Context, bundleSubI
 	}
 
 	newExpiry := bundleSub.ExpiresAt.AddDate(0, 0, days)
-	if err := s.bundleSubRepo.UpdateExpiry(ctx, bundleSubID, newExpiry); err != nil {
-		return fmt.Errorf("extend bundle subscription: %w", err)
-	}
-
-	// Sync: extend bridged UserSubscriptions' expiry.
-	if err := s.syncBridgedUserSubscriptions(ctx, bundleSub.UserID, bundleSubID, func(sub *UserSubscription) error {
-		extendedExpiry := sub.ExpiresAt.AddDate(0, 0, days)
-		return s.userSubRepo.ExtendExpiry(ctx, sub.ID, extendedExpiry)
+	// 事务化：bundle 到期延长 + 桥接 UserSubscription 同步原子提交，任一失败回滚，
+	// 杜绝「bundle 已延期但桥接 userSub 未延期」的状态不一致（历史 bug L2）。
+	if err := s.withTx(ctx, func(txCtx context.Context) error {
+		if err := s.bundleSubRepo.UpdateExpiry(txCtx, bundleSubID, newExpiry); err != nil {
+			return fmt.Errorf("extend bundle subscription: %w", err)
+		}
+		return s.syncBridgedUserSubscriptions(txCtx, bundleSub.UserID, bundleSubID, func(sub *UserSubscription) error {
+			extendedExpiry := sub.ExpiresAt.AddDate(0, 0, days)
+			return s.userSubRepo.ExtendExpiry(txCtx, sub.ID, extendedExpiry)
+		})
 	}); err != nil {
-		slog.Warn("extend bundle: sync bridged user subscriptions had errors",
-			"bundle_sub_id", bundleSubID, "error", err)
+		return err
 	}
 
-	// Invalidate cache after extension.
+	// Invalidate cache after extension (after tx commits).
 	if s.cache != nil {
 		_ = s.cache.InvalidateBundleSubscriptionCache(ctx, bundleSub.UserID)
 	}

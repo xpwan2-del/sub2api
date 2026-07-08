@@ -233,6 +233,48 @@ func sampleActivePlan() *BundlePlan {
 }
 
 // ──────────────────────────────────────────────────────
+// Tests: RevokeBundle / ExtendBundle 事务原子化（L2）
+// ──────────────────────────────────────────────────────
+
+// TestRevokeBundle_UserSubSyncFailureReturnsError 守护 L2：桥接 userSub 同步失败时，RevokeBundle
+// 必须返回 error（旧实现只 slog.Warn 后返回 nil，留「bundle revoked 但桥接 userSub 仍 active」
+// 的状态不一致）。entClient=nil 时 withTx 退化为直执行，故本用例验证「不再静默」；真实事务回滚
+// （bundle 状态不变）由集成测试覆盖。
+func TestRevokeBundle_UserSubSyncFailureReturnsError(t *testing.T) {
+	bundleSubID := int64(100)
+	bundleSub := &BundleSubscription{ID: bundleSubID, UserID: 7, PlanID: 1, Status: BundleStatusActive}
+	subRepo := &activateBundleSubRepoStub{created: bundleSub}
+	userSubRepo := &activateUserSubRepoStub{
+		existingSubs:    []UserSubscription{{ID: 55, UserID: 7, BundleSubscriptionID: &bundleSubID}},
+		updateStatusErr: errors.New("db down"),
+	}
+	svc := newBundleSubSvc(subRepo, &activateBundlePlanRepoStub{}, &activateBundleUsageRepoStub{}, userSubRepo)
+
+	if err := svc.RevokeBundle(context.Background(), bundleSubID); err == nil {
+		t.Fatal("RevokeBundle should return error when bridged userSub sync fails (no longer silent Warn)")
+	}
+}
+
+// TestExtendBundle_UserSubSyncFailureReturnsError 同上，守护 ExtendBundle 的桥接同步失败不再静默。
+func TestExtendBundle_UserSubSyncFailureReturnsError(t *testing.T) {
+	bundleSubID := int64(100)
+	bundleSub := &BundleSubscription{
+		ID: bundleSubID, UserID: 7, PlanID: 1, Status: BundleStatusActive,
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}
+	subRepo := &activateBundleSubRepoStub{created: bundleSub}
+	userSubRepo := &activateUserSubRepoStub{
+		existingSubs:    []UserSubscription{{ID: 55, UserID: 7, BundleSubscriptionID: &bundleSubID}},
+		extendExpiryErr: errors.New("db down"),
+	}
+	svc := newBundleSubSvc(subRepo, &activateBundlePlanRepoStub{}, &activateBundleUsageRepoStub{}, userSubRepo)
+
+	if err := svc.ExtendBundle(context.Background(), bundleSubID, 7); err == nil {
+		t.Fatal("ExtendBundle should return error when bridged userSub sync fails (no longer silent Warn)")
+	}
+}
+
+// ──────────────────────────────────────────────────────
 // Tests: AccumulateUsage (count dimension)
 // ──────────────────────────────────────────────────────
 
