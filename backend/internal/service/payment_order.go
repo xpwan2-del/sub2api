@@ -78,10 +78,13 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		}
 	}
 	// --- Balance deduction for bundle orders ---
+	// bundle 与 bundle_upgrade 共享同一余额抵扣逻辑：planPrice 即"本次需支付总额"。
+	// bundle 的 planPrice = plan.Price（orderAmount 在 plan!=nil 时已被设为 plan.Price）；
+	// bundle_upgrade 的 planPrice = req.Amount = 升级差价 due（validateOrderInput 对 upgrade 返回
+	// nil plan，故 orderAmount 保持 req.Amount）。两者余额抵扣语义一致。
 	balanceDeduct := 0.0
-	if req.UseBalance && req.OrderType == payment.OrderTypeBundle && user.Balance > 0 {
-		planPrice := orderAmount // for bundle orders, orderAmount == plan.Price
-		balanceDeduct = math.Min(user.Balance, planPrice)
+	if req.UseBalance && (req.OrderType == payment.OrderTypeBundle || req.OrderType == payment.OrderTypeBundleUpgrade) && user.Balance > 0 {
+		planPrice := orderAmount
 		if balanceDeduct >= planPrice {
 			// Pure balance payment: deduct balance, create order as PAID, fulfill immediately
 			return s.createPureBalanceBundleOrder(ctx, req, user, cfg, orderAmount, feeRate)
@@ -225,6 +228,12 @@ func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req C
 	if req.SrcURL != "" {
 		b.SetSrcURL(req.SrcURL)
 	}
+	// bundle_upgrade 订单需写入升级专属字段（source 订阅 + prorate credit），否则
+	// ExecuteBundleUpgradeFulfillment 会因 SourceBundleSubscriptionID 缺失拒绝履约。
+	if req.OrderType == payment.OrderTypeBundleUpgrade {
+		b.SetSourceBundleSubscriptionID(req.SourceBundleSubscriptionID).
+			SetProrateCredit(req.ProrateCredit)
+	}
 	order, err := b.Save(ctx)
 	if err != nil {
 		// Rollback balance deduction
@@ -238,8 +247,10 @@ func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req C
 	}
 	s.writeAuditLog(ctx, order.ID, "ORDER_PAID", "balance", map[string]any{"paymentType": "balance", "balanceDeductAmount": orderAmount})
 
-	// Fulfill the bundle immediately
-	if err := s.ExecuteBundleFulfillment(ctx, order.ID); err != nil {
+	// Fulfill the bundle/upgrade immediately. 走统一分发器：bundle_upgrade 必须路由到
+	// ExecuteBundleUpgradeFulfillment（换套），否则 ExecuteBundleFulfillment 会 ActivateBundle
+	// 建新订阅而非升级，导致用户付了差价却拿到全新订阅、旧订阅未失效。
+	if err := s.executeFulfillment(ctx, order.ID); err != nil {
 		slog.Error("bundle fulfillment failed after pure balance payment", "orderID", order.ID, "error", err)
 		// 套餐暂不支持退款，但激活失败时必须回滚已扣余额，避免用户付款却未拿到套餐。
 		// (This rolls back an intermediate deduction for an order that never fulfilled —
