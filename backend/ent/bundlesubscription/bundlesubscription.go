@@ -36,6 +36,8 @@ const (
 	FieldRpmLimit = "rpm_limit"
 	// FieldSource holds the string denoting the source field in the database.
 	FieldSource = "source"
+	// FieldUpgradedFromID holds the string denoting the upgraded_from_id field in the database.
+	FieldUpgradedFromID = "upgraded_from_id"
 	// Table holds the table name of the bundlesubscription in the database.
 	Table = "bundle_subscriptions"
 )
@@ -54,6 +56,7 @@ var Columns = []string{
 	FieldConcurrencyLimit,
 	FieldRpmLimit,
 	FieldSource,
+	FieldUpgradedFromID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -155,4 +158,9 @@ func ByRpmLimit(opts ...sql.OrderTermOption) OrderOption {
 // BySource orders the results by the source field.
 func BySource(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSource, opts...).ToFunc()
+}
+
+// ByUpgradedFromID orders the results by the upgraded_from_id field.
+func ByUpgradedFromID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpgradedFromID, opts...).ToFunc()
 }

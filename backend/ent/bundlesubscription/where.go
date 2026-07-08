@@ -109,6 +109,11 @@ func Source(v string) predicate.BundleSubscription {
 	return predicate.BundleSubscription(sql.FieldEQ(FieldSource, v))
 }
 
+// UpgradedFromID applies equality check predicate on the "upgraded_from_id" field. It's identical to UpgradedFromIDEQ.
+func UpgradedFromID(v int64) predicate.BundleSubscription {
+	return predicate.BundleSubscription(sql.FieldEQ(FieldUpgradedFromID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.BundleSubscription {
 	return predicate.BundleSubscription(sql.FieldEQ(FieldCreatedAt, v))
@@ -607,6 +612,56 @@ func SourceEqualFold(v string) predicate.BundleSubscription {
 // SourceContainsFold applies the ContainsFold predicate on the "source" field.
 func SourceContainsFold(v string) predicate.BundleSubscription {
 	return predicate.BundleSubscription(sql.FieldContainsFold(FieldSource, v))
+}
+
+// UpgradedFromIDEQ applies the EQ predicate on the "upgraded_from_id" field.
+func UpgradedFromIDEQ(v int64) predicate.BundleSubscription {
+	return predicate.BundleSubscription(sql.FieldEQ(FieldUpgradedFromID, v))
+}
+
+// UpgradedFromIDNEQ applies the NEQ predicate on the "upgraded_from_id" field.
+func UpgradedFromIDNEQ(v int64) predicate.BundleSubscription {
+	return predicate.BundleSubscription(sql.FieldNEQ(FieldUpgradedFromID, v))
+}
+
+// UpgradedFromIDIn applies the In predicate on the "upgraded_from_id" field.
+func UpgradedFromIDIn(vs ...int64) predicate.BundleSubscription {
+	return predicate.BundleSubscription(sql.FieldIn(FieldUpgradedFromID, vs...))
+}
+
+// UpgradedFromIDNotIn applies the NotIn predicate on the "upgraded_from_id" field.
+func UpgradedFromIDNotIn(vs ...int64) predicate.BundleSubscription {
+	return predicate.BundleSubscription(sql.FieldNotIn(FieldUpgradedFromID, vs...))
+}
+
+// UpgradedFromIDGT applies the GT predicate on the "upgraded_from_id" field.
+func UpgradedFromIDGT(v int64) predicate.BundleSubscription {
+	return predicate.BundleSubscription(sql.FieldGT(FieldUpgradedFromID, v))
+}
+
+// UpgradedFromIDGTE applies the GTE predicate on the "upgraded_from_id" field.
+func UpgradedFromIDGTE(v int64) predicate.BundleSubscription {
+	return predicate.BundleSubscription(sql.FieldGTE(FieldUpgradedFromID, v))
+}
+
+// UpgradedFromIDLT applies the LT predicate on the "upgraded_from_id" field.
+func UpgradedFromIDLT(v int64) predicate.BundleSubscription {
+	return predicate.BundleSubscription(sql.FieldLT(FieldUpgradedFromID, v))
+}
+
+// UpgradedFromIDLTE applies the LTE predicate on the "upgraded_from_id" field.
+func UpgradedFromIDLTE(v int64) predicate.BundleSubscription {
+	return predicate.BundleSubscription(sql.FieldLTE(FieldUpgradedFromID, v))
+}
+
+// UpgradedFromIDIsNil applies the IsNil predicate on the "upgraded_from_id" field.
+func UpgradedFromIDIsNil() predicate.BundleSubscription {
+	return predicate.BundleSubscription(sql.FieldIsNull(FieldUpgradedFromID))
+}
+
+// UpgradedFromIDNotNil applies the NotNil predicate on the "upgraded_from_id" field.
+func UpgradedFromIDNotNil() predicate.BundleSubscription {
+	return predicate.BundleSubscription(sql.FieldNotNull(FieldUpgradedFromID))
 }
 
 // And groups predicates with the AND operator between them.

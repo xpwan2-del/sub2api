@@ -39,9 +39,10 @@ const (
 
 // Order types distinguish balance recharges from subscription purchases.
 const (
-	OrderTypeBalance      = "balance"
-	OrderTypeSubscription = "subscription"
-	OrderTypeBundle       = "bundle"
+	OrderTypeBalance       = "balance"
+	OrderTypeSubscription  = "subscription"
+	OrderTypeBundle        = "bundle"
+	OrderTypeBundleUpgrade = "bundle_upgrade" // 套餐升级（差价订单）
 )
 
 // Entity statuses shared across users, groups, etc.

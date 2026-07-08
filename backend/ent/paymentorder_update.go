@@ -359,6 +359,33 @@ func (_u *PaymentOrderUpdate) ClearBundleSubscriptionID() *PaymentOrderUpdate {
 	return _u
 }
 
+// SetSourceBundleSubscriptionID sets the "source_bundle_subscription_id" field.
+func (_u *PaymentOrderUpdate) SetSourceBundleSubscriptionID(v int64) *PaymentOrderUpdate {
+	_u.mutation.ResetSourceBundleSubscriptionID()
+	_u.mutation.SetSourceBundleSubscriptionID(v)
+	return _u
+}
+
+// SetNillableSourceBundleSubscriptionID sets the "source_bundle_subscription_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableSourceBundleSubscriptionID(v *int64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetSourceBundleSubscriptionID(*v)
+	}
+	return _u
+}
+
+// AddSourceBundleSubscriptionID adds value to the "source_bundle_subscription_id" field.
+func (_u *PaymentOrderUpdate) AddSourceBundleSubscriptionID(v int64) *PaymentOrderUpdate {
+	_u.mutation.AddSourceBundleSubscriptionID(v)
+	return _u
+}
+
+// ClearSourceBundleSubscriptionID clears the value of the "source_bundle_subscription_id" field.
+func (_u *PaymentOrderUpdate) ClearSourceBundleSubscriptionID() *PaymentOrderUpdate {
+	_u.mutation.ClearSourceBundleSubscriptionID()
+	return _u
+}
+
 // SetSubscriptionGroupID sets the "subscription_group_id" field.
 func (_u *PaymentOrderUpdate) SetSubscriptionGroupID(v int64) *PaymentOrderUpdate {
 	_u.mutation.ResetSubscriptionGroupID()
@@ -497,6 +524,27 @@ func (_u *PaymentOrderUpdate) SetNillableRefundAmount(v *float64) *PaymentOrderU
 // AddRefundAmount adds value to the "refund_amount" field.
 func (_u *PaymentOrderUpdate) AddRefundAmount(v float64) *PaymentOrderUpdate {
 	_u.mutation.AddRefundAmount(v)
+	return _u
+}
+
+// SetProrateCredit sets the "prorate_credit" field.
+func (_u *PaymentOrderUpdate) SetProrateCredit(v float64) *PaymentOrderUpdate {
+	_u.mutation.ResetProrateCredit()
+	_u.mutation.SetProrateCredit(v)
+	return _u
+}
+
+// SetNillableProrateCredit sets the "prorate_credit" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableProrateCredit(v *float64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetProrateCredit(*v)
+	}
+	return _u
+}
+
+// AddProrateCredit adds value to the "prorate_credit" field.
+func (_u *PaymentOrderUpdate) AddProrateCredit(v float64) *PaymentOrderUpdate {
+	_u.mutation.AddProrateCredit(v)
 	return _u
 }
 
@@ -986,6 +1034,15 @@ func (_u *PaymentOrderUpdate) sqlSave(ctx context.Context) (_node int, err error
 	if _u.mutation.BundleSubscriptionIDCleared() {
 		_spec.ClearField(paymentorder.FieldBundleSubscriptionID, field.TypeInt64)
 	}
+	if value, ok := _u.mutation.SourceBundleSubscriptionID(); ok {
+		_spec.SetField(paymentorder.FieldSourceBundleSubscriptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSourceBundleSubscriptionID(); ok {
+		_spec.AddField(paymentorder.FieldSourceBundleSubscriptionID, field.TypeInt64, value)
+	}
+	if _u.mutation.SourceBundleSubscriptionIDCleared() {
+		_spec.ClearField(paymentorder.FieldSourceBundleSubscriptionID, field.TypeInt64)
+	}
 	if value, ok := _u.mutation.SubscriptionGroupID(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionGroupID, field.TypeInt64, value)
 	}
@@ -1030,6 +1087,12 @@ func (_u *PaymentOrderUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if value, ok := _u.mutation.AddedRefundAmount(); ok {
 		_spec.AddField(paymentorder.FieldRefundAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ProrateCredit(); ok {
+		_spec.SetField(paymentorder.FieldProrateCredit, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedProrateCredit(); ok {
+		_spec.AddField(paymentorder.FieldProrateCredit, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.RefundReason(); ok {
 		_spec.SetField(paymentorder.FieldRefundReason, field.TypeString, value)
@@ -1485,6 +1548,33 @@ func (_u *PaymentOrderUpdateOne) ClearBundleSubscriptionID() *PaymentOrderUpdate
 	return _u
 }
 
+// SetSourceBundleSubscriptionID sets the "source_bundle_subscription_id" field.
+func (_u *PaymentOrderUpdateOne) SetSourceBundleSubscriptionID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetSourceBundleSubscriptionID()
+	_u.mutation.SetSourceBundleSubscriptionID(v)
+	return _u
+}
+
+// SetNillableSourceBundleSubscriptionID sets the "source_bundle_subscription_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableSourceBundleSubscriptionID(v *int64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetSourceBundleSubscriptionID(*v)
+	}
+	return _u
+}
+
+// AddSourceBundleSubscriptionID adds value to the "source_bundle_subscription_id" field.
+func (_u *PaymentOrderUpdateOne) AddSourceBundleSubscriptionID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.AddSourceBundleSubscriptionID(v)
+	return _u
+}
+
+// ClearSourceBundleSubscriptionID clears the value of the "source_bundle_subscription_id" field.
+func (_u *PaymentOrderUpdateOne) ClearSourceBundleSubscriptionID() *PaymentOrderUpdateOne {
+	_u.mutation.ClearSourceBundleSubscriptionID()
+	return _u
+}
+
 // SetSubscriptionGroupID sets the "subscription_group_id" field.
 func (_u *PaymentOrderUpdateOne) SetSubscriptionGroupID(v int64) *PaymentOrderUpdateOne {
 	_u.mutation.ResetSubscriptionGroupID()
@@ -1623,6 +1713,27 @@ func (_u *PaymentOrderUpdateOne) SetNillableRefundAmount(v *float64) *PaymentOrd
 // AddRefundAmount adds value to the "refund_amount" field.
 func (_u *PaymentOrderUpdateOne) AddRefundAmount(v float64) *PaymentOrderUpdateOne {
 	_u.mutation.AddRefundAmount(v)
+	return _u
+}
+
+// SetProrateCredit sets the "prorate_credit" field.
+func (_u *PaymentOrderUpdateOne) SetProrateCredit(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetProrateCredit()
+	_u.mutation.SetProrateCredit(v)
+	return _u
+}
+
+// SetNillableProrateCredit sets the "prorate_credit" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableProrateCredit(v *float64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetProrateCredit(*v)
+	}
+	return _u
+}
+
+// AddProrateCredit adds value to the "prorate_credit" field.
+func (_u *PaymentOrderUpdateOne) AddProrateCredit(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.AddProrateCredit(v)
 	return _u
 }
 
@@ -2142,6 +2253,15 @@ func (_u *PaymentOrderUpdateOne) sqlSave(ctx context.Context) (_node *PaymentOrd
 	if _u.mutation.BundleSubscriptionIDCleared() {
 		_spec.ClearField(paymentorder.FieldBundleSubscriptionID, field.TypeInt64)
 	}
+	if value, ok := _u.mutation.SourceBundleSubscriptionID(); ok {
+		_spec.SetField(paymentorder.FieldSourceBundleSubscriptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSourceBundleSubscriptionID(); ok {
+		_spec.AddField(paymentorder.FieldSourceBundleSubscriptionID, field.TypeInt64, value)
+	}
+	if _u.mutation.SourceBundleSubscriptionIDCleared() {
+		_spec.ClearField(paymentorder.FieldSourceBundleSubscriptionID, field.TypeInt64)
+	}
 	if value, ok := _u.mutation.SubscriptionGroupID(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionGroupID, field.TypeInt64, value)
 	}
@@ -2186,6 +2306,12 @@ func (_u *PaymentOrderUpdateOne) sqlSave(ctx context.Context) (_node *PaymentOrd
 	}
 	if value, ok := _u.mutation.AddedRefundAmount(); ok {
 		_spec.AddField(paymentorder.FieldRefundAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ProrateCredit(); ok {
+		_spec.SetField(paymentorder.FieldProrateCredit, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedProrateCredit(); ok {
+		_spec.AddField(paymentorder.FieldProrateCredit, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.RefundReason(); ok {
 		_spec.SetField(paymentorder.FieldRefundReason, field.TypeString, value)

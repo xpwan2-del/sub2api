@@ -47,6 +47,7 @@ func (BundleSubscription) Fields() []ent.Field {
 		field.Int("concurrency_limit").Default(0).NonNegative().Comment("快照：并发上限"),
 		field.Int("rpm_limit").Default(0).NonNegative().Comment("快照：RPM上限"),
 		field.String("source").Default("purchase").Comment("来源: purchase/redeem/admin_assign"),
+		field.Int64("upgraded_from_id").Optional().Comment("升级来源：指向被替换的旧订阅ID，仅升级产生的新订阅有值"),
 	}
 }
 

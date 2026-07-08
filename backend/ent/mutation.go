@@ -11649,6 +11649,8 @@ type BundleSubscriptionMutation struct {
 	rpm_limit            *int
 	addrpm_limit         *int
 	source               *string
+	upgraded_from_id     *int64
+	addupgraded_from_id  *int64
 	clearedFields        map[string]struct{}
 	done                 bool
 	oldValue             func(context.Context) (*BundleSubscription, error)
@@ -12242,6 +12244,76 @@ func (m *BundleSubscriptionMutation) ResetSource() {
 	m.source = nil
 }
 
+// SetUpgradedFromID sets the "upgraded_from_id" field.
+func (m *BundleSubscriptionMutation) SetUpgradedFromID(i int64) {
+	m.upgraded_from_id = &i
+	m.addupgraded_from_id = nil
+}
+
+// UpgradedFromID returns the value of the "upgraded_from_id" field in the mutation.
+func (m *BundleSubscriptionMutation) UpgradedFromID() (r int64, exists bool) {
+	v := m.upgraded_from_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpgradedFromID returns the old "upgraded_from_id" field's value of the BundleSubscription entity.
+// If the BundleSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleSubscriptionMutation) OldUpgradedFromID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpgradedFromID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpgradedFromID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpgradedFromID: %w", err)
+	}
+	return oldValue.UpgradedFromID, nil
+}
+
+// AddUpgradedFromID adds i to the "upgraded_from_id" field.
+func (m *BundleSubscriptionMutation) AddUpgradedFromID(i int64) {
+	if m.addupgraded_from_id != nil {
+		*m.addupgraded_from_id += i
+	} else {
+		m.addupgraded_from_id = &i
+	}
+}
+
+// AddedUpgradedFromID returns the value that was added to the "upgraded_from_id" field in this mutation.
+func (m *BundleSubscriptionMutation) AddedUpgradedFromID() (r int64, exists bool) {
+	v := m.addupgraded_from_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearUpgradedFromID clears the value of the "upgraded_from_id" field.
+func (m *BundleSubscriptionMutation) ClearUpgradedFromID() {
+	m.upgraded_from_id = nil
+	m.addupgraded_from_id = nil
+	m.clearedFields[bundlesubscription.FieldUpgradedFromID] = struct{}{}
+}
+
+// UpgradedFromIDCleared returns if the "upgraded_from_id" field was cleared in this mutation.
+func (m *BundleSubscriptionMutation) UpgradedFromIDCleared() bool {
+	_, ok := m.clearedFields[bundlesubscription.FieldUpgradedFromID]
+	return ok
+}
+
+// ResetUpgradedFromID resets all changes to the "upgraded_from_id" field.
+func (m *BundleSubscriptionMutation) ResetUpgradedFromID() {
+	m.upgraded_from_id = nil
+	m.addupgraded_from_id = nil
+	delete(m.clearedFields, bundlesubscription.FieldUpgradedFromID)
+}
+
 // Where appends a list predicates to the BundleSubscriptionMutation builder.
 func (m *BundleSubscriptionMutation) Where(ps ...predicate.BundleSubscription) {
 	m.predicates = append(m.predicates, ps...)
@@ -12276,7 +12348,7 @@ func (m *BundleSubscriptionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BundleSubscriptionMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, bundlesubscription.FieldCreatedAt)
 	}
@@ -12310,6 +12382,9 @@ func (m *BundleSubscriptionMutation) Fields() []string {
 	if m.source != nil {
 		fields = append(fields, bundlesubscription.FieldSource)
 	}
+	if m.upgraded_from_id != nil {
+		fields = append(fields, bundlesubscription.FieldUpgradedFromID)
+	}
 	return fields
 }
 
@@ -12340,6 +12415,8 @@ func (m *BundleSubscriptionMutation) Field(name string) (ent.Value, bool) {
 		return m.RpmLimit()
 	case bundlesubscription.FieldSource:
 		return m.Source()
+	case bundlesubscription.FieldUpgradedFromID:
+		return m.UpgradedFromID()
 	}
 	return nil, false
 }
@@ -12371,6 +12448,8 @@ func (m *BundleSubscriptionMutation) OldField(ctx context.Context, name string) 
 		return m.OldRpmLimit(ctx)
 	case bundlesubscription.FieldSource:
 		return m.OldSource(ctx)
+	case bundlesubscription.FieldUpgradedFromID:
+		return m.OldUpgradedFromID(ctx)
 	}
 	return nil, fmt.Errorf("unknown BundleSubscription field %s", name)
 }
@@ -12457,6 +12536,13 @@ func (m *BundleSubscriptionMutation) SetField(name string, value ent.Value) erro
 		}
 		m.SetSource(v)
 		return nil
+	case bundlesubscription.FieldUpgradedFromID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpgradedFromID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BundleSubscription field %s", name)
 }
@@ -12477,6 +12563,9 @@ func (m *BundleSubscriptionMutation) AddedFields() []string {
 	if m.addrpm_limit != nil {
 		fields = append(fields, bundlesubscription.FieldRpmLimit)
 	}
+	if m.addupgraded_from_id != nil {
+		fields = append(fields, bundlesubscription.FieldUpgradedFromID)
+	}
 	return fields
 }
 
@@ -12493,6 +12582,8 @@ func (m *BundleSubscriptionMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedConcurrencyLimit()
 	case bundlesubscription.FieldRpmLimit:
 		return m.AddedRpmLimit()
+	case bundlesubscription.FieldUpgradedFromID:
+		return m.AddedUpgradedFromID()
 	}
 	return nil, false
 }
@@ -12530,6 +12621,13 @@ func (m *BundleSubscriptionMutation) AddField(name string, value ent.Value) erro
 		}
 		m.AddRpmLimit(v)
 		return nil
+	case bundlesubscription.FieldUpgradedFromID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUpgradedFromID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BundleSubscription numeric field %s", name)
 }
@@ -12540,6 +12638,9 @@ func (m *BundleSubscriptionMutation) ClearedFields() []string {
 	var fields []string
 	if m.FieldCleared(bundlesubscription.FieldDeletedAt) {
 		fields = append(fields, bundlesubscription.FieldDeletedAt)
+	}
+	if m.FieldCleared(bundlesubscription.FieldUpgradedFromID) {
+		fields = append(fields, bundlesubscription.FieldUpgradedFromID)
 	}
 	return fields
 }
@@ -12557,6 +12658,9 @@ func (m *BundleSubscriptionMutation) ClearField(name string) error {
 	switch name {
 	case bundlesubscription.FieldDeletedAt:
 		m.ClearDeletedAt()
+		return nil
+	case bundlesubscription.FieldUpgradedFromID:
+		m.ClearUpgradedFromID()
 		return nil
 	}
 	return fmt.Errorf("unknown BundleSubscription nullable field %s", name)
@@ -12598,6 +12702,9 @@ func (m *BundleSubscriptionMutation) ResetField(name string) error {
 		return nil
 	case bundlesubscription.FieldSource:
 		m.ResetSource()
+		return nil
+	case bundlesubscription.FieldUpgradedFromID:
+		m.ResetUpgradedFromID()
 		return nil
 	}
 	return fmt.Errorf("unknown BundleSubscription field %s", name)
@@ -25931,64 +26038,68 @@ func (m *PaymentAuditLogMutation) ResetEdge(name string) error {
 // PaymentOrderMutation represents an operation that mutates the PaymentOrder nodes in the graph.
 type PaymentOrderMutation struct {
 	config
-	op                        Op
-	typ                       string
-	id                        *int64
-	user_email                *string
-	user_name                 *string
-	user_notes                *string
-	amount                    *float64
-	addamount                 *float64
-	pay_amount                *float64
-	addpay_amount             *float64
-	fee_rate                  *float64
-	addfee_rate               *float64
-	balance_deduct_amount     *float64
-	addbalance_deduct_amount  *float64
-	recharge_code             *string
-	out_trade_no              *string
-	payment_type              *string
-	payment_trade_no          *string
-	pay_url                   *string
-	qr_code                   *string
-	qr_code_img               *string
-	order_type                *string
-	plan_id                   *int64
-	addplan_id                *int64
-	bundle_subscription_id    *int64
-	addbundle_subscription_id *int64
-	subscription_group_id     *int64
-	addsubscription_group_id  *int64
-	subscription_days         *int
-	addsubscription_days      *int
-	provider_instance_id      *string
-	provider_key              *string
-	provider_snapshot         *map[string]interface{}
-	status                    *string
-	refund_amount             *float64
-	addrefund_amount          *float64
-	refund_reason             *string
-	refund_at                 *time.Time
-	force_refund              *bool
-	refund_requested_at       *time.Time
-	refund_request_reason     *string
-	refund_requested_by       *string
-	expires_at                *time.Time
-	paid_at                   *time.Time
-	completed_at              *time.Time
-	failed_at                 *time.Time
-	failed_reason             *string
-	client_ip                 *string
-	src_host                  *string
-	src_url                   *string
-	created_at                *time.Time
-	updated_at                *time.Time
-	clearedFields             map[string]struct{}
-	user                      *int64
-	cleareduser               bool
-	done                      bool
-	oldValue                  func(context.Context) (*PaymentOrder, error)
-	predicates                []predicate.PaymentOrder
+	op                               Op
+	typ                              string
+	id                               *int64
+	user_email                       *string
+	user_name                        *string
+	user_notes                       *string
+	amount                           *float64
+	addamount                        *float64
+	pay_amount                       *float64
+	addpay_amount                    *float64
+	fee_rate                         *float64
+	addfee_rate                      *float64
+	balance_deduct_amount            *float64
+	addbalance_deduct_amount         *float64
+	recharge_code                    *string
+	out_trade_no                     *string
+	payment_type                     *string
+	payment_trade_no                 *string
+	pay_url                          *string
+	qr_code                          *string
+	qr_code_img                      *string
+	order_type                       *string
+	plan_id                          *int64
+	addplan_id                       *int64
+	bundle_subscription_id           *int64
+	addbundle_subscription_id        *int64
+	source_bundle_subscription_id    *int64
+	addsource_bundle_subscription_id *int64
+	subscription_group_id            *int64
+	addsubscription_group_id         *int64
+	subscription_days                *int
+	addsubscription_days             *int
+	provider_instance_id             *string
+	provider_key                     *string
+	provider_snapshot                *map[string]interface{}
+	status                           *string
+	refund_amount                    *float64
+	addrefund_amount                 *float64
+	prorate_credit                   *float64
+	addprorate_credit                *float64
+	refund_reason                    *string
+	refund_at                        *time.Time
+	force_refund                     *bool
+	refund_requested_at              *time.Time
+	refund_request_reason            *string
+	refund_requested_by              *string
+	expires_at                       *time.Time
+	paid_at                          *time.Time
+	completed_at                     *time.Time
+	failed_at                        *time.Time
+	failed_reason                    *string
+	client_ip                        *string
+	src_host                         *string
+	src_url                          *string
+	created_at                       *time.Time
+	updated_at                       *time.Time
+	clearedFields                    map[string]struct{}
+	user                             *int64
+	cleareduser                      bool
+	done                             bool
+	oldValue                         func(context.Context) (*PaymentOrder, error)
+	predicates                       []predicate.PaymentOrder
 }
 
 var _ ent.Mutation = (*PaymentOrderMutation)(nil)
@@ -26937,6 +27048,76 @@ func (m *PaymentOrderMutation) ResetBundleSubscriptionID() {
 	delete(m.clearedFields, paymentorder.FieldBundleSubscriptionID)
 }
 
+// SetSourceBundleSubscriptionID sets the "source_bundle_subscription_id" field.
+func (m *PaymentOrderMutation) SetSourceBundleSubscriptionID(i int64) {
+	m.source_bundle_subscription_id = &i
+	m.addsource_bundle_subscription_id = nil
+}
+
+// SourceBundleSubscriptionID returns the value of the "source_bundle_subscription_id" field in the mutation.
+func (m *PaymentOrderMutation) SourceBundleSubscriptionID() (r int64, exists bool) {
+	v := m.source_bundle_subscription_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSourceBundleSubscriptionID returns the old "source_bundle_subscription_id" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldSourceBundleSubscriptionID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSourceBundleSubscriptionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSourceBundleSubscriptionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSourceBundleSubscriptionID: %w", err)
+	}
+	return oldValue.SourceBundleSubscriptionID, nil
+}
+
+// AddSourceBundleSubscriptionID adds i to the "source_bundle_subscription_id" field.
+func (m *PaymentOrderMutation) AddSourceBundleSubscriptionID(i int64) {
+	if m.addsource_bundle_subscription_id != nil {
+		*m.addsource_bundle_subscription_id += i
+	} else {
+		m.addsource_bundle_subscription_id = &i
+	}
+}
+
+// AddedSourceBundleSubscriptionID returns the value that was added to the "source_bundle_subscription_id" field in this mutation.
+func (m *PaymentOrderMutation) AddedSourceBundleSubscriptionID() (r int64, exists bool) {
+	v := m.addsource_bundle_subscription_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSourceBundleSubscriptionID clears the value of the "source_bundle_subscription_id" field.
+func (m *PaymentOrderMutation) ClearSourceBundleSubscriptionID() {
+	m.source_bundle_subscription_id = nil
+	m.addsource_bundle_subscription_id = nil
+	m.clearedFields[paymentorder.FieldSourceBundleSubscriptionID] = struct{}{}
+}
+
+// SourceBundleSubscriptionIDCleared returns if the "source_bundle_subscription_id" field was cleared in this mutation.
+func (m *PaymentOrderMutation) SourceBundleSubscriptionIDCleared() bool {
+	_, ok := m.clearedFields[paymentorder.FieldSourceBundleSubscriptionID]
+	return ok
+}
+
+// ResetSourceBundleSubscriptionID resets all changes to the "source_bundle_subscription_id" field.
+func (m *PaymentOrderMutation) ResetSourceBundleSubscriptionID() {
+	m.source_bundle_subscription_id = nil
+	m.addsource_bundle_subscription_id = nil
+	delete(m.clearedFields, paymentorder.FieldSourceBundleSubscriptionID)
+}
+
 // SetSubscriptionGroupID sets the "subscription_group_id" field.
 func (m *PaymentOrderMutation) SetSubscriptionGroupID(i int64) {
 	m.subscription_group_id = &i
@@ -27314,6 +27495,62 @@ func (m *PaymentOrderMutation) AddedRefundAmount() (r float64, exists bool) {
 func (m *PaymentOrderMutation) ResetRefundAmount() {
 	m.refund_amount = nil
 	m.addrefund_amount = nil
+}
+
+// SetProrateCredit sets the "prorate_credit" field.
+func (m *PaymentOrderMutation) SetProrateCredit(f float64) {
+	m.prorate_credit = &f
+	m.addprorate_credit = nil
+}
+
+// ProrateCredit returns the value of the "prorate_credit" field in the mutation.
+func (m *PaymentOrderMutation) ProrateCredit() (r float64, exists bool) {
+	v := m.prorate_credit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProrateCredit returns the old "prorate_credit" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldProrateCredit(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProrateCredit is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProrateCredit requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProrateCredit: %w", err)
+	}
+	return oldValue.ProrateCredit, nil
+}
+
+// AddProrateCredit adds f to the "prorate_credit" field.
+func (m *PaymentOrderMutation) AddProrateCredit(f float64) {
+	if m.addprorate_credit != nil {
+		*m.addprorate_credit += f
+	} else {
+		m.addprorate_credit = &f
+	}
+}
+
+// AddedProrateCredit returns the value that was added to the "prorate_credit" field in this mutation.
+func (m *PaymentOrderMutation) AddedProrateCredit() (r float64, exists bool) {
+	v := m.addprorate_credit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetProrateCredit resets all changes to the "prorate_credit" field.
+func (m *PaymentOrderMutation) ResetProrateCredit() {
+	m.prorate_credit = nil
+	m.addprorate_credit = nil
 }
 
 // SetRefundReason sets the "refund_reason" field.
@@ -28083,7 +28320,7 @@ func (m *PaymentOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentOrderMutation) Fields() []string {
-	fields := make([]string, 0, 41)
+	fields := make([]string, 0, 43)
 	if m.user != nil {
 		fields = append(fields, paymentorder.FieldUserID)
 	}
@@ -28138,6 +28375,9 @@ func (m *PaymentOrderMutation) Fields() []string {
 	if m.bundle_subscription_id != nil {
 		fields = append(fields, paymentorder.FieldBundleSubscriptionID)
 	}
+	if m.source_bundle_subscription_id != nil {
+		fields = append(fields, paymentorder.FieldSourceBundleSubscriptionID)
+	}
 	if m.subscription_group_id != nil {
 		fields = append(fields, paymentorder.FieldSubscriptionGroupID)
 	}
@@ -28158,6 +28398,9 @@ func (m *PaymentOrderMutation) Fields() []string {
 	}
 	if m.refund_amount != nil {
 		fields = append(fields, paymentorder.FieldRefundAmount)
+	}
+	if m.prorate_credit != nil {
+		fields = append(fields, paymentorder.FieldProrateCredit)
 	}
 	if m.refund_reason != nil {
 		fields = append(fields, paymentorder.FieldRefundReason)
@@ -28251,6 +28494,8 @@ func (m *PaymentOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.PlanID()
 	case paymentorder.FieldBundleSubscriptionID:
 		return m.BundleSubscriptionID()
+	case paymentorder.FieldSourceBundleSubscriptionID:
+		return m.SourceBundleSubscriptionID()
 	case paymentorder.FieldSubscriptionGroupID:
 		return m.SubscriptionGroupID()
 	case paymentorder.FieldSubscriptionDays:
@@ -28265,6 +28510,8 @@ func (m *PaymentOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case paymentorder.FieldRefundAmount:
 		return m.RefundAmount()
+	case paymentorder.FieldProrateCredit:
+		return m.ProrateCredit()
 	case paymentorder.FieldRefundReason:
 		return m.RefundReason()
 	case paymentorder.FieldRefundAt:
@@ -28342,6 +28589,8 @@ func (m *PaymentOrderMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldPlanID(ctx)
 	case paymentorder.FieldBundleSubscriptionID:
 		return m.OldBundleSubscriptionID(ctx)
+	case paymentorder.FieldSourceBundleSubscriptionID:
+		return m.OldSourceBundleSubscriptionID(ctx)
 	case paymentorder.FieldSubscriptionGroupID:
 		return m.OldSubscriptionGroupID(ctx)
 	case paymentorder.FieldSubscriptionDays:
@@ -28356,6 +28605,8 @@ func (m *PaymentOrderMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldStatus(ctx)
 	case paymentorder.FieldRefundAmount:
 		return m.OldRefundAmount(ctx)
+	case paymentorder.FieldProrateCredit:
+		return m.OldProrateCredit(ctx)
 	case paymentorder.FieldRefundReason:
 		return m.OldRefundReason(ctx)
 	case paymentorder.FieldRefundAt:
@@ -28523,6 +28774,13 @@ func (m *PaymentOrderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetBundleSubscriptionID(v)
 		return nil
+	case paymentorder.FieldSourceBundleSubscriptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSourceBundleSubscriptionID(v)
+		return nil
 	case paymentorder.FieldSubscriptionGroupID:
 		v, ok := value.(int64)
 		if !ok {
@@ -28571,6 +28829,13 @@ func (m *PaymentOrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRefundAmount(v)
+		return nil
+	case paymentorder.FieldProrateCredit:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProrateCredit(v)
 		return nil
 	case paymentorder.FieldRefundReason:
 		v, ok := value.(string)
@@ -28710,6 +28975,9 @@ func (m *PaymentOrderMutation) AddedFields() []string {
 	if m.addbundle_subscription_id != nil {
 		fields = append(fields, paymentorder.FieldBundleSubscriptionID)
 	}
+	if m.addsource_bundle_subscription_id != nil {
+		fields = append(fields, paymentorder.FieldSourceBundleSubscriptionID)
+	}
 	if m.addsubscription_group_id != nil {
 		fields = append(fields, paymentorder.FieldSubscriptionGroupID)
 	}
@@ -28718,6 +28986,9 @@ func (m *PaymentOrderMutation) AddedFields() []string {
 	}
 	if m.addrefund_amount != nil {
 		fields = append(fields, paymentorder.FieldRefundAmount)
+	}
+	if m.addprorate_credit != nil {
+		fields = append(fields, paymentorder.FieldProrateCredit)
 	}
 	return fields
 }
@@ -28739,12 +29010,16 @@ func (m *PaymentOrderMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedPlanID()
 	case paymentorder.FieldBundleSubscriptionID:
 		return m.AddedBundleSubscriptionID()
+	case paymentorder.FieldSourceBundleSubscriptionID:
+		return m.AddedSourceBundleSubscriptionID()
 	case paymentorder.FieldSubscriptionGroupID:
 		return m.AddedSubscriptionGroupID()
 	case paymentorder.FieldSubscriptionDays:
 		return m.AddedSubscriptionDays()
 	case paymentorder.FieldRefundAmount:
 		return m.AddedRefundAmount()
+	case paymentorder.FieldProrateCredit:
+		return m.AddedProrateCredit()
 	}
 	return nil, false
 }
@@ -28796,6 +29071,13 @@ func (m *PaymentOrderMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddBundleSubscriptionID(v)
 		return nil
+	case paymentorder.FieldSourceBundleSubscriptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSourceBundleSubscriptionID(v)
+		return nil
 	case paymentorder.FieldSubscriptionGroupID:
 		v, ok := value.(int64)
 		if !ok {
@@ -28816,6 +29098,13 @@ func (m *PaymentOrderMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddRefundAmount(v)
+		return nil
+	case paymentorder.FieldProrateCredit:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProrateCredit(v)
 		return nil
 	}
 	return fmt.Errorf("unknown PaymentOrder numeric field %s", name)
@@ -28842,6 +29131,9 @@ func (m *PaymentOrderMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(paymentorder.FieldBundleSubscriptionID) {
 		fields = append(fields, paymentorder.FieldBundleSubscriptionID)
+	}
+	if m.FieldCleared(paymentorder.FieldSourceBundleSubscriptionID) {
+		fields = append(fields, paymentorder.FieldSourceBundleSubscriptionID)
 	}
 	if m.FieldCleared(paymentorder.FieldSubscriptionGroupID) {
 		fields = append(fields, paymentorder.FieldSubscriptionGroupID)
@@ -28919,6 +29211,9 @@ func (m *PaymentOrderMutation) ClearField(name string) error {
 		return nil
 	case paymentorder.FieldBundleSubscriptionID:
 		m.ClearBundleSubscriptionID()
+		return nil
+	case paymentorder.FieldSourceBundleSubscriptionID:
+		m.ClearSourceBundleSubscriptionID()
 		return nil
 	case paymentorder.FieldSubscriptionGroupID:
 		m.ClearSubscriptionGroupID()
@@ -29027,6 +29322,9 @@ func (m *PaymentOrderMutation) ResetField(name string) error {
 	case paymentorder.FieldBundleSubscriptionID:
 		m.ResetBundleSubscriptionID()
 		return nil
+	case paymentorder.FieldSourceBundleSubscriptionID:
+		m.ResetSourceBundleSubscriptionID()
+		return nil
 	case paymentorder.FieldSubscriptionGroupID:
 		m.ResetSubscriptionGroupID()
 		return nil
@@ -29047,6 +29345,9 @@ func (m *PaymentOrderMutation) ResetField(name string) error {
 		return nil
 	case paymentorder.FieldRefundAmount:
 		m.ResetRefundAmount()
+		return nil
+	case paymentorder.FieldProrateCredit:
+		m.ResetProrateCredit()
 		return nil
 	case paymentorder.FieldRefundReason:
 		m.ResetRefundReason()

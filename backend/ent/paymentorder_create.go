@@ -211,6 +211,20 @@ func (_c *PaymentOrderCreate) SetNillableBundleSubscriptionID(v *int64) *Payment
 	return _c
 }
 
+// SetSourceBundleSubscriptionID sets the "source_bundle_subscription_id" field.
+func (_c *PaymentOrderCreate) SetSourceBundleSubscriptionID(v int64) *PaymentOrderCreate {
+	_c.mutation.SetSourceBundleSubscriptionID(v)
+	return _c
+}
+
+// SetNillableSourceBundleSubscriptionID sets the "source_bundle_subscription_id" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableSourceBundleSubscriptionID(v *int64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetSourceBundleSubscriptionID(*v)
+	}
+	return _c
+}
+
 // SetSubscriptionGroupID sets the "subscription_group_id" field.
 func (_c *PaymentOrderCreate) SetSubscriptionGroupID(v int64) *PaymentOrderCreate {
 	_c.mutation.SetSubscriptionGroupID(v)
@@ -297,6 +311,20 @@ func (_c *PaymentOrderCreate) SetRefundAmount(v float64) *PaymentOrderCreate {
 func (_c *PaymentOrderCreate) SetNillableRefundAmount(v *float64) *PaymentOrderCreate {
 	if v != nil {
 		_c.SetRefundAmount(*v)
+	}
+	return _c
+}
+
+// SetProrateCredit sets the "prorate_credit" field.
+func (_c *PaymentOrderCreate) SetProrateCredit(v float64) *PaymentOrderCreate {
+	_c.mutation.SetProrateCredit(v)
+	return _c
+}
+
+// SetNillableProrateCredit sets the "prorate_credit" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableProrateCredit(v *float64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetProrateCredit(*v)
 	}
 	return _c
 }
@@ -565,6 +593,10 @@ func (_c *PaymentOrderCreate) defaults() {
 		v := paymentorder.DefaultRefundAmount
 		_c.mutation.SetRefundAmount(v)
 	}
+	if _, ok := _c.mutation.ProrateCredit(); !ok {
+		v := paymentorder.DefaultProrateCredit
+		_c.mutation.SetProrateCredit(v)
+	}
 	if _, ok := _c.mutation.ForceRefund(); !ok {
 		v := paymentorder.DefaultForceRefund
 		_c.mutation.SetForceRefund(v)
@@ -672,6 +704,9 @@ func (_c *PaymentOrderCreate) check() error {
 	}
 	if _, ok := _c.mutation.RefundAmount(); !ok {
 		return &ValidationError{Name: "refund_amount", err: errors.New(`ent: missing required field "PaymentOrder.refund_amount"`)}
+	}
+	if _, ok := _c.mutation.ProrateCredit(); !ok {
+		return &ValidationError{Name: "prorate_credit", err: errors.New(`ent: missing required field "PaymentOrder.prorate_credit"`)}
 	}
 	if _, ok := _c.mutation.ForceRefund(); !ok {
 		return &ValidationError{Name: "force_refund", err: errors.New(`ent: missing required field "PaymentOrder.force_refund"`)}
@@ -804,6 +839,10 @@ func (_c *PaymentOrderCreate) createSpec() (*PaymentOrder, *sqlgraph.CreateSpec)
 		_spec.SetField(paymentorder.FieldBundleSubscriptionID, field.TypeInt64, value)
 		_node.BundleSubscriptionID = &value
 	}
+	if value, ok := _c.mutation.SourceBundleSubscriptionID(); ok {
+		_spec.SetField(paymentorder.FieldSourceBundleSubscriptionID, field.TypeInt64, value)
+		_node.SourceBundleSubscriptionID = value
+	}
 	if value, ok := _c.mutation.SubscriptionGroupID(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionGroupID, field.TypeInt64, value)
 		_node.SubscriptionGroupID = &value
@@ -831,6 +870,10 @@ func (_c *PaymentOrderCreate) createSpec() (*PaymentOrder, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.RefundAmount(); ok {
 		_spec.SetField(paymentorder.FieldRefundAmount, field.TypeFloat64, value)
 		_node.RefundAmount = value
+	}
+	if value, ok := _c.mutation.ProrateCredit(); ok {
+		_spec.SetField(paymentorder.FieldProrateCredit, field.TypeFloat64, value)
+		_node.ProrateCredit = value
 	}
 	if value, ok := _c.mutation.RefundReason(); ok {
 		_spec.SetField(paymentorder.FieldRefundReason, field.TypeString, value)
@@ -1253,6 +1296,30 @@ func (u *PaymentOrderUpsert) ClearBundleSubscriptionID() *PaymentOrderUpsert {
 	return u
 }
 
+// SetSourceBundleSubscriptionID sets the "source_bundle_subscription_id" field.
+func (u *PaymentOrderUpsert) SetSourceBundleSubscriptionID(v int64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldSourceBundleSubscriptionID, v)
+	return u
+}
+
+// UpdateSourceBundleSubscriptionID sets the "source_bundle_subscription_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateSourceBundleSubscriptionID() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldSourceBundleSubscriptionID)
+	return u
+}
+
+// AddSourceBundleSubscriptionID adds v to the "source_bundle_subscription_id" field.
+func (u *PaymentOrderUpsert) AddSourceBundleSubscriptionID(v int64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldSourceBundleSubscriptionID, v)
+	return u
+}
+
+// ClearSourceBundleSubscriptionID clears the value of the "source_bundle_subscription_id" field.
+func (u *PaymentOrderUpsert) ClearSourceBundleSubscriptionID() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldSourceBundleSubscriptionID)
+	return u
+}
+
 // SetSubscriptionGroupID sets the "subscription_group_id" field.
 func (u *PaymentOrderUpsert) SetSubscriptionGroupID(v int64) *PaymentOrderUpsert {
 	u.Set(paymentorder.FieldSubscriptionGroupID, v)
@@ -1382,6 +1449,24 @@ func (u *PaymentOrderUpsert) UpdateRefundAmount() *PaymentOrderUpsert {
 // AddRefundAmount adds v to the "refund_amount" field.
 func (u *PaymentOrderUpsert) AddRefundAmount(v float64) *PaymentOrderUpsert {
 	u.Add(paymentorder.FieldRefundAmount, v)
+	return u
+}
+
+// SetProrateCredit sets the "prorate_credit" field.
+func (u *PaymentOrderUpsert) SetProrateCredit(v float64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldProrateCredit, v)
+	return u
+}
+
+// UpdateProrateCredit sets the "prorate_credit" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateProrateCredit() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldProrateCredit)
+	return u
+}
+
+// AddProrateCredit adds v to the "prorate_credit" field.
+func (u *PaymentOrderUpsert) AddProrateCredit(v float64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldProrateCredit, v)
 	return u
 }
 
@@ -2006,6 +2091,34 @@ func (u *PaymentOrderUpsertOne) ClearBundleSubscriptionID() *PaymentOrderUpsertO
 	})
 }
 
+// SetSourceBundleSubscriptionID sets the "source_bundle_subscription_id" field.
+func (u *PaymentOrderUpsertOne) SetSourceBundleSubscriptionID(v int64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSourceBundleSubscriptionID(v)
+	})
+}
+
+// AddSourceBundleSubscriptionID adds v to the "source_bundle_subscription_id" field.
+func (u *PaymentOrderUpsertOne) AddSourceBundleSubscriptionID(v int64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSourceBundleSubscriptionID(v)
+	})
+}
+
+// UpdateSourceBundleSubscriptionID sets the "source_bundle_subscription_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateSourceBundleSubscriptionID() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSourceBundleSubscriptionID()
+	})
+}
+
+// ClearSourceBundleSubscriptionID clears the value of the "source_bundle_subscription_id" field.
+func (u *PaymentOrderUpsertOne) ClearSourceBundleSubscriptionID() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSourceBundleSubscriptionID()
+	})
+}
+
 // SetSubscriptionGroupID sets the "subscription_group_id" field.
 func (u *PaymentOrderUpsertOne) SetSubscriptionGroupID(v int64) *PaymentOrderUpsertOne {
 	return u.Update(func(s *PaymentOrderUpsert) {
@@ -2157,6 +2270,27 @@ func (u *PaymentOrderUpsertOne) AddRefundAmount(v float64) *PaymentOrderUpsertOn
 func (u *PaymentOrderUpsertOne) UpdateRefundAmount() *PaymentOrderUpsertOne {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.UpdateRefundAmount()
+	})
+}
+
+// SetProrateCredit sets the "prorate_credit" field.
+func (u *PaymentOrderUpsertOne) SetProrateCredit(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetProrateCredit(v)
+	})
+}
+
+// AddProrateCredit adds v to the "prorate_credit" field.
+func (u *PaymentOrderUpsertOne) AddProrateCredit(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddProrateCredit(v)
+	})
+}
+
+// UpdateProrateCredit sets the "prorate_credit" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateProrateCredit() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateProrateCredit()
 	})
 }
 
@@ -2987,6 +3121,34 @@ func (u *PaymentOrderUpsertBulk) ClearBundleSubscriptionID() *PaymentOrderUpsert
 	})
 }
 
+// SetSourceBundleSubscriptionID sets the "source_bundle_subscription_id" field.
+func (u *PaymentOrderUpsertBulk) SetSourceBundleSubscriptionID(v int64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSourceBundleSubscriptionID(v)
+	})
+}
+
+// AddSourceBundleSubscriptionID adds v to the "source_bundle_subscription_id" field.
+func (u *PaymentOrderUpsertBulk) AddSourceBundleSubscriptionID(v int64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSourceBundleSubscriptionID(v)
+	})
+}
+
+// UpdateSourceBundleSubscriptionID sets the "source_bundle_subscription_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateSourceBundleSubscriptionID() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSourceBundleSubscriptionID()
+	})
+}
+
+// ClearSourceBundleSubscriptionID clears the value of the "source_bundle_subscription_id" field.
+func (u *PaymentOrderUpsertBulk) ClearSourceBundleSubscriptionID() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSourceBundleSubscriptionID()
+	})
+}
+
 // SetSubscriptionGroupID sets the "subscription_group_id" field.
 func (u *PaymentOrderUpsertBulk) SetSubscriptionGroupID(v int64) *PaymentOrderUpsertBulk {
 	return u.Update(func(s *PaymentOrderUpsert) {
@@ -3138,6 +3300,27 @@ func (u *PaymentOrderUpsertBulk) AddRefundAmount(v float64) *PaymentOrderUpsertB
 func (u *PaymentOrderUpsertBulk) UpdateRefundAmount() *PaymentOrderUpsertBulk {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.UpdateRefundAmount()
+	})
+}
+
+// SetProrateCredit sets the "prorate_credit" field.
+func (u *PaymentOrderUpsertBulk) SetProrateCredit(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetProrateCredit(v)
+	})
+}
+
+// AddProrateCredit adds v to the "prorate_credit" field.
+func (u *PaymentOrderUpsertBulk) AddProrateCredit(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddProrateCredit(v)
+	})
+}
+
+// UpdateProrateCredit sets the "prorate_credit" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateProrateCredit() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateProrateCredit()
 	})
 }
 

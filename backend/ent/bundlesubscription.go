@@ -38,8 +38,10 @@ type BundleSubscription struct {
 	// 快照：RPM上限
 	RpmLimit int `json:"rpm_limit,omitempty"`
 	// 来源: purchase/redeem/admin_assign
-	Source       string `json:"source,omitempty"`
-	selectValues sql.SelectValues
+	Source string `json:"source,omitempty"`
+	// 升级来源：指向被替换的旧订阅ID，仅升级产生的新订阅有值
+	UpgradedFromID int64 `json:"upgraded_from_id,omitempty"`
+	selectValues   sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -47,7 +49,7 @@ func (*BundleSubscription) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case bundlesubscription.FieldID, bundlesubscription.FieldUserID, bundlesubscription.FieldPlanID, bundlesubscription.FieldConcurrencyLimit, bundlesubscription.FieldRpmLimit:
+		case bundlesubscription.FieldID, bundlesubscription.FieldUserID, bundlesubscription.FieldPlanID, bundlesubscription.FieldConcurrencyLimit, bundlesubscription.FieldRpmLimit, bundlesubscription.FieldUpgradedFromID:
 			values[i] = new(sql.NullInt64)
 		case bundlesubscription.FieldStatus, bundlesubscription.FieldSource:
 			values[i] = new(sql.NullString)
@@ -141,6 +143,12 @@ func (_m *BundleSubscription) assignValues(columns []string, values []any) error
 			} else if value.Valid {
 				_m.Source = value.String
 			}
+		case bundlesubscription.FieldUpgradedFromID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field upgraded_from_id", values[i])
+			} else if value.Valid {
+				_m.UpgradedFromID = value.Int64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -211,6 +219,9 @@ func (_m *BundleSubscription) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("source=")
 	builder.WriteString(_m.Source)
+	builder.WriteString(", ")
+	builder.WriteString("upgraded_from_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UpgradedFromID))
 	builder.WriteByte(')')
 	return builder.String()
 }

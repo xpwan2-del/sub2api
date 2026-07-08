@@ -194,6 +194,33 @@ func (_u *BundleSubscriptionUpdate) SetNillableSource(v *string) *BundleSubscrip
 	return _u
 }
 
+// SetUpgradedFromID sets the "upgraded_from_id" field.
+func (_u *BundleSubscriptionUpdate) SetUpgradedFromID(v int64) *BundleSubscriptionUpdate {
+	_u.mutation.ResetUpgradedFromID()
+	_u.mutation.SetUpgradedFromID(v)
+	return _u
+}
+
+// SetNillableUpgradedFromID sets the "upgraded_from_id" field if the given value is not nil.
+func (_u *BundleSubscriptionUpdate) SetNillableUpgradedFromID(v *int64) *BundleSubscriptionUpdate {
+	if v != nil {
+		_u.SetUpgradedFromID(*v)
+	}
+	return _u
+}
+
+// AddUpgradedFromID adds value to the "upgraded_from_id" field.
+func (_u *BundleSubscriptionUpdate) AddUpgradedFromID(v int64) *BundleSubscriptionUpdate {
+	_u.mutation.AddUpgradedFromID(v)
+	return _u
+}
+
+// ClearUpgradedFromID clears the value of the "upgraded_from_id" field.
+func (_u *BundleSubscriptionUpdate) ClearUpgradedFromID() *BundleSubscriptionUpdate {
+	_u.mutation.ClearUpgradedFromID()
+	return _u
+}
+
 // Mutation returns the BundleSubscriptionMutation object of the builder.
 func (_u *BundleSubscriptionUpdate) Mutation() *BundleSubscriptionMutation {
 	return _u.mutation
@@ -312,6 +339,15 @@ func (_u *BundleSubscriptionUpdate) sqlSave(ctx context.Context) (_node int, err
 	}
 	if value, ok := _u.mutation.Source(); ok {
 		_spec.SetField(bundlesubscription.FieldSource, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.UpgradedFromID(); ok {
+		_spec.SetField(bundlesubscription.FieldUpgradedFromID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedUpgradedFromID(); ok {
+		_spec.AddField(bundlesubscription.FieldUpgradedFromID, field.TypeInt64, value)
+	}
+	if _u.mutation.UpgradedFromIDCleared() {
+		_spec.ClearField(bundlesubscription.FieldUpgradedFromID, field.TypeInt64)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -499,6 +535,33 @@ func (_u *BundleSubscriptionUpdateOne) SetNillableSource(v *string) *BundleSubsc
 	return _u
 }
 
+// SetUpgradedFromID sets the "upgraded_from_id" field.
+func (_u *BundleSubscriptionUpdateOne) SetUpgradedFromID(v int64) *BundleSubscriptionUpdateOne {
+	_u.mutation.ResetUpgradedFromID()
+	_u.mutation.SetUpgradedFromID(v)
+	return _u
+}
+
+// SetNillableUpgradedFromID sets the "upgraded_from_id" field if the given value is not nil.
+func (_u *BundleSubscriptionUpdateOne) SetNillableUpgradedFromID(v *int64) *BundleSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetUpgradedFromID(*v)
+	}
+	return _u
+}
+
+// AddUpgradedFromID adds value to the "upgraded_from_id" field.
+func (_u *BundleSubscriptionUpdateOne) AddUpgradedFromID(v int64) *BundleSubscriptionUpdateOne {
+	_u.mutation.AddUpgradedFromID(v)
+	return _u
+}
+
+// ClearUpgradedFromID clears the value of the "upgraded_from_id" field.
+func (_u *BundleSubscriptionUpdateOne) ClearUpgradedFromID() *BundleSubscriptionUpdateOne {
+	_u.mutation.ClearUpgradedFromID()
+	return _u
+}
+
 // Mutation returns the BundleSubscriptionMutation object of the builder.
 func (_u *BundleSubscriptionUpdateOne) Mutation() *BundleSubscriptionMutation {
 	return _u.mutation
@@ -647,6 +710,15 @@ func (_u *BundleSubscriptionUpdateOne) sqlSave(ctx context.Context) (_node *Bund
 	}
 	if value, ok := _u.mutation.Source(); ok {
 		_spec.SetField(bundlesubscription.FieldSource, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.UpgradedFromID(); ok {
+		_spec.SetField(bundlesubscription.FieldUpgradedFromID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedUpgradedFromID(); ok {
+		_spec.AddField(bundlesubscription.FieldUpgradedFromID, field.TypeInt64, value)
+	}
+	if _u.mutation.UpgradedFromIDCleared() {
+		_spec.ClearField(bundlesubscription.FieldUpgradedFromID, field.TypeInt64)
 	}
 	_node = &BundleSubscription{config: _u.config}
 	_spec.Assign = _node.assignValues

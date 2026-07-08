@@ -144,6 +144,20 @@ func (_c *BundleSubscriptionCreate) SetNillableSource(v *string) *BundleSubscrip
 	return _c
 }
 
+// SetUpgradedFromID sets the "upgraded_from_id" field.
+func (_c *BundleSubscriptionCreate) SetUpgradedFromID(v int64) *BundleSubscriptionCreate {
+	_c.mutation.SetUpgradedFromID(v)
+	return _c
+}
+
+// SetNillableUpgradedFromID sets the "upgraded_from_id" field if the given value is not nil.
+func (_c *BundleSubscriptionCreate) SetNillableUpgradedFromID(v *int64) *BundleSubscriptionCreate {
+	if v != nil {
+		_c.SetUpgradedFromID(*v)
+	}
+	return _c
+}
+
 // Mutation returns the BundleSubscriptionMutation object of the builder.
 func (_c *BundleSubscriptionCreate) Mutation() *BundleSubscriptionMutation {
 	return _c.mutation
@@ -326,6 +340,10 @@ func (_c *BundleSubscriptionCreate) createSpec() (*BundleSubscription, *sqlgraph
 	if value, ok := _c.mutation.Source(); ok {
 		_spec.SetField(bundlesubscription.FieldSource, field.TypeString, value)
 		_node.Source = value
+	}
+	if value, ok := _c.mutation.UpgradedFromID(); ok {
+		_spec.SetField(bundlesubscription.FieldUpgradedFromID, field.TypeInt64, value)
+		_node.UpgradedFromID = value
 	}
 	return _node, _spec
 }
@@ -526,6 +544,30 @@ func (u *BundleSubscriptionUpsert) SetSource(v string) *BundleSubscriptionUpsert
 // UpdateSource sets the "source" field to the value that was provided on create.
 func (u *BundleSubscriptionUpsert) UpdateSource() *BundleSubscriptionUpsert {
 	u.SetExcluded(bundlesubscription.FieldSource)
+	return u
+}
+
+// SetUpgradedFromID sets the "upgraded_from_id" field.
+func (u *BundleSubscriptionUpsert) SetUpgradedFromID(v int64) *BundleSubscriptionUpsert {
+	u.Set(bundlesubscription.FieldUpgradedFromID, v)
+	return u
+}
+
+// UpdateUpgradedFromID sets the "upgraded_from_id" field to the value that was provided on create.
+func (u *BundleSubscriptionUpsert) UpdateUpgradedFromID() *BundleSubscriptionUpsert {
+	u.SetExcluded(bundlesubscription.FieldUpgradedFromID)
+	return u
+}
+
+// AddUpgradedFromID adds v to the "upgraded_from_id" field.
+func (u *BundleSubscriptionUpsert) AddUpgradedFromID(v int64) *BundleSubscriptionUpsert {
+	u.Add(bundlesubscription.FieldUpgradedFromID, v)
+	return u
+}
+
+// ClearUpgradedFromID clears the value of the "upgraded_from_id" field.
+func (u *BundleSubscriptionUpsert) ClearUpgradedFromID() *BundleSubscriptionUpsert {
+	u.SetNull(bundlesubscription.FieldUpgradedFromID)
 	return u
 }
 
@@ -746,6 +788,34 @@ func (u *BundleSubscriptionUpsertOne) SetSource(v string) *BundleSubscriptionUps
 func (u *BundleSubscriptionUpsertOne) UpdateSource() *BundleSubscriptionUpsertOne {
 	return u.Update(func(s *BundleSubscriptionUpsert) {
 		s.UpdateSource()
+	})
+}
+
+// SetUpgradedFromID sets the "upgraded_from_id" field.
+func (u *BundleSubscriptionUpsertOne) SetUpgradedFromID(v int64) *BundleSubscriptionUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUpsert) {
+		s.SetUpgradedFromID(v)
+	})
+}
+
+// AddUpgradedFromID adds v to the "upgraded_from_id" field.
+func (u *BundleSubscriptionUpsertOne) AddUpgradedFromID(v int64) *BundleSubscriptionUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUpsert) {
+		s.AddUpgradedFromID(v)
+	})
+}
+
+// UpdateUpgradedFromID sets the "upgraded_from_id" field to the value that was provided on create.
+func (u *BundleSubscriptionUpsertOne) UpdateUpgradedFromID() *BundleSubscriptionUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUpsert) {
+		s.UpdateUpgradedFromID()
+	})
+}
+
+// ClearUpgradedFromID clears the value of the "upgraded_from_id" field.
+func (u *BundleSubscriptionUpsertOne) ClearUpgradedFromID() *BundleSubscriptionUpsertOne {
+	return u.Update(func(s *BundleSubscriptionUpsert) {
+		s.ClearUpgradedFromID()
 	})
 }
 
@@ -1132,6 +1202,34 @@ func (u *BundleSubscriptionUpsertBulk) SetSource(v string) *BundleSubscriptionUp
 func (u *BundleSubscriptionUpsertBulk) UpdateSource() *BundleSubscriptionUpsertBulk {
 	return u.Update(func(s *BundleSubscriptionUpsert) {
 		s.UpdateSource()
+	})
+}
+
+// SetUpgradedFromID sets the "upgraded_from_id" field.
+func (u *BundleSubscriptionUpsertBulk) SetUpgradedFromID(v int64) *BundleSubscriptionUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUpsert) {
+		s.SetUpgradedFromID(v)
+	})
+}
+
+// AddUpgradedFromID adds v to the "upgraded_from_id" field.
+func (u *BundleSubscriptionUpsertBulk) AddUpgradedFromID(v int64) *BundleSubscriptionUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUpsert) {
+		s.AddUpgradedFromID(v)
+	})
+}
+
+// UpdateUpgradedFromID sets the "upgraded_from_id" field to the value that was provided on create.
+func (u *BundleSubscriptionUpsertBulk) UpdateUpgradedFromID() *BundleSubscriptionUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUpsert) {
+		s.UpdateUpgradedFromID()
+	})
+}
+
+// ClearUpgradedFromID clears the value of the "upgraded_from_id" field.
+func (u *BundleSubscriptionUpsertBulk) ClearUpgradedFromID() *BundleSubscriptionUpsertBulk {
+	return u.Update(func(s *BundleSubscriptionUpsert) {
+		s.ClearUpgradedFromID()
 	})
 }
 

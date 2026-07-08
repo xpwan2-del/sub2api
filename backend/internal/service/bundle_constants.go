@@ -17,9 +17,10 @@ const (
 // BundleStatus 常量定义套餐订阅状态：active（生效）/expired（过期）/revoked（已撤销）
 // BundleStatus constants define the status of a bundle subscription.
 const (
-	BundleStatusActive  = "active"
-	BundleStatusExpired = "expired"
-	BundleStatusRevoked = "revoked"
+	BundleStatusActive   = "active"
+	BundleStatusExpired  = "expired"
+	BundleStatusRevoked  = "revoked"
+	BundleStatusUpgraded = "upgraded" // 旧订阅被升级替换
 )
 
 // BundleSource 常量定义套餐订阅获取来源：purchase（购买）/redeem（兑换）/admin_assign（管理员分配）
@@ -28,6 +29,7 @@ const (
 	BundleSourcePurchase    = "purchase"
 	BundleSourceRedeem      = "redeem"
 	BundleSourceAdminAssign = "admin_assign"
+	BundleSourceUpgrade     = "upgrade" // 升级产生的新订阅
 )
 
 // QuotaScope 常量定义额度粒度：platform（平台级，按渠道组整体计量）/model（模型级，按 glob 匹配特定模型）
