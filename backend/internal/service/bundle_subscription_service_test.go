@@ -53,6 +53,9 @@ func (bundleUsageRepoNoop) Create(context.Context, *BundleSubscriptionUsage) err
 func (bundleUsageRepoNoop) IncrementUsage(context.Context, int64, float64, int, int, time.Time) error {
 	panic("unexpected IncrementUsage call")
 }
+func (bundleUsageRepoNoop) GetOrCreateUsage(context.Context, int64, int64, string, time.Time) (*BundleSubscriptionUsage, error) {
+	panic("unexpected GetOrCreateUsage call")
+}
 func (bundleUsageRepoNoop) ResetDailyWindow(context.Context, int64, time.Time) error {
 	panic("unexpected ResetDailyWindow call")
 }

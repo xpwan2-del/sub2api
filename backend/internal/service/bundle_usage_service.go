@@ -105,18 +105,25 @@ func (s *BundleUsageService) AccumulateUsage(ctx context.Context, bundleSubID, g
 			pattern = q.ModelPattern
 		}
 	}
+	now := time.Now()
 	usage, err := s.usageRepo.GetBySubscriptionAndGroup(ctx, bundleSubID, groupID, pattern)
 	if err != nil {
 		return fmt.Errorf("find bundle usage: %w", err)
 	}
 	if usage == nil {
-		return ErrBundleNotFound
+		// H2 自愈：(sub,group,pattern) 无 usage 行。典型场景——管理员编辑 plan 的 model_pattern 后，
+		// 路由用当前 plan 命中新 pattern，但激活快照未建对应 usage 行 → 旧实现此处返回 ErrBundleNotFound
+		// 被 gateway 忽略，请求免费放行、计费丢失。改为当场创建空 usage 再计费（GetOrCreateUsage 并发安全）。
+		usage, err = s.usageRepo.GetOrCreateUsage(ctx, bundleSubID, groupID, pattern, now)
+		if err != nil {
+			return fmt.Errorf("self-heal create bundle usage: %w", err)
+		}
 	}
 
 	// 窗口滚动判断下推到 repo：在事务内 FOR UPDATE 锁行后，基于 DB 真实 window_start
 	// 判断过期（而非 service 层读到的可能已过期的快照），杜绝并发下窗口边界 Set 互相
 	// 覆盖、丢失计费（历史 bug H1）。service 仅负责定位 usage 行与传入基准时刻。
-	if err := s.usageRepo.IncrementUsage(ctx, usage.ID, costUSD, imageCount, videoCount, time.Now()); err != nil {
+	if err := s.usageRepo.IncrementUsage(ctx, usage.ID, costUSD, imageCount, videoCount, now); err != nil {
 		return fmt.Errorf("increment bundle usage: %w", err)
 	}
 	return nil

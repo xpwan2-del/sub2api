@@ -26,7 +26,8 @@ func NewBundleUsageRepository(client *dbent.Client) service.BundleUsageRepositor
 	return &bundleUsageRepository{client: client}
 }
 
-// GetBySubscriptionAndGroup 按订阅ID和渠道组ID查询用量记录
+// GetBySubscriptionAndGroup 按订阅ID和渠道组ID查询用量记录。记录不存在时返回 (nil, nil)
+// （非错误）：调用方据此判断——AccumulateUsage 触发自愈建行（H2），CheckQuotaEligibility 视为满额度。
 func (r *bundleUsageRepository) GetBySubscriptionAndGroup(ctx context.Context, subscriptionID, groupID int64, modelPattern string) (*service.BundleSubscriptionUsage, error) {
 	client := clientFromContext(ctx, r.client)
 
@@ -38,11 +39,77 @@ func (r *bundleUsageRepository) GetBySubscriptionAndGroup(ctx context.Context, s
 		).
 		Only(ctx)
 	if err != nil {
+		if dbent.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, translatePersistenceError(err, nil, nil)
 	}
 
 	result := bundleSubscriptionUsageToService(m)
 	return &result, nil
+}
+
+// GetOrCreateUsage 获取或自愈创建用量记录（修复 H2）。事务内查询 (subscriptionID,groupID,modelPattern)：
+// 存在则原样返回（不修改累计值）；不存在则用 now 初始化空 usage。并发安全——并发自愈请求各自
+// INSERT 时，唯一约束 (subscription_id,group_id,model_pattern) 使其中一个冲突，冲突方重查返回已建行。
+func (r *bundleUsageRepository) GetOrCreateUsage(ctx context.Context, bundleSubscriptionID, groupID int64, modelPattern string, now time.Time) (*service.BundleSubscriptionUsage, error) {
+	var result *service.BundleSubscriptionUsage
+	if err := r.withTx(ctx, func(txCtx context.Context, txClient *dbent.Client) error {
+		m, err := txClient.BundleSubscriptionUsage.Query().
+			Where(
+				bundlesubscriptionusage.BundleSubscriptionIDEQ(bundleSubscriptionID),
+				bundlesubscriptionusage.GroupIDEQ(groupID),
+				bundlesubscriptionusage.ModelPatternEQ(modelPattern),
+			).
+			Only(txCtx)
+		if err == nil {
+			usage := bundleSubscriptionUsageToService(m)
+			result = &usage
+			return nil
+		}
+		if !dbent.IsNotFound(err) {
+			return translatePersistenceError(err, nil, nil)
+		}
+
+		// 不存在 → 创建空 usage（usage 值走 schema 默认 0，窗口起点 = now）
+		created, createErr := txClient.BundleSubscriptionUsage.Create().
+			SetBundleSubscriptionID(bundleSubscriptionID).
+			SetGroupID(groupID).
+			SetModelPattern(modelPattern).
+			SetDailyWindowStart(now).
+			SetWeeklyWindowStart(now).
+			SetMonthlyWindowStart(now).
+			Save(txCtx)
+		if createErr == nil {
+			usage := bundleSubscriptionUsageToService(created)
+			result = &usage
+			return nil
+		}
+
+		// 并发：唯一约束冲突 = 另一请求已建，重查返回已建行
+		if isUniqueConstraintViolation(createErr) {
+			existing, qErr := txClient.BundleSubscriptionUsage.Query().
+				Where(
+					bundlesubscriptionusage.BundleSubscriptionIDEQ(bundleSubscriptionID),
+					bundlesubscriptionusage.GroupIDEQ(groupID),
+					bundlesubscriptionusage.ModelPatternEQ(modelPattern),
+				).
+				Only(txCtx)
+			if qErr != nil {
+				if dbent.IsNotFound(qErr) {
+					return fmt.Errorf("self-heal create bundle usage: concurrent create vanished: %w", createErr)
+				}
+				return translatePersistenceError(qErr, nil, nil)
+			}
+			usage := bundleSubscriptionUsageToService(existing)
+			result = &usage
+			return nil
+		}
+		return translatePersistenceError(createErr, nil, nil)
+	}); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // Create 创建用量记录，初始化各时间窗口

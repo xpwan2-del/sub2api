@@ -32,6 +32,9 @@ func (f *mwFakeUsageRepo) Create(_ context.Context, _ *service.BundleSubscriptio
 func (f *mwFakeUsageRepo) IncrementUsage(_ context.Context, _ int64, _ float64, _ int, _ int, _ time.Time) error {
 	return nil
 }
+func (f *mwFakeUsageRepo) GetOrCreateUsage(_ context.Context, _ int64, _ int64, _ string, _ time.Time) (*service.BundleSubscriptionUsage, error) {
+	return nil, nil
+}
 func (f *mwFakeUsageRepo) ResetDailyWindow(_ context.Context, _ int64, _ time.Time) error { return nil }
 func (f *mwFakeUsageRepo) ResetWeeklyWindow(_ context.Context, _ int64, _ time.Time) error {
 	return nil

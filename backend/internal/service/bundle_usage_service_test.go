@@ -55,6 +55,27 @@ func (f *fakeUsageRepo) applyWindow(usd *float64, img, vid *int, start *time.Tim
 	*img += ic
 	*vid += vc
 }
+
+// GetOrCreateUsage 模拟自愈建行（H2）：已有则返回，否则创建空 usage。用与生产 repo 相同的
+// （sub,group,pattern）定位语义，让 AccumulateUsage 自愈路径可在单测层验证。
+func (f *fakeUsageRepo) GetOrCreateUsage(_ context.Context, bundleSubID, groupID int64, pattern string, now time.Time) (*BundleSubscriptionUsage, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.lastPattern = pattern
+	if f.usage != nil {
+		return f.usage, nil
+	}
+	f.usage = &BundleSubscriptionUsage{
+		ID:                   500,
+		BundleSubscriptionID: bundleSubID,
+		GroupID:              groupID,
+		ModelPattern:         pattern,
+		DailyWindowStart:     now,
+		WeeklyWindowStart:    now,
+		MonthlyWindowStart:   now,
+	}
+	return f.usage, nil
+}
 func (f *fakeUsageRepo) ResetDailyWindow(_ context.Context, _ int64, _ time.Time) error  { return nil }
 func (f *fakeUsageRepo) ResetWeeklyWindow(_ context.Context, _ int64, _ time.Time) error { return nil }
 func (f *fakeUsageRepo) ResetMonthlyWindow(_ context.Context, _ int64, _ time.Time) error {
@@ -315,6 +336,40 @@ func TestAccumulateUsage_ConcurrentExpiredWindow_NoLostUpdate(t *testing.T) {
 	}
 	if usage.DailyImageUsageCount != goroutines {
 		t.Errorf("daily image count: concurrent increment lost updates, want %d, got %d", goroutines, usage.DailyImageUsageCount)
+	}
+}
+
+// TestAccumulateUsage_SelfHealsMissingUsage 守护 H2：当 (sub,group,pattern) 无 usage 行
+// （典型场景——管理员编辑 plan 的 model_pattern 后路由命中新 pattern，激活快照无对应 usage），
+// AccumulateUsage 应自愈创建空 usage 再计费，而非返回 ErrBundleNotFound 导致请求免费放行、计费丢失。
+func TestAccumulateUsage_SelfHealsMissingUsage(t *testing.T) {
+	const groupID int64 = 100
+	plan := &BundlePlan{GroupQuotas: []BundlePlanGroupQuota{{GroupID: groupID, ModelPattern: "gpt-5*"}}}
+	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
+	repo := &fakeUsageRepo{usage: nil} // 无 usage 行（H2 断链场景）
+
+	// ctx quota 注入路由命中的新 pattern（生产路径由 bundle_resolver 注入）。
+	ctxQuota := &BundlePlanGroupQuota{GroupID: groupID, ModelPattern: "gpt-5*"}
+	ctx := context.WithValue(context.Background(), ctxkey.BundleResolvedQuota, ctxQuota)
+
+	svc := NewBundleUsageService(repo, &fakeSubRepo{sub: sub}, &fakePlanRepo{plan: plan})
+
+	// 旧实现：usage==nil → ErrBundleNotFound → gateway 忽略 → 请求免费放行。
+	// 修复后：自愈创建 usage + 正常计费。
+	if err := svc.AccumulateUsage(ctx, 1, groupID, 1.0, 2, 0); err != nil {
+		t.Fatalf("AccumulateUsage should self-heal missing usage, got: %v", err)
+	}
+	if repo.usage == nil {
+		t.Fatal("self-heal should create the missing usage record")
+	}
+	if repo.usage.ModelPattern != "gpt-5*" {
+		t.Errorf("self-healed usage should use the routed pattern, got %q", repo.usage.ModelPattern)
+	}
+	if repo.usage.DailyUsageUSD != 1.0 {
+		t.Errorf("self-healed usage should accumulate cost, got %v", repo.usage.DailyUsageUSD)
+	}
+	if repo.usage.DailyImageUsageCount != 2 {
+		t.Errorf("self-healed usage should accumulate image count, got %d", repo.usage.DailyImageUsageCount)
 	}
 }
 

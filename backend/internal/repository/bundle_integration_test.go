@@ -17,6 +17,7 @@ import (
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/stretchr/testify/suite"
 )
@@ -288,6 +289,43 @@ func (s *BundleSubscriptionLifecycleSuite) TestIncrementUsage_RollsExpiredWindow
 	s.Require().Equal(5.0, usage.WeeklyUsageUSD, "active weekly window should accumulate from 0")
 	s.Require().Equal(2, usage.WeeklyImageUsageCount, "active weekly image count should accumulate")
 	s.Require().Equal(5.0, usage.MonthlyUsageUSD, "active monthly window should accumulate from 0")
+}
+
+// TestAccumulateUsage_SelfHealsMissingUsage 验证 H2 自愈在真实 PG 上的端到端行为。
+// 激活时只建了 plan 当时的 model_pattern usage；模拟「管理员编辑 plan 新增 model quota」后，
+// 路由命中新 pattern（ctx quota 注入）但无对应 usage 行 → AccumulateUsage 自愈创建并计费，
+// 而非返回 ErrBundleNotFound 导致请求免费放行、计费丢失。并验证幂等（再次自愈命中已存在行）。
+func (s *BundleSubscriptionLifecycleSuite) TestAccumulateUsage_SelfHealsMissingUsage() {
+	user := s.mustCreateUser("selfheal@test.com")
+	group := s.mustCreateGroup("g-selfheal", domain.PlatformOpenAI)
+	plan := s.mustCreatePlan("Plan", []service.CreateGroupQuotaRequest{
+		{GroupID: group.ID, QuotaScope: service.QuotaScopeModel, ModelPattern: "gpt-5*"},
+	})
+
+	bundleSub, err := s.subSvc.ActivateBundle(s.ctx, &service.ActivateBundleRequest{
+		UserID: user.ID, PlanID: plan.ID, Source: service.BundleSourcePurchase,
+	})
+	s.Require().NoError(err)
+
+	// 激活只建了 pattern="gpt-5*" 的 usage；ctx 注入一个不存在的 pattern（模拟编辑后命中新 pattern）。
+	ctxQuota := &service.BundlePlanGroupQuota{GroupID: group.ID, ModelPattern: "gpt-5.6"}
+	ctx := context.WithValue(s.ctx, ctxkey.BundleResolvedQuota, ctxQuota)
+
+	// 旧实现：无 usage → ErrBundleNotFound → gateway 忽略 → 请求免费。修复后：自愈创建 + 计费。
+	s.Require().NoError(s.usageSvc.AccumulateUsage(ctx, bundleSub.ID, group.ID, 3.0, 1, 0))
+
+	usage, err := s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, group.ID, "gpt-5.6")
+	s.Require().NoError(err)
+	s.Require().NotNil(usage, "self-heal should create the missing usage row")
+	s.Require().Equal(3.0, usage.DailyUsageUSD, "self-healed usage should accumulate cost")
+	s.Require().Equal(1, usage.DailyImageUsageCount, "self-healed usage should accumulate image count")
+
+	// 幂等：再次自愈命中已存在行（不重复创建、不重置累计值）。
+	s.Require().NoError(s.usageSvc.AccumulateUsage(ctx, bundleSub.ID, group.ID, 2.0, 0, 0))
+	usage2, err := s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, group.ID, "gpt-5.6")
+	s.Require().NoError(err)
+	s.Require().Equal(usage.ID, usage2.ID, "self-heal must reuse existing row, not create duplicate")
+	s.Require().Equal(5.0, usage2.DailyUsageUSD, "accumulated cost must be preserved (3.0 + 2.0)")
 }
 
 // TestCheckQuotaEligibility_WithinLimits
