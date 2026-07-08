@@ -1,11 +1,8 @@
 package handler
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"mime"
-	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
@@ -265,29 +262,13 @@ func readOpenAIVideoGatewayRequest(c *gin.Context) ([]byte, string, string, erro
 	}
 	contentType := c.GetHeader("Content-Type")
 	if strings.HasPrefix(strings.ToLower(contentType), "multipart/form-data") {
-		return body, contentType, readOpenAIVideoMultipartModel(body, contentType), nil
+		return body, contentType, pkghttputil.ExtractModelFromMultipart(body, contentType), nil
 	}
 	if !gjson.ValidBytes(body) {
 		return nil, "", "", errors.New("Failed to parse request body") //nolint:staticcheck // message 作为 API 响应返回客户端，与全项目大写约定一致
 	}
 	model := strings.TrimSpace(gjson.GetBytes(body, "model").String())
 	return body, contentType, model, nil
-}
-
-func readOpenAIVideoMultipartModel(body []byte, contentType string) string {
-	_, params, err := mime.ParseMediaType(contentType)
-	if err != nil {
-		return ""
-	}
-	form, err := multipart.NewReader(bytes.NewReader(body), params["boundary"]).ReadForm(32 << 20)
-	if err != nil {
-		return ""
-	}
-	defer func() { _ = form.RemoveAll() }()
-	if values := form.Value["model"]; len(values) > 0 {
-		return strings.TrimSpace(values[0])
-	}
-	return ""
 }
 
 func canvasUsageUserAgent(userAgent, canvasSource string) string {

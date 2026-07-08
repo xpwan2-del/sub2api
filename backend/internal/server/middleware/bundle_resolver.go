@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 )
@@ -290,6 +291,14 @@ func extractModelFromRequest(c *gin.Context) string {
 	}
 	// Restore the body so downstream handlers can read it.
 	c.Request.Body = io.NopCloser(strings.NewReader(string(bodyBytes)))
+
+	// multipart/form-data（如 /v1/videos、/v1/images/edits）不能用 JSON 解析：
+	// bundle key 若取不到 model 会跳过 group 注入，导致下游平台门控误判为不支持的平台。
+	contentType := c.GetHeader("Content-Type")
+	if strings.HasPrefix(strings.ToLower(contentType), "multipart/form-data") {
+		return httputil.ExtractModelFromMultipart(bodyBytes, contentType)
+	}
+
 	var req struct {
 		Model string `json:"model"`
 	}

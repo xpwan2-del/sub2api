@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -201,5 +203,62 @@ func TestBundleResolver_QuotaExceededReturns429(t *testing.T) {
 	}
 	if !c.IsAborted() {
 		t.Fatalf("expected request to be aborted")
+	}
+}
+
+// TestExtractModelFromRequest_MultipartFormData 验证 bundle key 在 multipart/form-data
+// 请求（如 /v1/videos）下能正确提取 model，且提取后 body 仍可被下游 handler 重读。
+//
+// 回归背景：视频/图片编辑接口用 multipart 提交，旧实现只用 json.Unmarshal 解析 body，
+// 导致 bundle key 取不到 model → 跳过 group 注入 → 平台门控 404。
+func TestExtractModelFromRequest_MultipartFormData(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	var buf bytes.Buffer
+	fw := multipart.NewWriter(&buf)
+	if err := fw.WriteField("model", "grok-imagine-video"); err != nil {
+		t.Fatalf("write model field: %v", err)
+	}
+	if err := fw.WriteField("prompt", "一只猫慵懒地躺在桌子上"); err != nil {
+		t.Fatalf("write prompt field: %v", err)
+	}
+	if err := fw.Close(); err != nil {
+		t.Fatalf("close multipart writer: %v", err)
+	}
+	rawBody := buf.Bytes()
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/videos", bytes.NewReader(rawBody))
+	c.Request.Header.Set("Content-Type", fw.FormDataContentType())
+
+	got := extractModelFromRequest(c)
+	if got != "grok-imagine-video" {
+		t.Fatalf("expected model %q from multipart form, got %q", "grok-imagine-video", got)
+	}
+
+	// body 必须可重读：下游 Videos handler 还要原样转发 multipart body 给上游。
+	if c.Request.Body == nil {
+		t.Fatal("request body is nil after extraction")
+	}
+	second, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		t.Fatalf("re-read body: %v", err)
+	}
+	if !bytes.Equal(second, rawBody) {
+		t.Fatalf("body changed after extraction: got %d bytes, want %d", len(second), len(rawBody))
+	}
+}
+
+// TestExtractModelFromRequest_JSONRegression 保护既有 JSON body 提取路径不被 multipart 改动破坏。
+func TestExtractModelFromRequest_JSONRegression(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	body, _ := json.Marshal(map[string]string{"model": "gpt-4o"})
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	if got := extractModelFromRequest(c); got != "gpt-4o" {
+		t.Fatalf("expected model %q from JSON body, got %q", "gpt-4o", got)
 	}
 }
