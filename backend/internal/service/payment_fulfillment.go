@@ -220,6 +220,9 @@ func (s *PaymentService) executeFulfillment(ctx context.Context, oid int64) erro
 	if o.OrderType == payment.OrderTypeBundle {
 		return s.ExecuteBundleFulfillment(ctx, oid)
 	}
+	if o.OrderType == payment.OrderTypeBundleUpgrade {
+		return s.ExecuteBundleUpgradeFulfillment(ctx, oid)
+	}
 	return s.ExecuteBalanceFulfillment(ctx, oid)
 }
 
@@ -752,4 +755,112 @@ func (s *PaymentService) doBundle(ctx context.Context, o *dbent.PaymentOrder) er
 		}
 	}
 	return s.markCompleted(ctx, o, "BUNDLE_ACTIVATION_SUCCESS")
+}
+
+// ExecuteBundleUpgradeFulfillment fulfills a bundle-upgrade order by swapping the
+// active source subscription to the target plan. Mirrors ExecuteBundleFulfillment's
+// state lock (Paid/Failed → Recharging → doBundleUpgrade → markCompleted/markFailed).
+func (s *PaymentService) ExecuteBundleUpgradeFulfillment(ctx context.Context, oid int64) error {
+	o, err := s.entClient.PaymentOrder.Get(ctx, oid)
+	if err != nil {
+		return infraerrors.NotFound("NOT_FOUND", "order not found")
+	}
+	if o.Status == OrderStatusCompleted {
+		return nil
+	}
+	if psIsRefundStatus(o.Status) {
+		return infraerrors.BadRequest("INVALID_STATUS", "refund-related order cannot fulfill")
+	}
+	if o.Status != OrderStatusPaid && o.Status != OrderStatusFailed {
+		return infraerrors.BadRequest("INVALID_STATUS", "order cannot fulfill in status "+o.Status)
+	}
+	// 升级订单必需字段：目标 PlanID + 被升级的 SourceBundleSubscriptionID（Task 6 已在建单时写入）。
+	// PlanID 为 *int64（普通 bundle 复用此列），SourceBundleSubscriptionID 为 int64。
+	if o.PlanID == nil || o.SourceBundleSubscriptionID == 0 {
+		return infraerrors.BadRequest("INVALID_STATUS", "missing plan_id/source_sub_id for upgrade order")
+	}
+	c, err := s.entClient.PaymentOrder.Update().Where(
+		paymentorder.IDEQ(oid),
+		paymentorder.StatusIn(OrderStatusPaid, OrderStatusFailed),
+	).SetStatus(OrderStatusRecharging).Save(ctx)
+	if err != nil {
+		return fmt.Errorf("lock: %w", err)
+	}
+	if c == 0 {
+		return nil
+	}
+	if err := s.doBundleUpgrade(ctx, o); err != nil {
+		s.markFailed(ctx, oid, err)
+		return err
+	}
+	return nil
+}
+
+// doBundleUpgrade 幂等执行套餐升级履约：
+//  1. 已有 BUNDLE_UPGRADE_SUCCESS audit log → 直接 markCompleted（崩溃恢复幂等）。
+//  2. 调 UpgradeBundle（Task 5）：旧订阅 active 校验 + 原子换套 + 建新订阅。
+//  3. 失败分流：ErrBundleExpired / ErrBundleNotFound（旧订阅支付期间过期 / 并发已被升级 /
+//     IDOR）→ refundUpgradeToBalance 把已付差价退到余额（资金不出平台，设计 §10 边界）。
+//     其他错误 → 原样冒泡由 ExecuteBundleUpgradeFulfillment markFailed（不退款，保留重试机会）。
+//  4. 成功 → 回写 bundle_subscription_id（财务对账追溯）+ markCompleted。
+func (s *PaymentService) doBundleUpgrade(ctx context.Context, o *dbent.PaymentOrder) error {
+	if s.bundleSubscriptionSvc == nil {
+		return fmt.Errorf("bundle subscription service not available")
+	}
+	if s.hasAuditLog(ctx, o.ID, "BUNDLE_UPGRADE_SUCCESS") {
+		slog.Info("bundle upgrade already fulfilled for order, skipping", "orderID", o.ID)
+		return s.markCompleted(ctx, o, "BUNDLE_UPGRADE_SUCCESS")
+	}
+	newSub, err := s.bundleSubscriptionSvc.UpgradeBundle(ctx, &UpgradeBundleRequest{
+		UserID:       o.UserID,
+		SourceSubID:  o.SourceBundleSubscriptionID,
+		TargetPlanID: *o.PlanID,
+	})
+	if err != nil {
+		// 旧订阅已非 active（支付期间过期 / 并发升级）或不存在 / 归属不符（IDOR）→
+		// 退款到余额，避免用户付了差价却拿不到套餐。资金不出平台。
+		if errors.Is(err, ErrBundleExpired) || errors.Is(err, ErrBundleNotFound) {
+			slog.Warn("upgrade fulfill: old sub no longer active or missing, refund to balance",
+				"orderID", o.ID, "userID", o.UserID, "err", err)
+			return s.refundUpgradeToBalance(ctx, o)
+		}
+		return fmt.Errorf("upgrade bundle: %w", err)
+	}
+	// 回写新订阅 ID，便于财务对账与追溯。
+	if newSub != nil {
+		if _, uErr := s.entClient.PaymentOrder.UpdateOneID(o.ID).
+			SetBundleSubscriptionID(newSub.ID).Save(ctx); uErr != nil {
+			slog.Warn("upgrade order: write back bundle_subscription_id failed",
+				"orderID", o.ID, "error", uErr)
+		}
+	}
+	return s.markCompleted(ctx, o, "BUNDLE_UPGRADE_SUCCESS")
+}
+
+// refundUpgradeToBalance 把升级履约失败时的已付差价退到用户余额。
+// 复用 doBalance 的 redeem 机制（resolveRedeemAction 幂等决策）：建一个 balance 兑换码并 Redeem，
+// 资金始终留在平台内（不退回支付渠道）。兑换码 code 固定格式保证跨重试唯一且可识别。
+func (s *PaymentService) refundUpgradeToBalance(ctx context.Context, o *dbent.PaymentOrder) error {
+	if s.hasAuditLog(ctx, o.ID, "BUNDLE_UPGRADE_REFUND_BALANCE") {
+		// 上次退款已闭环、markCompleted 前崩溃 → 直接补 markCompleted。
+		return s.markCompleted(ctx, o, "BUNDLE_UPGRADE_REFUND_BALANCE")
+	}
+	refundCode := fmt.Sprintf("UPGRADERFND-%d-%d", o.ID, o.UserID)
+	existing, lookupErr := s.redeemService.GetByCode(ctx, refundCode)
+	switch resolveRedeemAction(existing, lookupErr) {
+	case redeemActionSkipCompleted:
+		// 兑换码已被消费（上次 Redeem 成功、markCompleted 前崩溃）→ 补 markCompleted。
+		return s.markCompleted(ctx, o, "BUNDLE_UPGRADE_REFUND_BALANCE")
+	case redeemActionCreate:
+		rc := &RedeemCode{Code: refundCode, Type: RedeemTypeBalance, Value: o.Amount, Status: StatusUnused}
+		if err := s.redeemService.CreateCode(ctx, rc); err != nil {
+			return fmt.Errorf("create refund redeem code: %w", err)
+		}
+	case redeemActionRedeem:
+		// 兑换码已存在且未消费（上次 CreateCode 后崩溃）→ 跳过创建，直接 Redeem。
+	}
+	if _, err := s.redeemService.Redeem(ContextSkipRedeemAffiliate(ctx), o.UserID, refundCode); err != nil {
+		return fmt.Errorf("redeem refund balance: %w", err)
+	}
+	return s.markCompleted(ctx, o, "BUNDLE_UPGRADE_REFUND_BALANCE")
 }
