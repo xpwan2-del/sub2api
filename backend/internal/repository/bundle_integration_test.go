@@ -479,7 +479,7 @@ func (s *BundleRouteResolverSuite) SetupTest() {
 	s.planSvc = service.NewBundlePlanService(s.planRepo, nil)
 	s.subSvc = service.NewBundleSubscriptionService(s.subRepo, s.planRepo, s.usageRepo, s.userSubRepo, nil, s.client)
 	s.usageSvc = service.NewBundleUsageService(s.usageRepo, s.subRepo, s.planRepo)
-	s.resolver = service.NewBundleRouteResolver(s.subRepo, s.planRepo, s.groupRepo)
+	s.resolver = service.NewBundleRouteResolver(s.subRepo, s.planRepo, s.groupRepo, nil)
 }
 
 func TestBundleRouteResolverSuite(t *testing.T) {
@@ -733,7 +733,7 @@ func (s *BundleExpiryIntegrationSuite) SetupTest() {
 
 	s.planSvc = service.NewBundlePlanService(s.planRepo, nil)
 	s.subSvc = service.NewBundleSubscriptionService(s.subRepo, s.planRepo, s.usageRepo, s.userSubRepo, nil, s.client)
-	s.resolver = service.NewBundleRouteResolver(s.subRepo, s.planRepo, s.groupRepo)
+	s.resolver = service.NewBundleRouteResolver(s.subRepo, s.planRepo, s.groupRepo, nil)
 }
 
 func TestBundleExpiryIntegrationSuite(t *testing.T) {

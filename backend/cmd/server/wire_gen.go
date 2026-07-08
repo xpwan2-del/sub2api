@@ -274,7 +274,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	jwtAuthMiddleware := middleware.NewJWTAuthMiddleware(authService, userService)
 	adminAuthMiddleware := middleware.NewAdminAuthMiddleware(authService, userService, settingService)
 	apiKeyAuthMiddleware := middleware.NewAPIKeyAuthMiddleware(apiKeyService, subscriptionService, configConfig)
-	bundleRouteResolver := service.NewBundleRouteResolver(bundleSubscriptionRepository, bundlePlanRepository, groupRepository)
+	bundleRouteResolver := service.NewBundleRouteResolver(bundleSubscriptionRepository, bundlePlanRepository, groupRepository, gatewayCache)
 	bundleRPMCache := repository.NewBundleRPMCache(redisClient)
 	bundleConcurrencyCache := repository.NewBundleConcurrencyCache(redisClient)
 	bundleRouteResolverMiddleware := middleware.NewBundleRouteResolverMiddleware(bundleRouteResolver, bundleRPMCache, bundleConcurrencyCache, subscriptionService, bundleUsageService)

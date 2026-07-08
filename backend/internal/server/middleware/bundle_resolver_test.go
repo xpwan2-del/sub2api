@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -162,6 +163,7 @@ func TestBundleResolver_QuotaExceededReturns429(t *testing.T) {
 		&mwFakeSubRepo{sub: sub},
 		&mwFakePlanRepo{plan: plan},
 		&mwFakeGroupRepo{group: group},
+		nil,
 	)
 	usageSvc := service.NewBundleUsageService(
 		&mwFakeUsageRepo{usage: usage},
@@ -260,5 +262,156 @@ func TestExtractModelFromRequest_JSONRegression(t *testing.T) {
 
 	if got := extractModelFromRequest(c); got != "gpt-4o" {
 		t.Fatalf("expected model %q from JSON body, got %q", "gpt-4o", got)
+	}
+}
+
+// mwFakeVideoCache 实现 GatewayCache 但仅填充 GetVideoTaskBinding，
+// 用于 bundle GET videos 反查测试。bindings key 形如 "groupID:taskID"；
+// 未命中返回零值（Model 空），resolver 视为未命中。
+type mwFakeVideoCache struct {
+	bindings map[string]service.VideoTaskBinding
+}
+
+func (c mwFakeVideoCache) GetSessionAccountID(_ context.Context, _ int64, _ string) (int64, error) {
+	return 0, nil
+}
+func (c mwFakeVideoCache) SetSessionAccountID(_ context.Context, _ int64, _ string, _ int64, _ time.Duration) error {
+	return nil
+}
+func (c mwFakeVideoCache) RefreshSessionTTL(_ context.Context, _ int64, _ string, _ time.Duration) error {
+	return nil
+}
+func (c mwFakeVideoCache) DeleteSessionAccountID(_ context.Context, _ int64, _ string) error {
+	return nil
+}
+func (c mwFakeVideoCache) SetVideoTaskBinding(_ context.Context, _ int64, _ string, _ service.VideoTaskBinding, _ time.Duration) error {
+	return nil
+}
+func (c mwFakeVideoCache) GetVideoTaskBinding(_ context.Context, groupID int64, taskID string) (service.VideoTaskBinding, error) {
+	if c.bindings != nil {
+		if b, ok := c.bindings[fmt.Sprintf("%d:%s", groupID, taskID)]; ok {
+			return b, nil
+		}
+	}
+	return service.VideoTaskBinding{}, nil
+}
+func (c mwFakeVideoCache) DeleteVideoTaskBinding(_ context.Context, _ int64, _ string) error {
+	return nil
+}
+
+// TestBundleResolver_GETVideosResolvesGroupViaTaskBinding 验证通用 Key 查询视频进度
+// （GET /v1/videos/:id，按 OpenAI 规范不带 model）时，中间件用 taskID 反查创建时写入的
+// 绑定恢复 group 并注入，使下游平台门控与 handler 能正常工作（不再 404）。
+func TestBundleResolver_GETVideosResolvesGroupViaTaskBinding(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	const (
+		bundleSubID int64 = 9
+		groupID     int64 = 200
+	)
+	plan := &service.BundlePlan{
+		ID: 1,
+		GroupQuotas: []service.BundlePlanGroupQuota{{
+			GroupID:      groupID,
+			QuotaScope:   service.QuotaScopeModel,
+			ModelPattern: "grok-imagine-video",
+		}},
+	}
+	sub := &service.BundleSubscription{ID: bundleSubID, PlanID: 1, Status: service.BundleStatusActive}
+	group := &service.Group{ID: groupID, Platform: "openai"}
+
+	cache := mwFakeVideoCache{bindings: map[string]service.VideoTaskBinding{
+		fmt.Sprintf("%d:%s", groupID, "task-abc"): {AccountID: 5, Model: "grok-imagine-video"},
+	}}
+	resolver := service.NewBundleRouteResolver(
+		&mwFakeSubRepo{sub: sub},
+		&mwFakePlanRepo{plan: plan},
+		&mwFakeGroupRepo{group: group},
+		cache,
+	)
+	usageSvc := service.NewBundleUsageService(&mwFakeUsageRepo{}, &mwFakeSubRepo{sub: sub}, &mwFakePlanRepo{plan: plan})
+	mw := NewBundleRouteResolverMiddleware(resolver, nil, nil, nil, usageSvc)
+
+	bundleSubIDVal := bundleSubID
+	apiKey := &service.APIKey{ID: 1, BundleSubscriptionID: &bundleSubIDVal}
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodGet, "/v1/videos/task-abc", nil)
+	c.Set(string(ContextKeyAPIKey), apiKey)
+
+	mw.BundleResolver()(c)
+
+	if c.IsAborted() {
+		t.Fatalf("GET videos should not be aborted, status=%d", c.Writer.Status())
+	}
+	if apiKey.Group == nil {
+		t.Fatal("expected group injected for GET videos via task binding, got nil")
+	}
+	if apiKey.Group.Platform != "openai" {
+		t.Fatalf("expected openai platform, got %q", apiKey.Group.Platform)
+	}
+	if apiKey.GroupID == nil || *apiKey.GroupID != groupID {
+		t.Fatalf("expected groupID %d injected, got %v", groupID, apiKey.GroupID)
+	}
+}
+
+// TestBundleResolver_GETVideosWithoutBindingSkips 验证 task 绑定未命中（task 不属于本订阅
+// 或已过期）时，中间件不注入 group 也不 abort，回退到原有 skipping 行为交由下游处理。
+func TestBundleResolver_GETVideosWithoutBindingSkips(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	const (
+		bundleSubID int64 = 9
+		groupID     int64 = 200
+	)
+	plan := &service.BundlePlan{
+		ID:          1,
+		GroupQuotas: []service.BundlePlanGroupQuota{{GroupID: groupID, QuotaScope: service.QuotaScopeModel, ModelPattern: "grok-imagine-video"}},
+	}
+	sub := &service.BundleSubscription{ID: bundleSubID, PlanID: 1, Status: service.BundleStatusActive}
+	group := &service.Group{ID: groupID, Platform: "openai"}
+
+	// 空 cache → task 反查未命中。
+	resolver := service.NewBundleRouteResolver(
+		&mwFakeSubRepo{sub: sub},
+		&mwFakePlanRepo{plan: plan},
+		&mwFakeGroupRepo{group: group},
+		mwFakeVideoCache{},
+	)
+	usageSvc := service.NewBundleUsageService(&mwFakeUsageRepo{}, &mwFakeSubRepo{sub: sub}, &mwFakePlanRepo{plan: plan})
+	mw := NewBundleRouteResolverMiddleware(resolver, nil, nil, nil, usageSvc)
+
+	bundleSubIDVal := bundleSubID
+	apiKey := &service.APIKey{ID: 1, BundleSubscriptionID: &bundleSubIDVal}
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodGet, "/v1/videos/unknown-task", nil)
+	c.Set(string(ContextKeyAPIKey), apiKey)
+
+	mw.BundleResolver()(c)
+
+	if c.IsAborted() {
+		t.Fatalf("should not abort when task binding missing, status=%d", c.Writer.Status())
+	}
+	if apiKey.Group != nil {
+		t.Fatalf("expected nil group when binding missing, got platform=%q", apiKey.Group.Platform)
+	}
+}
+
+// TestExtractVideoTaskIDFromPath 保护 task id 提取逻辑（进度查询与取内容两种路径）。
+func TestExtractVideoTaskIDFromPath(t *testing.T) {
+	tests := []struct {
+		path string
+		want string
+	}{
+		{"/v1/videos/task-abc", "task-abc"},
+		{"/v1/videos/task-abc/content", "task-abc"},
+		{"/v1/videos/task-abc/", "task-abc"},
+		{"/videos/x", "x"},
+		{"/v1/messages", ""},
+		{"", ""},
+	}
+	for _, tt := range tests {
+		if got := extractVideoTaskIDFromPath(tt.path); got != tt.want {
+			t.Fatalf("extractVideoTaskIDFromPath(%q) = %q, want %q", tt.path, got, tt.want)
+		}
 	}
 }

@@ -21,6 +21,7 @@ type BundleRouteResolver struct {
 	bundleSubRepo BundleSubscriptionRepository
 	planRepo      BundlePlanRepository
 	groupRepo     GroupRepository
+	cache         GatewayCache
 }
 
 // NewBundleRouteResolver 创建路由解析器实例
@@ -29,11 +30,13 @@ func NewBundleRouteResolver(
 	bundleSubRepo BundleSubscriptionRepository,
 	planRepo BundlePlanRepository,
 	groupRepo GroupRepository,
+	cache GatewayCache,
 ) *BundleRouteResolver {
 	return &BundleRouteResolver{
 		bundleSubRepo: bundleSubRepo,
 		planRepo:      planRepo,
 		groupRepo:     groupRepo,
+		cache:         cache,
 	}
 }
 
@@ -140,6 +143,62 @@ func (r *BundleRouteResolver) ResolveGroup(ctx context.Context, modelName string
 		)
 	}
 
+	return nil, ErrBundleModelNotIncluded
+}
+
+// ResolveGroupByVideoTask 为 bundle key 的视频任务查询请求（GET /v1/videos/:id 与 /content）
+// 解析目标渠道组。这类请求按 OpenAI 规范不带 model，无法走 ResolveGroup 的 model 匹配；
+// 改为用 taskID 在订阅 plan 覆盖的渠道组里反查 video task 绑定，命中即恢复创建时选定的 group。
+//
+// 复用既有 (groupID, taskID) 绑定存储，无需为 bundle 维护额外索引。plan 覆盖的 group 数
+// 通常很少（个位数），每次 GET 仅做相应次数的 cache 查询，可接受。
+// 任意一步失败（订阅失效、task 不属于本订阅、绑定已过期）返回 ErrBundleModelNotIncluded，
+// 由调用方决定回退行为。
+func (r *BundleRouteResolver) ResolveGroupByVideoTask(ctx context.Context, bundleSubID int64, taskID string) (*ResolvedGroup, error) {
+	taskID = strings.TrimSpace(taskID)
+	if taskID == "" || r.cache == nil {
+		return nil, ErrBundleModelNotIncluded
+	}
+	// 与 ResolveGroup 一致的订阅有效性校验。
+	bundleSub, err := r.bundleSubRepo.GetByID(ctx, bundleSubID)
+	if err != nil {
+		return nil, fmt.Errorf("load bundle subscription: %w", err)
+	}
+	if bundleSub.Status != BundleStatusActive {
+		return nil, ErrBundleExpired
+	}
+	if !bundleSub.ExpiresAt.IsZero() && time.Now().After(bundleSub.ExpiresAt) {
+		return nil, ErrBundleExpired
+	}
+	plan, err := r.planRepo.GetByID(ctx, bundleSub.PlanID)
+	if err != nil {
+		return nil, fmt.Errorf("load bundle plan: %w", err)
+	}
+	// 遍历 plan 覆盖的 group（去重），用 taskID 反查 video 绑定；命中即返回。
+	seen := make(map[int64]struct{})
+	for _, gq := range plan.GroupQuotas {
+		if _, ok := seen[gq.GroupID]; ok {
+			continue
+		}
+		seen[gq.GroupID] = struct{}{}
+		binding, gErr := r.cache.GetVideoTaskBinding(ctx, gq.GroupID, taskID)
+		if gErr != nil || strings.TrimSpace(binding.Model) == "" {
+			continue
+		}
+		group, groupErr := r.groupRepo.GetByIDLite(ctx, gq.GroupID)
+		if groupErr != nil || group == nil {
+			continue
+		}
+		return &ResolvedGroup{
+			GroupID:          gq.GroupID,
+			Platform:         group.Platform,
+			Quota:            gq,
+			BundleSubID:      bundleSubID,
+			ConcurrencyLimit: bundleSub.ConcurrencyLimit,
+			RPMLimit:         bundleSub.RPMLimit,
+			Group:            group,
+		}, nil
+	}
 	return nil, ErrBundleModelNotIncluded
 }
 

@@ -78,26 +78,10 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 
 		// Extract model name from request body.
 		modelName := extractModelFromRequest(c)
-		if modelName == "" {
-			slog.Warn("bundle resolver: bundle key request has no model field, skipping",
-				"api_key_id", apiKey.ID,
-				"bundle_sub_id", *apiKey.BundleSubscriptionID,
-				"method", c.Request.Method,
-				"path", c.Request.URL.Path,
-			)
-			c.Next()
-			return
-		}
 
-		slog.Info("bundle resolver: resolving group for bundle key",
-			"api_key_id", apiKey.ID,
-			"bundle_sub_id", *apiKey.BundleSubscriptionID,
-			"model", modelName,
-			"path", c.Request.URL.Path,
-		)
-
-		// Resolve group.
-		resolved, err := m.resolver.ResolveGroup(c.Request.Context(), modelName, *apiKey.BundleSubscriptionID)
+		// Resolve group: 有 model 走标准 model 路由；GET /v1/videos/:id 与 /content 按
+		// OpenAI 规范不带 model，改用 taskID 反查创建时写入的 group 绑定。
+		resolved, err := m.resolveBundleGroup(c, modelName, *apiKey.BundleSubscriptionID)
 		if err != nil {
 			status := http.StatusForbidden
 			errType := "bundle_error"
@@ -118,6 +102,26 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		if resolved == nil {
+			// 无 model 且 task 反查未命中（非 videos 请求，或 task 不属于本订阅/已过期）：
+			// 跳过 group 注入，交由下游路由门控处理。
+			slog.Warn("bundle resolver: bundle key request has no model field and no video task binding, skipping",
+				"api_key_id", apiKey.ID,
+				"bundle_sub_id", *apiKey.BundleSubscriptionID,
+				"method", c.Request.Method,
+				"path", c.Request.URL.Path,
+			)
+			c.Next()
+			return
+		}
+
+		slog.Info("bundle resolver: resolved group for bundle key",
+			"api_key_id", apiKey.ID,
+			"bundle_sub_id", *apiKey.BundleSubscriptionID,
+			"model", modelName,
+			"group_id", resolved.GroupID,
+			"path", c.Request.URL.Path,
+		)
 
 		// 先加载桥接 UserSubscription：既供下游计费进入订阅扣减路径，又用其激活时快照的
 		// limit 构造注入 ctx 的 quota —— 使 pre-flight 额度检查、post 计费累加、用量进度展示
@@ -324,4 +328,53 @@ func extractModelFromPath(path string) string {
 		rest = rest[:slash]
 	}
 	return rest
+}
+
+// resolveBundleGroup 解析 bundle key 的目标渠道组：有 model 走标准 model 路由；
+// 无 model 时（如 GET /v1/videos/:id）尝试用 taskID 反查。返回 (nil, nil) 表示两种路径
+// 都无法解析（调用方应跳过 group 注入），返回非 nil error 表示订阅/计划级失败。
+func (m *BundleRouteResolverMiddleware) resolveBundleGroup(c *gin.Context, modelName string, bundleSubID int64) (*service.ResolvedGroup, error) {
+	if strings.TrimSpace(modelName) != "" {
+		return m.resolver.ResolveGroup(c.Request.Context(), modelName, bundleSubID)
+	}
+	if resolved := m.tryResolveBundleVideoTask(c, bundleSubID); resolved != nil {
+		return resolved, nil
+	}
+	return nil, nil
+}
+
+// tryResolveBundleVideoTask 仅对 GET /v1/videos/:id(/content) 用 taskID 反查创建时绑定的 group。
+// 非 GET、非 videos 路径、无 taskID 或反查未命中均返回 nil。
+func (m *BundleRouteResolverMiddleware) tryResolveBundleVideoTask(c *gin.Context, bundleSubID int64) *service.ResolvedGroup {
+	if c.Request.Method != http.MethodGet {
+		return nil
+	}
+	taskID := extractVideoTaskIDFromPath(c.Request.URL.Path)
+	if taskID == "" {
+		return nil
+	}
+	resolved, err := m.resolver.ResolveGroupByVideoTask(c.Request.Context(), bundleSubID, taskID)
+	if err != nil || resolved == nil {
+		return nil
+	}
+	return resolved
+}
+
+// extractVideoTaskIDFromPath 从 /v1/videos/:id 或 /v1/videos/:id/content 提取 task id 段。
+// 非 videos 路径或无 id 段返回空串。
+func extractVideoTaskIDFromPath(path string) string {
+	const marker = "/videos/"
+	idx := strings.Index(path, marker)
+	if idx < 0 {
+		return ""
+	}
+	rest := path[idx+len(marker):]
+	if cut, ok := strings.CutSuffix(rest, "/content"); ok {
+		rest = cut
+	}
+	rest = strings.TrimRight(rest, "/")
+	if slash := strings.Index(rest, "/"); slash >= 0 {
+		rest = rest[:slash]
+	}
+	return strings.TrimSpace(rest)
 }
