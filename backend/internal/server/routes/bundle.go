@@ -19,5 +19,7 @@ func RegisterBundleRoutes(v1 *gin.RouterGroup, h *handler.Handlers, requireAuth 
 		bundles.GET("/subscription", h.Bundle.GetMyBundle)
 		bundles.GET("/subscription/usage", h.Bundle.GetMyUsage)
 		bundles.POST("/checkout", h.Bundle.Checkout)
+		bundles.POST("/upgrade/preview", h.Bundle.PreviewUpgrade)
+		bundles.POST("/upgrade", h.Bundle.Upgrade)
 	}
 }

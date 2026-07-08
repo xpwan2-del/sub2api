@@ -1,9 +1,10 @@
 // bundle_handler.go 用户端套餐 Handler
-// 提供面向普通用户的套餐浏览、用量查询和购买 API：
+// 提供面向普通用户的套餐浏览、用量查询、购买和升级 API：
 // - 浏览在售套餐计划列表和详情
 // - 查看当前用户的活跃套餐订阅
 // - 查看套餐用量进度
 // - 发起套餐购买（checkout）
+// - 预览套餐升级差价 + 发起升级下单
 
 package handler
 
@@ -13,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Wei-Shaw/sub2api/internal/payment"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -187,6 +189,107 @@ func (h *BundleHandler) Checkout(c *gin.Context) {
 		PlanID:      req.PlanID,
 		Locale:      c.GetHeader("Accept-Language"),
 		UseBalance:  req.UseBalance,
+	})
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, result)
+}
+
+// upgradePreviewRequest is the request body for bundle upgrade preview.
+type upgradePreviewRequest struct {
+	SourceBundleSubscriptionID int64 `json:"source_bundle_subscription_id" binding:"required"`
+	TargetPlanID               int64 `json:"target_plan_id" binding:"required"`
+}
+
+// PreviewUpgrade 预览套餐升级差价（只读）
+// PreviewUpgrade returns the prorated upgrade cost without creating an order.
+// POST /bundles/upgrade/preview
+func (h *BundleHandler) PreviewUpgrade(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+
+	var req upgradePreviewRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	// 归属/active/在售校验均在 PreviewUpgrade 内完成；归属不符按"不存在"处理（IDOR 防护）。
+	pv, err := h.bundleSubscriptionService.PreviewUpgrade(c.Request.Context(), subject.UserID, req.SourceBundleSubscriptionID, req.TargetPlanID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, pv)
+}
+
+// upgradeRequest is the request body for placing a bundle upgrade order.
+type upgradeRequest struct {
+	SourceBundleSubscriptionID int64  `json:"source_bundle_subscription_id" binding:"required"`
+	TargetPlanID               int64  `json:"target_plan_id" binding:"required"`
+	PaymentType                string `json:"payment_type"` // 纯余额支付时可为空
+	UseBalance                 bool   `json:"use_balance"`  // 是否使用账户余额抵扣
+	ReturnURL                  string `json:"return_url"`
+}
+
+// Upgrade 发起套餐升级，创建差价支付订单
+// Upgrade creates an upgrade order: reuses PreviewUpgrade to compute the prorated
+// credit (and re-run ownership/active/listing checks), rejects non-upgradeable
+// targets (due <= 0) with 409, then creates the order via PaymentService.
+// POST /bundles/upgrade
+func (h *BundleHandler) Upgrade(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+
+	var req upgradeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	if req.ReturnURL != "" && !isValidReturnURL(req.ReturnURL) {
+		response.BadRequest(c, "Invalid return_url: only relative paths are allowed")
+		return
+	}
+
+	// 复用 PreviewUpgrade 算 credit，顺带完成归属/active/在售校验。
+	pv, err := h.bundleSubscriptionService.PreviewUpgrade(c.Request.Context(), subject.UserID, req.SourceBundleSubscriptionID, req.TargetPlanID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	if !pv.Upgradeable {
+		// 差价 <= 0（降级/同级），不构成升级；引导用户等当前套餐到期后再购买。
+		c.JSON(http.StatusConflict, gin.H{"error": gin.H{
+			"type":    "bundle_not_upgradeable",
+			"message": "目标套餐需补差价<=0，请等当前套餐到期后再购买",
+		}})
+		return
+	}
+
+	result, err := h.paymentService.CreateOrder(c.Request.Context(), service.CreateOrderRequest{
+		UserID:                     subject.UserID,
+		Amount:                     pv.DueAmount,
+		PaymentType:                req.PaymentType,
+		ClientIP:                   c.ClientIP(),
+		IsMobile:                   isMobile(c),
+		SrcHost:                    c.Request.Host,
+		SrcURL:                     c.Request.Referer(),
+		ReturnURL:                  req.ReturnURL,
+		OrderType:                  payment.OrderTypeBundleUpgrade,
+		PlanID:                     req.TargetPlanID,
+		SourceBundleSubscriptionID: req.SourceBundleSubscriptionID,
+		ProrateCredit:              pv.Credit,
+		Locale:                     c.GetHeader("Accept-Language"),
+		UseBalance:                 req.UseBalance,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
