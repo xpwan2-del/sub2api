@@ -7391,6 +7391,8 @@ export default {
       BALANCE_NOT_ENOUGH: 'Refund amount exceeds balance.',
       REFUND_AMOUNT_EXCEEDED: 'Refund amount exceeds the recharge amount.',
       REFUND_FAILED: 'Refund failed.',
+      BUNDLE_CONFLICT: 'You already have an active bundle and cannot purchase another.',
+      BUNDLE_PLAN_DISABLED: 'This bundle is no longer available.',
     },
     airwallexPay: 'Airwallex Payment',
     stripePay: 'Pay Now',

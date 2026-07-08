@@ -359,6 +359,11 @@ function isCurrentPlan(plan: BundlePlan): boolean {
 
 // 处理购买点击 — 跳转到支付页完成购买
 function handlePurchase(plan: BundlePlan) {
+  // 已有生效中的套餐时拦截：套餐暂不支持重复购买/并存，提前提示避免走到支付页才被拒
+  if (activeBundle.value) {
+    appStore.showError(t('payment.errors.BUNDLE_CONFLICT'))
+    return
+  }
   router.push({ path: '/purchase', query: { bundle_plan_id: String(plan.id) } })
 }
 

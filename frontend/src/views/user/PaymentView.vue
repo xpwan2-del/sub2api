@@ -992,6 +992,7 @@ async function confirmBundlePurchase() {
     })
   } catch (err: unknown) {
     errorMessage.value = extractI18nErrorMessage(err, t, 'payment.errors', t('common.error'))
+    appStore.showError(buildPaymentErrorToastMessage(errorMessage.value, errorHintMessage.value))
   } finally {
     submitting.value = false
   }

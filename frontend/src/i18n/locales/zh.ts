@@ -7574,6 +7574,8 @@ export default {
       BALANCE_NOT_ENOUGH: '退款金额超过余额',
       REFUND_AMOUNT_EXCEEDED: '退款金额超过充值金额',
       REFUND_FAILED: '退款失败',
+      BUNDLE_CONFLICT: '您已有生效中的套餐，无法重复购买',
+      BUNDLE_PLAN_DISABLED: '该套餐已下架',
     },
     airwallexPay: 'Airwallex 支付',
     stripePay: '立即支付',

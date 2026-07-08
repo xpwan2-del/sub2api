@@ -157,12 +157,7 @@ func (h *BundleHandler) Checkout(c *gin.Context) {
 		return
 	}
 	if !plan.ForSale || plan.Status != "active" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"type":    "bundle_plan_disabled",
-				"message": "该套餐已下架",
-			},
-		})
+		response.ErrorWithDetails(c, http.StatusBadRequest, "该套餐已下架", "BUNDLE_PLAN_DISABLED", nil)
 		return
 	}
 
@@ -174,12 +169,7 @@ func (h *BundleHandler) Checkout(c *gin.Context) {
 		return
 	}
 	if len(activeBundles) > 0 {
-		c.JSON(http.StatusConflict, gin.H{
-			"error": gin.H{
-				"type":    "bundle_conflict",
-				"message": "您已有生效中的套餐，无法重复购买",
-			},
-		})
+		response.ErrorWithDetails(c, http.StatusConflict, "您已有生效中的套餐，无法重复购买", "BUNDLE_CONFLICT", nil)
 		return
 	}
 
