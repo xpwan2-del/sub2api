@@ -450,9 +450,13 @@ var allowedHeaders = map[string]bool{
 type VideoTaskBinding struct {
 	AccountID int64  `json:"account_id"`
 	Model     string `json:"model"`
-	// BundleSubID 标记该视频任务由哪个 bundle 订阅创建，供 GET 反查做归属校验，
-	// 防止跨订阅越权查询（IDOR）。标准 Key 创建时为 nil（其固定 groupID 天然隔离）。
+	// BundleSubID 标记该视频任务由哪个 bundle 订阅创建，供 bundle key GET 反查做订阅归属
+	// 校验（防跨订阅 IDOR）。标准 Key 创建时为 nil。
 	BundleSubID *int64 `json:"bundle_sub_id,omitempty"`
+	// OwnerUserID 标记该视频任务的创建者用户 ID，供标准 Key GET 反查做用户归属校验
+	// （防同一 group 下不同用户的标准 Key 跨用户 IDOR）。标准 Key 无订阅维度，仅靠 groupID
+	// 无法隔离共享同一渠道组的多个用户，故必须按 userID 校验。bundle key 也写入以便审计。
+	OwnerUserID *int64 `json:"owner_user_id,omitempty"`
 }
 
 // GatewayCache 定义网关服务的缓存操作接口。

@@ -67,7 +67,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 			h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "video task id is required")
 			return
 		}
-		model, ok := h.gatewayService.GetVideoTaskModel(c.Request.Context(), apiKey.GroupID, taskID, apiKey.BundleSubscriptionID)
+		model, ok := h.gatewayService.GetVideoTaskModel(c.Request.Context(), apiKey.GroupID, taskID, apiKey.BundleSubscriptionID, &apiKey.UserID)
 		if !ok {
 			h.errorResponse(c, http.StatusNotFound, "invalid_request_error", "video task session expired or not found, please recreate the task")
 			return
@@ -215,7 +215,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 				}
 			} else if strings.TrimSpace(result.TaskID) != "" {
 				// POST 创建成功：写入 task→{account,model} 绑定 + 粘性账号
-				if bindErr := h.gatewayService.BindVideoTask(c.Request.Context(), apiKey.GroupID, result.TaskID, account.ID, reqModel, apiKey.BundleSubscriptionID, service.VideoTaskBindingTTL); bindErr != nil {
+				if bindErr := h.gatewayService.BindVideoTask(c.Request.Context(), apiKey.GroupID, result.TaskID, account.ID, reqModel, apiKey.BundleSubscriptionID, &apiKey.UserID, service.VideoTaskBindingTTL); bindErr != nil {
 					reqLog.Warn("openai.videos.bind_task_failed", zap.Error(bindErr), zap.String("task_id", result.TaskID))
 				}
 			}

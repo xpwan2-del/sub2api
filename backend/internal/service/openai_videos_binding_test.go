@@ -115,16 +115,17 @@ func TestBindAndGetVideoTaskModel(t *testing.T) {
 	cache := newFakeVideoCache()
 	svc := newBindingService(cache)
 	groupID := int64(3)
+	userA := int64(10)
 
-	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "t1", nil); ok {
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "t1", nil, &userA); ok {
 		t.Fatal("expected miss before bind")
 	}
 
-	if err := svc.BindVideoTask(context.Background(), &groupID, "t1", 99, "sora-2", nil, time.Minute); err != nil {
+	if err := svc.BindVideoTask(context.Background(), &groupID, "t1", 99, "sora-2", nil, &userA, time.Minute); err != nil {
 		t.Fatalf("bind: %v", err)
 	}
 
-	model, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "t1", nil)
+	model, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "t1", nil, &userA)
 	if !ok || model != "sora-2" {
 		t.Fatalf("expected hit sora-2, got %q ok=%v", model, ok)
 	}
@@ -139,7 +140,7 @@ func TestBindAndGetVideoTaskModel(t *testing.T) {
 func TestGetVideoTaskModel_EmptyTaskID(t *testing.T) {
 	svc := newBindingService(newFakeVideoCache())
 	groupID := int64(3)
-	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "  ", nil); ok {
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "  ", nil, nil); ok {
 		t.Fatal("empty taskID should miss")
 	}
 }
@@ -148,11 +149,12 @@ func TestUnbindVideoTask(t *testing.T) {
 	cache := newFakeVideoCache()
 	svc := newBindingService(cache)
 	groupID := int64(3)
-	_ = svc.BindVideoTask(context.Background(), &groupID, "t2", 7, "sora-2", nil, time.Minute)
+	userA := int64(10)
+	_ = svc.BindVideoTask(context.Background(), &groupID, "t2", 7, "sora-2", nil, &userA, time.Minute)
 
 	svc.UnbindVideoTask(context.Background(), &groupID, "t2")
 
-	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "t2", nil); ok {
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "t2", nil, &userA); ok {
 		t.Fatal("expected miss after unbind")
 	}
 	if _, err := cache.GetSessionAccountID(context.Background(), groupID, stickySessionKey("t2")); !errors.Is(err, redis.Nil) {
@@ -160,7 +162,7 @@ func TestUnbindVideoTask(t *testing.T) {
 	}
 }
 
-// TestGetVideoTaskModel_BundleOwnershipIDOR 验证 bundle key 查询视频 task 时的归属校验：
+// TestGetVideoTaskModel_BundleOwnershipIDOR 验证 bundle key 查询视频 task 时的订阅归属校验：
 // 订阅 B 不得读取订阅 A 创建的视频任务（防跨订阅 IDOR）。该校验补齐了带 ?model= 的 GET
 // 走 model 路由路径的缺口——中间件 ResolveGroup 不校验 task 归属，handler 统一把关，
 // 与无 model 反查路径（ResolveGroupByVideoTask）语义一致。
@@ -168,35 +170,62 @@ func TestGetVideoTaskModel_BundleOwnershipIDOR(t *testing.T) {
 	cache := newFakeVideoCache()
 	svc := newBindingService(cache)
 	groupID := int64(3)
+	userA := int64(10)
 	subA := int64(100)
 	subB := int64(200)
 
 	// 订阅 A 创建 task（同一 group，模拟两订阅共享上游账号池的常见配置）。
-	if err := svc.BindVideoTask(context.Background(), &groupID, "taskX", 99, "sora-2", &subA, time.Minute); err != nil {
+	if err := svc.BindVideoTask(context.Background(), &groupID, "taskX", 99, "sora-2", &subA, &userA, time.Minute); err != nil {
 		t.Fatalf("bind: %v", err)
 	}
 
 	// 归属订阅 A 查询 → 命中。
-	if model, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskX", &subA); !ok || model != "sora-2" {
+	if model, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskX", &subA, nil); !ok || model != "sora-2" {
 		t.Fatalf("owner subscription should hit, got model=%q ok=%v", model, ok)
 	}
 
 	// 订阅 B 查询同一 task → 必须拒绝（跨订阅 IDOR）。
-	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskX", &subB); ok {
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskX", &subB, nil); ok {
 		t.Fatal("non-owner bundle subscription must not read another subscription's video task (IDOR)")
 	}
 
 	// bundle key 查询标准 key 创建的 task（binding.BundleSubID=nil）→ 拒绝：
 	// bundle key 只能查本订阅创建的 task。
-	if err := svc.BindVideoTask(context.Background(), &groupID, "taskStd", 7, "sora-2", nil, time.Minute); err != nil {
+	if err := svc.BindVideoTask(context.Background(), &groupID, "taskStd", 7, "sora-2", nil, &userA, time.Minute); err != nil {
 		t.Fatalf("bind std: %v", err)
 	}
-	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskStd", &subA); ok {
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskStd", &subA, nil); ok {
 		t.Fatal("bundle key must not read a task created by a standard key")
 	}
+}
 
-	// 标准 key（bundleSubID=nil）查询保持原行为：不校验归属（其固定 groupID 天然隔离）。
-	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskX", nil); !ok {
-		t.Fatal("standard key (nil bundleSubID) should still read via groupID isolation")
+// TestGetVideoTaskModel_StandardKeyCrossUser 验证标准 Key 查询视频 task 时的用户归属校验：
+// 同一 group 下，用户 B 的标准 Key 不得读取用户 A 创建的视频任务（防同 group 跨用户 IDOR）。
+// 标准 Key 无订阅维度，仅靠 groupID 无法隔离共享同一渠道组的多个用户，故按 userID 校验。
+func TestGetVideoTaskModel_StandardKeyCrossUser(t *testing.T) {
+	cache := newFakeVideoCache()
+	svc := newBindingService(cache)
+	groupID := int64(3)
+	userA := int64(10)
+	userB := int64(20)
+
+	// 用户 A 的标准 Key 创建 task（bundleSubID=nil，同一 group 模拟两用户共享渠道组）。
+	if err := svc.BindVideoTask(context.Background(), &groupID, "taskY", 99, "sora-2", nil, &userA, time.Minute); err != nil {
+		t.Fatalf("bind: %v", err)
+	}
+
+	// 用户 A 查询 → 命中。
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskY", nil, &userA); !ok {
+		t.Fatal("owner user should hit own task")
+	}
+
+	// 用户 B 查询同一 task → 必须拒绝（同 group 跨用户 IDOR）。
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskY", nil, &userB); ok {
+		t.Fatal("different user's standard key must not read another user's video task (IDOR)")
+	}
+
+	// userID 为 nil（调用方漏传）→ fail-closed 拒绝，避免绕过归属校验。
+	if _, ok := svc.GetVideoTaskModel(context.Background(), &groupID, "taskY", nil, nil); ok {
+		t.Fatal("nil userID must not bypass ownership check (fail-closed)")
 	}
 }
