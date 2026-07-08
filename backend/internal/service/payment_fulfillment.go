@@ -800,7 +800,8 @@ func (s *PaymentService) ExecuteBundleUpgradeFulfillment(ctx context.Context, oi
 //  1. 已有 BUNDLE_UPGRADE_SUCCESS audit log → 直接 markCompleted（崩溃恢复幂等）。
 //  2. 调 UpgradeBundle（Task 5）：旧订阅 active 校验 + 原子换套 + 建新订阅。
 //  3. 失败分流：ErrBundleExpired / ErrBundleNotFound（旧订阅支付期间过期 / 并发已被升级 /
-//     IDOR）→ refundUpgradeToBalance 把已付差价退到余额（资金不出平台，设计 §10 边界）。
+//     IDOR）/ ErrBundlePlanDisabled（目标套餐支付窗口被运营下架）→ refundUpgradeToBalance
+//     把已付差价退到余额（资金不出平台，设计 §10 边界）。
 //     其他错误 → 原样冒泡由 ExecuteBundleUpgradeFulfillment markFailed（不退款，保留重试机会）。
 //  4. 成功 → 回写 bundle_subscription_id（财务对账追溯）+ markCompleted。
 func (s *PaymentService) doBundleUpgrade(ctx context.Context, o *dbent.PaymentOrder) error {
@@ -817,10 +818,11 @@ func (s *PaymentService) doBundleUpgrade(ctx context.Context, o *dbent.PaymentOr
 		TargetPlanID: *o.PlanID,
 	})
 	if err != nil {
-		// 旧订阅已非 active（支付期间过期 / 并发升级）或不存在 / 归属不符（IDOR）→
-		// 退款到余额，避免用户付了差价却拿不到套餐。资金不出平台。
-		if errors.Is(err, ErrBundleExpired) || errors.Is(err, ErrBundleNotFound) {
-			slog.Warn("upgrade fulfill: old sub no longer active or missing, refund to balance",
+		// 旧订阅已非 active（支付期间过期 / 并发升级）或不存在 / 归属不符（IDOR）、或目标套餐在
+		// 支付窗口期被运营下架（ErrBundlePlanDisabled）→ 退款到余额，避免用户付了差价却拿不到套餐。
+		// 资金不出平台（设计 §10 边界）。其余错误冒泡 markFailed（保留重试机会，不退款）。
+		if errors.Is(err, ErrBundleExpired) || errors.Is(err, ErrBundleNotFound) || errors.Is(err, ErrBundlePlanDisabled) {
+			slog.Warn("upgrade fulfill: old sub no longer active/missing or target plan disabled, refund to balance",
 				"orderID", o.ID, "userID", o.UserID, "err", err)
 			return s.refundUpgradeToBalance(ctx, o)
 		}

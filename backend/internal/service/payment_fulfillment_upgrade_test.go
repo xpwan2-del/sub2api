@@ -391,6 +391,67 @@ func TestDoBundleUpgrade_RefundsToBalanceWhenOldSubNotFound(t *testing.T) {
 	require.Equal(t, upgradeDue, userRepo.getByIDUser.Balance, "ErrBundleNotFound 走同一退款路径")
 }
 
+// TestDoBundleUpgrade_RefundsToBalanceWhenPlanDisabled 验证目标套餐下架退余额边界
+// （final-review Important #2）：
+// 支付窗口期内目标套餐被运营下架（UpgradeBundle 返回 ErrBundlePlanDisabled）→ 同样走
+// refundUpgradeToBalance，把已付差价退到余额，避免资金滞留。与 ErrBundleExpired/NotFound
+// 退余额哲学一致（设计 §10"资金不出平台"）。
+func TestDoBundleUpgrade_RefundsToBalanceWhenPlanDisabled(t *testing.T) {
+	ctx := context.Background()
+	client := newUpgradeFulfillTestClient(t)
+	ensurePaymentAuditOrderActionUniqueIndex(t, ctx, client)
+
+	const upgradeDue = 60.0
+	user := createUpgradeFulfillUser(t, ctx, client, "upgrade-refund-plan-disabled@example.com")
+	order := createUpgradeFulfillOrder(t, ctx, client, user.ID, 6, 1, upgradeDue)
+
+	userRepo := &mockUserRepo{
+		getByIDUser: &User{ID: user.ID, Email: user.Email, Username: user.Username, Balance: 0},
+	}
+	userRepo.updateBalanceFn = func(_ context.Context, id int64, amount float64) error {
+		require.Equal(t, user.ID, id)
+		if userRepo.getByIDUser != nil {
+			userRepo.getByIDUser.Balance += amount
+		}
+		return nil
+	}
+	redeemRepo := newUpgradeFulfillRedeemRepo()
+	redeemService := NewRedeemService(redeemRepo, userRepo, nil, nil, nil, client, nil, nil)
+
+	// 旧订阅 active（通过 active 校验），但目标套餐 ForSale=false → UpgradeBundle 在加载
+	// plan 校验时返回 ErrBundlePlanDisabled。注：entClient=nil 时 withTx 退化为直执行，
+	// step ②（标记旧订阅 upgraded）会先于错误落在 stub 上；生产真实事务会整体回滚，此处
+	// 不断言 subRepo.updateStatusCalls（no-tx 测试工件，非生产行为）。
+	subRepo := &upgradeSubRepoStub{old: upgradeActiveOldForUser(user.ID)}
+	planRepo := &activateBundlePlanRepoStub{plan: upgradeTargetPlan(false, BundlePlanStatusActive)}
+	bundleSvc := newUpgradeFulfillBundleSvc(subRepo, planRepo)
+
+	svc := &PaymentService{
+		entClient:             client,
+		bundleSubscriptionSvc: bundleSvc,
+		redeemService:         redeemService,
+		userRepo:              userRepo,
+	}
+
+	err := svc.ExecuteBundleUpgradeFulfillment(ctx, order.ID)
+	require.NoError(t, err, "ErrBundlePlanDisabled 应走退余额闭环（非 markFailed）")
+
+	reloaded, err := client.PaymentOrder.Get(ctx, order.ID)
+	require.NoError(t, err)
+	require.Equal(t, OrderStatusCompleted, reloaded.Status, "退余额后订单应 Completed")
+
+	// 用户余额 += 已付差价（资金不出平台）。
+	require.Equal(t, upgradeDue, userRepo.getByIDUser.Balance, "ErrBundlePlanDisabled 退款应等于已付差价")
+	require.Len(t, redeemRepo.useCalls, 1, "退款兑换码应被 Redeem 消费一次")
+
+	// 退款闭环以 BUNDLE_UPGRADE_REFUND_BALANCE 留痕。
+	refundAudit, err := client.PaymentAuditLog.Query().
+		Where(paymentauditlog.OrderIDEQ(strconv.FormatInt(order.ID, 10)), paymentauditlog.ActionEQ("BUNDLE_UPGRADE_REFUND_BALANCE")).
+		Only(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, refundAudit)
+}
+
 // TestRefundUpgradeToBalance_IsIdempotent 验证退款自身的幂等：
 // 已有 BUNDLE_UPGRADE_REFUND_BALANCE audit log → 不再 Redeem，直接 markCompleted。
 func TestRefundUpgradeToBalance_IsIdempotent(t *testing.T) {
