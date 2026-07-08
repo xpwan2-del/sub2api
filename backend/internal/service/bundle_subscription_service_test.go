@@ -12,6 +12,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 )
 
 // ──────────────────────────────────────────────────────
@@ -89,8 +90,8 @@ type activateBundleSubRepoStub struct {
 	updateStatusErr error
 	updateExpiryErr error
 
-	extendByDaysErr   error   // ExtendExpiryByDays 返回的错误（中危1 增量延期）
-	extendedByDaysIDs []int64 // 记录 ExtendExpiryByDays 调用
+	extendByDaysErr    error   // ExtendExpiryByDays 返回的错误（中危1 增量延期）
+	extendedByDaysIDs  []int64 // 记录 ExtendExpiryByDays 调用
 	updateExpiryCalled bool    // 是否仍走旧的覆盖写 UpdateExpiry（中危1 后应为 false）
 }
 
@@ -396,6 +397,11 @@ func TestBundleSubscriptionService_ActivateBundle_Success(t *testing.T) {
 	require.Len(t, usageRepo.createdUsages, 2)
 	require.Equal(t, int64(10), usageRepo.createdUsages[0].GroupID)
 	require.Equal(t, int64(20), usageRepo.createdUsages[1].GroupID)
+	// window_start 对齐到激活日（购买日）0 点：周/月窗口锚定购买日，重置落在「购买日+N 天」的 0 点。
+	purchaseMidnight := timezone.StartOfDay(time.Now())
+	require.Equal(t, purchaseMidnight, usageRepo.createdUsages[0].DailyWindowStart, "daily window_start must align to purchase-day 00:00")
+	require.Equal(t, purchaseMidnight, usageRepo.createdUsages[0].WeeklyWindowStart, "weekly window_start must align to purchase-day 00:00")
+	require.Equal(t, purchaseMidnight, usageRepo.createdUsages[0].MonthlyWindowStart, "monthly window_start must align to purchase-day 00:00")
 
 	// Verify bridged UserSubscriptions created.
 	require.Len(t, userSubRepo.createdSubs, 2)
@@ -614,9 +620,10 @@ func TestBundleSubscriptionService_ExtendBundle_ExtendByDaysError(t *testing.T) 
 
 func TestBundleSubscriptionService_GetBundleUsageProgress_Success(t *testing.T) {
 	bundleSubID := int64(100)
+	today0 := timezone.StartOfDay(time.Now()) // 窗口未过期，累计应保留展示
 	usages := []BundleSubscriptionUsage{
-		{BundleSubscriptionID: 100, GroupID: 10, DailyUsageUSD: 2.5, WeeklyUsageUSD: 10.0, MonthlyUsageUSD: 40.0},
-		{BundleSubscriptionID: 100, GroupID: 20, ModelPattern: "gpt-4*", DailyUsageUSD: 1.0, WeeklyUsageUSD: 5.0, MonthlyUsageUSD: 20.0},
+		{BundleSubscriptionID: 100, GroupID: 10, DailyWindowStart: today0, WeeklyWindowStart: today0, MonthlyWindowStart: today0, DailyUsageUSD: 2.5, WeeklyUsageUSD: 10.0, MonthlyUsageUSD: 40.0},
+		{BundleSubscriptionID: 100, GroupID: 20, ModelPattern: "gpt-4*", DailyWindowStart: today0, WeeklyWindowStart: today0, MonthlyWindowStart: today0, DailyUsageUSD: 1.0, WeeklyUsageUSD: 5.0, MonthlyUsageUSD: 20.0},
 	}
 
 	subRepo := &activateBundleSubRepoStub{}
@@ -672,6 +679,41 @@ func TestBundleSubscriptionService_GetBundleUsageProgress_SubscriptionNotFound(t
 
 	require.Error(t, err)
 	require.Nil(t, progress)
+}
+
+// TestBundleSubscriptionService_GetBundleUsageProgress_ZeroesExpiredWindows 守护前端展示死锁回归：
+// 窗口已过期的累计必须在响应中归零展示，避免用户次日打开界面仍看到昨天满额误判达限额。
+// 与 CheckQuotaEligibility / IncrementUsage 共用 rolledBundleUsage 的过期判定。
+func TestBundleSubscriptionService_GetBundleUsageProgress_ZeroesExpiredWindows(t *testing.T) {
+	bundleSubID := int64(100)
+	// 30 天前的 window_start → 日/周/月三窗口全部过期。
+	monthAgo := timezone.StartOfDay(time.Now()).AddDate(0, 0, -30)
+	usages := []BundleSubscriptionUsage{
+		{
+			BundleSubscriptionID: 100, GroupID: 10,
+			DailyWindowStart: monthAgo, WeeklyWindowStart: monthAgo, MonthlyWindowStart: monthAgo,
+			DailyUsageUSD: 5.0, WeeklyUsageUSD: 7.0, MonthlyUsageUSD: 9.0,
+		},
+	}
+
+	subRepo := &activateBundleSubRepoStub{}
+	subRepo.created = &BundleSubscription{ID: 100, UserID: 42, PlanID: 1, Status: BundleStatusActive, Usages: usages}
+
+	userSubRepo := &activateUserSubRepoStub{}
+	userSubRepo.existingSubs = []UserSubscription{
+		{ID: 200, UserID: 42, GroupID: 10, BundleSubscriptionID: &bundleSubID, DailyLimitUSD: 10.0, WeeklyLimitUSD: 10.0, MonthlyLimitUSD: 10.0},
+	}
+
+	planRepo := &activateBundlePlanRepoStub{plan: &BundlePlan{ID: 1, GroupQuotas: []BundlePlanGroupQuota{{GroupID: 10}}}}
+	svc := newBundleSubSvc(subRepo, planRepo, &activateBundleUsageRepoStub{}, userSubRepo)
+
+	progress, err := svc.GetBundleUsageProgress(context.Background(), 100)
+
+	require.NoError(t, err)
+	require.Len(t, progress, 1)
+	require.Equal(t, 0.0, progress[0].DailyUsageUSD, "expired daily window should display as 0")
+	require.Equal(t, 0.0, progress[0].WeeklyUsageUSD, "expired weekly window should display as 0")
+	require.Equal(t, 0.0, progress[0].MonthlyUsageUSD, "expired monthly window should display as 0")
 }
 
 // ──────────────────────────────────────────────────────

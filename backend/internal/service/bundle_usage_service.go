@@ -193,15 +193,20 @@ func (s *BundleUsageService) CheckQuotaEligibility(ctx context.Context, bundleSu
 	result := &QuotaEligibilityResult{Eligible: true}
 
 	if usage != nil {
-		result.DailyRemaining = matchingQuota.DailyLimitUSD - usage.DailyUsageUSD
-		result.WeeklyRemaining = matchingQuota.WeeklyLimitUSD - usage.WeeklyUsageUSD
-		result.MonthlyRemaining = matchingQuota.MonthlyLimitUSD - usage.MonthlyUsageUSD
-		result.DailyRemainingImageCount = matchingQuota.DailyImageLimitCount - usage.DailyImageUsageCount
-		result.WeeklyRemainingImageCount = matchingQuota.WeeklyImageLimitCount - usage.WeeklyImageUsageCount
-		result.MonthlyRemainingImageCount = matchingQuota.MonthlyImageLimitCount - usage.MonthlyImageUsageCount
-		result.DailyRemainingVideoCount = matchingQuota.DailyVideoLimitCount - usage.DailyVideoUsageCount
-		result.WeeklyRemainingVideoCount = matchingQuota.WeeklyVideoLimitCount - usage.WeeklyVideoUsageCount
-		result.MonthlyRemainingVideoCount = matchingQuota.MonthlyVideoLimitCount - usage.MonthlyVideoUsageCount
+		// 读时归零：已过期窗口的累计不计入今天额度（不写 DB）。与写路径 IncrementUsage 的过期
+		// 判定逐字一致（共用 BundleWindowExpired），避免「读判过期放行、写判未过期累加」的计费偏差。
+		// 这是解除「达到日限额后窗口永不重置」死锁的关键——次日 0 点起读路径恢复额度，请求得以
+		// 放行进入写路径完成真正的清零。
+		eff := rolledBundleUsage(usage, time.Now())
+		result.DailyRemaining = matchingQuota.DailyLimitUSD - eff.DailyUsageUSD
+		result.WeeklyRemaining = matchingQuota.WeeklyLimitUSD - eff.WeeklyUsageUSD
+		result.MonthlyRemaining = matchingQuota.MonthlyLimitUSD - eff.MonthlyUsageUSD
+		result.DailyRemainingImageCount = matchingQuota.DailyImageLimitCount - eff.DailyImageUsageCount
+		result.WeeklyRemainingImageCount = matchingQuota.WeeklyImageLimitCount - eff.WeeklyImageUsageCount
+		result.MonthlyRemainingImageCount = matchingQuota.MonthlyImageLimitCount - eff.MonthlyImageUsageCount
+		result.DailyRemainingVideoCount = matchingQuota.DailyVideoLimitCount - eff.DailyVideoUsageCount
+		result.WeeklyRemainingVideoCount = matchingQuota.WeeklyVideoLimitCount - eff.WeeklyVideoUsageCount
+		result.MonthlyRemainingVideoCount = matchingQuota.MonthlyVideoLimitCount - eff.MonthlyVideoUsageCount
 	} else {
 		// No usage record yet means full quota is available.
 		result.DailyRemaining = matchingQuota.DailyLimitUSD
