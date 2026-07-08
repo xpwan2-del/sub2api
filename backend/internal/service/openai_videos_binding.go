@@ -33,9 +33,10 @@ func IsTerminalOpenAIVideosTaskStatus(status string) bool {
 }
 
 // BindVideoTask 在视频任务创建成功后写入 model 绑定，并把它粘性绑定到创建账号，
-// 使后续 GET 查询能恢复 model 并命中同一上游账号。
+// 使后续 GET 查询能恢复 model 并命中同一上游账号。bundleSubID 记录归属订阅，供 bundle
+// key 的 GET 反查做 scope 校验（标准 Key 传 nil）。
 // 写入失败仅返回错误（不阻断已成功的创建响应）。
-func (s *OpenAIGatewayService) BindVideoTask(ctx context.Context, groupID *int64, taskID string, accountID int64, model string, ttl time.Duration) error {
+func (s *OpenAIGatewayService) BindVideoTask(ctx context.Context, groupID *int64, taskID string, accountID int64, model string, bundleSubID *int64, ttl time.Duration) error {
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" || accountID <= 0 || s == nil {
 		return nil
@@ -43,7 +44,7 @@ func (s *OpenAIGatewayService) BindVideoTask(ctx context.Context, groupID *int64
 	if ttl <= 0 {
 		ttl = VideoTaskBindingTTL
 	}
-	if err := s.cache.SetVideoTaskBinding(ctx, derefGroupID(groupID), taskID, VideoTaskBinding{AccountID: accountID, Model: model}, ttl); err != nil {
+	if err := s.cache.SetVideoTaskBinding(ctx, derefGroupID(groupID), taskID, VideoTaskBinding{AccountID: accountID, Model: model, BundleSubID: bundleSubID}, ttl); err != nil {
 		return err
 	}
 	// 粘性绑定到创建账号：查询时选号链路通过 sessionHash 命中，

@@ -120,7 +120,7 @@ func TestBindAndGetVideoTaskModel(t *testing.T) {
 		t.Fatal("expected miss before bind")
 	}
 
-	if err := svc.BindVideoTask(context.Background(), &groupID, "t1", 99, "sora-2", time.Minute); err != nil {
+	if err := svc.BindVideoTask(context.Background(), &groupID, "t1", 99, "sora-2", nil, time.Minute); err != nil {
 		t.Fatalf("bind: %v", err)
 	}
 
@@ -148,7 +148,7 @@ func TestUnbindVideoTask(t *testing.T) {
 	cache := newFakeVideoCache()
 	svc := newBindingService(cache)
 	groupID := int64(3)
-	_ = svc.BindVideoTask(context.Background(), &groupID, "t2", 7, "sora-2", time.Minute)
+	_ = svc.BindVideoTask(context.Background(), &groupID, "t2", 7, "sora-2", nil, time.Minute)
 
 	svc.UnbindVideoTask(context.Background(), &groupID, "t2")
 

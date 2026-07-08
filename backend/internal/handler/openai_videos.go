@@ -215,7 +215,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 				}
 			} else if strings.TrimSpace(result.TaskID) != "" {
 				// POST 创建成功：写入 task→{account,model} 绑定 + 粘性账号
-				if bindErr := h.gatewayService.BindVideoTask(c.Request.Context(), apiKey.GroupID, result.TaskID, account.ID, reqModel, service.VideoTaskBindingTTL); bindErr != nil {
+				if bindErr := h.gatewayService.BindVideoTask(c.Request.Context(), apiKey.GroupID, result.TaskID, account.ID, reqModel, apiKey.BundleSubscriptionID, service.VideoTaskBindingTTL); bindErr != nil {
 					reqLog.Warn("openai.videos.bind_task_failed", zap.Error(bindErr), zap.String("task_id", result.TaskID))
 				}
 			}

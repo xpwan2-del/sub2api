@@ -185,6 +185,12 @@ func (r *BundleRouteResolver) ResolveGroupByVideoTask(ctx context.Context, bundl
 		if gErr != nil || strings.TrimSpace(binding.Model) == "" {
 			continue
 		}
+		// scope 到订阅：仅接受本订阅创建的 task，防止跨订阅越权查询/取内容（IDOR）。
+		// 多个订阅共享同一 group（同一上游账号池）时，(groupID, taskID) 维度的绑定不带
+		// 归属即可被任意订阅命中，故必须用 BundleSubID 收紧到归属订阅。
+		if binding.BundleSubID == nil || *binding.BundleSubID != bundleSubID {
+			continue
+		}
 		group, groupErr := r.groupRepo.GetByIDLite(ctx, gq.GroupID)
 		if groupErr != nil || group == nil {
 			continue

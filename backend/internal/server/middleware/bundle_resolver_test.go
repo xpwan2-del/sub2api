@@ -319,8 +319,9 @@ func TestBundleResolver_GETVideosResolvesGroupViaTaskBinding(t *testing.T) {
 	sub := &service.BundleSubscription{ID: bundleSubID, PlanID: 1, Status: service.BundleStatusActive}
 	group := &service.Group{ID: groupID, Platform: "openai"}
 
+	owningSub := bundleSubID
 	cache := mwFakeVideoCache{bindings: map[string]service.VideoTaskBinding{
-		fmt.Sprintf("%d:%s", groupID, "task-abc"): {AccountID: 5, Model: "grok-imagine-video"},
+		fmt.Sprintf("%d:%s", groupID, "task-abc"): {AccountID: 5, Model: "grok-imagine-video", BundleSubID: &owningSub},
 	}}
 	resolver := service.NewBundleRouteResolver(
 		&mwFakeSubRepo{sub: sub},
@@ -393,6 +394,56 @@ func TestBundleResolver_GETVideosWithoutBindingSkips(t *testing.T) {
 	}
 	if apiKey.Group != nil {
 		t.Fatalf("expected nil group when binding missing, got platform=%q", apiKey.Group.Platform)
+	}
+}
+
+// TestBundleResolver_GETVideosDoesNotLeakAcrossSubscriptions 验证视频任务反查 scope 到订阅：
+// 订阅 B 不能通过 taskID 查到订阅 A 创建的视频任务（防跨订阅 IDOR 越权查询/取内容）。
+// 即便两者共享同一 group（同一上游账号池是常见配置），绑定归属也必须隔离。
+func TestBundleResolver_GETVideosDoesNotLeakAcrossSubscriptions(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	const (
+		subA    int64 = 9
+		subB    int64 = 11
+		groupID int64 = 200
+	)
+	// A 与 B 共享同一 plan/group（同一上游账号池是常见配置）。
+	plan := &service.BundlePlan{
+		ID:          1,
+		GroupQuotas: []service.BundlePlanGroupQuota{{GroupID: groupID, QuotaScope: service.QuotaScopeModel, ModelPattern: "grok-imagine-video"}},
+	}
+	subBObj := &service.BundleSubscription{ID: subB, PlanID: 1, Status: service.BundleStatusActive}
+	group := &service.Group{ID: groupID, Platform: "openai"}
+
+	// task-X 由订阅 A 创建，绑定归属 subA。
+	subARef := subA
+	cache := mwFakeVideoCache{bindings: map[string]service.VideoTaskBinding{
+		fmt.Sprintf("%d:%s", groupID, "task-X"): {AccountID: 5, Model: "grok-imagine-video", BundleSubID: &subARef},
+	}}
+	// 用订阅 B 的解析器查询 task-X。
+	resolver := service.NewBundleRouteResolver(
+		&mwFakeSubRepo{sub: subBObj},
+		&mwFakePlanRepo{plan: plan},
+		&mwFakeGroupRepo{group: group},
+		cache,
+	)
+	usageSvc := service.NewBundleUsageService(&mwFakeUsageRepo{}, &mwFakeSubRepo{sub: subBObj}, &mwFakePlanRepo{plan: plan})
+	mw := NewBundleRouteResolverMiddleware(resolver, nil, nil, nil, usageSvc)
+
+	subBRef := subB
+	apiKey := &service.APIKey{ID: 1, BundleSubscriptionID: &subBRef}
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodGet, "/v1/videos/task-X", nil)
+	c.Set(string(ContextKeyAPIKey), apiKey)
+
+	mw.BundleResolver()(c)
+
+	if c.IsAborted() {
+		t.Fatalf("should not abort when task belongs to another subscription, status=%d", c.Writer.Status())
+	}
+	if apiKey.Group != nil {
+		t.Fatalf("subscription B must not resolve task owned by subscription A (IDOR): got platform=%q", apiKey.Group.Platform)
 	}
 }
 
