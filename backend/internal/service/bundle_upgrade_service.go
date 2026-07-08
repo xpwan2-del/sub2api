@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math"
 	"time"
+
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
 
 // computeProrateCredit 按剩余有效期线性折算旧套餐剩余价值。
@@ -78,4 +80,129 @@ func (s *BundleSubscriptionService) PreviewUpgrade(ctx context.Context, userID, 
 		OldPlanName:  oldPlanName,
 		NewPlanName:  plan.Name,
 	}, nil
+}
+
+// UpgradeBundle 原子切换：旧订阅 → upgraded + 桥接 userSub 失效；新订阅 active + 桥接 userSub 激活。
+// 全流程在单个 withTx 内完成，任一步失败整体回滚，杜绝「旧已 upgraded 但新未激活」的悬空状态。
+// 这是支付成功履约时被调用的核心切换方法（被 doBundleUpgrade 调用）。
+//
+// 事务 5 步：
+//  1. 校验旧订阅：归属（IDOR 防护：不泄露存在性）+ active（防并发升级 / 支付期间过期）
+//  2. 旧订阅 → upgraded，桥接 userSub → expired
+//  3. 加载目标 plan，校验 ForSale + Active
+//  4. 创建新订阅：source=upgrade, upgraded_from_id=旧ID, 完整有效期从当下起算
+//  5. 每个 plan.GroupQuota 建 usage tracker + 桥接 userSub(active) —— 字段集与 ActivateBundle 完全一致
+//
+// 并发防护点在 ①：两个并发 UpgradeBundle，第一个把旧置 upgraded 提交后，第二个进 ① 发现非 active → 失败。
+// 缓存失效在事务提交后执行，避免回滚后脏失效。
+// UpgradeBundle atomically swaps an active bundle subscription to a new plan.
+func (s *BundleSubscriptionService) UpgradeBundle(ctx context.Context, req *UpgradeBundleRequest) (*BundleSubscription, error) {
+	if req == nil {
+		return nil, ErrBundleNotFound
+	}
+
+	var upgraded *BundleSubscription
+	if err := s.withTx(ctx, func(txCtx context.Context) error {
+		// ① 校验旧订阅：归属（IDOR 防护：不泄露存在性）+ active（防并发升级 / 支付期间过期）
+		old, err := s.bundleSubRepo.GetByIDWithUsages(txCtx, req.SourceSubID)
+		if err != nil {
+			return ErrBundleNotFound
+		}
+		if old.UserID != req.UserID {
+			// 归属不符按"不存在"处理，避免攻击者通过响应差异探测他人订阅（与 PreviewUpgrade / IDOR 修复 ecb747d9 同原则）
+			return ErrBundleNotFound
+		}
+		if old.Status != BundleStatusActive {
+			return ErrBundleExpired
+		}
+
+		// ② 旧订阅 → upgraded，桥接 userSub → expired
+		if err := s.bundleSubRepo.UpdateStatus(txCtx, old.ID, BundleStatusUpgraded); err != nil {
+			return fmt.Errorf("mark old subscription upgraded: %w", err)
+		}
+		if err := s.syncBridgedUserSubscriptions(txCtx, old.UserID, old.ID, func(sub *UserSubscription) error {
+			return s.userSubRepo.UpdateStatus(txCtx, sub.ID, domain.SubscriptionStatusExpired)
+		}); err != nil {
+			return fmt.Errorf("expire bridged user subscriptions: %w", err)
+		}
+
+		// ③ 加载目标 plan，校验 ForSale + Active
+		plan, err := s.planRepo.GetByID(txCtx, req.TargetPlanID)
+		if err != nil {
+			return fmt.Errorf("load target plan: %w", err)
+		}
+		if !plan.ForSale || plan.Status != BundlePlanStatusActive {
+			return ErrBundlePlanDisabled
+		}
+
+		// ④ 创建新订阅：source=upgrade, upgraded_from_id=旧ID, 从当下起算完整有效期（不沿用旧订阅剩余期）
+		now := time.Now()
+		newSub := &BundleSubscription{
+			UserID:           req.UserID,
+			PlanID:           req.TargetPlanID,
+			Status:           BundleStatusActive,
+			StartsAt:         now,
+			ExpiresAt:        now.AddDate(0, 0, plan.ValidityDays),
+			ConcurrencyLimit: plan.ConcurrencyLimit,
+			RPMLimit:         plan.RPMLimit,
+			Source:           BundleSourceUpgrade,
+			UpgradedFromID:   old.ID,
+			Usages:           make([]BundleSubscriptionUsage, 0, len(plan.GroupQuotas)),
+		}
+		if err := s.bundleSubRepo.Create(txCtx, newSub); err != nil {
+			return fmt.Errorf("create new subscription: %w", err)
+		}
+
+		// ⑤ 每个渠道组建 usage tracker + 桥接 userSub(active) —— 字段集与 ActivateBundle 完全一致
+		for _, gq := range plan.GroupQuotas {
+			usage := &BundleSubscriptionUsage{
+				BundleSubscriptionID: newSub.ID,
+				GroupID:              gq.GroupID,
+				ModelPattern:         gq.ModelPattern,
+				DailyWindowStart:     now,
+				WeeklyWindowStart:    now,
+				MonthlyWindowStart:   now,
+			}
+			if err := s.usageRepo.Create(txCtx, usage); err != nil {
+				return fmt.Errorf("create usage tracker for group %d: %w", gq.GroupID, err)
+			}
+			newSub.Usages = append(newSub.Usages, *usage)
+
+			bundleSubID := newSub.ID
+			userSub := &UserSubscription{
+				UserID:                 req.UserID,
+				GroupID:                gq.GroupID,
+				StartsAt:               now,
+				ExpiresAt:              newSub.ExpiresAt,
+				Status:                 domain.SubscriptionStatusActive,
+				DailyUsageUSD:          0,
+				WeeklyUsageUSD:         0,
+				MonthlyUsageUSD:        0,
+				BundleSubscriptionID:   &bundleSubID,
+				DailyLimitUSD:          gq.DailyLimitUSD,
+				WeeklyLimitUSD:         gq.WeeklyLimitUSD,
+				MonthlyLimitUSD:        gq.MonthlyLimitUSD,
+				DailyImageLimitCount:   gq.DailyImageLimitCount,
+				WeeklyImageLimitCount:  gq.WeeklyImageLimitCount,
+				MonthlyImageLimitCount: gq.MonthlyImageLimitCount,
+				DailyVideoLimitCount:   gq.DailyVideoLimitCount,
+				WeeklyVideoLimitCount:  gq.WeeklyVideoLimitCount,
+				MonthlyVideoLimitCount: gq.MonthlyVideoLimitCount,
+				Notes:                  fmt.Sprintf("Bridged from bundle plan %q (ID:%d) via upgrade", plan.Name, plan.ID),
+			}
+			if err := s.userSubRepo.Create(txCtx, userSub); err != nil {
+				return fmt.Errorf("bridge user subscription for group %d: %w", gq.GroupID, err)
+			}
+		}
+		upgraded = newSub
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	// 缓存失效在事务提交后执行，避免回滚后脏失效（与 ActivateBundle / RevokeBundle 同款）。
+	if s.cache != nil {
+		_ = s.cache.InvalidateBundleSubscriptionCache(ctx, req.UserID)
+	}
+	return upgraded, nil
 }
