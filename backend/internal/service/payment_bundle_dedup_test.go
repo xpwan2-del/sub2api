@@ -147,4 +147,61 @@ func TestEnsureNoDuplicateBundleOrder(t *testing.T) {
 		svc := &PaymentService{entClient: client}
 		require.NoError(t, svc.ensureNoDuplicateBundleOrder(ctx, uid))
 	})
+
+	// --- bundle_upgrade 防重覆盖（Task 6 硬要求） ---
+	// 守护：同一用户存在未完成 bundle_upgrade 订单时拒绝新建，杜绝两个升级支付回调并发
+	// 履约产生两个 active 新订阅（UpgradeBundle 的 status 校验在真实并发下是 TOCTOU，
+	// 订单防重是 UpgradeBundle 并发防护的上游主防线）。
+
+	t.Run("pending_bundle_upgrade_blocks", func(t *testing.T) {
+		client := newBundleDedupClient(t)
+		uid := createDedupUser(t, client, "upg-pending@example.com")
+		createDedupOrder(t, client, uid, OrderStatusPending, payment.OrderTypeBundleUpgrade, "upg-pending@example.com")
+		svc := &PaymentService{entClient: client}
+		require.Error(t, svc.ensureNoDuplicateBundleOrder(ctx, uid))
+	})
+
+	t.Run("paid_bundle_upgrade_blocks", func(t *testing.T) {
+		client := newBundleDedupClient(t)
+		uid := createDedupUser(t, client, "upg-paid@example.com")
+		createDedupOrder(t, client, uid, OrderStatusPaid, payment.OrderTypeBundleUpgrade, "upg-paid@example.com")
+		svc := &PaymentService{entClient: client}
+		require.Error(t, svc.ensureNoDuplicateBundleOrder(ctx, uid))
+	})
+
+	t.Run("recharging_bundle_upgrade_blocks", func(t *testing.T) {
+		client := newBundleDedupClient(t)
+		uid := createDedupUser(t, client, "upg-recharging@example.com")
+		createDedupOrder(t, client, uid, OrderStatusRecharging, payment.OrderTypeBundleUpgrade, "upg-recharging@example.com")
+		svc := &PaymentService{entClient: client}
+		require.Error(t, svc.ensureNoDuplicateBundleOrder(ctx, uid))
+	})
+
+	t.Run("completed_bundle_upgrade_allows", func(t *testing.T) {
+		client := newBundleDedupClient(t)
+		uid := createDedupUser(t, client, "upg-done@example.com")
+		createDedupOrder(t, client, uid, OrderStatusCompleted, payment.OrderTypeBundleUpgrade, "upg-done@example.com")
+		svc := &PaymentService{entClient: client}
+		require.NoError(t, svc.ensureNoDuplicateBundleOrder(ctx, uid))
+	})
+
+	t.Run("cancelled_bundle_upgrade_allows", func(t *testing.T) {
+		client := newBundleDedupClient(t)
+		uid := createDedupUser(t, client, "upg-cancelled@example.com")
+		createDedupOrder(t, client, uid, OrderStatusCancelled, payment.OrderTypeBundleUpgrade, "upg-cancelled@example.com")
+		svc := &PaymentService{entClient: client}
+		require.NoError(t, svc.ensureNoDuplicateBundleOrder(ctx, uid))
+	})
+
+	// 跨类型互斥：未完成的 bundle_upgrade 订单应阻塞后续 bundle 新建（反之亦然，
+	// pending_bundle_blocks 已覆盖 bundle→bundle_upgrade 方向，因查询同时匹配两种类型）。
+	t.Run("bundle_upgrade_blocks_cross_type", func(t *testing.T) {
+		client := newBundleDedupClient(t)
+		uid := createDedupUser(t, client, "cross@example.com")
+		// 既有未完成 bundle_upgrade 订单
+		createDedupOrder(t, client, uid, OrderStatusPending, payment.OrderTypeBundleUpgrade, "cross@example.com")
+		svc := &PaymentService{entClient: client}
+		// 同一用户即便想下普通 bundle 订单也应被拦截（ensureNoDuplicateBundleOrder 不区分类型）
+		require.Error(t, svc.ensureNoDuplicateBundleOrder(ctx, uid))
+	})
 }

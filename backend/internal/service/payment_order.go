@@ -38,10 +38,12 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	if err != nil {
 		return nil, err
 	}
-	// 中危3：bundle 严格防重——同一用户存在未完成 bundle 订单（PENDING/PAID/RECHARGING）时
-	// 拒绝新建，在扣款前拦截。bundle 是唯一订阅，重复下单必失败；双击/并发下单会导致两个
-	// 订单都支付后第二个激活失败（纯余额有余额回滚，第三方支付 markFailed 不退款致资金滞留）。
-	if req.OrderType == payment.OrderTypeBundle {
+	// 中危3：bundle 与 bundle_upgrade 严格防重——同一用户存在未完成 bundle/bundle_upgrade 订单
+	// （PENDING/PAID/RECHARGING）时拒绝新建，在扣款前拦截。bundle 是唯一订阅，重复下单必失败；
+	// 双击/并发下单会导致两个订单都支付后第二个激活失败（纯余额有余额回滚，第三方支付 markFailed
+	// 不退款致资金滞留）。bundle_upgrade 同样防重：UpgradeBundle 的 status 校验在真实并发下是
+	// TOCTOU，两个并发升级支付回调可能各创建一个 active 新订阅，订单防重是其上游主防线。
+	if req.OrderType == payment.OrderTypeBundle || req.OrderType == payment.OrderTypeBundleUpgrade {
 		if err := s.ensureNoDuplicateBundleOrder(ctx, req.UserID); err != nil {
 			return nil, err
 		}
@@ -159,6 +161,17 @@ func (s *PaymentService) validateOrderInput(ctx context.Context, req CreateOrder
 	}
 	if req.OrderType == payment.OrderTypeSubscription {
 		return s.validateSubOrder(ctx, req)
+	}
+	if req.OrderType == payment.OrderTypeBundleUpgrade {
+		// 升级订单：不触发普通 bundle 的"已有 active 订阅"冲突预检——升级本就基于已有 active 订阅。
+		// 目标 plan 存在/在售、source 订阅 active 的深度校验由升级结账 handler 完成（与 bundle
+		// 下单一致，见 bundle_handler.go）。此处仅做输入完整性校验，金额范围校验沿用下方通用分支。
+		if req.PlanID == 0 {
+			return nil, infraerrors.BadRequest("INVALID_INPUT", "bundle upgrade order requires a target plan")
+		}
+		if req.SourceBundleSubscriptionID == 0 {
+			return nil, infraerrors.BadRequest("INVALID_INPUT", "bundle upgrade order requires a source subscription")
+		}
 	}
 	if math.IsNaN(req.Amount) || math.IsInf(req.Amount, 0) || req.Amount <= 0 {
 		return nil, infraerrors.BadRequest("INVALID_AMOUNT", "amount must be a positive number")
@@ -331,6 +344,13 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 	if plan != nil {
 		b.SetPlanID(plan.ID).SetSubscriptionGroupID(plan.GroupID).SetSubscriptionDays(psComputeValidityDays(plan.ValidityDays, plan.ValidityUnit))
 	}
+	// bundle_upgrade 订单：plan 为 BundlePlan（非 SubscriptionPlan），不走上面的 plan 分支，
+	// 需显式写入目标 plan_id（fulfillment 要求 PlanID 非空）+ 升级专属字段（source 订阅、prorate credit）。
+	if req.OrderType == payment.OrderTypeBundleUpgrade {
+		b.SetPlanID(req.PlanID).
+			SetSourceBundleSubscriptionID(req.SourceBundleSubscriptionID).
+			SetProrateCredit(req.ProrateCredit)
+	}
 	order, err := b.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("create order: %w", err)
@@ -392,16 +412,20 @@ func (s *PaymentService) checkPendingLimit(ctx context.Context, tx *dbent.Tx, us
 	return nil
 }
 
-// ensureNoDuplicateBundleOrder 检查同一用户是否存在未完成的 bundle 订单
+// ensureNoDuplicateBundleOrder 检查同一用户是否存在未完成的 bundle 或 bundle_upgrade 订单
 // （PENDING/PAID/RECHARGING）。存在则返回 Conflict，阻止重复下单（中危3）。
 //
-// 已完成/失败/取消/过期或非 bundle 订单不阻塞——用户可取消旧未支付订单后重新下单。
+// bundle_upgrade 一并纳入防重（Task 6）：UpgradeBundle 的 status 校验在真实并发下是 TOCTOU，
+// 订单层防重是并发防护的上游主防线——若同一用户能同时持有两个未完成的 bundle/bundle_upgrade
+// 订单，两个支付回调并发履约可能各创建一个 active 新订阅。
+//
+// 已完成/失败/取消/过期或非 bundle 类订单不阻塞——用户可取消旧未支付订单后重新下单。
 // 查询用 entClient（非事务），与 checkPendingLimit 同为创建前的软校验。
 func (s *PaymentService) ensureNoDuplicateBundleOrder(ctx context.Context, userID int64) error {
 	count, err := s.entClient.PaymentOrder.Query().
 		Where(
 			paymentorder.UserIDEQ(userID),
-			paymentorder.OrderTypeEQ(payment.OrderTypeBundle),
+			paymentorder.OrderTypeIn(payment.OrderTypeBundle, payment.OrderTypeBundleUpgrade),
 			paymentorder.StatusIn(OrderStatusPending, OrderStatusPaid, OrderStatusRecharging),
 		).
 		Count(ctx)

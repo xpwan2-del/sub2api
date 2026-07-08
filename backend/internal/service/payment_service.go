@@ -86,6 +86,11 @@ type CreateOrderRequest struct {
 	PlanID          int64
 	Locale          string
 	UseBalance      bool // 使用账户余额抵扣（用于套餐购买）
+	// 升级订单（OrderType=bundle_upgrade）专属字段：
+	// SourceBundleSubscriptionID 指向被升级的旧订阅；ProrateCredit 为锁定的旧套餐剩余价值。
+	// 由 PreviewUpgrade 计算、升级结账 handler 透传，履约时 UpgradeBundle 据此抵扣差价。
+	SourceBundleSubscriptionID int64
+	ProrateCredit              float64
 }
 
 type CreateOrderResponse struct {
