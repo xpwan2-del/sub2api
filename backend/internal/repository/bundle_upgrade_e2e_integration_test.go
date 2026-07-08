@@ -627,6 +627,9 @@ func TestBundleUpgradeE2E_IdempotentFulfillment(t *testing.T) {
 	upgradeSubsAfter1 := e.userBundleSubsOfSource(user.ID, service.BundleSourceUpgrade)
 	require.Len(t, upgradeSubsAfter1, 1, "首次履约应创建 1 条 upgrade 订阅")
 
+	// 记录 Layer1 完成后的余额，供 Layer3 幂等重入断言用（重入不应触发退款 → 余额不应变化）。
+	balanceAfterLayer1 := e.userBalance(user.ID)
+
 	// —— 第二次（订单级幂等）：订单已 Completed，顶部直接返回，不进 doBundleUpgrade ——
 	require.NoError(t, e.paySvc.ExecuteBundleUpgradeFulfillment(ctx, order.ID))
 	upgradeSubsAfter2 := e.userBundleSubsOfSource(user.ID, service.BundleSourceUpgrade)
@@ -649,6 +652,16 @@ func TestBundleUpgradeE2E_IdempotentFulfillment(t *testing.T) {
 
 	// 旧订阅状态不变（仍 upgraded，未被二次处理）。
 	require.Equal(t, service.BundleStatusUpgraded, e.reloadSub(starterSub.ID).Status)
+
+	// 灵魂断言（加固）：直接约束"重复回调 = 无副作用"核心不变量。
+	// 若 doBundleUpgrade:810 的 hasAuditLog(BUNDLE_UPGRADE_SUCCESS) 守卫被破坏，第三次调用会进入
+	// UpgradeBundle → 旧订阅已 upgraded → ErrBundleExpired → refundUpgradeToBalance，导致余额增加
+	// 且写出 BUNDLE_UPGRADE_REFUND_BALANCE 审计。原 upgradeSubsAfter3==1 断言无法捕获（refund 不
+	// 建新订阅）。这两个断言补上该缺口。
+	require.InDelta(t, balanceAfterLayer1, e.userBalance(user.ID), 0.0001,
+		"幂等重入不应触发退款（余额不应变化）")
+	require.False(t, e.hasAudit(order.ID, "BUNDLE_UPGRADE_REFUND_BALANCE"),
+		"幂等重入不应产生退款审计")
 }
 
 // =============================================================================
