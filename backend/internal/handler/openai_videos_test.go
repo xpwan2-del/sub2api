@@ -78,6 +78,7 @@ func TestOpenAIVideosHandler_GetPollMissingBinding_Returns404(t *testing.T) {
 		nil, nil, nil, nil, nil, nil, nil, nil, // 9-16: schedulerSnapshot, concurrency, billing, rateLimit, billingCache, httpUpstream, deferred, openAITokenProvider
 		nil,                     // 17: grokTokenProvider (上游 main 新增)
 		nil, nil, nil, nil, nil, // 18-22: resolver, channelService, balanceNotifyService, settingService, userPlatformQuotaRepo
+		nil,                   // 23: bundleUsageService
 	)
 	billingService := service.NewBillingCacheService(nil, nil, nil, nil, nil, nil, cfg, nil)
 	t.Cleanup(billingService.Stop)

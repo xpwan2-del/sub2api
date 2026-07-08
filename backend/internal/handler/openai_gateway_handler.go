@@ -85,6 +85,11 @@ func usageRecordContext(parent context.Context, base context.Context) context.Co
 	if requestID, _ := parent.Value(ctxkey.RequestID).(string); strings.TrimSpace(requestID) != "" {
 		base = context.WithValue(base, ctxkey.RequestID, strings.TrimSpace(requestID))
 	}
+	// 透传套餐路由中间件已解析的分组额度（含 model_pattern），让异步计费 worker 命中正确的
+	// usage 行；否则 AccumulateUsage 会 fallback 重查 plan，同一 group 配多条模型级 quota 时取错 pattern。
+	if q := parent.Value(ctxkey.BundleResolvedQuota); q != nil {
+		base = context.WithValue(base, ctxkey.BundleResolvedQuota, q)
+	}
 	return base
 }
 
