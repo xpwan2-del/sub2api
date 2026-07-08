@@ -113,18 +113,10 @@ func (s *BundleUsageService) AccumulateUsage(ctx context.Context, bundleSubID, g
 		return ErrBundleNotFound
 	}
 
-	// 窗口滚动：日/周/月独立判断是否过期。过期窗口在 repo 内清零（USD + count）
-	// 并把 window_start 推进到 now 后再累加本次值；未过期窗口直接 Add。
-	now := time.Now()
-	roll := WindowRoll{
-		Daily:           IsWindowExpired(&usage.DailyWindowStart, BundleDailyWindow),
-		Weekly:          IsWindowExpired(&usage.WeeklyWindowStart, BundleWeeklyWindow),
-		Monthly:         IsWindowExpired(&usage.MonthlyWindowStart, BundleMonthlyWindow),
-		NewDailyStart:   now,
-		NewWeeklyStart:  now,
-		NewMonthlyStart: now,
-	}
-	if err := s.usageRepo.IncrementUsage(ctx, usage.ID, costUSD, imageCount, videoCount, roll); err != nil {
+	// 窗口滚动判断下推到 repo：在事务内 FOR UPDATE 锁行后，基于 DB 真实 window_start
+	// 判断过期（而非 service 层读到的可能已过期的快照），杜绝并发下窗口边界 Set 互相
+	// 覆盖、丢失计费（历史 bug H1）。service 仅负责定位 usage 行与传入基准时刻。
+	if err := s.usageRepo.IncrementUsage(ctx, usage.ID, costUSD, imageCount, videoCount, time.Now()); err != nil {
 		return fmt.Errorf("increment bundle usage: %w", err)
 	}
 	return nil

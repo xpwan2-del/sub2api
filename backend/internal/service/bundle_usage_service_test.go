@@ -5,6 +5,7 @@ package service
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -13,55 +14,46 @@ import (
 )
 
 // fakeUsageRepo 内存实现的 BundleUsageRepository，仅覆盖测试需要的子集。
+// 用 mutex 模拟 DB 行锁，IncrementUsage 在锁内基于 fake 自身 window_start 判断过期，
+// 与修复后 bundleUsageRepository.IncrementUsage（事务内 FOR UPDATE + rollBundleWindow）同语义，
+// 从而让并发测试能在单测层验证「窗口边界不丢累加」（H1）。
 type fakeUsageRepo struct {
+	mu          sync.Mutex
 	usage       *BundleSubscriptionUsage
-	lastRoll    WindowRoll
 	lastPattern string
 }
 
 func (f *fakeUsageRepo) GetBySubscriptionAndGroup(_ context.Context, _, _ int64, pattern string) (*BundleSubscriptionUsage, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.lastPattern = pattern
 	return f.usage, nil
 }
 func (f *fakeUsageRepo) Create(_ context.Context, _ *BundleSubscriptionUsage) error { return nil }
-func (f *fakeUsageRepo) IncrementUsage(_ context.Context, _ int64, costUSD float64, imageCount, videoCount int, roll WindowRoll) error {
-	f.lastRoll = roll
+func (f *fakeUsageRepo) IncrementUsage(_ context.Context, _ int64, costUSD float64, imageCount, videoCount int, now time.Time) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if f.usage == nil {
 		return nil
 	}
-	// 复刻 repo 的窗口语义：过期窗口 Set（重置为本次值），未过期窗口 Add（累加）。
-	// 图片/视频两个维度对称处理。
-	if roll.Daily {
-		f.usage.DailyUsageUSD = costUSD
-		f.usage.DailyImageUsageCount = imageCount
-		f.usage.DailyVideoUsageCount = videoCount
-		f.usage.DailyWindowStart = roll.NewDailyStart
-	} else {
-		f.usage.DailyUsageUSD += costUSD
-		f.usage.DailyImageUsageCount += imageCount
-		f.usage.DailyVideoUsageCount += videoCount
-	}
-	if roll.Weekly {
-		f.usage.WeeklyUsageUSD = costUSD
-		f.usage.WeeklyImageUsageCount = imageCount
-		f.usage.WeeklyVideoUsageCount = videoCount
-		f.usage.WeeklyWindowStart = roll.NewWeeklyStart
-	} else {
-		f.usage.WeeklyUsageUSD += costUSD
-		f.usage.WeeklyImageUsageCount += imageCount
-		f.usage.WeeklyVideoUsageCount += videoCount
-	}
-	if roll.Monthly {
-		f.usage.MonthlyUsageUSD = costUSD
-		f.usage.MonthlyImageUsageCount = imageCount
-		f.usage.MonthlyVideoUsageCount = videoCount
-		f.usage.MonthlyWindowStart = roll.NewMonthlyStart
-	} else {
-		f.usage.MonthlyUsageUSD += costUSD
-		f.usage.MonthlyImageUsageCount += imageCount
-		f.usage.MonthlyVideoUsageCount += videoCount
-	}
+	f.applyWindow(&f.usage.DailyUsageUSD, &f.usage.DailyImageUsageCount, &f.usage.DailyVideoUsageCount, &f.usage.DailyWindowStart, now, BundleDailyWindow, costUSD, imageCount, videoCount)
+	f.applyWindow(&f.usage.WeeklyUsageUSD, &f.usage.WeeklyImageUsageCount, &f.usage.WeeklyVideoUsageCount, &f.usage.WeeklyWindowStart, now, BundleWeeklyWindow, costUSD, imageCount, videoCount)
+	f.applyWindow(&f.usage.MonthlyUsageUSD, &f.usage.MonthlyImageUsageCount, &f.usage.MonthlyVideoUsageCount, &f.usage.MonthlyWindowStart, now, BundleMonthlyWindow, costUSD, imageCount, videoCount)
 	return nil
+}
+
+// applyWindow 模拟 rollBundleWindow：过期（now-start>=dur）置为本次值并推进起点，否则累加。
+func (f *fakeUsageRepo) applyWindow(usd *float64, img, vid *int, start *time.Time, now time.Time, dur time.Duration, costUSD float64, ic, vc int) {
+	if now.Sub(*start) >= dur {
+		*usd = costUSD
+		*img = ic
+		*vid = vc
+		*start = now
+		return
+	}
+	*usd += costUSD
+	*img += ic
+	*vid += vc
 }
 func (f *fakeUsageRepo) ResetDailyWindow(_ context.Context, _ int64, _ time.Time) error  { return nil }
 func (f *fakeUsageRepo) ResetWeeklyWindow(_ context.Context, _ int64, _ time.Time) error { return nil }
@@ -284,12 +276,45 @@ func TestAccumulateUsage_RollsExpiredDailyWindow(t *testing.T) {
 	if usage.MonthlyUsageUSD != 10.5 {
 		t.Errorf("monthly usd: active window should accumulate 10+0.5=10.5, got %v", usage.MonthlyUsageUSD)
 	}
-	// service 必须正确判定窗口过期状态并传给 repo。
-	if !repo.lastRoll.Daily {
-		t.Errorf("roll.Daily should be true for expired daily window")
+}
+
+// TestAccumulateUsage_ConcurrentExpiredWindow_NoLostUpdate 守护 H1：窗口过期瞬间并发累加，
+// 最终用量必须等于所有请求 cost 之和，不得因「Set 互相覆盖」丢失。旧实现（service 读
+// window_start 快照算 roll → 无条件 Set/Add）在并发下会丢失中间累加；新实现把窗口判断
+// 下推进 repo 事务（fake 用 mutex 模拟 DB 行锁），第一个请求重置、其余累加，结果精确。
+func TestAccumulateUsage_ConcurrentExpiredWindow_NoLostUpdate(t *testing.T) {
+	const groupID int64 = 100
+	const goroutines = 50
+	const perCost = 1.0
+
+	now := time.Now()
+	plan := &BundlePlan{GroupQuotas: []BundlePlanGroupQuota{{GroupID: groupID}}}
+	sub := &BundleSubscription{PlanID: 1, Status: BundleStatusActive}
+	// 日窗口已过期 25h → 触发滚动重置路径（H1 的危险区间）。
+	usage := &BundleSubscriptionUsage{
+		ID: 50, BundleSubscriptionID: 1, GroupID: groupID,
+		DailyWindowStart: now.Add(-25 * time.Hour),
 	}
-	if repo.lastRoll.Monthly {
-		t.Errorf("roll.Monthly should be false for active monthly window")
+	repo := &fakeUsageRepo{usage: usage}
+	svc := NewBundleUsageService(repo, &fakeSubRepo{sub: sub}, &fakePlanRepo{plan: plan})
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+	for i := 0; i < goroutines; i++ {
+		go func() {
+			defer wg.Done()
+			_ = svc.AccumulateUsage(context.Background(), 1, groupID, perCost, 1, 0)
+		}()
+	}
+	wg.Wait()
+
+	// 50 次并发 × 1.0：首请求重置为 1.0，其余 49 次累加 → 50.0。旧实现会远小于此。
+	want := float64(goroutines) * perCost
+	if usage.DailyUsageUSD != want {
+		t.Errorf("daily usd: concurrent expired-window increment lost updates, want %v, got %v", want, usage.DailyUsageUSD)
+	}
+	if usage.DailyImageUsageCount != goroutines {
+		t.Errorf("daily image count: concurrent increment lost updates, want %d, got %d", goroutines, usage.DailyImageUsageCount)
 	}
 }
 

@@ -50,7 +50,7 @@ func (bundleUsageRepoNoop) GetBySubscriptionAndGroup(context.Context, int64, int
 func (bundleUsageRepoNoop) Create(context.Context, *BundleSubscriptionUsage) error {
 	panic("unexpected Create call")
 }
-func (bundleUsageRepoNoop) IncrementUsage(context.Context, int64, float64, int, int, WindowRoll) error {
+func (bundleUsageRepoNoop) IncrementUsage(context.Context, int64, float64, int, int, time.Time) error {
 	panic("unexpected IncrementUsage call")
 }
 func (bundleUsageRepoNoop) ResetDailyWindow(context.Context, int64, time.Time) error {
@@ -260,7 +260,7 @@ func (s *accumulateUsageRepoStub) GetBySubscriptionAndGroup(_ context.Context, _
 	return &cp, nil
 }
 
-func (s *accumulateUsageRepoStub) IncrementUsage(_ context.Context, id int64, costUSD float64, imageCount, videoCount int, _ WindowRoll) error {
+func (s *accumulateUsageRepoStub) IncrementUsage(_ context.Context, id int64, costUSD float64, imageCount, videoCount int, _ time.Time) error {
 	if s.incrementErr != nil {
 		return s.incrementErr
 	}

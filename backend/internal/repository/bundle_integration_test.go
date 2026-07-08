@@ -234,8 +234,8 @@ func (s *BundleSubscriptionLifecycleSuite) TestIncrementUsage_AccumulatesCorrect
 	// Accumulate usage incrementally
 	cost1 := 0.5
 	cost2 := 1.25
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, cost1, 1, 0, service.WindowRoll{}))
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, cost2, 1, 0, service.WindowRoll{}))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, cost1, 1, 0, time.Now()))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, cost2, 1, 0, time.Now()))
 
 	// Verify accumulated correctly
 	usage, err = s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, group.ID, "")
@@ -243,6 +243,51 @@ func (s *BundleSubscriptionLifecycleSuite) TestIncrementUsage_AccumulatesCorrect
 	s.Require().Equal(cost1+cost2, usage.DailyUsageUSD, "daily usage should be sum of increments")
 	s.Require().Equal(cost1+cost2, usage.WeeklyUsageUSD, "weekly usage should be sum of increments")
 	s.Require().Equal(cost1+cost2, usage.MonthlyUsageUSD, "monthly usage should be sum of increments")
+}
+
+// TestIncrementUsage_RollsExpiredWindowAndAccumulatesActive 验证修复 H1 后的 repo 层窗口滚动
+// 在真实 PG 上的端到端行为：过期窗口重置为本次值、未过期窗口累加。与 service 层的
+// TestAccumulateUsage_RollsExpiredDailyWindow 互补，此处覆盖事务内 FOR UPDATE + rollBundleWindow
+// 的实际 SQL 语义（含 ErrTxStarted 事务隔离复用分支）。
+func (s *BundleSubscriptionLifecycleSuite) TestIncrementUsage_RollsExpiredWindowAndAccumulatesActive() {
+	user := s.mustCreateUser("roll-window@test.com")
+	group := s.mustCreateGroup("g-roll", domain.PlatformOpenAI)
+
+	plan := s.mustCreatePlan("Plan", []service.CreateGroupQuotaRequest{
+		{GroupID: group.ID, QuotaScope: service.QuotaScopePlatform},
+	})
+
+	bundleSub, err := s.subSvc.ActivateBundle(s.ctx, &service.ActivateBundleRequest{
+		UserID: user.ID, PlanID: plan.ID, Source: service.BundleSourcePurchase,
+	})
+	s.Require().NoError(err)
+
+	usage, err := s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, group.ID, "")
+	s.Require().NoError(err)
+	s.Require().NotNil(usage)
+
+	// 手动把日窗口推到 25h 前（过期），并写入历史值 99；周/月窗口保持刚激活（未过期）。
+	_, err = s.client.BundleSubscriptionUsage.UpdateOneID(usage.ID).
+		SetDailyWindowStart(time.Now().Add(-25 * time.Hour)).
+		SetDailyUsageUsd(99.0).
+		SetDailyImageUsageCount(99).
+		Save(s.ctx)
+	s.Require().NoError(err)
+
+	// 累加 5.0 USD + 2 图 + 1 视频。
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 5.0, 2, 1, time.Now()))
+
+	usage, err = s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, group.ID, "")
+	s.Require().NoError(err)
+
+	// 日窗口过期 → 重置为本次值（历史 99 被清零为 5.0 / img 2 / vid 1）。
+	s.Require().Equal(5.0, usage.DailyUsageUSD, "expired daily window should reset to current cost")
+	s.Require().Equal(2, usage.DailyImageUsageCount, "expired daily image count should reset")
+	s.Require().Equal(1, usage.DailyVideoUsageCount, "expired daily video count should reset")
+	// 周/月窗口未过期 → 在初值 0 上累加。
+	s.Require().Equal(5.0, usage.WeeklyUsageUSD, "active weekly window should accumulate from 0")
+	s.Require().Equal(2, usage.WeeklyImageUsageCount, "active weekly image count should accumulate")
+	s.Require().Equal(5.0, usage.MonthlyUsageUSD, "active monthly window should accumulate from 0")
 }
 
 // TestCheckQuotaEligibility_WithinLimits
@@ -264,7 +309,7 @@ func (s *BundleSubscriptionLifecycleSuite) TestCheckQuotaEligibility_WithinLimit
 	s.Require().NoError(err)
 
 	// Stay under the daily limit
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 5.0, 1, 0, service.WindowRoll{}))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 5.0, 1, 0, time.Now()))
 
 	result, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, group.ID, service.ModalityAny)
 	s.Require().NoError(err, "should pass when under limits")
@@ -290,7 +335,7 @@ func (s *BundleSubscriptionLifecycleSuite) TestCheckQuotaEligibility_ExceedsDail
 	s.Require().NoError(err)
 
 	// Exceed daily limit
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 5.01, 1, 0, service.WindowRoll{}))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 5.01, 1, 0, time.Now()))
 
 	result, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, group.ID, service.ModalityAny)
 	s.Require().NoError(err)
@@ -314,7 +359,7 @@ func (s *BundleSubscriptionLifecycleSuite) TestCheckQuotaEligibility_ExceedsWeek
 
 	usage, err := s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, group.ID, "")
 	s.Require().NoError(err)
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 10.01, 1, 0, service.WindowRoll{}))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 10.01, 1, 0, time.Now()))
 
 	result, err := s.usageSvc.CheckQuotaEligibility(s.ctx, bundleSub.ID, group.ID, service.ModalityAny)
 	s.Require().NoError(err)
@@ -341,7 +386,7 @@ func (s *BundleSubscriptionLifecycleSuite) TestGetBundleUsageProgress_ReturnsAll
 	// Add some usage to openai group
 	usage, err := s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, openaiGroup.ID, "")
 	s.Require().NoError(err)
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 1.5, 1, 0, service.WindowRoll{}))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, usage.ID, 1.5, 1, 0, time.Now()))
 
 	progress, err := s.subSvc.GetBundleUsageProgress(s.ctx, bundleSub.ID)
 	s.Require().NoError(err)
@@ -597,7 +642,7 @@ func (s *BundleRouteResolverSuite) TestResolveGroup_IndependentQuotaPerGroup() {
 
 	openaiUsage, err := s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, openaiGroup.ID, "")
 	s.Require().NoError(err)
-	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, openaiUsage.ID, 8.0, 1, 0, service.WindowRoll{}))
+	s.Require().NoError(s.usageRepo.IncrementUsage(s.ctx, openaiUsage.ID, 8.0, 1, 0, time.Now()))
 
 	// Anthropic group usage should be unaffected
 	anthroUsage, err := s.usageRepo.GetBySubscriptionAndGroup(s.ctx, bundleSub.ID, anthroGroup.ID, "")

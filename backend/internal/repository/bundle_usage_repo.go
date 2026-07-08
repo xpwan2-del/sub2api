@@ -6,6 +6,8 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
@@ -76,33 +78,75 @@ func (r *bundleUsageRepository) Create(ctx context.Context, usage *service.Bundl
 	return nil
 }
 
-// IncrementUsage 累加日/周/月用量（USD + 次数），并在过期窗口上滚动重置。
-// 对每个窗口：若 roll 标记为过期，则把该窗口的 USD/count 直接置为本次值（等价于
-// 清零后累加）并更新 window_start；否则在原值上 Add。三条窗口独立判断，单次往返。
-// IncrementUsage applies costUSD/count to each window, rolling (resetting) any window
-// flagged expired in roll and accumulating (Add) the rest, in a single update.
-func (r *bundleUsageRepository) IncrementUsage(ctx context.Context, id int64, costUSD float64, imageCount, videoCount int, roll service.WindowRoll) error {
-	client := clientFromContext(ctx, r.client)
+// IncrementUsage 原子累加日/周/月用量（USD + 图片/视频次数），并在过期窗口上滚动重置。
+//
+// 并发安全设计（修复历史 bug H1）：判断窗口是否过期与清零/累加写入必须在同一原子操作内。
+// 旧实现由 service 层先读到 window_start 快照、算出 roll 标志、再无条件 UPDATE（Set/Add），
+// 窗口边界瞬间的并发请求会各自基于过期快照算出 roll=true、各自 Set，互相覆盖、丢失计费。
+// 现改为事务内 SELECT ... FOR UPDATE 锁行，基于 DB 真实 window_start 判断过期：过期则
+// 置为本次值并推进 window_start，否则累加。与 user_platform_quota_repo.IncrementUsageWithReset
+// 同范式。三条窗口独立判断，单次事务往返。
+func (r *bundleUsageRepository) IncrementUsage(ctx context.Context, id int64, costUSD float64, imageCount, videoCount int, now time.Time) error {
+	return r.withTx(ctx, func(txCtx context.Context, txClient *dbent.Client) error {
+		existing, err := txClient.BundleSubscriptionUsage.Query().
+			Where(bundlesubscriptionusage.IDEQ(id)).
+			ForUpdate().
+			Only(txCtx)
+		if err != nil {
+			return translatePersistenceError(err, service.ErrBundleNotFound, nil)
+		}
 
-	update := client.BundleSubscriptionUsage.UpdateOneID(id)
-	if roll.Daily {
-		update.SetDailyUsageUsd(costUSD).SetDailyImageUsageCount(imageCount).SetDailyVideoUsageCount(videoCount).SetDailyWindowStart(roll.NewDailyStart)
-	} else {
-		update.AddDailyUsageUsd(costUSD).AddDailyImageUsageCount(imageCount).AddDailyVideoUsageCount(videoCount)
-	}
-	if roll.Weekly {
-		update.SetWeeklyUsageUsd(costUSD).SetWeeklyImageUsageCount(imageCount).SetWeeklyVideoUsageCount(videoCount).SetWeeklyWindowStart(roll.NewWeeklyStart)
-	} else {
-		update.AddWeeklyUsageUsd(costUSD).AddWeeklyImageUsageCount(imageCount).AddWeeklyVideoUsageCount(videoCount)
-	}
-	if roll.Monthly {
-		update.SetMonthlyUsageUsd(costUSD).SetMonthlyImageUsageCount(imageCount).SetMonthlyVideoUsageCount(videoCount).SetMonthlyWindowStart(roll.NewMonthlyStart)
-	} else {
-		update.AddMonthlyUsageUsd(costUSD).AddMonthlyImageUsageCount(imageCount).AddMonthlyVideoUsageCount(videoCount)
+		dUSD, dImg, dVid, dStart := rollBundleWindow(existing.DailyUsageUsd, existing.DailyImageUsageCount, existing.DailyVideoUsageCount, existing.DailyWindowStart, now, service.BundleDailyWindow, costUSD, imageCount, videoCount)
+		wUSD, wImg, wVid, wStart := rollBundleWindow(existing.WeeklyUsageUsd, existing.WeeklyImageUsageCount, existing.WeeklyVideoUsageCount, existing.WeeklyWindowStart, now, service.BundleWeeklyWindow, costUSD, imageCount, videoCount)
+		mUSD, mImg, mVid, mStart := rollBundleWindow(existing.MonthlyUsageUsd, existing.MonthlyImageUsageCount, existing.MonthlyVideoUsageCount, existing.MonthlyWindowStart, now, service.BundleMonthlyWindow, costUSD, imageCount, videoCount)
+
+		_, err = existing.Update().
+			SetDailyUsageUsd(dUSD).SetDailyImageUsageCount(dImg).SetDailyVideoUsageCount(dVid).SetDailyWindowStart(dStart).
+			SetWeeklyUsageUsd(wUSD).SetWeeklyImageUsageCount(wImg).SetWeeklyVideoUsageCount(wVid).SetWeeklyWindowStart(wStart).
+			SetMonthlyUsageUsd(mUSD).SetMonthlyImageUsageCount(mImg).SetMonthlyVideoUsageCount(mVid).SetMonthlyWindowStart(mStart).
+			Save(txCtx)
+		return translatePersistenceError(err, nil, nil)
+	})
+}
+
+// withTx 在数据库事务中执行 fn；若 ctx 已携带外层事务（集成测试隔离事务 / 上层事务）
+// 则直接复用，不再嵌套开事务。与 BundleSubscriptionService.withActivationTx 同范式：
+// r.client 已处于事务中时 Tx() 返回 ErrTxStarted，此时复用既有 client，fn 内的
+// FOR UPDATE/Update 仍在该事务内执行。
+func (r *bundleUsageRepository) withTx(ctx context.Context, fn func(txCtx context.Context, txClient *dbent.Client) error) error {
+	if tx := dbent.TxFromContext(ctx); tx != nil {
+		return fn(ctx, tx.Client())
 	}
 
-	_, err := update.Save(ctx)
-	return translatePersistenceError(err, nil, nil)
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		if errors.Is(err, dbent.ErrTxStarted) {
+			return fn(ctx, r.client)
+		}
+		return fmt.Errorf("begin bundle usage transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	txCtx := dbent.NewTxContext(ctx, tx)
+	if err := fn(txCtx, tx.Client()); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit bundle usage transaction: %w", err)
+	}
+	return nil
+}
+
+// rollBundleWindow 计算单个滚动窗口累加后的 (USD, imageCount, videoCount, windowStart)。
+// 过期条件：now - prevStart >= duration（prevStart 为零值/历史默认时同样判为过期）。
+// 过期 → 重置为本次值并以 now 为新窗口起点；未过期 → 在原值上累加并保留原起点。
+// 纯函数，供 IncrementUsage 在事务锁内调用，保证「判断 + 写入」原子。
+func rollBundleWindow(prevUSD float64, prevImg, prevVid int, prevStart, now time.Time, duration time.Duration, costUSD float64, img, vid int) (float64, int, int, time.Time) {
+	if now.Sub(prevStart) >= duration {
+		return costUSD, img, vid, now
+	}
+	return prevUSD + costUSD, prevImg + img, prevVid + vid, prevStart
 }
 
 // ResetDailyWindow 重置日窗口：清零日用量并更新窗口起点
