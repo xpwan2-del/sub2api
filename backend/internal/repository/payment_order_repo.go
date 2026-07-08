@@ -24,14 +24,19 @@ func NewPaymentOrderReader(client *dbent.Client) service.PaymentOrderReader {
 	return &paymentOrderReaderRepository{client: client}
 }
 
-// GetPaidAmountByBundleSub 取该 bundle 订阅对应已完成 bundle 购买订单的实付金额（取最早一笔）。
+// GetPaidAmountByBundleSub 取该 bundle 订阅对应已完成购买订单的实付金额（取最早一笔）。
+// 同时匹配 bundle（普通购买）与 bundle_upgrade（升级差价）两种订单类型：
+// 一个 bundle 订阅只对应一笔购买订单——普通购买订阅对应 bundle 订单，
+// 升级产生的订阅对应 bundle_upgrade 订单。二次升级（pro→enterprise）时，
+// pro 订阅的购买订单是 bundle_upgrade 类型，credit 必须基于该升级订单反查
+// （见 docs/BUNDLE_UPGRADE_DESIGN.md §6.3）。
 // 找不到订单（兑换/赠送来源）返回 0,nil，不视作错误。
 func (r *paymentOrderReaderRepository) GetPaidAmountByBundleSub(ctx context.Context, bundleSubID int64) (float64, error) {
 	client := clientFromContext(ctx, r.client)
 	o, err := client.PaymentOrder.Query().
 		Where(
 			paymentorder.BundleSubscriptionIDEQ(bundleSubID),
-			paymentorder.OrderTypeEQ(payment.OrderTypeBundle),
+			paymentorder.OrderTypeIn(payment.OrderTypeBundle, payment.OrderTypeBundleUpgrade),
 			paymentorder.StatusEQ(payment.OrderStatusCompleted),
 		).
 		Order(dbent.Asc(paymentorder.FieldCreatedAt)).
