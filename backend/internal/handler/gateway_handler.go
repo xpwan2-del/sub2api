@@ -520,7 +520,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			// ForceCacheBilling 提前拍成标量，避免 worker 闭包保活 failover 状态里的响应体。
 			forceCacheBilling := fs.ForceCacheBilling
 			quotaPlatform := service.QuotaPlatform(c.Request.Context(), apiKey)
-			h.submitUsageRecordTask(c.Request.Context(), func(ctx context.Context) {
+			h.submitUsageRecordTaskForMedia(c.Request.Context(), result, func(ctx context.Context) {
 				if err := h.gatewayService.RecordUsage(ctx, &service.RecordUsageInput{
 					Result:             result,
 					QuotaPlatform:      quotaPlatform,
@@ -950,7 +950,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			// ForceCacheBilling 提前拍成标量，避免 worker 闭包保活 failover 状态里的响应体。
 			forceCacheBilling := fs.ForceCacheBilling
 			quotaPlatform := service.QuotaPlatform(c.Request.Context(), currentAPIKey)
-			h.submitUsageRecordTask(c.Request.Context(), func(ctx context.Context) {
+			h.submitUsageRecordTaskForMedia(c.Request.Context(), result, func(ctx context.Context) {
 				if err := h.gatewayService.RecordUsage(ctx, &service.RecordUsageInput{
 					Result:             result,
 					QuotaPlatform:      quotaPlatform,
@@ -2162,6 +2162,53 @@ func (h *GatewayHandler) submitUsageRecordTask(parent context.Context, task serv
 		}
 	}()
 	task(ctx)
+}
+
+// submitMandatoryUsageRecordTask 强制提交使用量记录任务：worker 池饱和丢弃时降级为同步执行，
+// 保证计费不丢。与 OpenAIGatewayHandler.submitMandatoryUsageRecordTask 同语义。供媒体产出
+// （图片/视频）等「不可丢失」的计费任务使用。
+func (h *GatewayHandler) submitMandatoryUsageRecordTask(parent context.Context, task service.UsageRecordTask) {
+	if task == nil {
+		return
+	}
+	task = wrapUsageRecordTaskContext(parent, task)
+	if h.usageRecordWorkerPool != nil {
+		if mode := h.usageRecordWorkerPool.Submit(task); mode != service.UsageRecordSubmitModeDropped {
+			return
+		}
+		logger.L().With(
+			zap.String("component", "handler.gateway.usage"),
+		).Warn("gateway.usage_record_task_mandatory_sync_fallback")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			logger.L().With(
+				zap.String("component", "handler.gateway.usage"),
+				zap.Any("panic", recovered),
+			).Error("gateway.usage_record_task_panic_recovered")
+		}
+	}()
+	task(ctx)
+}
+
+// submitUsageRecordTaskForMedia 按 ForwardResult 媒体产出决定计费任务提交策略：
+// 图片产出（ImageCount>0，如 Gemini Imagen 经兼容路径——gemini_messages_compat_service
+// 构造 ForwardResult 时填充 ImageCount）走 mandatory（池饱和时同步兜底，不可丢弃）；否则走
+// 可丢弃的 submitUsageRecordTask。按次计费丢失会让 count 永不增长、次数/额度限额失效
+// （H3-ext：通用网关路径曾对所有请求用可丢弃路径，Gemini 图片计费可被丢）。
+//
+// 视频计费【不】经过本路径：视频走 OpenAI 专用 /v1/videos 端点（openai_videos.go 填充
+// VideoCount=1），由 OpenAIGatewayHandler.submitOpenAIUsageRecordTask（H3，ImageCount||VideoCount）
+// 保护。通用网关（messages/responses/chat_completions/gemini）不处理视频，其 ForwardResult.VideoCount
+// 恒为 0；此处保留 VideoCount 判定仅为前瞻（若将来通用网关支持视频产出则自动生效）。
+func (h *GatewayHandler) submitUsageRecordTaskForMedia(parent context.Context, result *service.ForwardResult, task service.UsageRecordTask) {
+	if result != nil && (result.ImageCount > 0 || result.VideoCount > 0) {
+		h.submitMandatoryUsageRecordTask(parent, task)
+		return
+	}
+	h.submitUsageRecordTask(parent, task)
 }
 
 // getUserMsgQueueMode 获取当前请求的 UMQ 模式
