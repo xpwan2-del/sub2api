@@ -108,6 +108,31 @@ func (s *BundleSubscriptionLifecycleSuite) mustCreatePlan(name string, quotas []
 
 // --- tests ---
 
+// TestExtendExpiryByDays_PGHappyPath 验证中危1：ExtendExpiryByDays 的 PG 原子加 SQL
+// 正确延期 N 天。unit 测试用 stub 不执行真 SQL，此处在 testcontainers PG 下验证
+// `expires_at = expires_at + $1 * interval '1 day'` 语法正确且延期天数符合预期。
+func (s *BundleSubscriptionLifecycleSuite) TestExtendExpiryByDays_PGHappyPath() {
+	user := s.mustCreateUser("extend-bydays@example.com")
+	group := s.mustCreateGroup("ext-group", domain.PlatformOpenAI)
+	plan := s.mustCreatePlan("Ext Plan", []service.CreateGroupQuotaRequest{
+		{GroupID: group.ID, QuotaScope: service.QuotaScopePlatform, DailyLimitUSD: 10},
+	})
+
+	bundle, err := s.subSvc.ActivateBundle(s.ctx, &service.ActivateBundleRequest{
+		UserID: user.ID, PlanID: plan.ID, Source: service.BundleSourcePurchase,
+	})
+	s.Require().NoError(err)
+	orig := bundle.ExpiresAt
+
+	s.Require().NoError(s.subRepo.ExtendExpiryByDays(s.ctx, bundle.ID, 10))
+
+	got, err := s.subRepo.GetByID(s.ctx, bundle.ID)
+	s.Require().NoError(err)
+	// 延期 10 天（允许 2 秒误差吸收时钟/PG 往返）
+	s.Require().WithinDuration(orig.AddDate(0, 0, 10), got.ExpiresAt, 2*time.Second,
+		"ExtendExpiryByDays should advance expires_at by exactly N days")
+}
+
 // TestActivateBundle_CreatesBundleSubscriptionAndBridgedUserSubscriptions
 // 验证激活套餐后完整的数据创建链路：
 // BundleSubscription → BundleSubscriptionUsage → bridged UserSubscription

@@ -20,4 +20,7 @@ type BundleSubscriptionRepository interface {
 	List(ctx context.Context, params pagination.PaginationParams, userID *int64, status string) ([]BundleSubscription, *pagination.PaginationResult, error)
 	UpdateStatus(ctx context.Context, id int64, status string) error
 	UpdateExpiry(ctx context.Context, id int64, expiresAt time.Time) error
+	// ExtendExpiryByDays 原子增量延期：expires_at = expires_at + days 天。
+	// 用于 ExtendBundle，避免基于事务外快照的覆盖写导致并发延期丢失（lost update）。
+	ExtendExpiryByDays(ctx context.Context, id int64, days int) error
 }

@@ -106,6 +106,7 @@ func (f *fakeSubRepo) List(_ context.Context, _ pagination.PaginationParams, _ *
 }
 func (f *fakeSubRepo) UpdateStatus(_ context.Context, _ int64, _ string) error    { return nil }
 func (f *fakeSubRepo) UpdateExpiry(_ context.Context, _ int64, _ time.Time) error { return nil }
+func (f *fakeSubRepo) ExtendExpiryByDays(_ context.Context, _ int64, _ int) error { return nil }
 
 // fakePlanRepo 内存实现的 BundlePlanRepository 子集。
 type fakePlanRepo struct {

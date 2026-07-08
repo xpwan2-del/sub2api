@@ -164,13 +164,23 @@ func (r *bundleSubscriptionRepository) UpdateStatus(ctx context.Context, id int6
 	return translatePersistenceError(err, service.ErrBundleNotFound, nil)
 }
 
-// UpdateExpiry 更新订阅到期时间
+// UpdateExpiry 更新订阅到期时间（绝对值覆盖写，仅用于过期扫描等非并发场景）
 func (r *bundleSubscriptionRepository) UpdateExpiry(ctx context.Context, id int64, expiresAt time.Time) error {
 	client := clientFromContext(ctx, r.client)
 
 	_, err := client.BundleSubscription.UpdateOneID(id).
 		SetExpiresAt(expiresAt).
 		Save(ctx)
+	return translatePersistenceError(err, service.ErrBundleNotFound, nil)
+}
+
+// ExtendExpiryByDays 原子增量延期：expires_at = expires_at + days 天。
+// 用原生 SQL 原子加，避免"读快照→算新值→覆盖写"在并发延期下互相覆盖丢失天数（lost update，
+// 中危1）。上游 ExtendBundle 已 GetByID 校验存在 + active，此处不重复 NotFound 检查。
+func (r *bundleSubscriptionRepository) ExtendExpiryByDays(ctx context.Context, id int64, days int) error {
+	client := clientFromContext(ctx, r.client)
+	const sql = `UPDATE bundle_subscriptions SET expires_at = expires_at + $1 * interval '1 day' WHERE id = $2`
+	_, err := client.ExecContext(ctx, sql, days, id)
 	return translatePersistenceError(err, service.ErrBundleNotFound, nil)
 }
 

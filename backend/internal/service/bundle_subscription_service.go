@@ -443,16 +443,16 @@ func (s *BundleSubscriptionService) ExtendBundle(ctx context.Context, bundleSubI
 		return ErrBundleExpired
 	}
 
-	newExpiry := bundleSub.ExpiresAt.AddDate(0, 0, days)
-	// 事务化：bundle 到期延长 + 桥接 UserSubscription 同步原子提交，任一失败回滚，
-	// 杜绝「bundle 已延期但桥接 userSub 未延期」的状态不一致（历史 bug L2）。
+	// 原子增量延期（中危1）：用 DB 原子加 expires_at = expires_at + interval，而非基于
+	// 事务外快照算 newExpiry 再覆盖写。后者在并发延期下两个请求各自基于同一快照算出相同
+	// 新值、互相覆盖，丢失一次延期（lost update）。bundle 与桥接 userSub 均按 days 增量，
+	// 事务内原子提交，任一失败回滚（历史 bug L2 的状态一致性仍保留）。
 	if err := s.withTx(ctx, func(txCtx context.Context) error {
-		if err := s.bundleSubRepo.UpdateExpiry(txCtx, bundleSubID, newExpiry); err != nil {
+		if err := s.bundleSubRepo.ExtendExpiryByDays(txCtx, bundleSubID, days); err != nil {
 			return fmt.Errorf("extend bundle subscription: %w", err)
 		}
 		return s.syncBridgedUserSubscriptions(txCtx, bundleSub.UserID, bundleSubID, func(sub *UserSubscription) error {
-			extendedExpiry := sub.ExpiresAt.AddDate(0, 0, days)
-			return s.userSubRepo.ExtendExpiry(txCtx, sub.ID, extendedExpiry)
+			return s.userSubRepo.ExtendExpiryByDays(txCtx, sub.ID, days)
 		})
 	}); err != nil {
 		return err

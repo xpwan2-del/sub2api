@@ -298,6 +298,16 @@ func (r *userSubscriptionRepository) ExtendExpiry(ctx context.Context, subscript
 	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
 }
 
+// ExtendExpiryByDays 原子增量延期：expires_at = expires_at + days 天。
+// 用于 bundle ExtendBundle 桥接 userSub，用原生 SQL 原子加避免覆盖写导致并发延期丢失
+// （lost update，中危1）。
+func (r *userSubscriptionRepository) ExtendExpiryByDays(ctx context.Context, subscriptionID int64, days int) error {
+	client := clientFromContext(ctx, r.client)
+	const sql = `UPDATE user_subscriptions SET expires_at = expires_at + $1 * interval '1 day' WHERE id = $2`
+	_, err := client.ExecContext(ctx, sql, days, subscriptionID)
+	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+}
+
 func (r *userSubscriptionRepository) UpdateStatus(ctx context.Context, subscriptionID int64, status string) error {
 	client := clientFromContext(ctx, r.client)
 	_, err := client.UserSubscription.UpdateOneID(subscriptionID).

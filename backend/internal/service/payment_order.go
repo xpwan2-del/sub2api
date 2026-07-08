@@ -38,6 +38,14 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	if err != nil {
 		return nil, err
 	}
+	// 中危3：bundle 严格防重——同一用户存在未完成 bundle 订单（PENDING/PAID/RECHARGING）时
+	// 拒绝新建，在扣款前拦截。bundle 是唯一订阅，重复下单必失败；双击/并发下单会导致两个
+	// 订单都支付后第二个激活失败（纯余额有余额回滚，第三方支付 markFailed 不退款致资金滞留）。
+	if req.OrderType == payment.OrderTypeBundle {
+		if err := s.ensureNoDuplicateBundleOrder(ctx, req.UserID); err != nil {
+			return nil, err
+		}
+	}
 	if err := s.checkCancelRateLimit(ctx, req.UserID, cfg); err != nil {
 		return nil, err
 	}
@@ -380,6 +388,28 @@ func (s *PaymentService) checkPendingLimit(ctx context.Context, tx *dbent.Tx, us
 	if c >= max {
 		return infraerrors.TooManyRequests("TOO_MANY_PENDING", "too_many_pending").
 			WithMetadata(map[string]string{"max": strconv.Itoa(max)})
+	}
+	return nil
+}
+
+// ensureNoDuplicateBundleOrder 检查同一用户是否存在未完成的 bundle 订单
+// （PENDING/PAID/RECHARGING）。存在则返回 Conflict，阻止重复下单（中危3）。
+//
+// 已完成/失败/取消/过期或非 bundle 订单不阻塞——用户可取消旧未支付订单后重新下单。
+// 查询用 entClient（非事务），与 checkPendingLimit 同为创建前的软校验。
+func (s *PaymentService) ensureNoDuplicateBundleOrder(ctx context.Context, userID int64) error {
+	count, err := s.entClient.PaymentOrder.Query().
+		Where(
+			paymentorder.UserIDEQ(userID),
+			paymentorder.OrderTypeEQ(payment.OrderTypeBundle),
+			paymentorder.StatusIn(OrderStatusPending, OrderStatusPaid, OrderStatusRecharging),
+		).
+		Count(ctx)
+	if err != nil {
+		return fmt.Errorf("check duplicate bundle order: %w", err)
+	}
+	if count > 0 {
+		return infraerrors.Conflict("BUNDLE_ORDER_IN_PROGRESS", "已有未完成的套餐订单，请先完成或取消后再下单")
 	}
 	return nil
 }

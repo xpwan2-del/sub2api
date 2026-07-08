@@ -72,6 +72,7 @@ func (f *mwFakeSubRepo) List(_ context.Context, _ pagination.PaginationParams, _
 }
 func (f *mwFakeSubRepo) UpdateStatus(_ context.Context, _ int64, _ string) error    { return nil }
 func (f *mwFakeSubRepo) UpdateExpiry(_ context.Context, _ int64, _ time.Time) error { return nil }
+func (f *mwFakeSubRepo) ExtendExpiryByDays(_ context.Context, _ int64, _ int) error { return nil }
 
 var _ service.BundleSubscriptionRepository = (*mwFakeSubRepo)(nil)
 

@@ -150,6 +150,9 @@ func (f fakeGoogleSubscriptionRepo) ExistsByUserIDAndGroupID(ctx context.Context
 func (f fakeGoogleSubscriptionRepo) ExtendExpiry(ctx context.Context, subscriptionID int64, newExpiresAt time.Time) error {
 	return errors.New("not implemented")
 }
+func (f fakeGoogleSubscriptionRepo) ExtendExpiryByDays(ctx context.Context, subscriptionID int64, days int) error {
+	return nil
+}
 func (f fakeGoogleSubscriptionRepo) UpdateStatus(ctx context.Context, subscriptionID int64, status string) error {
 	if f.updateStatus != nil {
 		return f.updateStatus(ctx, subscriptionID, status)

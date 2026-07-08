@@ -41,6 +41,9 @@ func (bundleSubRepoNoop) UpdateStatus(context.Context, int64, string) error {
 func (bundleSubRepoNoop) UpdateExpiry(context.Context, int64, time.Time) error {
 	panic("unexpected UpdateExpiry call")
 }
+func (bundleSubRepoNoop) ExtendExpiryByDays(context.Context, int64, int) error {
+	panic("unexpected ExtendExpiryByDays call")
+}
 
 type bundleUsageRepoNoop struct{}
 
@@ -85,6 +88,10 @@ type activateBundleSubRepoStub struct {
 	createErr       error
 	updateStatusErr error
 	updateExpiryErr error
+
+	extendByDaysErr   error   // ExtendExpiryByDays 返回的错误（中危1 增量延期）
+	extendedByDaysIDs []int64 // 记录 ExtendExpiryByDays 调用
+	updateExpiryCalled bool    // 是否仍走旧的覆盖写 UpdateExpiry（中危1 后应为 false）
 }
 
 func (s *activateBundleSubRepoStub) GetActiveByUserID(_ context.Context, _ int64) ([]BundleSubscription, error) {
@@ -124,7 +131,17 @@ func (s *activateBundleSubRepoStub) UpdateStatus(_ context.Context, _ int64, _ s
 }
 
 func (s *activateBundleSubRepoStub) UpdateExpiry(_ context.Context, _ int64, _ time.Time) error {
+	s.updateExpiryCalled = true
 	return s.updateExpiryErr
+}
+
+// ExtendExpiryByDays 记录增量延期调用（中危1：ExtendBundle 改用原子增量延期）。
+func (s *activateBundleSubRepoStub) ExtendExpiryByDays(_ context.Context, id int64, _ int) error {
+	if s.extendByDaysErr != nil {
+		return s.extendByDaysErr
+	}
+	s.extendedByDaysIDs = append(s.extendedByDaysIDs, id)
+	return nil
 }
 
 // activateBundlePlanRepoStub supports GetByID for plan loading.
@@ -168,8 +185,9 @@ type activateUserSubRepoStub struct {
 	updateStatusErr error
 	extendExpiryErr error
 
-	updatedStatusIDs []int64
-	extendedIDs      []int64
+	updatedStatusIDs  []int64
+	extendedIDs       []int64
+	extendedByDaysIDs []int64 // 记录 ExtendExpiryByDays 调用（中危1 增量延期）
 }
 
 func (s *activateUserSubRepoStub) Create(_ context.Context, sub *UserSubscription) error {
@@ -197,6 +215,15 @@ func (s *activateUserSubRepoStub) ExtendExpiry(_ context.Context, id int64, _ ti
 		return s.extendExpiryErr
 	}
 	s.extendedIDs = append(s.extendedIDs, id)
+	return nil
+}
+
+// ExtendExpiryByDays 记录增量延期调用（中危1：ExtendBundle 桥接 userSub 也用原子增量）。
+func (s *activateUserSubRepoStub) ExtendExpiryByDays(_ context.Context, id int64, _ int) error {
+	if s.extendExpiryErr != nil {
+		return s.extendExpiryErr
+	}
+	s.extendedByDaysIDs = append(s.extendedByDaysIDs, id)
 	return nil
 }
 
@@ -571,8 +598,8 @@ func TestBundleSubscriptionService_ExtendBundle_NotFound(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestBundleSubscriptionService_ExtendBundle_UpdateExpiryError(t *testing.T) {
-	subRepo := &activateBundleSubRepoStub{updateExpiryErr: errors.New("db error")}
+func TestBundleSubscriptionService_ExtendBundle_ExtendByDaysError(t *testing.T) {
+	subRepo := &activateBundleSubRepoStub{extendByDaysErr: errors.New("db error")}
 	subRepo.created = &BundleSubscription{ID: 100, Status: BundleStatusActive, ExpiresAt: time.Now().Add(24 * time.Hour)}
 	svc := newBundleSubSvc(subRepo, &activateBundlePlanRepoStub{}, &activateBundleUsageRepoStub{}, &activateUserSubRepoStub{})
 
@@ -699,11 +726,43 @@ func TestBundleSubscriptionService_ExtendBundle_SyncsBridgedUserSubs(t *testing.
 	err := svc.ExtendBundle(context.Background(), 100, 10)
 
 	require.NoError(t, err)
-	// Should have extended the 2 bridged subs.
-	require.Len(t, userSubRepo.extendedIDs, 2)
-	require.Contains(t, userSubRepo.extendedIDs, int64(200))
-	require.Contains(t, userSubRepo.extendedIDs, int64(201))
+	// Should have extended the 2 bridged subs via incremental ExtendExpiryByDays (中危1).
+	require.Len(t, userSubRepo.extendedByDaysIDs, 2)
+	require.Contains(t, userSubRepo.extendedByDaysIDs, int64(200))
+	require.Contains(t, userSubRepo.extendedByDaysIDs, int64(201))
 }
 func (s *activateUserSubRepoStub) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) {
 	return 0, nil
+}
+
+// TestExtendBundle_UsesIncrementalExpiry 守护中危1：ExtendBundle 必须用增量延期
+// (ExtendExpiryByDays) 而非基于事务外快照的覆盖写 (UpdateExpiry)。
+//
+// 旧实现先在事务外 GetByID 读 ExpiresAt 快照、算 newExpiry=ExpiresAt+days、再事务内
+// SetExpiresAt(newExpiry) 覆盖写——两个并发延期各自基于同一快照算出相同 newExpiry，
+// 互相覆盖，丢失一次延期（lost update）。改用 DB 原子加 expires_at = expires_at + interval
+// 后，并发延期在 DB 层原子累加，不再丢失。
+func TestExtendBundle_UsesIncrementalExpiry(t *testing.T) {
+	bundleSubID := int64(100)
+	subRepo := &activateBundleSubRepoStub{}
+	subRepo.created = &BundleSubscription{
+		ID:        100,
+		UserID:    42,
+		Status:    BundleStatusActive,
+		ExpiresAt: time.Now().Add(5 * 24 * time.Hour),
+	}
+	userSubRepo := &activateUserSubRepoStub{
+		existingSubs: []UserSubscription{{ID: 200, UserID: 42, BundleSubscriptionID: &bundleSubID, ExpiresAt: time.Now().Add(5 * 24 * time.Hour)}},
+	}
+	svc := newBundleSubSvc(subRepo, &activateBundlePlanRepoStub{}, &activateBundleUsageRepoStub{}, userSubRepo)
+
+	err := svc.ExtendBundle(context.Background(), 100, 10)
+	require.NoError(t, err)
+
+	require.Contains(t, subRepo.extendedByDaysIDs, int64(100),
+		"ExtendBundle must call ExtendExpiryByDays (atomic increment) on the bundle subscription")
+	require.False(t, subRepo.updateExpiryCalled,
+		"ExtendBundle must NOT use UpdateExpiry (overwrite) — overwrite from a stale snapshot causes lost update on concurrent extends")
+	require.Contains(t, userSubRepo.extendedByDaysIDs, int64(200),
+		"ExtendBundle must call ExtendExpiryByDays on bridged UserSubscriptions too")
 }

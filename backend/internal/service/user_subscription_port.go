@@ -22,6 +22,9 @@ type UserSubscriptionRepository interface {
 
 	ExistsByUserIDAndGroupID(ctx context.Context, userID, groupID int64) (bool, error)
 	ExtendExpiry(ctx context.Context, subscriptionID int64, newExpiresAt time.Time) error
+	// ExtendExpiryByDays 原子增量延期：expires_at = expires_at + days 天。
+	// 用于 bundle ExtendBundle 桥接 userSub，避免覆盖写导致并发延期丢失（lost update）。
+	ExtendExpiryByDays(ctx context.Context, subscriptionID int64, days int) error
 	UpdateStatus(ctx context.Context, subscriptionID int64, status string) error
 	UpdateNotes(ctx context.Context, subscriptionID int64, notes string) error
 
