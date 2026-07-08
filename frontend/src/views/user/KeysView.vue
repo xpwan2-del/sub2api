@@ -1496,9 +1496,11 @@ const groupOptions = computed(() =>
 // Group dropdown search
 const groupSearchQuery = ref('')
 const filteredGroupOptions = computed(() => {
+  // 过滤掉订阅分组：切换分组下拉不展示 subscription 类型（用户选了也会被后端拒绝）
+  const base = groupOptions.value.filter((opt) => opt.subscriptionType !== 'subscription')
   const query = groupSearchQuery.value.trim().toLowerCase()
-  if (!query) return groupOptions.value
-  return groupOptions.value.filter((opt) => {
+  if (!query) return base
+  return base.filter((opt) => {
     return opt.label.toLowerCase().includes(query) ||
       (opt.description && opt.description.toLowerCase().includes(query))
   })
