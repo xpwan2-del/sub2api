@@ -965,3 +965,35 @@ func (s *BundleExpiryIntegrationSuite) TestActivateBundle_AllowedAfterPreviousBu
 	s.Require().NoError(err)
 	s.Require().Equal(service.BundleStatusActive, b2.Status)
 }
+
+// TestActivateBundle_AdminAssignFailureRollsBackRevoked 验证 admin_assign 的原子性（守护
+// withTx 嵌套事务复用）：激活流程在 revoke 之后失败时（此处用不存在的 planID 触发 load plan 失败），
+// revoke 必须随事务回滚，旧套餐保持 active。修复前 withTx 不支持嵌套复用——RevokeBundle 开独立
+// 事务先 commit 撤销旧套餐，激活失败回滚时旧套餐已被撤销、不可恢复，用户失去套餐；本用例对那个
+// bug 为红，修复后（revoke 与 activate 同事务）为绿。
+func (s *BundleSubscriptionLifecycleSuite) TestActivateBundle_AdminAssignFailureRollsBackRevoked() {
+	user := s.mustCreateUser("admin-rollback@test.com")
+	group := s.mustCreateGroup("g-admin-rollback", domain.PlatformOpenAI)
+	plan := s.mustCreatePlan("Plan", []service.CreateGroupQuotaRequest{
+		{GroupID: group.ID, QuotaScope: service.QuotaScopePlatform, DailyLimitUSD: 5},
+	})
+
+	// 激活 bundle1（active）。
+	bundle1, err := s.subSvc.ActivateBundle(s.ctx, &service.ActivateBundleRequest{
+		UserID: user.ID, PlanID: plan.ID, Source: service.BundleSourcePurchase,
+	})
+	s.Require().NoError(err)
+
+	// admin_assign 一个不存在的 plan：ActivateBundle 先 revoke bundle1（step1），再 load plan
+	// （step2）失败 → 整个事务应回滚（含 revoke）。
+	_, err = s.subSvc.ActivateBundle(s.ctx, &service.ActivateBundleRequest{
+		UserID: user.ID, PlanID: 999999, Source: service.BundleSourceAdminAssign,
+	})
+	s.Require().Error(err, "activating non-existent plan should fail")
+
+	// 关键原子性断言：bundle1 必须仍 active（revoke 随事务回滚），用户未失去套餐。
+	b1, err := s.subRepo.GetByID(s.ctx, bundle1.ID)
+	s.Require().NoError(err)
+	s.Require().Equal(service.BundleStatusActive, b1.Status,
+		"failed admin_assign must roll back the revoke; existing bundle must stay active (atomicity)")
+}

@@ -53,13 +53,18 @@ func NewBundleSubscriptionService(
 // withTx runs the bundle writes inside a DB transaction so partial failures roll back cleanly.
 // Falls back to direct execution when entClient is nil.
 func (s *BundleSubscriptionService) withTx(ctx context.Context, fn func(context.Context) error) error {
+	// 优先复用 ctx 携带的外层事务（生产：ActivateBundle 的 withTx 内调 RevokeBundle/ExtendBundle）。
+	// 否则会嵌套开一个独立事务——嵌套事务独立提交/回滚，破坏 admin assign「先 revoke 旧、再激活新」
+	// 的原子性（激活失败回滚时，旧 bundle 已被嵌套事务 commit 撤销，不可恢复）。
+	if tx := dbent.TxFromContext(ctx); tx != nil {
+		return fn(ctx)
+	}
 	if s.entClient == nil {
 		return fn(ctx)
 	}
 	tx, err := s.entClient.Tx(ctx)
 	if err != nil {
-		// entClient 已处于一个事务中（如集成测试的隔离事务 / 外层调用方的事务）：
-		// 复用当前 ctx 不再嵌套开事务，repo 通过 clientFromContext 自动 join 既有事务。
+		// entClient 已是事务 client（集成测试隔离事务 tx.Client()）：复用，不嵌套。
 		if errors.Is(err, dbent.ErrTxStarted) {
 			return fn(ctx)
 		}
