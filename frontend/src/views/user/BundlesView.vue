@@ -210,20 +210,43 @@
 
                 <div class="flex-1" />
 
-                <!-- Purchase Button -->
+                <!-- Purchase / Upgrade Button -->
+                <!-- 1) 当前已订阅套餐 → 使用中（置灰） -->
                 <button
-                  v-if="!isCurrentPlan(plan)"
-                  :class="['w-full rounded-xl py-2.5 text-sm font-semibold transition-all active:scale-[0.98]', tierBtnClass(plan.tier)]"
-                  @click="handlePurchase(plan)"
-                >
-                  {{ t('bundles.purchaseNow') }}
-                </button>
-                <button
-                  v-else
+                  v-if="isCurrentPlan(plan)"
                   :class="['w-full rounded-xl py-2.5 text-sm font-semibold', tierDisabledBtnClass(plan.tier)]"
                   disabled
                 >
                   {{ t('bundles.currentPlan') }}
+                </button>
+                <!-- 2) 已有套餐 & 目标价值更高 → 升级 -->
+                <button
+                  v-else-if="activeBundle && isUpgradeTarget(plan)"
+                  :class="['w-full rounded-xl py-2.5 text-sm font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-1.5', tierBtnClass(plan.tier)]"
+                  :disabled="upgradeLoading && upgradeTargetPlan?.id === plan.id"
+                  @click="handleUpgradeClick(plan)"
+                >
+                  <span
+                    v-if="upgradeLoading && upgradeTargetPlan?.id === plan.id"
+                    class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent"
+                  />
+                  {{ t('bundles.upgrade') }}
+                </button>
+                <!-- 3) 已有套餐 & 目标价值不高 → 到期后可购买（置灰） -->
+                <button
+                  v-else-if="activeBundle"
+                  :class="['w-full rounded-xl py-2.5 text-sm font-semibold', tierDisabledBtnClass(plan.tier)]"
+                  disabled
+                >
+                  {{ t('bundles.notUpgradeable') }}
+                </button>
+                <!-- 4) 无活跃套餐 → 立即购买 -->
+                <button
+                  v-else
+                  :class="['w-full rounded-xl py-2.5 text-sm font-semibold transition-all active:scale-[0.98]', tierBtnClass(plan.tier)]"
+                  @click="handlePurchase(plan)"
+                >
+                  {{ t('bundles.purchaseNow') }}
                 </button>
               </div>
             </div>
@@ -231,6 +254,81 @@
         </div>
       </template>
     </div>
+
+    <!-- Upgrade Confirm Modal -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="showUpgradeModal && upgradePreview && upgradeTargetPlan"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          @click.self="closeUpgradeModal"
+        >
+          <div class="relative w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-dark-700 dark:bg-dark-900">
+            <!-- Close -->
+            <button
+              class="absolute right-4 top-4 rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-dark-700 dark:hover:text-gray-200"
+              @click="closeUpgradeModal"
+            >
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('bundles.upgradeConfirmTitle') }}
+            </h3>
+
+            <!-- Plan transition: old → new -->
+            <div class="mb-4 flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2.5 dark:bg-dark-700/50">
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] text-gray-400 dark:text-gray-500">{{ t('bundles.upgradeFromLabel') }}</p>
+                <p class="truncate text-sm font-medium text-gray-700 dark:text-gray-300">{{ upgradePreview.old_plan_name }}</p>
+              </div>
+              <svg class="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+              <div class="min-w-0 flex-1 text-right">
+                <p class="text-[11px] text-gray-400 dark:text-gray-500">{{ t('bundles.upgradeToLabel') }}</p>
+                <p class="truncate text-sm font-bold text-primary-600 dark:text-primary-400">{{ upgradePreview.new_plan_name }}</p>
+              </div>
+            </div>
+
+            <!-- Credit / Due / Validity breakdown -->
+            <div class="space-y-2 text-sm">
+              <div class="flex items-start gap-2 rounded-lg bg-emerald-50 px-3 py-2 dark:bg-emerald-900/20">
+                <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+                <span class="text-emerald-700 dark:text-emerald-300">
+                  {{ t('bundles.upgradeCreditHint', { credit: upgradePreview.credit.toFixed(2) }) }}
+                </span>
+              </div>
+              <div class="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-900/20">
+                <svg class="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                <span class="text-amber-700 dark:text-amber-300">
+                  {{ t('bundles.upgradeDueHint', { due: upgradePreview.due_amount.toFixed(2), days: upgradePreview.validity_days }) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-5 flex gap-2">
+              <button class="btn btn-secondary flex-1" @click="closeUpgradeModal">
+                {{ t('common.cancel') }}
+              </button>
+              <button
+                class="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-600 active:bg-primary-700"
+                @click="goToUpgradePayment"
+              >
+                {{ t('bundles.goToPayUpgrade') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </AppLayout>
 </template>
 
@@ -239,7 +337,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { getPlans, getMyBundle } from '@/api/bundles'
+import { getPlans, getMyBundle, previewBundleUpgrade } from '@/api/bundles'
+import type { UpgradePreview } from '@/api/bundles'
 import type { BundlePlan, BundleSubscription } from '@/types/bundle'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -262,6 +361,16 @@ const loading = ref(true)
 const plans = ref<BundlePlan[]>([])
 // 当前用户的活跃套餐订阅
 const activeBundle = ref<BundleSubscription | null>(null)
+
+// 套餐升级流程状态
+// 升级目标套餐（点击「升级」后暂存，用于确认窗展示）
+const upgradeTargetPlan = ref<BundlePlan | null>(null)
+// 升级试算结果（差价 / 抵扣 / 新有效期）
+const upgradePreview = ref<UpgradePreview | null>(null)
+// 试算请求 loading（点击升级 → 拉取 preview 期间）
+const upgradeLoading = ref(false)
+// 确认窗开关
+const showUpgradeModal = ref(false)
 
 // 从已加载的 plans 列表中匹配当前订阅的套餐（后端未返回 plan 详情）
 const activePlan = computed<BundlePlan | null>(() => {
@@ -357,6 +466,15 @@ function isCurrentPlan(plan: BundlePlan): boolean {
   return activeBundle.value?.plan_id === plan.id
 }
 
+// 判断套餐对当前用户是否为「可升级」目标（价值更高方可升级）
+function isUpgradeTarget(plan: BundlePlan): boolean {
+  if (!activeBundle.value || !activePlan.value) return false
+  if (isCurrentPlan(plan)) return false
+  // 升级方向：目标套餐价格严格高于当前套餐价格
+  // 最终是否可升以 previewBundleUpgrade 返回的 upgradeable 为准，这里仅做按钮展示启发判断
+  return plan.price > activePlan.value.price
+}
+
 // 处理购买点击 — 跳转到支付页完成购买
 function handlePurchase(plan: BundlePlan) {
   // 已有生效中的套餐时拦截：套餐暂不支持重复购买/并存，提前提示避免走到支付页才被拒
@@ -365,6 +483,51 @@ function handlePurchase(plan: BundlePlan) {
     return
   }
   router.push({ path: '/purchase', query: { bundle_plan_id: String(plan.id) } })
+}
+
+// 点击「升级」：拉取差价试算，可升级则弹确认窗
+async function handleUpgradeClick(plan: BundlePlan) {
+  if (!activeBundle.value || upgradeLoading.value) return
+  upgradeLoading.value = true
+  upgradeTargetPlan.value = plan
+  upgradePreview.value = null
+  try {
+    const preview = await previewBundleUpgrade(activeBundle.value.id, plan.id)
+    upgradePreview.value = preview
+    if (!preview.upgradeable) {
+      // 后端判定不可升级（理论上不应走到，价格启发已过滤），兜底提示
+      appStore.showInfo(t('bundles.notUpgradeable'))
+      return
+    }
+    showUpgradeModal.value = true
+  } catch (error) {
+    console.error('Failed to preview bundle upgrade:', error)
+    appStore.showError(t('bundles.upgradeFailedToPreview'))
+  } finally {
+    upgradeLoading.value = false
+  }
+}
+
+// 确认升级 —— 跳转支付页走升级支付流程（复用 PaymentView 的支付方式选择 / 跳转 / 二维码）
+function goToUpgradePayment() {
+  const target = upgradeTargetPlan.value
+  const preview = upgradePreview.value
+  const source = activeBundle.value
+  if (!target || !preview || !source) return
+  showUpgradeModal.value = false
+  router.push({
+    path: '/purchase',
+    query: {
+      bundle_plan_id: String(target.id),
+      upgrade_from: String(source.id),
+      due: String(preview.due_amount),
+      credit: String(preview.credit),
+    },
+  })
+}
+
+function closeUpgradeModal() {
+  showUpgradeModal.value = false
 }
 
 // 并行加载套餐计划和当前订阅数据

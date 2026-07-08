@@ -284,6 +284,16 @@
                 </div>
               </div>
             </div>
+            <!-- Upgrade breakdown banner (upgrade mode only) -->
+            <div v-if="isBundleUpgradeMode" class="p-5 space-y-2 card">
+              <div class="flex items-start justify-between gap-2">
+                <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('bundles.upgradeCreditHint', { credit: bundleUpgradeCredit.toFixed(2) }) }}</span>
+              </div>
+              <div class="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-900/20">
+                <span class="text-sm font-medium text-amber-700 dark:text-amber-300">{{ t('bundles.upgradeDueLabel') }}</span>
+                <span class="text-lg font-bold text-amber-700 dark:text-amber-300">${{ effectiveBundlePrice.toFixed(2) }}</span>
+              </div>
+            </div>
             <!-- Balance Payment Option -->
             <div class="p-5 card">
               <label class="flex items-center justify-between cursor-pointer" :class="{ 'opacity-50 pointer-events-none': !user?.balance || user.balance <= 0 }">
@@ -325,8 +335,8 @@
             <div v-if="useBalance && balanceToUse > 0" class="p-6 card">
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-gray-500 dark:text-gray-400">{{ t('payment.bundleAmount') }}</span>
-                  <span class="text-gray-900 dark:text-white">${{ bundlePlan.price }}</span>
+                  <span class="text-gray-500 dark:text-gray-400">{{ isBundleUpgradeMode ? t('bundles.upgradeDueLabel') : t('payment.bundleAmount') }}</span>
+                  <span class="text-gray-900 dark:text-white">${{ displayBundleAmount }}</span>
                 </div>
                 <div class="flex justify-between text-green-600 dark:text-green-400">
                   <span>{{ t('payment.balanceDeduct') }}</span>
@@ -349,8 +359,8 @@
             <div v-else-if="feeRate > 0 && bundlePlan.price > 0" class="p-6 card">
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-gray-500 dark:text-gray-400">{{ t('payment.bundleAmount') }}</span>
-                  <span class="text-gray-900 dark:text-white">${{ bundlePlan.price }}</span>
+                  <span class="text-gray-500 dark:text-gray-400">{{ isBundleUpgradeMode ? t('bundles.upgradeDueLabel') : t('payment.bundleAmount') }}</span>
+                  <span class="text-gray-900 dark:text-white">${{ displayBundleAmount }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-500 dark:text-gray-400">{{ t('payment.fee') }} ({{ feeRate }}%)</span>
@@ -368,8 +378,8 @@
                 <span class="w-4 h-4 border-2 border-white rounded-full animate-spin border-t-transparent"></span>
                 {{ t('common.processing') }}
               </span>
-              <span v-else-if="useBalance && balanceSufficient">{{ t('payment.payWithBalance') }} ${{ bundlePlan.price }}</span>
-              <span v-else>{{ t('payment.createOrder') }} ${{ useBalance && gatewayAmount > 0 ? mixedTotalAmount.toFixed(2) : (feeRate > 0 ? bundleTotalAmount : bundlePlan.price) }}</span>
+              <span v-else-if="useBalance && balanceSufficient">{{ t('payment.payWithBalance') }} ${{ displayBundleAmount }}</span>
+              <span v-else>{{ isBundleUpgradeMode ? t('bundles.goToPayUpgrade') : t('payment.createOrder') }} ${{ useBalance && gatewayAmount > 0 ? mixedTotalAmount.toFixed(2) : (feeRate > 0 ? bundleTotalAmount : displayBundleAmount) }}</span>
             </button>
             <button class="w-full btn btn-secondary" @click="cancelBundlePurchase">{{ t('common.cancel') }}</button>
           </template>
@@ -434,7 +444,7 @@ import { usePaymentStore } from '@/stores/payment'
 import { useSubscriptionStore } from '@/stores/subscriptions'
 import { useAppStore } from '@/stores'
 import { paymentAPI } from '@/api/payment'
-import { getPlanDetail, checkout as bundleCheckout } from '@/api/bundles'
+import { getPlanDetail, checkout as bundleCheckout, createBundleUpgradeOrder } from '@/api/bundles'
 import type { BundlePlan } from '@/types/bundle'
 import { getTierTheme, getTierI18nKey } from '@/constants/bundleTiers'
 import { extractApiErrorMessage, extractI18nErrorMessage } from '@/utils/apiError'
@@ -502,6 +512,10 @@ const amount = ref<number | null>(null)
 const selectedMethod = ref('')
 const selectedPlan = ref<SubscriptionPlan | null>(null)
 const bundlePlan = ref<BundlePlan | null>(null)
+// 套餐升级模式：来源订阅 ID / 试算补差价 / 旧套餐抵扣（由 BundlesView 通过 query 传入）
+const bundleUpgradeSource = ref<number | null>(null)
+const bundleUpgradeDue = ref<number>(0)
+const bundleUpgradeCredit = ref<number>(0)
 const previewImage = ref('')
 
 const paymentPhase = ref<'select' | 'paying'>('select')
@@ -513,6 +527,8 @@ interface CreateOrderOptions {
   isResume?: boolean
   mobileQrFallbackAttempted?: boolean
   useBalance?: boolean
+  /** 套餐升级模式：来源套餐订阅 ID。存在时 createOrder 走 createBundleUpgradeOrder */
+  upgradeSourceId?: number
 }
 
 interface WeixinJSBridgeLike {
@@ -690,6 +706,18 @@ const tabs = computed(() => {
 const visibleMethods = computed(() => getVisibleMethods(checkout.value.methods))
 const enabledMethods = computed(() => Object.keys(visibleMethods.value))
 const isBundleMode = computed(() => bundlePlan.value !== null)
+// 套餐升级模式：bundlePlan 已加载且携带来源订阅 ID
+const isBundleUpgradeMode = computed(() => bundlePlan.value !== null && bundleUpgradeSource.value !== null)
+// 套餐模式下用于计价的有效金额：升级模式取试算补差价，普通购买取套餐价
+// 升级模式下余额抵扣 / 网关金额 / 手续费 / 限额校验全部基于补差价 due_amount
+const effectiveBundlePrice = computed(() =>
+  isBundleUpgradeMode.value ? bundleUpgradeDue.value : (bundlePlan.value?.price ?? 0),
+)
+// 展示用金额：升级模式固定 2 位小数（补差价），普通购买保留原始套餐价（避免改动既有展示格式）
+const displayBundleAmount = computed(() => {
+  const v = effectiveBundlePrice.value
+  return isBundleUpgradeMode.value ? v.toFixed(2) : v
+})
 const validAmount = computed(() => amount.value ?? 0)
 const balanceRechargeMultiplier = computed(() => {
   const multiplier = checkout.value.balance_recharge_multiplier
@@ -859,35 +887,35 @@ const canSubmitSubscription = computed(() =>
 
 // ── Bundle purchase mode ──
 const bundleFeeAmount = computed(() => {
-  const price = bundlePlan.value?.price ?? 0
+  const price = effectiveBundlePrice.value
   return feeRate.value > 0 && price > 0
     ? Math.ceil(((price * feeRate.value) / 100) * 100) / 100
     : 0
 })
 
 const bundleTotalAmount = computed(() => {
-  const price = bundlePlan.value?.price ?? 0
+  const price = effectiveBundlePrice.value
   if (feeRate.value <= 0 || price <= 0) return price
   return Math.round((price + bundleFeeAmount.value) * 100) / 100
 })
 
 const canSubmitBundle = computed(() =>
   bundlePlan.value !== null
-    && amountFitsMethod(bundlePlan.value.price, selectedMethod.value)
+    && amountFitsMethod(effectiveBundlePrice.value, selectedMethod.value)
     && selectedLimit.value?.available !== false
 )
 
 // ── Bundle balance payment ──
 const useBalance = ref(false)
 const balanceSufficient = computed(() =>
-  (user.value?.balance ?? 0) >= (bundlePlan.value?.price ?? 0)
+  (user.value?.balance ?? 0) >= effectiveBundlePrice.value
 )
 const balanceToUse = computed(() => {
   if (!useBalance.value || !bundlePlan.value) return 0
-  return Math.min(user.value?.balance ?? 0, bundlePlan.value.price)
+  return Math.min(user.value?.balance ?? 0, effectiveBundlePrice.value)
 })
 const gatewayAmount = computed(() =>
-  Math.max(0, (bundlePlan.value?.price ?? 0) - balanceToUse.value)
+  Math.max(0, effectiveBundlePrice.value - balanceToUse.value)
 )
 const mixedFeeAmount = computed(() =>
   gatewayAmount.value * feeRate.value / 100
@@ -899,7 +927,7 @@ const canSubmitBundleWithBalance = computed(() => {
   if (!bundlePlan.value) return false
   if (useBalance.value && balanceSufficient.value) return true // 纯余额
   if (useBalance.value && gatewayAmount.value > 0 && selectedMethod.value && amountFitsMethod(gatewayAmount.value, selectedMethod.value) && selectedLimit.value?.available !== false) return true // 混合
-  if (!useBalance.value && selectedMethod.value && amountFitsMethod(bundlePlan.value.price, selectedMethod.value) && selectedLimit.value?.available !== false) return true // 全额网关
+  if (!useBalance.value && selectedMethod.value && amountFitsMethod(effectiveBundlePrice.value, selectedMethod.value) && selectedLimit.value?.available !== false) return true // 全额网关
   return false
 })
 const canSubmitAnyBundle = computed(() =>
@@ -978,17 +1006,26 @@ async function confirmBundlePurchase() {
   try {
     // 纯余额支付
     if (useBalance.value && balanceSufficient.value) {
-      const result = await bundleCheckout(bundlePlan.value.id, 'balance', undefined, true)
+      // 升级模式走升级下单接口；普通购买走 bundle checkout
+      const result = isBundleUpgradeMode.value && bundleUpgradeSource.value
+        ? await createBundleUpgradeOrder({
+          source_bundle_subscription_id: bundleUpgradeSource.value,
+          target_plan_id: bundlePlan.value.id,
+          payment_type: 'balance',
+          use_balance: true,
+        })
+        : await bundleCheckout(bundlePlan.value.id, 'balance', undefined, true)
       if (result.direct_success) {
-        appStore.showSuccess(t('bundles.purchaseSuccess'))
+        appStore.showSuccess(isBundleUpgradeMode.value ? t('bundles.upgradeSuccess') : t('bundles.purchaseSuccess'))
         router.push('/bundles')
         return
       }
       // Fallback to normal flow if backend didn't return direct_success
     }
-    // 混合支付或全额网关支付
-    await createOrder(bundlePlan.value.price, 'bundle', bundlePlan.value.id, {
+    // 混合支付或全额网关支付（升级模式以补差价为下单金额）
+    await createOrder(effectiveBundlePrice.value, 'bundle', bundlePlan.value.id, {
       useBalance: useBalance.value,
+      upgradeSourceId: isBundleUpgradeMode.value ? (bundleUpgradeSource.value ?? undefined) : undefined,
     })
   } catch (err: unknown) {
     errorMessage.value = extractI18nErrorMessage(err, t, 'payment.errors', t('common.error'))
@@ -1000,7 +1037,10 @@ async function confirmBundlePurchase() {
 
 function cancelBundlePurchase() {
   bundlePlan.value = null
-  if (route.query.bundle_plan_id) {
+  bundleUpgradeSource.value = null
+  bundleUpgradeDue.value = 0
+  bundleUpgradeCredit.value = 0
+  if (route.query.bundle_plan_id || route.query.upgrade_from) {
     router.replace({ path: route.path, query: {} })
   }
 }
@@ -1031,7 +1071,16 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
     // Bundle orders use a dedicated checkout endpoint; regular orders go through payment store
     let result: CreateOrderResult & { resume_token?: string }
     if (orderType === 'bundle' && planId) {
-      const bundleResult = await bundleCheckout(planId, requestType, payload.return_url, options.useBalance)
+      // 套餐升级走升级下单接口；普通套餐购买走 bundle checkout
+      const bundleResult = options.upgradeSourceId
+        ? await createBundleUpgradeOrder({
+          source_bundle_subscription_id: options.upgradeSourceId,
+          target_plan_id: planId,
+          payment_type: requestType,
+          use_balance: !!options.useBalance,
+          return_url: payload.return_url,
+        })
+        : await bundleCheckout(planId, requestType, payload.return_url, options.useBalance)
       result = { ...bundleResult, resume_token: (bundleResult as CreateOrderResult & { resume_token?: string }).resume_token }
     } else {
       result = await paymentStore.createOrder(payload) as CreateOrderResult & { resume_token?: string }
@@ -1403,6 +1452,7 @@ onMounted(async () => {
       }
     }
     // Handle bundle purchase navigation: ?bundle_plan_id=123
+    // 套餐升级：附加 ?upgrade_from=<source_sub_id>&due=<due_amount>&credit=<credit>
     if (route.query.bundle_plan_id) {
       const planId = Number(route.query.bundle_plan_id)
       if (Number.isFinite(planId) && planId > 0) {
@@ -1410,8 +1460,19 @@ onMounted(async () => {
           const plan = await getPlanDetail(planId)
           if (plan && plan.for_sale && plan.status === 'active') {
             bundlePlan.value = plan
-            // Auto-select first valid payment method for the plan price
-            const available = enabledMethods.value.find(m => amountFitsMethod(plan.price, m))
+            // 解析升级模式参数
+            const upgradeFrom = Number(route.query.upgrade_from)
+            if (Number.isFinite(upgradeFrom) && upgradeFrom > 0) {
+              bundleUpgradeSource.value = upgradeFrom
+              const due = Number(route.query.due)
+              const credit = Number(route.query.credit)
+              if (Number.isFinite(due) && due >= 0) bundleUpgradeDue.value = due
+              if (Number.isFinite(credit) && credit >= 0) bundleUpgradeCredit.value = credit
+            }
+            // Auto-select first valid payment method for the effective price
+            // （升级模式下金额为补差价 due_amount）
+            const priceForFit = isBundleUpgradeMode.value ? effectiveBundlePrice.value : plan.price
+            const available = enabledMethods.value.find(m => amountFitsMethod(priceForFit, m))
             if (available) selectedMethod.value = available
           } else {
             appStore.showError(t('bundles.planNotAvailable'))
