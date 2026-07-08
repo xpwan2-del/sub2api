@@ -230,7 +230,12 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 		// read-only check of "used vs limit"; transient usageSvc errors must
 		// not block requests. Concurrent over-issuance is acceptable here
 		// (see spec 10.1) — strictness is enforced post-billing.
-		if m.usageSvc != nil {
+		//
+		// 跳过只读视频任务查询（无 model 参数、走 task binding 反查的 GET /v1/videos/:id 与
+		// /content）：视频任务在 POST 创建时已通过配额检查（合法创建），轮询进度/取内容是
+		// 只读操作、不消耗配额。带 ?model= 的 GET 走 model 路由（ResolveGroup），语义上不属
+		// "查询已创建任务"，不享受豁免。并发/RPM 检查已在上游执行，频率仍受控。
+		if m.usageSvc != nil && !isReadOnlyVideoTaskQuery(c.Request.Method, c.Request.URL.Path, modelName) {
 			// 按请求路径粗略推断媒体维度,决定 pre-flight 校验哪条 count 轨道。
 			// fail-open:推断不精确也安全(严格扣减在 post-billing)。
 			path := c.Request.URL.Path
@@ -377,4 +382,26 @@ func extractVideoTaskIDFromPath(path string) string {
 		rest = rest[:slash]
 	}
 	return strings.TrimSpace(rest)
+}
+
+// isReadOnlyVideoTaskQuery reports whether the request is a read-only video task query
+// that resolved its group via task-binding lookup (the no-model path in resolveBundleGroup):
+// GET /v1/videos/:id or /v1/videos/:id/content, WITHOUT a model parameter.
+//
+// Such requests do not consume quota — the task already passed the quota check when created
+// via POST — so they skip the pre-flight quota pre-check. Otherwise, once a bundle hits its
+// limit, users could no longer poll progress or fetch content of tasks they legitimately
+// created. A GET that carries ?model= routes by model (ResolveGroup) and stays under the
+// standard quota check; only the task-binding lookup path qualifies for the exemption.
+// Concurrency/RPM limits above still apply, so query frequency remains controlled.
+func isReadOnlyVideoTaskQuery(method, path, modelName string) bool {
+	if method != http.MethodGet {
+		return false
+	}
+	// 带 model 参数 → 走 model 路由（resolveBundleGroup 优先 ResolveGroup），不属于纯只读
+	// 查询，不豁免。仅无 model、走 task binding 反查的请求才豁免。
+	if strings.TrimSpace(modelName) != "" {
+		return false
+	}
+	return strings.Contains(path, "/videos/") && extractVideoTaskIDFromPath(path) != ""
 }

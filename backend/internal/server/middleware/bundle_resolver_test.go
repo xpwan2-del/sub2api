@@ -447,6 +447,169 @@ func TestBundleResolver_GETVideosDoesNotLeakAcrossSubscriptions(t *testing.T) {
 	}
 }
 
+// TestBundleResolver_GETVideosSkipsQuotaCheckWhenExhausted 验证只读视频查询
+// （GET /v1/videos/:id）在套餐 video 配额已耗尽时仍应放行——视频任务在 POST 创建时
+// 已通过配额检查（合法创建），轮询进度/取内容是只读操作、不消耗配额，不应被 pre-check
+// 拒绝，否则用户一旦套餐达上限就再也查不到自己已创建任务的结果。
+//
+// 回归背景：commit 5756aacf 给 GET 视频查询加了 taskID 反查 group，使 resolveBundleGroup
+// 成功，但中间件在反查成功后无条件执行配额 pre-check，导致 GET 查询进度被错误拒绝。
+func TestBundleResolver_GETVideosSkipsQuotaCheckWhenExhausted(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	const (
+		bundleSubID int64 = 9
+		groupID     int64 = 200
+	)
+	// Plan: model-scope quota，月度 video count 上限 = 5。
+	plan := &service.BundlePlan{
+		ID: 1,
+		GroupQuotas: []service.BundlePlanGroupQuota{{
+			GroupID:                groupID,
+			QuotaScope:             service.QuotaScopeModel,
+			ModelPattern:           "grok-imagine-video",
+			MonthlyVideoLimitCount: 5,
+		}},
+	}
+	sub := &service.BundleSubscription{ID: bundleSubID, PlanID: 1, Status: service.BundleStatusActive}
+	group := &service.Group{ID: groupID, Platform: "openai"}
+	// video count 已达上限 → ModalityVideo 轨道耗尽，pre-check 本应拒绝。
+	usage := &service.BundleSubscriptionUsage{MonthlyVideoUsageCount: 5}
+
+	owningSub := bundleSubID
+	cache := mwFakeVideoCache{bindings: map[string]service.VideoTaskBinding{
+		fmt.Sprintf("%d:%s", groupID, "task-abc"): {AccountID: 5, Model: "grok-imagine-video", BundleSubID: &owningSub},
+	}}
+	resolver := service.NewBundleRouteResolver(
+		&mwFakeSubRepo{sub: sub},
+		&mwFakePlanRepo{plan: plan},
+		&mwFakeGroupRepo{group: group},
+		cache,
+	)
+	usageSvc := service.NewBundleUsageService(&mwFakeUsageRepo{usage: usage}, &mwFakeSubRepo{sub: sub}, &mwFakePlanRepo{plan: plan})
+	mw := NewBundleRouteResolverMiddleware(resolver, nil, nil, nil, usageSvc)
+
+	bundleSubIDVal := bundleSubID
+	apiKey := &service.APIKey{ID: 1, BundleSubscriptionID: &bundleSubIDVal}
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodGet, "/v1/videos/task-abc", nil)
+	c.Set(string(ContextKeyAPIKey), apiKey)
+
+	mw.BundleResolver()(c)
+
+	if c.IsAborted() {
+		t.Fatalf("GET video progress query must not be aborted by quota pre-check when bundle is exhausted, status=%d", c.Writer.Status())
+	}
+	if apiKey.Group == nil || apiKey.GroupID == nil || *apiKey.GroupID != groupID {
+		t.Fatalf("expected group %d injected for read-only GET video query, got group=%v", groupID, apiKey.Group)
+	}
+}
+
+// TestBundleResolver_GETVideosContentSkipsQuotaCheckWhenExhausted 同上，覆盖取内容路径
+// （GET /v1/videos/:id/content）——同样是只读查询，套餐耗尽时应放行。
+func TestBundleResolver_GETVideosContentSkipsQuotaCheckWhenExhausted(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	const (
+		bundleSubID int64 = 9
+		groupID     int64 = 200
+	)
+	plan := &service.BundlePlan{
+		ID: 1,
+		GroupQuotas: []service.BundlePlanGroupQuota{{
+			GroupID:                groupID,
+			QuotaScope:             service.QuotaScopeModel,
+			ModelPattern:           "grok-imagine-video",
+			MonthlyVideoLimitCount: 5,
+		}},
+	}
+	sub := &service.BundleSubscription{ID: bundleSubID, PlanID: 1, Status: service.BundleStatusActive}
+	group := &service.Group{ID: groupID, Platform: "openai"}
+	usage := &service.BundleSubscriptionUsage{MonthlyVideoUsageCount: 5}
+
+	owningSub := bundleSubID
+	cache := mwFakeVideoCache{bindings: map[string]service.VideoTaskBinding{
+		fmt.Sprintf("%d:%s", groupID, "task-abc"): {AccountID: 5, Model: "grok-imagine-video", BundleSubID: &owningSub},
+	}}
+	resolver := service.NewBundleRouteResolver(
+		&mwFakeSubRepo{sub: sub},
+		&mwFakePlanRepo{plan: plan},
+		&mwFakeGroupRepo{group: group},
+		cache,
+	)
+	usageSvc := service.NewBundleUsageService(&mwFakeUsageRepo{usage: usage}, &mwFakeSubRepo{sub: sub}, &mwFakePlanRepo{plan: plan})
+	mw := NewBundleRouteResolverMiddleware(resolver, nil, nil, nil, usageSvc)
+
+	bundleSubIDVal := bundleSubID
+	apiKey := &service.APIKey{ID: 1, BundleSubscriptionID: &bundleSubIDVal}
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodGet, "/v1/videos/task-abc/content", nil)
+	c.Set(string(ContextKeyAPIKey), apiKey)
+
+	mw.BundleResolver()(c)
+
+	if c.IsAborted() {
+		t.Fatalf("GET video content query must not be aborted by quota pre-check when bundle is exhausted, status=%d", c.Writer.Status())
+	}
+	if apiKey.GroupID == nil || *apiKey.GroupID != groupID {
+		t.Fatalf("expected group %d injected for read-only GET video content query, got %v", groupID, apiKey.GroupID)
+	}
+}
+
+// TestBundleResolver_GETVideosWithModelParamStillChecksQuota 验证只读豁免的精确性：
+// 带 ?model= 参数的 GET /v1/videos/:id 走的是 model 路由（ResolveGroup），并非 task 反查，
+// 语义上不属于"查询已创建任务"。配额耗尽时仍应被 pre-check 拒绝——豁免仅限无 model
+// 参数、通过 task binding 反查解析的纯查询请求。
+func TestBundleResolver_GETVideosWithModelParamStillChecksQuota(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	const (
+		bundleSubID int64 = 9
+		groupID     int64 = 200
+	)
+	plan := &service.BundlePlan{
+		ID: 1,
+		GroupQuotas: []service.BundlePlanGroupQuota{{
+			GroupID:                groupID,
+			QuotaScope:             service.QuotaScopeModel,
+			ModelPattern:           "grok-imagine-video",
+			MonthlyVideoLimitCount: 5,
+		}},
+	}
+	sub := &service.BundleSubscription{ID: bundleSubID, PlanID: 1, Status: service.BundleStatusActive}
+	group := &service.Group{ID: groupID, Platform: "openai"}
+	usage := &service.BundleSubscriptionUsage{MonthlyVideoUsageCount: 5}
+
+	owningSub := bundleSubID
+	cache := mwFakeVideoCache{bindings: map[string]service.VideoTaskBinding{
+		fmt.Sprintf("%d:%s", groupID, "task-abc"): {AccountID: 5, Model: "grok-imagine-video", BundleSubID: &owningSub},
+	}}
+	resolver := service.NewBundleRouteResolver(
+		&mwFakeSubRepo{sub: sub},
+		&mwFakePlanRepo{plan: plan},
+		&mwFakeGroupRepo{group: group},
+		cache,
+	)
+	usageSvc := service.NewBundleUsageService(&mwFakeUsageRepo{usage: usage}, &mwFakeSubRepo{sub: sub}, &mwFakePlanRepo{plan: plan})
+	mw := NewBundleRouteResolverMiddleware(resolver, nil, nil, nil, usageSvc)
+
+	bundleSubIDVal := bundleSubID
+	apiKey := &service.APIKey{ID: 1, BundleSubscriptionID: &bundleSubIDVal}
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	// 带 ?model= → 走 model 路由，不享受只读豁免。
+	c.Request = httptest.NewRequest(http.MethodGet, "/v1/videos/task-abc?model=grok-imagine-video", nil)
+	c.Set(string(ContextKeyAPIKey), apiKey)
+
+	mw.BundleResolver()(c)
+
+	if !c.IsAborted() {
+		t.Fatal("GET video request routed by model param must still be gated by quota pre-check (not skipped)")
+	}
+	if c.Writer.Status() != http.StatusTooManyRequests {
+		t.Fatalf("expected 429 when quota exhausted for model-routed GET, got status=%d", c.Writer.Status())
+	}
+}
+
 // TestExtractVideoTaskIDFromPath 保护 task id 提取逻辑（进度查询与取内容两种路径）。
 func TestExtractVideoTaskIDFromPath(t *testing.T) {
 	tests := []struct {
