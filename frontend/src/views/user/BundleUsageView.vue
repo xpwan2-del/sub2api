@@ -133,7 +133,7 @@
                 <div class="p-3 space-y-3">
                   <!-- 限额（日/周/月 USD 用量） -->
                   <template v-if="hasUsdLimit(usage)">
-                    <div class="pt-2 border-t border-gray-100 dark:border-dark-700"></div>
+                    <!-- <div class="pt-2 border-t border-gray-100 dark:border-dark-700"></div> -->
                     <div class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.limits') }}</div>
                     <!-- Daily Usage -->
                     <div v-if="usage.daily_limit_usd > 0" class="space-y-1">
@@ -183,7 +183,7 @@
 
                   <!-- Image count usage -->
                   <template v-if="hasImageLimit(usage)">
-                    <div class="pt-2 border-t border-gray-100 dark:border-dark-700"></div>
+                    <!-- <div class="pt-2 border-t border-gray-100 dark:border-dark-700"></div> -->
                     <div class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.image') }}</div>
                     <template v-for="m in countMetrics(usage, 'image')" :key="m.key">
                       <div v-if="m.limit > 0" class="space-y-1">
@@ -204,7 +204,7 @@
 
                   <!-- Video count usage -->
                   <template v-if="hasVideoLimit(usage)">
-                    <div class="pt-2 border-t border-gray-100 dark:border-dark-700"></div>
+                    <!-- <div class="pt-2 border-t border-gray-100 dark:border-dark-700"></div> -->
                     <div class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.video') }}</div>
                     <template v-for="m in countMetrics(usage, 'video')" :key="'video-' + m.key">
                       <div v-if="m.limit > 0" class="space-y-1">
