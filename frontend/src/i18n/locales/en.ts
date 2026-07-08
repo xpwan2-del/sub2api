@@ -7602,6 +7602,7 @@ export default {
     noUsageData: 'No usage data',
     image: 'Image',
     video: 'Video',
+    limits: 'Limits',
     unlimited: 'Unlimited',
     viewUsageRecords: 'Usage Records',
     backToBundles: 'Back to Bundles',

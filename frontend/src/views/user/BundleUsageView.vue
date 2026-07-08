@@ -1,21 +1,21 @@
 <template>
   <AppLayout>
-    <div class="mx-auto max-w-4xl space-y-6">
+    <div class="max-w-4xl mx-auto space-y-6">
       <!-- Loading State -->
       <div v-if="loading" class="flex items-center justify-center py-20">
-        <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
+        <div class="w-8 h-8 border-4 rounded-full animate-spin border-primary-500 border-t-transparent"></div>
       </div>
 
       <template v-else>
         <!-- No Active Bundle -->
-        <div v-if="!bundle" class="card p-12 text-center">
-          <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-dark-700">
+        <div v-if="!bundle" class="p-12 text-center card">
+          <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full dark:bg-dark-700">
             <Icon name="cube" size="xl" class="text-gray-400" />
           </div>
           <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">{{ t('bundles.noActiveBundle') }}</h3>
           <p class="mb-4 text-gray-500 dark:text-gray-400">{{ t('bundles.noActiveBundleDesc') }}</p>
           <button
-            class="rounded-xl bg-primary-500 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
+            class="px-5 py-2 text-sm font-semibold text-white transition-colors rounded-xl bg-primary-500 hover:bg-primary-600"
             @click="router.push('/bundles')"
           >
             {{ t('bundles.browsePlans') }}
@@ -24,15 +24,15 @@
 
         <template v-else>
           <!-- Bundle Info Header — 参考 BundlesView 活跃套餐卡片样式 -->
-          <div class="overflow-hidden rounded-2xl border border-primary-500/20 bg-gradient-to-r from-primary-50 to-white dark:from-primary-900/20 dark:to-dark-800">
+          <div class="overflow-hidden border rounded-2xl border-primary-500/20 bg-gradient-to-r from-primary-50 to-white dark:from-primary-900/20 dark:to-dark-800">
             <!-- 标题栏 -->
-            <div class="flex items-center gap-3 border-b border-primary-100 p-4 dark:border-dark-700">
-              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100 dark:bg-primary-900/40">
+            <div class="flex items-center gap-3 p-4 border-b border-primary-100 dark:border-dark-700">
+              <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-900/40">
                 <Icon name="cube" size="lg" class="text-primary-600 dark:text-primary-400" />
               </div>
-              <div class="min-w-0 flex-1">
+              <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2">
-                  <h2 class="truncate text-lg font-bold text-gray-900 dark:text-white">
+                  <h2 class="text-lg font-bold text-gray-900 truncate dark:text-white">
                     {{ activePlan?.name || t('bundles.currentBundle') }}
                   </h2>
                   <span :class="tierBadgeClass(activePlan?.tier)">
@@ -53,7 +53,7 @@
             <!-- 信息网格：到期时间 + 并发数 + RPM -->
             <div class="grid gap-4 p-4 sm:grid-cols-3">
               <!-- Expiration -->
-              <div class="rounded-xl bg-white/60 p-3 dark:bg-dark-700/40">
+              <div class="p-3 rounded-xl bg-white/60 dark:bg-dark-700/40">
                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.expiresAt') }}</p>
                 <p :class="expirationClass">
                   {{ formatExpirationDate(bundle.expires_at) }}
@@ -63,18 +63,18 @@
                 </p>
               </div>
               <!-- Concurrency -->
-              <div class="rounded-xl bg-white/60 p-3 dark:bg-dark-700/40">
+              <div class="p-3 rounded-xl bg-white/60 dark:bg-dark-700/40">
                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.concurrency') }}</p>
                 <p class="text-lg font-bold text-gray-900 dark:text-white">{{ bundle.concurrency_limit || '-' }}</p>
               </div>
               <!-- RPM -->
-              <div class="rounded-xl bg-white/60 p-3 dark:bg-dark-700/40">
+              <div class="p-3 rounded-xl bg-white/60 dark:bg-dark-700/40">
                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.rpm') }}</p>
                 <p class="text-lg font-bold text-gray-900 dark:text-white">{{ bundle.rpm_limit || '-' }}</p>
               </div>
             </div>
 
-            <div class="border-t border-primary-100 p-4 dark:border-dark-700">
+            <div class="p-4 border-t border-primary-100 dark:border-dark-700">
               <button
                 class="inline-flex items-center gap-1.5 rounded-xl bg-primary-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-600 active:bg-primary-700"
                 @click="router.push('/bundles')"
@@ -87,10 +87,10 @@
 
           <!-- Usage Cards by Group -->
           <div>
-            <div class="mb-4 flex items-center justify-between">
+            <div class="flex items-center justify-between mb-4">
               <h3 class="text-base font-bold text-gray-900 dark:text-white">{{ t('bundles.usageByGroup') }}</h3>
               <button
-                class="inline-flex items-center gap-1 text-sm font-medium text-primary-600 transition-colors hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                class="inline-flex items-center gap-1 text-sm font-medium transition-colors text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                 @click="router.push('/usage')"
               >
                 <Icon name="document" size="sm" />
@@ -99,7 +99,7 @@
               </button>
             </div>
 
-            <div v-if="usages.length === 0" class="card py-12 text-center">
+            <div v-if="usages.length === 0" class="py-12 text-center card">
               <Icon name="chart" size="xl" class="mx-auto mb-3 text-gray-300 dark:text-dark-600" />
               <p class="text-gray-500 dark:text-gray-400">{{ t('bundles.noUsageData') }}</p>
             </div>
@@ -108,11 +108,11 @@
               <div
                 v-for="usage in usages"
                 :key="usage.group_id"
-                class="overflow-hidden rounded-2xl border bg-white dark:bg-dark-800"
+                class="overflow-hidden bg-white border rounded-2xl dark:bg-dark-800"
                 :class="platformBorderClass(usage.platform)"
               >
                 <!-- Group Header -->
-                <div class="flex items-center gap-2 border-b border-gray-100 p-3 dark:border-dark-700">
+                <div class="flex items-center gap-2 p-3 border-b border-gray-100 dark:border-dark-700">
                   <div :class="['h-2 w-2 rounded-full', platformDotClass(usage.platform)]" />
                   <span class="text-sm font-semibold text-gray-900 dark:text-white">
                     {{ usage.group_name || t('bundles.groupFallback', { id: usage.group_id }) }}
@@ -120,7 +120,7 @@
                   <span :class="['rounded-md border px-2 py-0.5 text-[11px] font-medium', platformBadgeLightClass(usage.platform)]">
                     {{ platformLabel(usage.platform) }}
                   </span>
-                  <div v-if="usage.model_pattern" class="ml-auto flex flex-wrap items-center justify-end gap-1">
+                  <div v-if="usage.model_pattern" class="flex flex-wrap items-center justify-end gap-1 ml-auto">
                     <span
                       v-for="(p, i) in splitModelPatterns(usage.model_pattern)"
                       :key="i"
@@ -130,55 +130,60 @@
                 </div>
 
                 <!-- Progress Bars -->
-                <div class="space-y-3 p-3">
-                  <!-- Daily Usage -->
-                  <div v-if="usage.daily_limit_usd > 0" class="space-y-1.5">
-                    <div class="flex items-center justify-between text-xs">
-                      <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.daily') }}</span>
-                      <span class="text-gray-500 dark:text-gray-400">${{ usage.daily_usage_usd.toFixed(2) }} / ${{ usage.daily_limit_usd.toFixed(2) }}</span>
+                <div class="p-3 space-y-3">
+                  <!-- 限额（日/周/月 USD 用量） -->
+                  <template v-if="hasUsdLimit(usage)">
+                    <div class="pt-2 border-t border-gray-100 dark:border-dark-700"></div>
+                    <div class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.limits') }}</div>
+                    <!-- Daily Usage -->
+                    <div v-if="usage.daily_limit_usd > 0" class="space-y-1">
+                      <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-gray-500 dark:text-gray-400">{{ t('bundles.daily') }}</span>
+                        <span class="text-gray-500 dark:text-gray-400">${{ usage.daily_usage_usd.toFixed(2) }} / ${{ usage.daily_limit_usd.toFixed(2) }}</span>
+                      </div>
+                      <div class="relative h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                        <div
+                          class="absolute inset-y-0 left-0 transition-all duration-300 rounded-full"
+                          :class="progressBarClass(usage.daily_usage_usd, usage.daily_limit_usd)"
+                          :style="{ width: progressWidth(usage.daily_usage_usd, usage.daily_limit_usd) }"
+                        ></div>
+                      </div>
                     </div>
-                    <div class="relative h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
-                      <div
-                        class="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
-                        :class="progressBarClass(usage.daily_usage_usd, usage.daily_limit_usd)"
-                        :style="{ width: progressWidth(usage.daily_usage_usd, usage.daily_limit_usd) }"
-                      ></div>
-                    </div>
-                  </div>
 
-                  <!-- Weekly Usage -->
-                  <div v-if="usage.weekly_limit_usd > 0" class="space-y-1.5">
-                    <div class="flex items-center justify-between text-xs">
-                      <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.weekly') }}</span>
-                      <span class="text-gray-500 dark:text-gray-400">${{ usage.weekly_usage_usd.toFixed(2) }} / ${{ usage.weekly_limit_usd.toFixed(2) }}</span>
+                    <!-- Weekly Usage -->
+                    <div v-if="usage.weekly_limit_usd > 0" class="space-y-1">
+                      <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-gray-500 dark:text-gray-400">{{ t('bundles.weekly') }}</span>
+                        <span class="text-gray-500 dark:text-gray-400">${{ usage.weekly_usage_usd.toFixed(2) }} / ${{ usage.weekly_limit_usd.toFixed(2) }}</span>
+                      </div>
+                      <div class="relative h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                        <div
+                          class="absolute inset-y-0 left-0 transition-all duration-300 rounded-full"
+                          :class="progressBarClass(usage.weekly_usage_usd, usage.weekly_limit_usd)"
+                          :style="{ width: progressWidth(usage.weekly_usage_usd, usage.weekly_limit_usd) }"
+                        ></div>
+                      </div>
                     </div>
-                    <div class="relative h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
-                      <div
-                        class="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
-                        :class="progressBarClass(usage.weekly_usage_usd, usage.weekly_limit_usd)"
-                        :style="{ width: progressWidth(usage.weekly_usage_usd, usage.weekly_limit_usd) }"
-                      ></div>
-                    </div>
-                  </div>
 
-                  <!-- Monthly Usage -->
-                  <div v-if="usage.monthly_limit_usd > 0" class="space-y-1.5">
-                    <div class="flex items-center justify-between text-xs">
-                      <span class="font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.monthly') }}</span>
-                      <span class="text-gray-500 dark:text-gray-400">${{ usage.monthly_usage_usd.toFixed(2) }} / ${{ usage.monthly_limit_usd.toFixed(2) }}</span>
+                    <!-- Monthly Usage -->
+                    <div v-if="usage.monthly_limit_usd > 0" class="space-y-1">
+                      <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-gray-500 dark:text-gray-400">{{ t('bundles.monthly') }}</span>
+                        <span class="text-gray-500 dark:text-gray-400">${{ usage.monthly_usage_usd.toFixed(2) }} / ${{ usage.monthly_limit_usd.toFixed(2) }}</span>
+                      </div>
+                      <div class="relative h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                        <div
+                          class="absolute inset-y-0 left-0 transition-all duration-300 rounded-full"
+                          :class="progressBarClass(usage.monthly_usage_usd, usage.monthly_limit_usd)"
+                          :style="{ width: progressWidth(usage.monthly_usage_usd, usage.monthly_limit_usd) }"
+                        ></div>
+                      </div>
                     </div>
-                    <div class="relative h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
-                      <div
-                        class="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
-                        :class="progressBarClass(usage.monthly_usage_usd, usage.monthly_limit_usd)"
-                        :style="{ width: progressWidth(usage.monthly_usage_usd, usage.monthly_limit_usd) }"
-                      ></div>
-                    </div>
-                  </div>
+                  </template>
 
                   <!-- Image count usage -->
                   <template v-if="hasImageLimit(usage)">
-                    <div class="border-t border-gray-100 pt-2 dark:border-dark-700"></div>
+                    <div class="pt-2 border-t border-gray-100 dark:border-dark-700"></div>
                     <div class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.image') }}</div>
                     <template v-for="m in countMetrics(usage, 'image')" :key="m.key">
                       <div v-if="m.limit > 0" class="space-y-1">
@@ -188,7 +193,7 @@
                         </div>
                         <div class="relative h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
                           <div
-                            class="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
+                            class="absolute inset-y-0 left-0 transition-all duration-300 rounded-full"
                             :class="progressBarClass(m.used, m.limit)"
                             :style="{ width: progressWidth(m.used, m.limit) }"
                           ></div>
@@ -199,7 +204,7 @@
 
                   <!-- Video count usage -->
                   <template v-if="hasVideoLimit(usage)">
-                    <div class="border-t border-gray-100 pt-2 dark:border-dark-700"></div>
+                    <div class="pt-2 border-t border-gray-100 dark:border-dark-700"></div>
                     <div class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('bundles.video') }}</div>
                     <template v-for="m in countMetrics(usage, 'video')" :key="'video-' + m.key">
                       <div v-if="m.limit > 0" class="space-y-1">
@@ -209,7 +214,7 @@
                         </div>
                         <div class="relative h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
                           <div
-                            class="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
+                            class="absolute inset-y-0 left-0 transition-all duration-300 rounded-full"
                             :class="progressBarClass(m.used, m.limit)"
                             :style="{ width: progressWidth(m.used, m.limit) }"
                           ></div>
@@ -221,7 +226,7 @@
                   <!-- No limits -->
                   <div
                     v-if="!hasAnyUsageLimit(usage)"
-                    class="flex items-center justify-center rounded-lg bg-emerald-50 py-3 dark:bg-emerald-900/20"
+                    class="flex items-center justify-center py-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20"
                   >
                     <span class="text-sm text-emerald-600 dark:text-emerald-400">∞ {{ t('bundles.unlimited') }}</span>
                   </div>
@@ -313,9 +318,13 @@ function hasImageLimit(u: BundleUsageProgress): boolean {
 function hasVideoLimit(u: BundleUsageProgress): boolean {
   return u.daily_video_limit_count > 0 || u.weekly_video_limit_count > 0 || u.monthly_video_limit_count > 0
 }
+// 是否配置了日/周/月 USD 金额限额
+function hasUsdLimit(u: BundleUsageProgress): boolean {
+  return u.daily_limit_usd > 0 || u.weekly_limit_usd > 0 || u.monthly_limit_usd > 0
+}
 // 是否有任何限额（USD 或 count）；全为 0 时显示"不限"
 function hasAnyUsageLimit(u: BundleUsageProgress): boolean {
-  return u.daily_limit_usd > 0 || u.weekly_limit_usd > 0 || u.monthly_limit_usd > 0 || hasImageLimit(u) || hasVideoLimit(u)
+  return hasUsdLimit(u) || hasImageLimit(u) || hasVideoLimit(u)
 }
 // 拼装某类（image/video）的日/周/月 count 指标，供模板 v-for 渲染
 function countMetrics(u: BundleUsageProgress, kind: 'image' | 'video') {

@@ -7784,6 +7784,7 @@ export default {
     noUsageData: '暂无用量数据',
     image: '图片',
     video: '视频',
+    limits: '限额',
     unlimited: '不限额度',
     viewUsageRecords: '使用记录',
     backToBundles: '返回套餐',
