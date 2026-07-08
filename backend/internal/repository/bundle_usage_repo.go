@@ -71,41 +71,35 @@ func (r *bundleUsageRepository) GetOrCreateUsage(ctx context.Context, bundleSubs
 			return translatePersistenceError(err, nil, nil)
 		}
 
-		// 不存在 → 创建空 usage（usage 值走 schema 默认 0，窗口起点 = now）
-		created, createErr := txClient.BundleSubscriptionUsage.Create().
-			SetBundleSubscriptionID(bundleSubscriptionID).
-			SetGroupID(groupID).
-			SetModelPattern(modelPattern).
-			SetDailyWindowStart(now).
-			SetWeeklyWindowStart(now).
-			SetMonthlyWindowStart(now).
-			Save(txCtx)
-		if createErr == nil {
-			usage := bundleSubscriptionUsageToService(created)
-			result = &usage
-			return nil
+		// 不存在 → INSERT ON CONFLICT DO NOTHING（单条 SQL，并发冲突时不报错、不使事务进入
+		// aborted 状态）。避免「Create 撞唯一约束 → PG 事务 aborted → 后续重查失败」的陷阱
+		// （PG 规则：事务内任一语句报错后，后续语句全部失败直到 ROLLBACK）。
+		// 与 user_platform_quota_repo.IncrementUsageWithReset 的 fail-open create 同范式。
+		const insertSQL = `INSERT INTO bundle_subscription_usages
+			(bundle_subscription_id, group_id, model_pattern,
+			 daily_window_start, weekly_window_start, monthly_window_start)
+			VALUES ($1, $2, $3, $4, $4, $4)
+			ON CONFLICT (bundle_subscription_id, group_id, model_pattern) DO NOTHING`
+		if _, err := txClient.ExecContext(txCtx, insertSQL,
+			bundleSubscriptionID, groupID, modelPattern, now,
+		); err != nil {
+			return translatePersistenceError(err, nil, nil)
 		}
 
-		// 并发：唯一约束冲突 = 另一请求已建，重查返回已建行
-		if isUniqueConstraintViolation(createErr) {
-			existing, qErr := txClient.BundleSubscriptionUsage.Query().
-				Where(
-					bundlesubscriptionusage.BundleSubscriptionIDEQ(bundleSubscriptionID),
-					bundlesubscriptionusage.GroupIDEQ(groupID),
-					bundlesubscriptionusage.ModelPatternEQ(modelPattern),
-				).
-				Only(txCtx)
-			if qErr != nil {
-				if dbent.IsNotFound(qErr) {
-					return fmt.Errorf("self-heal create bundle usage: concurrent create vanished: %w", createErr)
-				}
-				return translatePersistenceError(qErr, nil, nil)
-			}
-			usage := bundleSubscriptionUsageToService(existing)
-			result = &usage
-			return nil
+		// 重查：事务状态正常（ON CONFLICT 未 abort），返回新建行或并发已建行。
+		m2, err := txClient.BundleSubscriptionUsage.Query().
+			Where(
+				bundlesubscriptionusage.BundleSubscriptionIDEQ(bundleSubscriptionID),
+				bundlesubscriptionusage.GroupIDEQ(groupID),
+				bundlesubscriptionusage.ModelPatternEQ(modelPattern),
+			).
+			Only(txCtx)
+		if err != nil {
+			return translatePersistenceError(err, nil, nil)
 		}
-		return translatePersistenceError(createErr, nil, nil)
+		usage := bundleSubscriptionUsageToService(m2)
+		result = &usage
+		return nil
 	}); err != nil {
 		return nil, err
 	}
