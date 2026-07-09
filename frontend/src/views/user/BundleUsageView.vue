@@ -88,7 +88,18 @@
           <!-- Usage Cards by Group -->
           <div>
             <div class="flex items-center justify-between mb-4">
-              <h3 class="text-base font-bold text-gray-900 dark:text-white">{{ t('bundles.usageByGroup') }}</h3>
+              <div class="flex items-center gap-2">
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">{{ t('bundles.usageByGroup') }}</h3>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-icon"
+                  :title="t('common.refresh')"
+                  :disabled="refreshing"
+                  @click="refreshUsage"
+                >
+                  <Icon name="refresh" size="sm" :class="refreshing ? 'animate-spin' : ''" />
+                </button>
+              </div>
               <button
                 class="inline-flex items-center gap-1 text-sm font-medium transition-colors text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                 @click="router.push('/usage')"
@@ -271,6 +282,8 @@ const plans = ref<BundlePlan[]>([])
 const bundle = ref<BundleSubscription | null>(null)
 // 各渠道组的用量进度列表
 const usages = ref<BundleUsageProgress[]>([])
+// 手动刷新用量时的局部 loading（仅图标旋转，不触发整页骨架）
+const refreshing = ref(false)
 
 // 从 plans 中匹配当前订阅的 plan（和 BundlesView 一致的方式）
 const activePlan = computed<BundlePlan | null>(() => {
@@ -398,6 +411,19 @@ async function loadData() {
     appStore.showError(t('bundles.failedToLoad'))
   } finally {
     loading.value = false
+  }
+}
+
+// 手动刷新各渠道组用量（仅重新拉取 usage，不重载套餐/订阅）
+async function refreshUsage() {
+  try {
+    refreshing.value = true
+    usages.value = await getMyUsage()
+  } catch (error) {
+    console.error('Failed to refresh bundle usage:', error)
+    appStore.showError(t('bundles.failedToLoad'))
+  } finally {
+    refreshing.value = false
   }
 }
 
