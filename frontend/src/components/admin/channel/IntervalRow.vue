@@ -35,14 +35,12 @@
       </div>
     </template>
 
-    <!-- Per-request / Image mode: tier label + context range + price -->
-    <template v-else>
+    <!-- Per-request mode: 自由文本层级（语义通用，保持手输） -->
+    <template v-else-if="mode === 'per_request'">
       <div class="w-24">
-        <label class="text-xs text-gray-400">
-          {{ mode === 'image' ? t('admin.channels.form.resolution', '分辨率') : t('admin.channels.form.tierLabel', '层级') }}
-        </label>
+        <label class="text-xs text-gray-400">{{ t('admin.channels.form.tierLabel', '层级') }}</label>
         <input :value="interval.tier_label" @input="emitField('tier_label', ($event.target as HTMLInputElement).value)"
-          type="text" class="input mt-0.5 text-xs" :placeholder="mode === 'image' ? '1K / 2K / 4K' : ''" />
+          type="text" class="input mt-0.5 text-xs" />
       </div>
       <div class="w-20">
         <label class="text-xs text-gray-400">Min</label>
@@ -61,6 +59,29 @@
       </div>
     </template>
 
+    <!-- Image / Video mode: 分辨率下拉框（固定枚举）+ 单次价格 -->
+    <template v-else>
+      <div class="w-28">
+        <label class="text-xs text-gray-400">
+          {{ t('admin.channels.form.resolution', '分辨率') }}
+          <span v-if="isTierInvalid" class="text-red-500">*</span>
+        </label>
+        <Select
+          :modelValue="interval.tier_label"
+          @update:modelValue="emitField('tier_label', ($event as string) ?? '')"
+          :options="resolutionOptionsForMode(mode)"
+          :error="isTierInvalid"
+          :placeholder="t('admin.channels.form.resolutionNotMatched', '该档位无法匹配，请重新选择')"
+          class="mt-0.5"
+        />
+      </div>
+      <div class="flex-1">
+        <label class="text-xs text-gray-400">{{ t('admin.channels.form.perRequestPrice', '单次价格') }} <span v-if="isEmpty" class="text-red-500">*</span> <span class="text-gray-300">$</span></label>
+        <input :value="interval.per_request_price" @input="emitField('per_request_price', ($event.target as HTMLInputElement).value)"
+          type="number" step="any" min="0" class="input mt-0.5 text-xs" />
+      </div>
+    </template>
+
     <button type="button" @click="emit('remove')" class="mt-4 rounded p-0.5 text-gray-400 hover:text-red-500">
       <Icon name="x" size="sm" />
     </button>
@@ -71,6 +92,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
+import Select from '@/components/common/Select.vue'
+import { resolutionOptionsForMode } from './types'
 import type { IntervalFormEntry } from './types'
 import type { BillingMode } from '@/api/admin/channels'
 
@@ -94,6 +117,13 @@ const isEmpty = computed(() => {
     (iv.cache_write_price == null || iv.cache_write_price === '') &&
     (iv.cache_read_price == null || iv.cache_read_price === '') &&
     (iv.per_request_price == null || iv.per_request_price === '')
+})
+
+// 当前 tier_label 是否不在该模式合法枚举内（旧非标数据 → 标红提示）
+const isTierInvalid = computed(() => {
+  const opts = resolutionOptionsForMode(props.mode)
+  if (opts.length === 0) return false // per_request/token 不校验
+  return !opts.some(o => o.value === props.interval.tier_label)
 })
 
 function emitField(field: keyof IntervalFormEntry, value: string | number | null) {
