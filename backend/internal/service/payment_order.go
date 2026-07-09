@@ -85,6 +85,7 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	balanceDeduct := 0.0
 	if req.UseBalance && (req.OrderType == payment.OrderTypeBundle || req.OrderType == payment.OrderTypeBundleUpgrade) && user.Balance > 0 {
 		planPrice := orderAmount
+		balanceDeduct = math.Min(user.Balance, planPrice)
 		if balanceDeduct >= planPrice {
 			// Pure balance payment: deduct balance, create order as PAID, fulfill immediately
 			return s.createPureBalanceBundleOrder(ctx, req, user, cfg, orderAmount, feeRate)

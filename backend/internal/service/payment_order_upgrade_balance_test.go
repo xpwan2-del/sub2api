@@ -15,6 +15,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -169,4 +170,87 @@ func TestCreatePureBalanceBundleOrder_BundleStillRoutesToBundleFulfillment(t *te
 		Only(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, activationAudit, "普通 bundle 应走 ActivateBundle 激活路径")
+}
+
+// upgradeBalanceGateLoadBalancer 记录 SelectInstance 是否被调用。纯余额套餐支付不应
+// 触达支付网关（balance 无渠道实例），一旦触达即说明 CreateOrder 的余额 gate 失效——
+// 回归特征：balanceDeduct 未被计算→恒 0→纯余额判断恒 false→误入混合支付→网关选实例
+// → method_not_configured (503)。
+type upgradeBalanceGateLoadBalancer struct {
+	selectCalled bool
+}
+
+func (lb *upgradeBalanceGateLoadBalancer) GetInstanceConfig(context.Context, int64) (map[string]string, error) {
+	return nil, nil
+}
+
+func (lb *upgradeBalanceGateLoadBalancer) SelectInstance(_ context.Context, _ string, pt payment.PaymentType, _ payment.Strategy, _ float64) (*payment.InstanceSelection, error) {
+	lb.selectCalled = true
+	return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "method_not_configured").
+		WithMetadata(map[string]string{"payment_type": string(pt)})
+}
+
+// TestCreateOrder_PureBalanceUpgradeSkipsGateway 从 CreateOrder 公开入口驱动，守护余额 gate。
+// UseBalance + 余额充足时，bundle_upgrade 必须走 createPureBalanceBundleOrder 直接成功，
+// 绝不能触达 loadBalancer.SelectInstance（否则前端报 method_not_configured 503）。
+// 这是入口级回归测试：上面的用例直接调 createPureBalanceBundleOrder 绕过了 gate，
+// 无法捕获 balanceDeduct 计算回归（commit 2899ffb3 把 OrderType 扩成 bundle||bundle_upgrade
+// 时误删了 balanceDeduct = math.Min(user.Balance, planPrice)）。
+func TestCreateOrder_PureBalanceUpgradeSkipsGateway(t *testing.T) {
+	ctx := context.Background()
+	client := newUpgradeFulfillTestClient(t)
+	ensurePaymentAuditOrderActionUniqueIndex(t, ctx, client)
+
+	const upgradeDue = 50.0
+	user := createUpgradeFulfillUser(t, ctx, client, "upgrade-createorder-balance@example.com")
+
+	userRepo := &mockUserRepo{
+		getByIDUser: &User{ID: user.ID, Email: user.Email, Username: user.Username, Status: payment.EntityStatusActive, Balance: upgradeDue + 100},
+	}
+	userRepo.deductBalanceFn = func(_ context.Context, id int64, amount float64) error {
+		require.Equal(t, user.ID, id)
+		require.Equal(t, upgradeDue, amount, "纯余额应一次性扣足差价")
+		return nil
+	}
+	userRepo.updateBalanceFn = func(_ context.Context, _ int64, _ float64) error { return nil }
+
+	subRepo := &upgradeSubRepoStub{old: upgradeActiveOldForUser(user.ID)}
+	planRepo := &activateBundlePlanRepoStub{plan: upgradeTargetPlan(true, BundlePlanStatusActive)}
+	usageRepo := &activateBundleUsageRepoStub{}
+	userSubRepo := &activateUserSubRepoStub{}
+	bundleSvc := NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil)
+
+	// 真实 PaymentConfigService：GetPaymentConfig 经 settingRepo 取 payment_enabled=true；
+	// 其余配置缺省（CancelRateLimit 关闭、无日限）即可让 CreateOrder 顺利抵达余额 gate。
+	settingRepo := newNotificationEmailMemorySettingRepo()
+	_ = settingRepo.Set(ctx, SettingPaymentEnabled, "true")
+	cfgSvc := NewPaymentConfigService(client, settingRepo, nil)
+
+	lb := &upgradeBalanceGateLoadBalancer{}
+
+	svc := &PaymentService{
+		entClient:             client,
+		bundleSubscriptionSvc: bundleSvc,
+		userRepo:              userRepo,
+		configService:         cfgSvc,
+		loadBalancer:          lb,
+	}
+
+	req := CreateOrderRequest{
+		UserID:                     user.ID,
+		Amount:                     upgradeDue,
+		OrderType:                  payment.OrderTypeBundleUpgrade,
+		PlanID:                     6,
+		SourceBundleSubscriptionID: 1,
+		ProrateCredit:              30.0,
+		UseBalance:                 true,
+		PaymentType:                "balance", // 纯余额意图：前端真实发送值
+		ClientIP:                   "127.0.0.1",
+		SrcHost:                    "api.example.com",
+	}
+	resp, err := svc.CreateOrder(ctx, req)
+	require.NoError(t, err, "纯余额升级不应报 method_not_configured")
+	require.NotNil(t, resp)
+	require.True(t, resp.DirectSuccess, "纯余额支付应直接成功")
+	require.False(t, lb.selectCalled, "纯余额支付不得触达支付网关 SelectInstance")
 }
