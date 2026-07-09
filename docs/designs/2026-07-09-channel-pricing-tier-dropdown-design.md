@@ -105,10 +105,11 @@ export const VIDEO_RESOLUTION_OPTIONS = [
 ### 5.4 后端匹配修复（图片闭环）
 
 1. **大小写归一化（关键 bug 修复）**：`GetRequestTierPrice`（`model_pricing_resolver.go`）把 `tier.TierLabel == tierLabel` 改为 `strings.EqualFold(tier.TierLabel, tierLabel)`，与 `GetTierByLabel` 统一。根除「DB 小写 / 请求大写 → 静默落兜底价」。
-2. **video 接进计费分发**：
-   - `applyRequestTierOverrides`（`model_pricing_resolver.go`）：mode 判断 `per_request, image` 扩展为 `per_request, image, video`，使 `video` 的 intervals 进入 `RequestTiers`、`PerRequestPrice` 进入 `DefaultPerRequestPrice`。
-   - `CalculateCostUnified`（`billing_service.go`）的 mode 分发：`video` 归到与 `per_request`/`image` 相同的 `calculatePerRequestCost` 路径。
-   - 效果：本轮即使没有视频分辨率解析链路，配了 `video` 模式的渠道，视频请求也能按默认兜底价计费（不再 0 元或走 token）。
+2. **video 模式后端骨架（配置合法化 + 解析就绪）**：
+   - `channel.go`：加 `BillingModeVideo` 常量；`IsValid()` 与 `ValidateIntervals` 纳入 `video`（按 label 分层、跳过 token 区间重叠校验）。
+   - `model_pricing_resolver.go` `Resolve`（约第 75 行）：`per_request, image` 的 mode 判断扩展为含 `video`，使 `video` 定价走 `applyRequestTierOverrides`（否则会被误当 token 处理、价格读不出）；`applyChannelOverrides` 的 switch case 同步加 `video`。
+   - `billing_service.go` `CalculateCostUnified`：mode 分发 case 加 `video`，归到 `calculatePerRequestCost`。
+   - **边界**：本轮不改视频请求的金额计算入口（`calculateRecordUsageCost` / `calculateOpenAIRecordUsageCost` 现仅 `ImageCount > 0` 走图片计费，否则走 token）。因此 video 模式本轮是「配置可保存 + 解析链路就绪」的骨架，视频请求金额仍走 token；待后续「视频分辨率解析」专项接通金额入口后，video 档位即按 tier/兜底价计费。
 3. 图片分类器 `ClassifyImageBillingTier` **无需改动**——已与下拉框枚举对齐。
 4. 后端 `ValidateIntervals`（`channel.go`）：`video` 同 `per_request`/`image`，按 label 分层、跳过 token 区间重叠校验。
 
@@ -129,7 +130,7 @@ export const VIDEO_RESOLUTION_OPTIONS = [
 
 **后端：**
 - `backend/internal/service/channel.go` — `BillingModeVideo` 常量 + `IsValid()` + `ValidateIntervals` video 分支
-- `backend/internal/service/model_pricing_resolver.go` — `GetRequestTierPrice` 大小写归一化 + `applyRequestTierOverrides` 接入 video
+- `backend/internal/service/model_pricing_resolver.go` — `GetRequestTierPrice` 大小写归一化 + `Resolve`/`applyChannelOverrides` 识别 video
 - `backend/internal/service/billing_service.go` — `CalculateCostUnified` mode 分发接入 video
 
 **无 migration、无 ent schema 变更、无 Wire 变更。**
@@ -149,6 +150,6 @@ export const VIDEO_RESOLUTION_OPTIONS = [
 
 ## 8. 风险与边界
 
-- **视频档位本轮不生效**：`video` 模式的 tier 单价（480P/720P/...）在视频解析链路建成前不会被命中，视频按默认兜底价计费。这是已知边界，需在 UI 上向运营说明（如 video 模式层级区加提示「分辨率匹配需后续支持」）。
+- **视频档位本轮不生效**：`video` 模式的 tier 单价（480P/720P/...）在视频金额入口接通前不会被命中，且视频请求金额本轮仍走 token 计费（非兜底价）。这是已知边界，需在 UI 上向运营说明（如 video 模式层级区加提示「分辨率匹配需后续支持」）。
 - **后端大小写归一化的副作用**：若历史数据存在故意区分大小写的 tier_label（极少见），归一化会改变其匹配行为。风险极低，且符合「统一到枚举」的方向。
 - **`per_request` 保持自由文本**：意味着「配了不生效」风险在 `per_request` 模式依然存在，但这是该模式通用性所需，且不在本次目标内。
