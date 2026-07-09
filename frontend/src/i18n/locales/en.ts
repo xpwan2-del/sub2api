@@ -4,6 +4,8 @@ export default {
     viewOnGithub: 'View on GitHub',
     viewDocs: 'View Documentation',
     docs: 'Docs',
+    models: 'Models',
+    canvas: 'AI Canvas',
     switchToLight: 'Switch to Light Mode',
     switchToDark: 'Switch to Dark Mode',
     dashboard: 'Dashboard',
@@ -17,6 +19,93 @@ export default {
       subscriptionToApi: 'Subscription to API',
       stickySession: 'Session Persistence',
       realtimeBilling: 'Pay As You Go'
+    },
+    jarvis: {
+      kicker: 'AI Routing Intelligence',
+      title: 'Model traffic, thinking in motion.',
+      description: 'One gateway coordinates upstream accounts, latency, quotas, fallback paths, and billing signals as a living command system.',
+      models: {
+        Claude: {
+          specialty: 'Long context · reasoning · writing',
+          intro: "I'm Claude. I write like a consultant, reason like a patient teacher, and yes, stability is kind of my brand."
+        },
+        OpenAI: {
+          specialty: 'Tool calling · code · agents',
+          intro: "I'm OpenAI. Code, APIs, tools, agents: hand me the workflow and I'll try to wire the whole machine."
+        },
+        Gemini: {
+          specialty: 'Multimodal · long context · Google ecosystem',
+          intro: "I'm Gemini. Text, images, video, long context, plus the Google toolbox. I bring a rather large backpack."
+        },
+        Grok: {
+          specialty: 'Real-time feel · personality · fast reasoning',
+          intro: "I'm Grok. I may crack the joke first, but I still show up fast when the reasoning gets serious."
+        },
+        Qwen: {
+          specialty: 'Chinese · code · open source',
+          intro: "I'm Qwen. Strong Chinese, solid code, open weights energy, and I don't make finance people panic."
+        },
+        DeepSeek: {
+          specialty: 'Reasoning · code · low cost',
+          intro: "I'm DeepSeek. I can reason, code, and keep the bill polite. Cheap and punchy is a valid personality."
+        },
+        Kimi: {
+          specialty: 'Long context · documents · Chinese',
+          intro: "I'm Kimi. Drop the documents here; I have a big appetite and a very patient reading habit."
+        },
+        Meta: {
+          specialty: 'Open source · local deploy · fine-tuning',
+          intro: "I'm Llama. Not the flashiest suit in the room, but if you want to customize and self-host, I'm moving in."
+        },
+        Zhipu: {
+          specialty: 'Chinese reasoning · enterprise · local ecosystem',
+          intro: "I'm GLM. Chinese business scenarios, proposals, enterprise Q&A: I know the hallway conversations too."
+        },
+        Baidu: {
+          specialty: 'Chinese knowledge · search-enhanced · deployment',
+          intro: "I'm ERNIE. I have search in the family, so when memory gets fuzzy, I know where to look."
+        },
+        MiniMax: {
+          specialty: 'Chinese chat · long context · product experience',
+          intro: "I'm MiniMax. Smooth chat, long context, and product polish. I try to feel less like a lab demo."
+        },
+        Mistral: {
+          specialty: 'Efficient · commercial · European ecosystem',
+          intro: "I'm Mistral. French efficiency, compact moves, fast runs. I don't need to shout to get work done."
+        },
+        AWS: {
+          specialty: 'Cloud integration · enterprise deploy · stable',
+          intro: "I'm Nova. Born in the AWS house, so scaling, deployment, and enterprise wiring feel like home turf."
+        },
+        Hunyuan: {
+          specialty: 'Chinese · multimedia · Tencent ecosystem',
+          intro: "I'm Hunyuan. Chinese content and social scenarios are familiar territory; I've seen plenty of traffic."
+        },
+        Nvidia: {
+          specialty: 'Inference optimization · GPU · private deployment',
+          intro: "I'm Nemotron. Others ask about prompts; I ask about GPUs. Feed the hardware and let it sprint."
+        },
+        Doubao: {
+          specialty: 'Chinese content · chat · productization',
+          intro: "I'm Doubao. Content, conversation, product feel: I can tell when users are about to scroll away."
+        },
+        Microsoft: {
+          specialty: 'Small models · efficiency · edge',
+          intro: "I'm Phi. Small frame, low appetite, useful output. Tiny can still do real work."
+        },
+        Perplexity: {
+          specialty: 'Web search · citations · research',
+          intro: "I'm Sonar. I don't pretend to know everything; I search, cite, and show my receipts."
+        },
+        AI21: {
+          specialty: 'Long context · documents · enterprise text',
+          intro: "I'm Jamba. Contracts, reports, knowledge bases: send the document queue and I'll start chewing."
+        },
+        Cohere: {
+          specialty: 'RAG · multilingual · enterprise retrieval',
+          intro: "I'm Cohere. Enterprise RAG is my regular route; ask less if I can chat, more if I can retrieve accurately."
+        }
+      }
     },
     // Pain points section
     painPoints: {
@@ -44,14 +133,6 @@ export default {
     solutions: {
       title: 'We Solve These Problems',
       subtitle: 'Three simple steps to stress-free AI access'
-    },
-    features: {
-      unifiedGateway: 'One-Click Access',
-      unifiedGatewayDesc: 'Get a single API key to call all connected AI models. No separate applications needed.',
-      multiAccount: 'Always Reliable',
-      multiAccountDesc: 'Smart routing across multiple upstream accounts with automatic failover. Say goodbye to errors.',
-      balanceQuota: 'Pay What You Use',
-      balanceQuotaDesc: 'Usage-based billing with quota limits. Full visibility into team consumption.'
     },
     // Comparison section
     comparison: {
@@ -88,16 +169,6 @@ export default {
           us: 'Quotas & detailed analytics'
         }
       }
-    },
-    providers: {
-      title: 'Supported AI Models',
-      description: 'One API, Multiple Choices',
-      supported: 'Supported',
-      soon: 'Soon',
-      claude: 'Claude',
-      gemini: 'Gemini',
-      antigravity: 'Antigravity',
-      more: 'More'
     },
     // CTA section
     cta: {
@@ -247,6 +318,76 @@ export default {
     }
   },
 
+  modelCatalog: {
+    navLabel: 'Models',
+    kicker: 'Public Model Catalog',
+    title: 'Model Catalog',
+    subtitle: '',
+    available: 'Available',
+    loading: 'Syncing model catalog...',
+    loadFailed: 'Failed to load model catalog',
+    retry: 'Retry',
+    empty: 'No matching models are available, or no sellable models have been connected yet.',
+    searchPlaceholder: 'Search model or platform',
+    copyName: 'Copy model',
+    copied: 'Model name copied',
+    startUsing: 'Start using',
+    stats: {
+      models: 'Models',
+      platforms: 'Platforms',
+      currency: 'Billing'
+    },
+    filters: {
+      allPlatforms: 'All platforms',
+      allCapabilities: 'All capabilities',
+      allBilling: 'All billing'
+    },
+    capabilities: {
+      reasoning: 'Reasoning',
+      coding: 'Coding',
+      longContext: 'Long context',
+      lowCost: 'Low cost',
+      multimodal: 'Multimodal',
+      fast: 'Fast'
+    },
+    billingModes: {
+      token: 'Token',
+      image: 'Image',
+      per_request: 'Per request',
+      unknown: 'Price pending'
+    },
+    price: {
+      input: 'Input / 1M',
+      output: 'Output / 1M',
+      image: 'Image output',
+      request: 'Per request',
+      unavailable: 'Price pending'
+    },
+    health: {
+      title: 'Health',
+      window: 'Last 48h',
+      requests: 'Requests',
+      successRate: 'Success',
+      statusLabel: 'Status',
+      bucket: 'Hour bucket {index}',
+      status: {
+        operational: 'Operational',
+        degraded: 'Degraded',
+        rate_limited: 'Rate limited',
+        failed: 'Incident',
+        no_recent_traffic: 'No traffic',
+        orphaned_history: 'Historic traffic',
+        idle: 'No requests',
+        unknown: 'Unknown'
+      }
+    },
+    sort: {
+      price: 'Lowest price',
+      name: 'Name',
+      provider: 'Platform'
+    }
+  },
+
   // Common
   common: {
     loading: 'Loading...',
@@ -375,6 +516,7 @@ export default {
   // Navigation
   nav: {
     dashboard: 'Dashboard',
+    canvas: 'AI Canvas',
     announcements: 'Announcements',
     apiKeys: 'API Keys',
     usage: 'Usage',
@@ -394,6 +536,7 @@ export default {
     proxies: 'Proxies',
     redeemCodes: 'Redeem Codes',
     ops: 'Ops',
+    modelStatus: 'Model Status',
     promoCodes: 'Promo Codes',
     settings: 'Settings',
     myAccount: 'My Account',
@@ -416,6 +559,11 @@ export default {
     channelMonitor: 'Channel Monitor',
     channelStatus: 'Channel Status',
     riskControl: 'Risk Control',
+    bundleManagement: 'Bundle Management',
+    bundlePlans: 'Bundle Plans',
+    bundleSubscriptions: 'Bundle Subscriptions',
+    bundles: 'Bundles',
+    bundleUsage: 'Bundle Usage',
   },
 
   // Auth
@@ -771,6 +919,8 @@ export default {
       note: 'These environment variables will be active in the current terminal session. For permanent configuration, add them to ~/.bashrc, ~/.zshrc, or the appropriate configuration file.',
       noGroupTitle: 'Please assign a group first',
       noGroupDescription: 'This API key has not been assigned to a group. Please click the group column in the key list to assign one before viewing the configuration.',
+      universalKeyTitle: 'Universal Key · Auto Route',
+      universalKeyDescription: 'This is a universal key with auto-routing to all models in your bundle. Configure your client below to start using it.',
       openai: {
         description: 'Add the following configuration files to your Codex CLI config directory.',
         configTomlHint: 'Make sure the following content is at the beginning of the config.toml file',
@@ -2244,13 +2394,17 @@ export default {
       },
       imagePricing: {
         title: 'Image Generation Pricing',
-        description: 'Configure image generation access and base image prices. Leave empty to use default prices.',
+        description: 'Configure image generation access and image multiplier. Set per-model image prices in channel pricing.',
         allowImageGeneration: 'Allow image generation for this group',
         independentMultiplier: 'Use independent image multiplier',
         imageMultiplier: 'Image multiplier',
         modeHint: 'By default, image billing uses image price × current effective group multiplier. Independent mode uses image price × image multiplier.',
+        priceMigratedHint: 'Image unit prices have moved to “Channels → Model Pricing”: set billing mode to “Image” and configure tiers like 1K/2K/4K. Only multiplier and toggles remain here.',
+        legacyPriceNote: 'This group still has legacy image prices; they serve as a fallback when a channel has no pricing for the model.',
         finalPricePreview: 'Final per-image price preview',
-        notConfigured: 'Not configured'
+        notConfigured: 'Not configured',
+        multiplierRequired: 'Please enter the image multiplier when independent mode is enabled',
+        multiplierInvalid: 'Image multiplier must be a number ≥ 0'
       },
       modelsList: {
         title: 'Custom /v1/models Model List',
@@ -4734,6 +4888,80 @@ export default {
     ops: {
       title: 'Ops Monitoring',
       description: 'Operational monitoring and troubleshooting',
+      modelStatus: {
+        title: 'Model Status',
+        description: 'Realtime server, gateway, provider, and model health',
+        refresh: 'Refresh',
+        refreshing: 'Refreshing',
+        failedToLoad: 'Failed to load model status',
+        timeRange: 'Time Range',
+        provider: 'Provider',
+        statusLabel: 'Status',
+        search: 'Search',
+        searchPlaceholder: 'Search model name',
+        cloudTitle: 'Server',
+        gatewayTitle: 'Gateway Health',
+        cpu: 'CPU',
+        memory: 'Memory',
+        disk: 'Disk',
+        network: 'Network',
+        db: 'Database',
+        online: 'Online',
+        offline: 'Offline',
+        localMetrics: 'Local metrics',
+        requests: 'Requests',
+        errors: 'Errors',
+        sla: 'SLA',
+        healthHistory: 'Health',
+        routes: 'Routes',
+        emptyRoutes: 'No recent route requests',
+        totalModels: 'Total Models',
+        accountAvailability: 'Account Availability',
+        availableAccounts: 'Available',
+        totalAccounts: 'Total',
+        rateLimitedAccounts: 'Limited',
+        errorAccounts: 'Error',
+        providers: 'Providers',
+        emptyProviders: 'No providers',
+        providerCards: 'Provider Status',
+        modelDistribution: 'Model Status Distribution',
+        models: 'Models',
+        modelCards: 'Model Status Cards',
+        modelCardsHint: 'Gray means no recent traffic. The page does not call models for checks.',
+        cardView: 'Cards',
+        tableView: 'Table',
+        viewModeHint: 'Cards are for fast status reads. Table is for detailed investigation.',
+        model: 'Model',
+        successRate: 'Success',
+        latency: 'Avg / P95',
+        accounts: 'Accounts',
+        lastSeen: 'Last Seen',
+        emptyModels: 'No models found',
+        previous: 'Previous',
+        next: 'Next',
+        status: {
+          operational: 'Operational',
+          degraded: 'Degraded',
+          rate_limited: 'Rate Limited',
+          failed: 'Failed',
+          no_recent_traffic: 'No Recent Traffic',
+          unknown: 'Unknown',
+          orphaned_history: 'Orphaned History'
+        },
+        cloudStatus: {
+          disabled: 'Disabled',
+          not_configured: 'Not Configured',
+          ok: 'OK',
+          partial: 'Partial',
+          error: 'Error'
+        },
+        source: {
+          account_mapping: 'Account',
+          group_models_list: 'Group',
+          group_model_routing: 'Routing',
+          real_traffic: 'Traffic'
+        }
+      },
       // Dashboard
       systemHealth: 'System Health',
       overview: 'Overview',
@@ -5944,8 +6172,8 @@ export default {
         contactInfoPlaceholder: 'e.g., QQ: 123456789',
         contactInfoHint: 'Customer support contact info, displayed on redeem page, profile, etc.',
         docUrl: 'Documentation URL',
-        docUrlPlaceholder: 'https://docs.example.com',
-        docUrlHint: 'Link to your documentation site. Leave empty to hide the documentation link.',
+        docUrlPlaceholder: '/docs or https://docs.example.com',
+        docUrlHint: 'Link to your documentation site, or an internal path such as /docs. Leave empty to hide the documentation link.',
         siteLogo: 'Site Logo',
         uploadImage: 'Upload Image',
         remove: 'Remove',
@@ -6715,7 +6943,15 @@ export default {
       loadFailed: 'Failed to load profiles',
       saveFailed: 'Failed to save profile',
       deleteFailed: 'Failed to delete profile'
-    }
+    },
+
+    // Bundle Plans & Subscriptions (router description keys)
+    bundlePlans: {
+      description: 'Manage bundle plans including creation, editing, and disabling',
+    },
+    bundleSubscriptions: {
+      description: 'View and manage user bundle subscriptions, support extending and revoking',
+    },
   },
 
   // Subscription Progress (Header component)
@@ -6731,8 +6967,19 @@ export default {
     expiresToday: 'Expires today',
     expiresTomorrow: 'Expires tomorrow',
     viewAll: 'View all subscriptions',
+    viewCurrent: 'View current subscription',
     noSubscriptions: 'No active subscriptions',
-    unlimited: 'Unlimited'
+    unlimited: 'Unlimited',
+    bundleActive: 'Active Bundle',
+    currentSubscription: 'Current Subscription',
+    expires: 'Expires',
+    concurrency: 'Concurrency',
+    rpm: 'RPM Limit',
+    source: 'Source',
+    sourcePurchase: 'Purchase',
+    sourceRedeem: 'Redeem',
+    sourceAdmin: 'Admin Assigned',
+    moreFeatures: 'more features'
   },
 
   // Version Badge
@@ -6740,6 +6987,7 @@ export default {
     currentVersion: 'Current Version',
     latestVersion: 'Latest Version',
     upToDate: "You're running the latest version.",
+    basedOn: 'Based on sub2api {version}',
     updateAvailable: 'A new version is available!',
     releaseNotes: 'Release Notes',
     noReleaseNotes: 'No release notes',
@@ -6983,6 +7231,7 @@ export default {
   payment: {
     title: 'Recharge / Subscription',
     amountLabel: 'Amount',
+    bundleAmount: 'Bundle Price',
     paymentAmount: 'Payment Amount',
     creditedBalance: 'Credited Balance',
     quickAmounts: 'Quick Amounts',
@@ -7002,6 +7251,7 @@ export default {
       link: 'Link',
       alipay_direct: 'Alipay (Direct)',
       wxpay_direct: 'WeChat Pay (Direct)',
+      balance: 'Balance',
     },
     status: {
       pending: 'Pending',
@@ -7043,6 +7293,7 @@ export default {
       amount: 'Amount',
       payAmount: 'Paid',
       creditedAmount: 'Credited Amount',
+      balanceDeductAmount: 'Balance Deduction',
       fee: 'Fee',
       baseAmount: 'Base Amount',
       includedInPayAmount: 'included in paid amount',
@@ -7054,10 +7305,15 @@ export default {
       orderType: 'Order Type',
       actions: 'Actions',
       requestRefund: 'Request Refund',
+      viewDetail: 'View Details',
+      amountInfo: 'Amount Breakdown',
+      timeline: 'Order Timeline',
+      refundRequestedAt: 'Refund Requested At',
     },
     result: {
       success: 'Payment Successful',
       subscriptionSuccess: 'Subscription Successful',
+      bundleSuccess: 'Bundle Purchased Successfully',
       processing: 'Payment Processing',
       processingHint: 'Payment confirmation is still pending. This page will refresh automatically.',
       failed: 'Payment Failed',
@@ -7065,6 +7321,12 @@ export default {
       viewOrders: 'View Orders',
     },
     currentBalance: 'Current Balance',
+    useBalance: 'Use Account Balance',
+    balanceCoversFull: 'Balance covers the full amount, no other payment method needed',
+    balancePartial: 'Balance covers ${deduct}, remaining ${remaining} to pay',
+    balanceDeduct: 'Balance Deduction',
+    gatewayPay: 'To Pay',
+    payWithBalance: 'Pay with Balance',
     groupFallback: 'Group #{id}',
     rechargeAccount: 'Recharge Account',
     activeSubscription: 'Active Subscription',
@@ -7130,6 +7392,8 @@ export default {
       BALANCE_NOT_ENOUGH: 'Refund amount exceeds balance.',
       REFUND_AMOUNT_EXCEEDED: 'Refund amount exceeds the recharge amount.',
       REFUND_FAILED: 'Refund failed.',
+      BUNDLE_CONFLICT: 'You already have an active bundle and cannot purchase another.',
+      BUNDLE_PLAN_DISABLED: 'This bundle is no longer available.',
     },
     airwallexPay: 'Airwallex Payment',
     stripePay: 'Pay Now',
@@ -7177,6 +7441,9 @@ export default {
       paymentDistribution: 'Payment Distribution',
       colUser: 'User',
       topUsers: 'Top Users',
+      paidAmount: 'Paid',
+      balanceAmount: 'Balance',
+      amountFormat: '{paid}/{balance}',
       noData: 'No data',
       days: 'days',
       weeks: 'weeks',
@@ -7194,6 +7461,7 @@ export default {
       completedAt: 'Completed At',
       expiresAt: 'Expires At',
       feeRate: 'Fee Rate',
+      balanceDeductAmount: 'Balance Deduction Amount',
       refund: 'Refund',
       refundOrder: 'Refund Order',
       refundAmount: 'Refund Amount',
@@ -7297,6 +7565,194 @@ export default {
         revoked: 'Revoked',
       },
     },
+  },
+
+  // Bundle module
+  bundles: {
+    title: 'Model Bundles',
+    usageTitle: 'Bundle Usage',
+    // User-facing top-level keys
+    groupFallback: 'Group #{id}',
+    currentBundle: 'Current Bundle',
+    active: 'Active',
+    expiresAt: 'Expires At',
+    concurrency: 'Concurrency',
+    rpm: 'RPM',
+    includedGroups: 'Included Groups',
+    viewUsage: 'View Usage',
+    noActiveBundle: 'No Active Bundle',
+    noActiveBundleDesc: 'You don\'t have an active bundle subscription. Browse available plans below.',
+    availablePlans: 'Available Plans',
+    currentPlan: 'Subscribed',
+    noPlans: 'No plans available',
+    days: 'days',
+    daily: 'Daily',
+    weekly: 'Weekly',
+    monthly: 'Monthly',
+    concurrencyShort: 'Conc.',
+    includesGroupCount: 'Includes {count} model groups',
+    purchaseNow: 'Purchase Now',
+    purchaseSuccess: 'Bundle purchased successfully',
+    purchaseNotAvailable: 'Purchase feature is not available yet',
+    upgrade: 'Upgrade',
+    upgradeSuccess: 'Bundle upgraded successfully',
+    upgradeConfirmTitle: 'Confirm Bundle Upgrade',
+    upgradeFromLabel: 'Current bundle',
+    upgradeToLabel: 'Upgrade to',
+    upgradeCreditHint: 'Remaining value ¥{credit} from your current bundle will be credited',
+    upgradeDueHint: 'Top-up ¥{due} due, new validity {days} days',
+    upgradeDueLabel: 'Upgrade due',
+    upgradeCreditDeduct: 'Current bundle credit',
+    upgradeValidityHint: 'New validity {days} days',
+    notUpgradeable: 'Available after expiry',
+    upgradeFailedToPreview: 'Upgrade preview failed, please try again later',
+    goToPayUpgrade: 'Pay the difference',
+    tierStarter: 'Starter',
+    tierPro: 'Pro',
+    tierEnterprise: 'Enterprise',
+    daysRemaining: '{days} days remaining',
+    failedToLoad: 'Failed to load, please refresh',
+    planNotAvailable: 'This plan is no longer available for purchase',
+    browsePlans: 'Browse Plans',
+    usageByGroup: 'Usage by Group',
+    noUsageData: 'No usage data',
+    image: 'Image',
+    video: 'Video',
+    limits: 'Limits',
+    unlimited: 'Unlimited',
+    viewUsageRecords: 'Usage Records',
+    backToBundles: 'Back to Bundles',
+    bundleEntryTitle: 'Model Bundles',
+    bundleEntryDesc: 'Subscribe to a bundle for more model quotas and features',
+    // Admin
+    admin: {
+      planManagement: 'Plan Management',
+      subscriptionManagement: 'Subscription Management',
+      createPlan: 'Create Plan',
+      editPlan: 'Edit Plan',
+      planName: 'Plan Name',
+      planTier: 'Plan Tier',
+      tier: 'Tier',
+      tierStarter: 'Starter',
+      tierPro: 'Pro',
+      tierEnterprise: 'Enterprise',
+      selectTier: 'Select Tier',
+      planDescription: 'Plan Description',
+      price: 'Price',
+      originalPrice: 'Original Price',
+      currency: 'Currency',
+      validityDays: 'Validity (Days)',
+      sortOrder: 'Sort Order',
+      concurrencyLimit: 'Concurrency Limit',
+      rpmLimit: 'RPM Limit',
+      groupQuotas: 'Group Quota Configuration',
+      addGroup: 'Add Group',
+      selectGroup: 'Select Group',
+      noGroupQuotas: 'No group quotas configured',
+      group: 'Group',
+      groupCount: 'Groups',
+      quotaScope: 'Quota Scope',
+      scopePlatform: 'By Platform',
+      scopeModel: 'By Model',
+      modelPattern: 'Model Pattern',
+      modelPatternPlaceholder: 'gpt-4*, claude-3-opus',
+      modelPatternHint: 'Multiple models share this quota (comma-separated, * wildcard supported)',
+      dailyLimit: 'Daily Limit (USD)',
+      weeklyLimit: 'Weekly Limit (USD)',
+      monthlyLimit: 'Monthly Limit (USD)',
+      daily: 'Daily',
+      weekly: 'Weekly',
+      monthly: 'Monthly',
+      countUnit: 'count',
+      countPlaceholder: 'Unlimited',
+      imageCountLimitHint: 'Image count limit (per image, 0=unlimited)',
+      videoCountLimitHint: 'Video count limit (per segment, 0=unlimited)',
+      imageUnit: 'img',
+      videoUnit: 'vid',
+      dailyCount: 'Daily Count',
+      weeklyCount: 'Weekly Count',
+      monthlyCount: 'Monthly Count',
+      days: 'days',
+      features: 'Features',
+      featuresPlaceholder: 'One feature per line',
+      featuresHint: 'Enter one feature per line, displayed on plan cards',
+      forSale: 'For Sale',
+      onSale: 'On Sale',
+      offSale: 'Off Sale',
+      status: 'Status',
+      statusActive: 'Active',
+      statusDisabled: 'Disabled',
+      statusExpired: 'Expired',
+      statusRevoked: 'Revoked',
+      disable: 'Disable',
+      enable: 'Enable',
+      disableConfirm: 'Are you sure you want to disable this plan?',
+      tierRequired: 'Please select a plan tier',
+      priceRequired: 'Please enter a valid price',
+      validityDaysRequired: 'Please enter valid days',
+      saveSuccess: 'Saved successfully',
+      deleteSuccess: 'Deleted successfully',
+      // Subscription management
+      searchUserId: 'Search User ID',
+      allStatus: 'All Status',
+      noSubscriptions: 'No subscriptions found',
+      userId: 'User ID',
+      plan: 'Plan',
+      source: 'Source',
+      sourcePurchase: 'Purchase',
+      sourceRedeem: 'Redeem',
+      sourceAdminAssign: 'Admin Assigned',
+      revoke: 'Revoke',
+      revokeConfirm: 'Are you sure you want to revoke this subscription?',
+      revokeSubscription: 'Revoke Subscription',
+      extend: 'Extend',
+      extendDays: 'Days to Extend',
+      extendSubscription: 'Extend Subscription',
+      extendHint: 'Subscription #{id} expiry will be extended by the following days',
+      extendSuccess: 'Extended successfully',
+      revokeSuccess: 'Revoked successfully',
+      expiresAt: 'Expires At',
+      startsAt: 'Starts At',
+      usage: 'Usage',
+      groupUsageDetails: 'Group Usage Details',
+      noGroupUsage: 'No usage data available',
+      costLimitLabel: 'Cost Limit',
+      imageCountLabel: 'Image Count Limit',
+      videoCountLabel: 'Video Count Limit',
+    },
+    // User
+    user: {
+      myBundle: 'My Bundle',
+      noActiveBundle: 'No active bundle',
+      browsePlans: 'Browse Plans',
+      purchaseBundle: 'Purchase Bundle',
+      purchaseComingSoon: 'Payment feature is under development, stay tuned',
+      viewUsage: 'View Usage',
+      bundleExpiresIn: 'Bundle expires in {days} days',
+      bundleExpired: 'Bundle has expired',
+      includedModels: 'Included Models',
+      days: 'days',
+      validity: 'Validity',
+      // Usage
+      usageTitle: 'Bundle Usage',
+      daily: 'Daily',
+      weekly: 'Weekly',
+      monthly: 'Monthly',
+      noLimit: 'Unlimited',
+      used: 'Used',
+      limit: 'Limit',
+      remaining: 'Remaining',
+      progressOf: '{used} / {limit}',
+    },
+    // Key creation
+    keyMode: 'Key Mode',
+    keyModeUniversal: 'Universal Key (Auto Route)',
+    keyModeUniversalDesc: 'One key for all models in the bundle, the system automatically selects the platform based on the requested model',
+    keyModeDedicated: 'Dedicated Key (Specific Platform)',
+    keyModeDedicatedDesc: 'Bound to a specific platform within the bundle, can only use models from that platform',
+    keyModeNormal: 'Standard Key',
+    keyModeNormalDesc: 'Bound to a specific group',
+    selectBundleGroup: 'Select a platform in the bundle',
   },
 
 }

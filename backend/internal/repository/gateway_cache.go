@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -70,4 +71,43 @@ func (c *gatewayCache) IsCyberSessionBlocked(ctx context.Context, key string) (b
 		return false, err
 	}
 	return n > 0, nil
+}
+
+const videoTaskBindingPrefix = "video_task:"
+
+func buildVideoTaskBindingKey(groupID int64, taskID string) string {
+	return fmt.Sprintf("%s%d:%s", videoTaskBindingPrefix, groupID, taskID)
+}
+
+func (c *gatewayCache) SetVideoTaskBinding(ctx context.Context, groupID int64, taskID string, binding service.VideoTaskBinding, ttl time.Duration) error {
+	if taskID == "" {
+		return nil
+	}
+	payload, err := json.Marshal(binding)
+	if err != nil {
+		return err
+	}
+	return c.rdb.Set(ctx, buildVideoTaskBindingKey(groupID, taskID), payload, ttl).Err()
+}
+
+func (c *gatewayCache) GetVideoTaskBinding(ctx context.Context, groupID int64, taskID string) (service.VideoTaskBinding, error) {
+	var binding service.VideoTaskBinding
+	if taskID == "" {
+		return binding, redis.Nil
+	}
+	raw, err := c.rdb.Get(ctx, buildVideoTaskBindingKey(groupID, taskID)).Bytes()
+	if err != nil {
+		return binding, err
+	}
+	if err := json.Unmarshal(raw, &binding); err != nil {
+		return binding, err
+	}
+	return binding, nil
+}
+
+func (c *gatewayCache) DeleteVideoTaskBinding(ctx context.Context, groupID int64, taskID string) error {
+	if taskID == "" {
+		return nil
+	}
+	return c.rdb.Del(ctx, buildVideoTaskBindingKey(groupID, taskID)).Err()
 }

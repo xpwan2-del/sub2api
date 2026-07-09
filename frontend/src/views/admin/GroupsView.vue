@@ -598,52 +598,6 @@
               {{ t("admin.groups.subscription.typeHint") }}
             </p>
           </div>
-
-          <!-- Subscription limits (only show when subscription type is selected) -->
-          <div
-            v-if="createForm.subscription_type === 'subscription'"
-            class="space-y-4 border-l-2 border-primary-200 pl-4 dark:border-primary-800"
-          >
-            <div>
-              <label class="input-label">{{
-                t("admin.groups.subscription.dailyLimit")
-              }}</label>
-              <input
-                v-model.number="createForm.daily_limit_usd"
-                type="number"
-                step="0.01"
-                min="0"
-                class="input"
-                :placeholder="t('admin.groups.subscription.noLimit')"
-              />
-            </div>
-            <div>
-              <label class="input-label">{{
-                t("admin.groups.subscription.weeklyLimit")
-              }}</label>
-              <input
-                v-model.number="createForm.weekly_limit_usd"
-                type="number"
-                step="0.01"
-                min="0"
-                class="input"
-                :placeholder="t('admin.groups.subscription.noLimit')"
-              />
-            </div>
-            <div>
-              <label class="input-label">{{
-                t("admin.groups.subscription.monthlyLimit")
-              }}</label>
-              <input
-                v-model.number="createForm.monthly_limit_usd"
-                type="number"
-                step="0.01"
-                min="0"
-                class="input"
-                :placeholder="t('admin.groups.subscription.noLimit')"
-              />
-            </div>
-          </div>
         </div>
 
         <div class="border-t pt-4">
@@ -800,56 +754,11 @@
               placeholder="1"
             />
           </div>
-          <div class="grid grid-cols-3 gap-3">
-            <div>
-              <label class="input-label">1K ($)</label>
-              <input
-                v-model.number="createForm.image_price_1k"
-                type="number"
-                step="0.001"
-                min="0"
-                class="input"
-                placeholder="0.134"
-              />
-            </div>
-            <div>
-              <label class="input-label">2K ($)</label>
-              <input
-                v-model.number="createForm.image_price_2k"
-                type="number"
-                step="0.001"
-                min="0"
-                class="input"
-                placeholder="0.201"
-              />
-            </div>
-            <div>
-              <label class="input-label">4K ($)</label>
-              <input
-                v-model.number="createForm.image_price_4k"
-                type="number"
-                step="0.001"
-                min="0"
-                class="input"
-                placeholder="0.268"
-              />
-            </div>
-          </div>
           <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
             {{ t("admin.groups.imagePricing.modeHint") }}
           </p>
-          <div class="mt-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-            <div class="mb-1 font-medium">
-              {{ t("admin.groups.imagePricing.finalPricePreview") }}
-            </div>
-            <div class="grid grid-cols-3 gap-2">
-              <div
-                v-for="item in createImageFinalPricePreview"
-                :key="item.label"
-              >
-                {{ item.label }}: {{ item.value }}
-              </div>
-            </div>
+          <div class="mt-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs leading-relaxed text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+            {{ t("admin.groups.imagePricing.priceMigratedHint") }}
           </div>
         </div>
 
@@ -1886,52 +1795,6 @@
               {{ t("admin.groups.subscription.typeNotEditable") }}
             </p>
           </div>
-
-          <!-- Subscription limits (only show when subscription type is selected) -->
-          <div
-            v-if="editForm.subscription_type === 'subscription'"
-            class="space-y-4 border-l-2 border-primary-200 pl-4 dark:border-primary-800"
-          >
-            <div>
-              <label class="input-label">{{
-                t("admin.groups.subscription.dailyLimit")
-              }}</label>
-              <input
-                v-model.number="editForm.daily_limit_usd"
-                type="number"
-                step="0.01"
-                min="0"
-                class="input"
-                :placeholder="t('admin.groups.subscription.noLimit')"
-              />
-            </div>
-            <div>
-              <label class="input-label">{{
-                t("admin.groups.subscription.weeklyLimit")
-              }}</label>
-              <input
-                v-model.number="editForm.weekly_limit_usd"
-                type="number"
-                step="0.01"
-                min="0"
-                class="input"
-                :placeholder="t('admin.groups.subscription.noLimit')"
-              />
-            </div>
-            <div>
-              <label class="input-label">{{
-                t("admin.groups.subscription.monthlyLimit")
-              }}</label>
-              <input
-                v-model.number="editForm.monthly_limit_usd"
-                type="number"
-                step="0.01"
-                min="0"
-                class="input"
-                :placeholder="t('admin.groups.subscription.noLimit')"
-              />
-            </div>
-          </div>
         </div>
 
         <div class="border-t pt-4">
@@ -2088,57 +1951,18 @@
               placeholder="1"
             />
           </div>
-          <div class="grid grid-cols-3 gap-3">
-            <div>
-              <label class="input-label">1K ($)</label>
-              <input
-                v-model.number="editForm.image_price_1k"
-                type="number"
-                step="0.001"
-                min="0"
-                class="input"
-                placeholder="0.134"
-              />
-            </div>
-            <div>
-              <label class="input-label">2K ($)</label>
-              <input
-                v-model.number="editForm.image_price_2k"
-                type="number"
-                step="0.001"
-                min="0"
-                class="input"
-                placeholder="0.201"
-              />
-            </div>
-            <div>
-              <label class="input-label">4K ($)</label>
-              <input
-                v-model.number="editForm.image_price_4k"
-                type="number"
-                step="0.001"
-                min="0"
-                class="input"
-                placeholder="0.268"
-              />
-            </div>
-          </div>
           <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
             {{ t("admin.groups.imagePricing.modeHint") }}
           </p>
-          <div class="mt-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-            <div class="mb-1 font-medium">
-              {{ t("admin.groups.imagePricing.finalPricePreview") }}
-            </div>
-            <div class="grid grid-cols-3 gap-2">
-              <div
-                v-for="item in editImageFinalPricePreview"
-                :key="item.label"
-              >
-                {{ item.label }}: {{ item.value }}
-              </div>
-            </div>
+          <div class="mt-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs leading-relaxed text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+            {{ t("admin.groups.imagePricing.priceMigratedHint") }}
           </div>
+          <p
+            v-if="editForm.image_price_1k || editForm.image_price_2k || editForm.image_price_4k"
+            class="mt-2 text-xs text-amber-600 dark:text-amber-400"
+          >
+            {{ t("admin.groups.imagePricing.legacyPriceNote") }}
+          </p>
         </div>
 
         <!-- 支持的模型系列（仅 antigravity 平台） -->
@@ -3699,62 +3523,6 @@ const editForm = reactive({
   rpm_limit: 0 as number,
 });
 
-type ImagePricingFormState = {
-  rate_multiplier: number;
-  image_rate_independent: boolean;
-  image_rate_multiplier: number;
-  image_price_1k: number | string | null;
-  image_price_2k: number | string | null;
-  image_price_4k: number | string | null;
-};
-
-const imagePricingTiers = [
-  { key: "image_price_1k", label: "1K" },
-  { key: "image_price_2k", label: "2K" },
-  { key: "image_price_4k", label: "4K" },
-] as const;
-
-const normalizePreviewNumber = (value: number | string | null | undefined, fallback = 0) => {
-  if (value === null || value === undefined || value === "") {
-    return fallback;
-  }
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
-
-const formatImagePricePreview = (value: number | string | null | undefined) => {
-  if (value === null || value === undefined || value === "") {
-    return t("admin.groups.imagePricing.notConfigured");
-  }
-  const price = Number(value);
-  if (!Number.isFinite(price) || price < 0) {
-    return t("admin.groups.imagePricing.notConfigured");
-  }
-  return `$${price.toFixed(6).replace(/0+$/, "").replace(/\.$/, "")}`;
-};
-
-const buildImageFinalPricePreview = (form: ImagePricingFormState) => {
-  const multiplier = form.image_rate_independent
-    ? normalizePreviewNumber(form.image_rate_multiplier, 1)
-    : normalizePreviewNumber(form.rate_multiplier, 1);
-  return imagePricingTiers.map((tier) => {
-    const basePrice = normalizePreviewNumber(form[tier.key]);
-    return {
-      label: tier.label,
-      value: basePrice > 0
-        ? formatImagePricePreview(basePrice * multiplier)
-        : t("admin.groups.imagePricing.notConfigured"),
-    };
-  });
-};
-
-const createImageFinalPricePreview = computed(() =>
-  buildImageFinalPricePreview(createForm),
-);
-const editImageFinalPricePreview = computed(() =>
-  buildImageFinalPricePreview(editForm),
-);
-
 // 根据分组类型返回不同的删除确认消息
 const deleteConfirmMessage = computed(() => {
   if (!deletingGroup.value) {
@@ -3967,11 +3735,36 @@ const normalizeImageRateMultiplier = (
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 1;
 };
 
+// 校验生图独立倍率：开关开启时必须为不小于 0 的有效数字。返回错误文案 key 或 null。
+const validateImageRateMultiplier = (
+  independent: boolean,
+  value: number | string | null | undefined,
+): string | null => {
+  if (!independent) return null;
+  if (value === "" || value === null || value === undefined) {
+    return "admin.groups.imagePricing.multiplierRequired";
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return "admin.groups.imagePricing.multiplierInvalid";
+  }
+  return null;
+};
+
 const handleCreateGroup = async () => {
   if (!createForm.name.trim()) {
     appStore.showError(t("admin.groups.nameRequired"));
     return;
   }
+  const createMultiplierError = validateImageRateMultiplier(
+    createForm.image_rate_independent,
+    createForm.image_rate_multiplier,
+  );
+  if (createMultiplierError) {
+    appStore.showError(t(createMultiplierError));
+    return;
+  }
+
   submitting.value = true;
   try {
     // 构建请求数据，包含模型路由配置
@@ -4102,6 +3895,14 @@ const handleUpdateGroup = async () => {
   if (!editingGroup.value) return;
   if (!editForm.name.trim()) {
     appStore.showError(t("admin.groups.nameRequired"));
+    return;
+  }
+  const editMultiplierError = validateImageRateMultiplier(
+    editForm.image_rate_independent,
+    editForm.image_rate_multiplier,
+  );
+  if (editMultiplierError) {
+    appStore.showError(t(editMultiplierError));
     return;
   }
 

@@ -1294,7 +1294,7 @@ func newContractDeps(t *testing.T) *contractDeps {
 	usageService := service.NewUsageService(usageRepo, userRepo, nil, nil)
 
 	subscriptionService := service.NewSubscriptionService(groupRepo, userSubRepo, nil, nil, cfg)
-	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService)
+	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService, nil)
 
 	redeemService := service.NewRedeemService(redeemRepo, userRepo, subscriptionService, nil, nil, nil, nil, nil)
 	redeemHandler := handler.NewRedeemHandler(redeemService)
@@ -2029,6 +2029,9 @@ func (stubUserSubscriptionRepo) ExistsByUserIDAndGroupID(ctx context.Context, us
 func (stubUserSubscriptionRepo) ExtendExpiry(ctx context.Context, subscriptionID int64, newExpiresAt time.Time) error {
 	return errors.New("not implemented")
 }
+func (stubUserSubscriptionRepo) ExtendExpiryByDays(ctx context.Context, subscriptionID int64, days int) error {
+	return nil
+}
 func (stubUserSubscriptionRepo) UpdateStatus(ctx context.Context, subscriptionID int64, status string) error {
 	return errors.New("not implemented")
 }
@@ -2080,6 +2083,9 @@ func (r *stubApiKeyRepo) MustSeed(key *service.APIKey) {
 	r.byKey[clone.Key] = &clone
 }
 
+func (r *stubApiKeyRepo) RebindBundleKeys(context.Context, int64, int64) (int, error) {
+	return 0, nil
+}
 func (r *stubApiKeyRepo) Create(ctx context.Context, key *service.APIKey) error {
 	if key == nil {
 		return errors.New("nil key")
@@ -2704,3 +2710,7 @@ var (
 	_ service.UsageLogRepository         = (*stubUsageLogRepo)(nil)
 	_ service.SettingRepository          = (*stubSettingRepo)(nil)
 )
+
+func (s stubUserSubscriptionRepo) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) {
+	return 0, nil
+}

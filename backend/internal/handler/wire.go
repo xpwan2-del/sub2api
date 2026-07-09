@@ -40,6 +40,7 @@ func ProvideAdminHandlers(
 	contentModerationHandler *admin.ContentModerationHandler,
 	paymentHandler *admin.PaymentHandler,
 	affiliateHandler *admin.AffiliateHandler,
+	bundleAdminHandler *admin.BundleAdminHandler,
 	complianceHandler *admin.ComplianceHandler,
 ) *AdminHandlers {
 	return &AdminHandlers{
@@ -74,6 +75,7 @@ func ProvideAdminHandlers(
 		ContentModeration:      contentModerationHandler,
 		Payment:                paymentHandler,
 		Affiliate:              affiliateHandler,
+		Bundle:                 bundleAdminHandler,
 		Compliance:             complianceHandler,
 	}
 }
@@ -85,7 +87,8 @@ func ProvideSystemHandler(updateService *service.UpdateService, lockService *ser
 
 // ProvideSettingHandler creates SettingHandler with version from BuildInfo
 func ProvideSettingHandler(settingService *service.SettingService, buildInfo BuildInfo, notificationEmailService *service.NotificationEmailService) *SettingHandler {
-	h := NewSettingHandler(settingService, buildInfo.Version)
+	// version（主显示）= 自研发布号 Build；baseVersion（副显示）= 上游基线 Version
+	h := NewSettingHandler(settingService, buildInfo.Build, buildInfo.Version)
 	h.SetNotificationEmailService(notificationEmailService)
 	return h
 }
@@ -115,26 +118,30 @@ func ProvideHandlers(
 	paymentHandler *PaymentHandler,
 	paymentWebhookHandler *PaymentWebhookHandler,
 	availableChannelHandler *AvailableChannelHandler,
+	publicModelCatalogHandler *PublicModelCatalogHandler,
+	bundleHandler *BundleHandler,
 	_ *service.IdempotencyCoordinator,
 	_ *service.IdempotencyCleanupService,
 ) *Handlers {
 	return &Handlers{
-		Auth:             authHandler,
-		User:             userHandler,
-		APIKey:           apiKeyHandler,
-		Usage:            usageHandler,
-		Redeem:           redeemHandler,
-		Subscription:     subscriptionHandler,
-		Announcement:     announcementHandler,
-		ChannelMonitor:   channelMonitorUserHandler,
-		Admin:            adminHandlers,
-		Gateway:          gatewayHandler,
-		OpenAIGateway:    openaiGatewayHandler,
-		Setting:          settingHandler,
-		Totp:             totpHandler,
-		Payment:          paymentHandler,
-		PaymentWebhook:   paymentWebhookHandler,
-		AvailableChannel: availableChannelHandler,
+		Auth:               authHandler,
+		User:               userHandler,
+		APIKey:             apiKeyHandler,
+		Usage:              usageHandler,
+		Redeem:             redeemHandler,
+		Subscription:       subscriptionHandler,
+		Announcement:       announcementHandler,
+		ChannelMonitor:     channelMonitorUserHandler,
+		Admin:              adminHandlers,
+		Gateway:            gatewayHandler,
+		OpenAIGateway:      openaiGatewayHandler,
+		Setting:            settingHandler,
+		Totp:               totpHandler,
+		Payment:            paymentHandler,
+		PaymentWebhook:     paymentWebhookHandler,
+		AvailableChannel:   availableChannelHandler,
+		PublicModelCatalog: publicModelCatalogHandler,
+		Bundle:             bundleHandler,
 	}
 }
 
@@ -156,6 +163,8 @@ var ProviderSet = wire.NewSet(
 	NewPaymentHandler,
 	NewPaymentWebhookHandler,
 	NewAvailableChannelHandler,
+	NewPublicModelCatalogHandler,
+	NewBundleHandler,
 
 	// Admin handlers
 	admin.NewDashboardHandler,
@@ -189,6 +198,7 @@ var ProviderSet = wire.NewSet(
 	admin.NewContentModerationHandler,
 	admin.NewPaymentHandler,
 	admin.NewAffiliateHandler,
+	admin.NewBundleAdminHandler,
 	admin.NewComplianceHandler,
 
 	// AdminHandlers and Handlers constructors

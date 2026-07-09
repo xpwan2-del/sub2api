@@ -173,6 +173,16 @@ func (c *schedulerTestGatewayCache) DeleteSessionAccountID(ctx context.Context, 
 	return nil
 }
 
+func (c *schedulerTestGatewayCache) SetVideoTaskBinding(_ context.Context, _ int64, _ string, _ VideoTaskBinding, _ time.Duration) error {
+	return nil
+}
+func (c *schedulerTestGatewayCache) GetVideoTaskBinding(_ context.Context, _ int64, _ string) (VideoTaskBinding, error) {
+	return VideoTaskBinding{}, errors.New("not found")
+}
+func (c *schedulerTestGatewayCache) DeleteVideoTaskBinding(_ context.Context, _ int64, _ string) error {
+	return nil
+}
+
 func newSchedulerTestOpenAIWSV2Config() *config.Config {
 	cfg := &config.Config{}
 	cfg.Gateway.OpenAIWS.Enabled = true

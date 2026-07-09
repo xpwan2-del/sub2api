@@ -41,6 +41,7 @@ func newGatewayRoutesTestRouter(platform ...string) *gin.Engine {
 		nil,
 		nil,
 		nil,
+		nil,
 		&config.Config{},
 	)
 
@@ -80,6 +81,30 @@ func TestGatewayRoutesOpenAIImagesPathsAreRegistered(t *testing.T) {
 
 		router.ServeHTTP(w, req)
 		require.NotEqual(t, http.StatusNotFound, w.Code, "path=%s should hit OpenAI images handler", path)
+	}
+}
+
+func TestGatewayRoutesOpenAIVideosPathsAreRegistered(t *testing.T) {
+	router := newGatewayRoutesTestRouter()
+
+	for _, item := range []struct {
+		method string
+		path   string
+		body   string
+	}{
+		{http.MethodPost, "/v1/videos", `{"model":"grok-imagine-video","prompt":"test"}`},
+		{http.MethodGet, "/v1/videos/task_123?model=grok-imagine-video", ``},
+		{http.MethodGet, "/v1/videos/task_123/content?model=grok-imagine-video", ``},
+		{http.MethodPost, "/videos", `{"model":"grok-imagine-video","prompt":"test"}`},
+		{http.MethodGet, "/videos/task_123?model=grok-imagine-video", ``},
+		{http.MethodGet, "/videos/task_123/content?model=grok-imagine-video", ``},
+	} {
+		req := httptest.NewRequest(item.method, item.path, strings.NewReader(item.body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+		require.NotEqual(t, http.StatusNotFound, w.Code, "path=%s should hit OpenAI videos handler", item.path)
 	}
 }
 

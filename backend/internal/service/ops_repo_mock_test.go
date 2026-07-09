@@ -14,6 +14,9 @@ type opsRepoMock struct {
 	DeleteSystemLogsFn            func(ctx context.Context, filter *OpsSystemLogCleanupFilter) (int64, error)
 	InsertSystemLogCleanupAuditFn func(ctx context.Context, input *OpsSystemLogCleanupAudit) error
 	LookupDeletedKeyAuditFn       func(ctx context.Context, key string) (*DeletedKeyAuditResult, error)
+	GetModelTrafficStatsFn        func(ctx context.Context, filter *OpsModelStatusFilter) ([]*OpsModelTrafficStats, error)
+	GetModelHealthBucketsFn       func(ctx context.Context, filter *OpsModelStatusFilter, bucketSeconds int) ([]*OpsModelHealthBucket, error)
+	GetGatewayRouteHealthFn       func(ctx context.Context, filter *OpsModelStatusFilter, limit int) ([]*OpsGatewayRouteHealth, error)
 }
 
 func (m *opsRepoMock) InsertErrorLog(ctx context.Context, input *OpsInsertErrorLogInput) (int64, error) {
@@ -104,6 +107,27 @@ func (m *opsRepoMock) GetErrorDistribution(ctx context.Context, filter *OpsDashb
 
 func (m *opsRepoMock) GetOpenAITokenStats(ctx context.Context, filter *OpsOpenAITokenStatsFilter) (*OpsOpenAITokenStatsResponse, error) {
 	return &OpsOpenAITokenStatsResponse{}, nil
+}
+
+func (m *opsRepoMock) GetModelTrafficStats(ctx context.Context, filter *OpsModelStatusFilter) ([]*OpsModelTrafficStats, error) {
+	if m.GetModelTrafficStatsFn != nil {
+		return m.GetModelTrafficStatsFn(ctx, filter)
+	}
+	return []*OpsModelTrafficStats{}, nil
+}
+
+func (m *opsRepoMock) GetModelHealthBuckets(ctx context.Context, filter *OpsModelStatusFilter, bucketSeconds int) ([]*OpsModelHealthBucket, error) {
+	if m.GetModelHealthBucketsFn != nil {
+		return m.GetModelHealthBucketsFn(ctx, filter, bucketSeconds)
+	}
+	return []*OpsModelHealthBucket{}, nil
+}
+
+func (m *opsRepoMock) GetGatewayRouteHealth(ctx context.Context, filter *OpsModelStatusFilter, limit int) ([]*OpsGatewayRouteHealth, error) {
+	if m.GetGatewayRouteHealthFn != nil {
+		return m.GetGatewayRouteHealthFn(ctx, filter, limit)
+	}
+	return []*OpsGatewayRouteHealth{}, nil
 }
 
 func (m *opsRepoMock) InsertSystemMetrics(ctx context.Context, input *OpsInsertSystemMetricsInput) error {

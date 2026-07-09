@@ -4,6 +4,8 @@ export default {
     viewOnGithub: '在 GitHub 上查看',
     viewDocs: '查看文档',
     docs: '文档',
+    models: '模型广场',
+    canvas: 'AI 画布',
     switchToLight: '切换到浅色模式',
     switchToDark: '切换到深色模式',
     dashboard: '控制台',
@@ -17,6 +19,93 @@ export default {
       subscriptionToApi: '订阅转 API',
       stickySession: '会话保持',
       realtimeBilling: '按量计费'
+    },
+    jarvis: {
+      kicker: 'AI 路由智能中枢',
+      title: '模型流量，实时思考。',
+      description: '一个网关协调上游账号、延迟、额度、故障切换与计费信号，让接入系统像神经中枢一样持续运转。',
+      models: {
+        Claude: {
+          specialty: '长文 · 推理 · 写作',
+          intro: '我是 Claude，写报告像咨询顾问，讲道理像班主任，贵是贵点，但我真的稳。'
+        },
+        OpenAI: {
+          specialty: '工具调用 · 代码 · Agent',
+          intro: '我是 OpenAI，全场最会接工具的打工人，写代码、调 API、跑 Agent，我一条龙。'
+        },
+        Gemini: {
+          specialty: '多模态 · 长上下文 · Google 生态',
+          intro: '我是 Gemini，文字图片视频都能看，背后还有 Google，主打一个家里资源多。'
+        },
+        Grok: {
+          specialty: '实时感 · 个性 · 快速推理',
+          intro: '我是 Grok，别人一本正经，我先开个玩笑；能聊能冲，就是嘴比较快。'
+        },
+        Qwen: {
+          specialty: '中文 · 代码 · 开源',
+          intro: '我是 Qwen，中文我熟，代码我会，开源我给，老板问成本我也不慌。'
+        },
+        DeepSeek: {
+          specialty: '推理 · 代码 · 低成本',
+          intro: '我是 DeepSeek，我会推理，还便宜，还能打。你预算紧？巧了，我也擅长省钱。'
+        },
+        Kimi: {
+          specialty: '长上下文 · 文档 · 中文',
+          intro: '我是 Kimi，你把文档堆过来，我慢慢吃。长文档？别客气，我胃口大。'
+        },
+        Meta: {
+          specialty: '开源 · 本地部署 · 微调',
+          intro: '我是 Llama，不一定最会装，但最适合被你改装。想私有化？我搬进你服务器。'
+        },
+        Zhipu: {
+          specialty: '中文推理 · 企业 · 国产生态',
+          intro: '我是 GLM，中文业务我门儿清，写方案、做问答、进企业，我比较接地气。'
+        },
+        Baidu: {
+          specialty: '中文知识 · 搜索增强 · 落地',
+          intro: '我是 ERNIE，背靠百度搜索，别人靠记忆，我还能顺手翻资料。'
+        },
+        MiniMax: {
+          specialty: '中文对话 · 长上下文 · 应用体验',
+          intro: '我是 MiniMax，聊天不端着，长文也能扛，主打一个产品感比较顺。'
+        },
+        Mistral: {
+          specialty: '轻量高效 · 商用 · 欧洲生态',
+          intro: '我是 Mistral，法国来的效率派，不一定嗓门最大，但跑起来很利索。'
+        },
+        AWS: {
+          specialty: '云集成 · 企业部署 · 稳定',
+          intro: '我是 Nova，AWS 家亲儿子，上云、扩容、接企业系统，我熟得像回家。'
+        },
+        Hunyuan: {
+          specialty: '中文 · 多媒体 · 腾讯生态',
+          intro: '我是 Hunyuan，中文内容和社交场景我懂，毕竟腾讯系流量我见得多。'
+        },
+        Nvidia: {
+          specialty: '推理优化 · GPU · 私有化',
+          intro: '我是 Nemotron，别人谈模型，我先看显卡。GPU 吃满，性能拉满。'
+        },
+        Doubao: {
+          specialty: '中文内容 · 对话 · 产品化',
+          intro: '我是 Doubao，做内容我熟，用户爱不爱看，我比你老板还敏感。'
+        },
+        Microsoft: {
+          specialty: '小模型 · 高效率 · 端侧',
+          intro: '我是 Phi，别看我小，我省电省钱省机器。小身板，也能干正事。'
+        },
+        Perplexity: {
+          specialty: '联网搜索 · 引用 · 研究',
+          intro: '我是 Sonar，我不装全知全能，我会查，还会告诉你我从哪查的。'
+        },
+        AI21: {
+          specialty: '长上下文 · 文档 · 企业文本',
+          intro: '我是 Jamba，文档工作流我能啃，合同、报告、知识库，来多少我排队处理。'
+        },
+        Cohere: {
+          specialty: 'RAG · 多语言 · 企业检索',
+          intro: '我是 Cohere，企业 RAG 老熟人，别问我会不会聊天，问我资料找得准不准。'
+        }
+      }
     },
     // 用户痛点区块
     painPoints: {
@@ -44,14 +133,6 @@ export default {
     solutions: {
       title: '我们帮你解决',
       subtitle: '简单三步，开始省心使用 AI'
-    },
-    features: {
-      unifiedGateway: '一键接入',
-      unifiedGatewayDesc: '获取一个 API 密钥，即可调用所有已接入的 AI 模型，无需分别申请。',
-      multiAccount: '稳定可靠',
-      multiAccountDesc: '智能调度多个上游账号，自动切换和负载均衡，告别频繁报错。',
-      balanceQuota: '用多少付多少',
-      balanceQuotaDesc: '按实际使用量计费，支持设置配额上限，团队用量一目了然。'
     },
     // 优势对比
     comparison: {
@@ -89,16 +170,6 @@ export default {
         }
       }
     },
-    providers: {
-      title: '已支持的 AI 模型',
-      description: '一个 API，多种选择',
-      supported: '已支持',
-      soon: '即将推出',
-      claude: 'Claude',
-      gemini: 'Gemini',
-      antigravity: 'Antigravity',
-      more: '更多'
-    },
     // CTA 区块
     cta: {
       title: '准备好开始了吗？',
@@ -106,7 +177,7 @@ export default {
       button: '免费注册'
     },
     footer: {
-      allRightsReserved: '保留所有权利。'
+      allRightsReserved: 'All rights reserved.'
     }
   },
 
@@ -247,6 +318,76 @@ export default {
     }
   },
 
+  modelCatalog: {
+    navLabel: '模型广场',
+    kicker: 'Public Model Catalog',
+    title: '模型广场',
+    subtitle: '',
+    available: '可用',
+    loading: '正在同步模型列表...',
+    loadFailed: '模型列表加载失败',
+    retry: '重试',
+    empty: '当前没有符合条件的模型，或管理员尚未接入可售模型。',
+    searchPlaceholder: '搜索模型名或平台',
+    copyName: '复制模型名',
+    copied: '模型名已复制',
+    startUsing: '开始使用',
+    stats: {
+      models: '模型',
+      platforms: '平台',
+      currency: '结算'
+    },
+    filters: {
+      allPlatforms: '全部平台',
+      allCapabilities: '全部能力',
+      allBilling: '全部计费'
+    },
+    capabilities: {
+      reasoning: '推理',
+      coding: '编程',
+      longContext: '长上下文',
+      lowCost: '低价',
+      multimodal: '多模态',
+      fast: '高速'
+    },
+    billingModes: {
+      token: 'Token 计费',
+      image: '图片计费',
+      per_request: '按次计费',
+      unknown: '价格待配置'
+    },
+    price: {
+      input: '输入 / 1M',
+      output: '输出 / 1M',
+      image: '图片输出',
+      request: '单次请求',
+      unavailable: '价格待配置'
+    },
+    health: {
+      title: '健康度',
+      window: '近48小时',
+      requests: '请求',
+      successRate: '成功率',
+      statusLabel: '状态',
+      bucket: '第 {index} 个小时桶',
+      status: {
+        operational: '正常',
+        degraded: '降级',
+        rate_limited: '限流',
+        failed: '异常',
+        no_recent_traffic: '暂无流量',
+        orphaned_history: '历史流量',
+        idle: '无请求',
+        unknown: '未知'
+      }
+    },
+    sort: {
+      price: '价格优先',
+      name: '按名称',
+      provider: '按平台'
+    }
+  },
+
   // Common
   common: {
     loading: '加载中...',
@@ -375,6 +516,7 @@ export default {
   // Navigation
   nav: {
     dashboard: '仪表盘',
+    canvas: 'AI 画布',
     announcements: '公告',
     apiKeys: 'API 密钥',
     usage: '使用记录',
@@ -394,6 +536,7 @@ export default {
     proxies: 'IP管理',
     redeemCodes: '兑换码',
     ops: '运维监控',
+    modelStatus: '模型状态',
     promoCodes: '优惠码',
     settings: '系统设置',
     myAccount: '我的账户',
@@ -416,6 +559,11 @@ export default {
     channelMonitor: '渠道监控',
     channelStatus: '渠道状态',
     riskControl: '风控中心',
+    bundleManagement: '套餐管理',
+    bundlePlans: '套餐方案',
+    bundleSubscriptions: '套餐订阅',
+    bundles: '套餐订阅',
+    bundleUsage: '套餐用量',
   },
 
   // Auth
@@ -770,6 +918,9 @@ export default {
       noGroupTitle: '请先分配分组',
       noGroupDescription:
         '此 API 密钥尚未分配分组，请先在密钥列表中点击分组列进行分配，然后才能查看使用配置。',
+      universalKeyTitle: '通用 Key · 自动路由',
+      universalKeyDescription:
+        '此密钥为通用 Key，支持自动路由至套餐内所有模型。根据下方所选客户端完成配置即可使用。',
       openai: {
         description: '将以下配置文件添加到 Codex CLI 配置目录中。',
         configTomlHint: '请确保以下内容位于 config.toml 文件的开头部分',
@@ -2326,13 +2477,17 @@ export default {
       },
       imagePricing: {
         title: '图片生成计费',
-        description: '配置图片生成能力和图片基础单价，留空则使用默认价格',
+        description: '配置图片生成能力与生图倍率；图片单价请在渠道定价中按模型配置',
         allowImageGeneration: '允许当前分组生图',
         independentMultiplier: '生图倍率独立',
         imageMultiplier: '生图独立倍率',
         modeHint: '默认关闭独立倍率时，图片费用 = 图片价格 × 当前分组有效倍率；开启独立倍率后，图片费用 = 图片价格 × 生图独立倍率。',
+        priceMigratedHint: '图片单价已迁移至「渠道管理 → 模型定价」：计费模式选择「图片」，按 1K/2K/4K 等层级配置。此处仅保留倍率与开关，价格不再在此设置。',
+        legacyPriceNote: '该分组仍保留历史图片价格，将作为渠道未配置该模型时的兜底价格。',
         finalPricePreview: '最终单张价格预览',
-        notConfigured: '未配置'
+        notConfigured: '未配置',
+        multiplierRequired: '开启独立倍率时，请填写生图倍率',
+        multiplierInvalid: '生图倍率必须为不小于 0 的数字'
       },
       modelsList: {
         title: '自定义 /v1/models 模型列表',
@@ -4887,6 +5042,80 @@ export default {
     ops: {
       title: '运维监控',
       description: '运维监控与排障',
+      modelStatus: {
+        title: '模型状态',
+        description: '服务器、网关、Provider 与模型健康状态',
+        refresh: '刷新',
+        refreshing: '刷新中',
+        failedToLoad: '加载模型状态失败',
+        timeRange: '时间范围',
+        provider: 'Provider',
+        statusLabel: '状态',
+        search: '搜索',
+        searchPlaceholder: '搜索模型名称',
+        cloudTitle: '服务器',
+        gatewayTitle: '网关健康',
+        cpu: 'CPU',
+        memory: '内存',
+        disk: '磁盘',
+        network: '网络',
+        db: '数据库',
+        online: '在线',
+        offline: '离线',
+        localMetrics: '本机采集',
+        requests: '请求数',
+        errors: '错误',
+        sla: 'SLA',
+        healthHistory: '健康度',
+        routes: '路由',
+        emptyRoutes: '暂无近期路由请求',
+        totalModels: '模型总数',
+        accountAvailability: '账号可用性',
+        availableAccounts: '可用',
+        totalAccounts: '总数',
+        rateLimitedAccounts: '限流',
+        errorAccounts: '错误',
+        providers: 'Provider 汇总',
+        emptyProviders: '暂无 Provider',
+        providerCards: 'Provider 状态',
+        modelDistribution: '模型状态分布',
+        models: '模型列表',
+        modelCards: '模型状态卡片',
+        modelCardsHint: '灰色代表无近期流量，不会主动请求模型检测。',
+        cardView: '卡片视图',
+        tableView: '表格视图',
+        viewModeHint: '卡片适合快速判断状态，表格适合排查明细。',
+        model: '模型',
+        successRate: '成功率',
+        latency: '平均 / P95',
+        accounts: '账号',
+        lastSeen: '最近出现',
+        emptyModels: '暂无模型',
+        previous: '上一页',
+        next: '下一页',
+        status: {
+          operational: '正常',
+          degraded: '降级',
+          rate_limited: '限流',
+          failed: '失败',
+          no_recent_traffic: '无近期流量',
+          unknown: '未知',
+          orphaned_history: '孤儿历史'
+        },
+        cloudStatus: {
+          disabled: '未启用',
+          not_configured: '未配置',
+          ok: '正常',
+          partial: '部分可用',
+          error: '错误'
+        },
+        source: {
+          account_mapping: '账号',
+          group_models_list: '分组',
+          group_model_routing: '路由',
+          real_traffic: '流量'
+        }
+      },
       // Dashboard
       systemHealth: '系统健康',
       overview: '概览',
@@ -6097,8 +6326,8 @@ export default {
         contactInfoPlaceholder: '例如：QQ: 123456789',
         contactInfoHint: '填写客服联系方式，将展示在兑换页面、个人资料等位置',
         docUrl: '文档链接',
-        docUrlHint: '文档网站的链接。留空则隐藏文档链接。',
-        docUrlPlaceholder: 'https://docs.example.com',
+        docUrlHint: '文档网站的链接，也可以填写站内路径，例如 /docs。留空则隐藏文档链接。',
+        docUrlPlaceholder: '/docs 或 https://docs.example.com',
         siteLogo: '站点Logo',
         uploadImage: '上传图片',
         remove: '移除',
@@ -6870,7 +7099,15 @@ export default {
       loadFailed: '加载模板失败',
       saveFailed: '保存模板失败',
       deleteFailed: '删除模板失败'
-    }
+    },
+
+    // Bundle Plans & Subscriptions (router description keys)
+    bundlePlans: {
+      description: '管理套餐方案，包括创建、编辑和停用套餐',
+    },
+    bundleSubscriptions: {
+      description: '查看和管理用户套餐订阅，支持延长和撤销',
+    },
   },
 
   // Subscription Progress (Header component)
@@ -6886,8 +7123,19 @@ export default {
     expiresToday: '今天到期',
     expiresTomorrow: '明天到期',
     viewAll: '查看全部订阅',
+    viewCurrent: '查看当前订阅',
     noSubscriptions: '暂无有效订阅',
-    unlimited: '无限制'
+    unlimited: '无限制',
+    bundleActive: '有效套餐',
+    currentSubscription: '当前订阅',
+    expires: '到期时间',
+    concurrency: '并发数',
+    rpm: 'RPM 限制',
+    source: '来源',
+    sourcePurchase: '购买',
+    sourceRedeem: '兑换',
+    sourceAdmin: '管理员分配',
+    moreFeatures: '项更多特性'
   },
 
   // Version Badge
@@ -6895,6 +7143,7 @@ export default {
     currentVersion: '当前版本',
     latestVersion: '最新版本',
     upToDate: '已是最新版本',
+    basedOn: '基于 sub2api {version}',
     updateAvailable: '有新版本可用！',
     releaseNotes: '更新日志',
     noReleaseNotes: '暂无更新日志',
@@ -6984,7 +7233,9 @@ export default {
     resetIn: '{time} 后重置',
     quotaEndsIn: '额度将在 {time} 后结束',
     windowNotActive: '等待首次使用',
-    usageOf: '已用 {used} / {limit}'
+    usageOf: '已用 {used} / {limit}',
+    bundleBadge: '套餐订阅',
+    bundleRenew: '续费套餐'
   },
 
   // Onboarding Tour
@@ -7163,6 +7414,7 @@ export default {
   payment: {
     title: '充值/订阅',
     amountLabel: '充值金额',
+    bundleAmount: '套餐金额',
     paymentAmount: '支付金额',
     creditedBalance: '到账余额',
     quickAmounts: '快捷金额',
@@ -7182,6 +7434,7 @@ export default {
       link: 'Link',
       alipay_direct: '支付宝（直连）',
       wxpay_direct: '微信支付（直连）',
+      balance: '余额支付',
     },
     status: {
       pending: '待支付',
@@ -7223,6 +7476,7 @@ export default {
       amount: '金额',
       payAmount: '实付',
       creditedAmount: '到账金额',
+      balanceDeductAmount: '余额抵扣金额',
       fee: '手续费',
       baseAmount: '充值金额',
       includedInPayAmount: '已含在实付金额中',
@@ -7234,10 +7488,15 @@ export default {
       orderType: '订单类型',
       actions: '操作',
       requestRefund: '申请退款',
+      viewDetail: '查看详情',
+      amountInfo: '金额明细',
+      timeline: '订单进度',
+      refundRequestedAt: '申请退款时间',
     },
     result: {
       success: '支付成功',
       subscriptionSuccess: '订阅成功',
+      bundleSuccess: '套餐购买成功',
       processing: '支付处理中',
       processingHint: '支付结果仍在确认中，页面会自动刷新。',
       failed: '支付失败',
@@ -7245,6 +7504,12 @@ export default {
       viewOrders: '查看订单',
     },
     currentBalance: '当前余额',
+    useBalance: '使用账户余额',
+    balanceCoversFull: '余额足以支付全额，无需其他支付方式',
+    balancePartial: '余额抵扣 ${deduct}，还需支付 ${remaining}',
+    balanceDeduct: '余额抵扣',
+    gatewayPay: '需支付',
+    payWithBalance: '余额支付',
     groupFallback: '分组 #{id}',
     rechargeAccount: '充值账户',
     activeSubscription: '当前订阅',
@@ -7310,6 +7575,8 @@ export default {
       BALANCE_NOT_ENOUGH: '退款金额超过余额',
       REFUND_AMOUNT_EXCEEDED: '退款金额超过充值金额',
       REFUND_FAILED: '退款失败',
+      BUNDLE_CONFLICT: '您已有生效中的套餐，无法重复购买',
+      BUNDLE_PLAN_DISABLED: '该套餐已下架',
     },
     airwallexPay: 'Airwallex 支付',
     stripePay: '立即支付',
@@ -7357,6 +7624,9 @@ export default {
       paymentDistribution: '支付方式分布',
       colUser: '用户',
       topUsers: '消费排行',
+      paidAmount: '实付',
+      balanceAmount: '余额',
+      amountFormat: '{paid}/{balance}',
       noData: '暂无数据',
       days: '天',
       weeks: '周',
@@ -7374,6 +7644,7 @@ export default {
       completedAt: '完成时间',
       expiresAt: '过期时间',
       feeRate: '手续费率',
+      balanceDeductAmount: '余额抵扣金额',
       refund: '退款',
       refundOrder: '退款订单',
       refundAmount: '退款金额',
@@ -7476,6 +7747,194 @@ export default {
         revoked: '已撤销',
       },
     },
+  },
+
+  // Bundle (套餐) module
+  bundles: {
+    title: '模型套餐',
+    usageTitle: '套餐用量',
+    // 用户视图顶层 key
+    groupFallback: '分组 #{id}',
+    currentBundle: '当前套餐',
+    active: '活跃',
+    expiresAt: '到期时间',
+    concurrency: '并发数',
+    rpm: 'RPM',
+    includedGroups: '包含的 Group',
+    viewUsage: '查看用量',
+    noActiveBundle: '暂无活跃套餐',
+    noActiveBundleDesc: '您尚未订阅任何套餐，请在下方浏览可购套餐',
+    availablePlans: '可购套餐',
+    currentPlan: '已订阅',
+    noPlans: '暂无可购套餐',
+    days: '天',
+    daily: '日用量',
+    weekly: '周用量',
+    monthly: '月用量',
+    concurrencyShort: '并发',
+    includesGroupCount: '包含 {count} 个模型分组',
+    purchaseNow: '立即购买',
+    purchaseSuccess: '套餐购买成功',
+    purchaseNotAvailable: '购买功能暂未开放',
+    upgrade: '升级',
+    upgradeSuccess: '套餐升级成功',
+    upgradeConfirmTitle: '确认升级套餐',
+    upgradeFromLabel: '当前套餐',
+    upgradeToLabel: '升级至',
+    upgradeCreditHint: '旧套餐剩余价值 ¥{credit} 将抵扣',
+    upgradeDueHint: '需补差价 ¥{due}，升级后新有效期 {days} 天',
+    upgradeDueLabel: '升级补差价',
+    upgradeCreditDeduct: '旧套餐抵扣',
+    upgradeValidityHint: '新有效期 {days} 天',
+    notUpgradeable: '到期后可购买',
+    upgradeFailedToPreview: '升级试算失败，请稍后重试',
+    goToPayUpgrade: '去支付差价',
+    tierStarter: '入门版',
+    tierPro: '专业版',
+    tierEnterprise: '企业版',
+    daysRemaining: '剩余 {days} 天',
+    failedToLoad: '加载失败，请刷新重试',
+    planNotAvailable: '该套餐已下架或不可购买',
+    browsePlans: '浏览套餐',
+    usageByGroup: '各 Group 用量',
+    noUsageData: '暂无用量数据',
+    image: '图片',
+    video: '视频',
+    limits: '限额',
+    unlimited: '不限额度',
+    viewUsageRecords: '使用记录',
+    backToBundles: '返回套餐',
+    bundleEntryTitle: '模型套餐',
+    bundleEntryDesc: '订阅套餐获取更多模型配额与特权',
+    // 管理员
+    admin: {
+      planManagement: '套餐管理',
+      subscriptionManagement: '套餐订阅管理',
+      createPlan: '创建套餐',
+      editPlan: '编辑套餐',
+      planName: '套餐名称',
+      planTier: '套餐层级',
+      tier: '套餐层级',
+      tierStarter: '入门版',
+      tierPro: '专业版',
+      tierEnterprise: '企业版',
+      selectTier: '选择套餐层级',
+      planDescription: '套餐描述',
+      price: '价格',
+      originalPrice: '原价',
+      currency: '货币',
+      validityDays: '有效天数',
+      sortOrder: '排序',
+      concurrencyLimit: '并发上限',
+      rpmLimit: 'RPM上限',
+      groupQuotas: 'Group 额度配置',
+      addGroup: '添加 Group',
+      selectGroup: '选择 Group',
+      noGroupQuotas: '暂未配置 Group 额度',
+      group: 'Group',
+      groupCount: 'Group 数',
+      quotaScope: '额度粒度',
+      scopePlatform: '按平台',
+      scopeModel: '按模型',
+      modelPattern: '模型匹配',
+      modelPatternPlaceholder: 'gpt-4*, claude-3-opus',
+      modelPatternHint: '多个模型共享本行额度(逗号分隔,支持 * 通配)',
+      dailyLimit: '日额度 (USD)',
+      weeklyLimit: '周额度 (USD)',
+      monthlyLimit: '月额度 (USD)',
+      daily: '日额度',
+      weekly: '周额度',
+      monthly: '月额度',
+      countUnit: '次',
+      countPlaceholder: '不限',
+      imageCountLimitHint: '图片次数上限（按张，0=不限）',
+      videoCountLimitHint: '视频次数上限（按段，0=不限）',
+      imageUnit: '图',
+      videoUnit: '视频',
+      dailyCount: '每日次数',
+      weeklyCount: '每周次数',
+      monthlyCount: '每月次数',
+      days: '天',
+      features: '功能特性',
+      featuresPlaceholder: '每行一个功能特性',
+      featuresHint: '每行输入一个功能特性，将显示在用户端的套餐卡片中',
+      forSale: '在售',
+      onSale: '上架',
+      offSale: '下架',
+      status: '状态',
+      statusActive: '启用',
+      statusDisabled: '停用',
+      statusExpired: '已过期',
+      statusRevoked: '已撤销',
+      disable: '停用',
+      enable: '启用',
+      disableConfirm: '确定要停用该套餐吗？',
+      tierRequired: '请选择套餐层级',
+      priceRequired: '请输入有效价格',
+      validityDaysRequired: '请输入有效天数',
+      saveSuccess: '保存成功',
+      deleteSuccess: '删除成功',
+      // 订阅管理
+      searchUserId: '搜索用户 ID',
+      allStatus: '全部状态',
+      noSubscriptions: '暂无订阅记录',
+      userId: '用户ID',
+      plan: '套餐',
+      source: '来源',
+      sourcePurchase: '购买',
+      sourceRedeem: '兑换',
+      sourceAdminAssign: '管理员分配',
+      revoke: '撤销',
+      revokeConfirm: '确定要撤销该用户的套餐吗？',
+      revokeSubscription: '撤销订阅',
+      extend: '延长',
+      extendDays: '延长天数',
+      extendSubscription: '延长订阅',
+      extendHint: '订阅 #{id} 的到期时间将被延长以下天数',
+      extendSuccess: '延长成功',
+      revokeSuccess: '撤销成功',
+      expiresAt: '到期时间',
+      startsAt: '生效时间',
+      usage: '用量',
+      groupUsageDetails: 'Group 用量详情',
+      noGroupUsage: '暂无用量数据',
+      costLimitLabel: '金额限额',
+      imageCountLabel: '图片次数限额',
+      videoCountLabel: '视频次数限额',
+    },
+    // 用户
+    user: {
+      myBundle: '我的套餐',
+      noActiveBundle: '暂无活跃套餐',
+      browsePlans: '浏览可购套餐',
+      purchaseBundle: '购买套餐',
+      purchaseComingSoon: '支付功能开发中，敬请期待',
+      viewUsage: '查看用量',
+      bundleExpiresIn: '套餐将在 {days} 天后到期',
+      bundleExpired: '套餐已过期',
+      includedModels: '包含的模型',
+      days: '天',
+      validity: '有效期',
+      // 用量
+      usageTitle: '套餐用量',
+      daily: '日用量',
+      weekly: '周用量',
+      monthly: '月用量',
+      noLimit: '不限',
+      used: '已用',
+      limit: '限额',
+      remaining: '剩余',
+      progressOf: '{used} / {limit}',
+    },
+    // Key 创建
+    keyMode: 'Key 模式',
+    keyModeUniversal: '通用 Key（自动路由）',
+    keyModeUniversalDesc: '一个 Key 访问套餐内所有模型，系统自动根据请求的模型选择对应的平台',
+    keyModeDedicated: '专用 Key（指定平台）',
+    keyModeDedicatedDesc: '绑定到套餐内某个特定的平台，只能使用该平台的模型',
+    keyModeNormal: '标准 Key',
+    keyModeNormalDesc: '绑定到指定的分组',
+    selectBundleGroup: '选择套餐内的平台',
   },
 
 }

@@ -334,6 +334,56 @@ func TestOpenAIGatewayServiceParseOpenAIImagesRequest_RejectsNonImageModel(t *te
 	require.ErrorContains(t, err, `images endpoint requires an image model, got "gpt-5.4"`)
 }
 
+func TestIsOpenAIImageGenerationModel_AcceptsOpenAIAndGrokFamilies(t *testing.T) {
+	cases := []struct {
+		name  string
+		model string
+		want  bool
+	}{
+		// OpenAI 原生图片模型
+		{"openai gpt-image-1", "gpt-image-1", true},
+		{"openai gpt-image-2", "gpt-image-2", true},
+		{"openai gpt-image-1.5", "gpt-image-1.5", true},
+		// xAI Grok 图片模型（含大小写与版本演进）
+		{"grok imagine image", "grok-imagine-image", true},
+		{"grok imagine image v2", "grok-imagine-image-2", true},
+		{"grok imagine image upper", "GROK-IMAGINE-IMAGE", true},
+		{"grok imagine image spaced", "  grok-imagine-image  ", true},
+		// 视频模型必须被排除（前缀精确到 grok-imagine-image）
+		{"grok imagine video excluded", "grok-imagine-video", false},
+		// 非图片模型
+		{"openai text model", "gpt-5.4", false},
+		{"empty", "", false},
+		{"whitespace only", "   ", false},
+		// 形近但非图片（防止误判）
+		{"grok text model", "grok-3", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, isOpenAIImageGenerationModel(tc.model))
+		})
+	}
+}
+
+func TestOpenAIGatewayServiceParseOpenAIImagesRequest_AcceptsGrokImagineImage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	body := []byte(`{"model":"grok-imagine-image","prompt":"猫慵懒的趴在桌子上","n":1,"size":"1024x1024","response_format":"b64_json","output_format":"png"}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/images/generations", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = req
+
+	svc := &OpenAIGatewayService{}
+	parsed, err := svc.ParseOpenAIImagesRequest(c, body)
+	require.NoError(t, err)
+	require.NotNil(t, parsed)
+	require.Equal(t, "grok-imagine-image", parsed.Model)
+	// Grok 走原生透传（Native），不应套用 OpenAI Basic 优化路径
+	require.Equal(t, OpenAIImagesCapabilityNative, parsed.RequiredCapability)
+}
+
 func TestOpenAIGatewayServiceParseOpenAIImagesRequest_JSONEditURLs(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	body := []byte(`{

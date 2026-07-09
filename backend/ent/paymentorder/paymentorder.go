@@ -28,6 +28,8 @@ const (
 	FieldPayAmount = "pay_amount"
 	// FieldFeeRate holds the string denoting the fee_rate field in the database.
 	FieldFeeRate = "fee_rate"
+	// FieldBalanceDeductAmount holds the string denoting the balance_deduct_amount field in the database.
+	FieldBalanceDeductAmount = "balance_deduct_amount"
 	// FieldRechargeCode holds the string denoting the recharge_code field in the database.
 	FieldRechargeCode = "recharge_code"
 	// FieldOutTradeNo holds the string denoting the out_trade_no field in the database.
@@ -46,6 +48,10 @@ const (
 	FieldOrderType = "order_type"
 	// FieldPlanID holds the string denoting the plan_id field in the database.
 	FieldPlanID = "plan_id"
+	// FieldBundleSubscriptionID holds the string denoting the bundle_subscription_id field in the database.
+	FieldBundleSubscriptionID = "bundle_subscription_id"
+	// FieldSourceBundleSubscriptionID holds the string denoting the source_bundle_subscription_id field in the database.
+	FieldSourceBundleSubscriptionID = "source_bundle_subscription_id"
 	// FieldSubscriptionGroupID holds the string denoting the subscription_group_id field in the database.
 	FieldSubscriptionGroupID = "subscription_group_id"
 	// FieldSubscriptionDays holds the string denoting the subscription_days field in the database.
@@ -60,6 +66,8 @@ const (
 	FieldStatus = "status"
 	// FieldRefundAmount holds the string denoting the refund_amount field in the database.
 	FieldRefundAmount = "refund_amount"
+	// FieldProrateCredit holds the string denoting the prorate_credit field in the database.
+	FieldProrateCredit = "prorate_credit"
 	// FieldRefundReason holds the string denoting the refund_reason field in the database.
 	FieldRefundReason = "refund_reason"
 	// FieldRefundAt holds the string denoting the refund_at field in the database.
@@ -115,6 +123,7 @@ var Columns = []string{
 	FieldAmount,
 	FieldPayAmount,
 	FieldFeeRate,
+	FieldBalanceDeductAmount,
 	FieldRechargeCode,
 	FieldOutTradeNo,
 	FieldPaymentType,
@@ -124,6 +133,8 @@ var Columns = []string{
 	FieldQrCodeImg,
 	FieldOrderType,
 	FieldPlanID,
+	FieldBundleSubscriptionID,
+	FieldSourceBundleSubscriptionID,
 	FieldSubscriptionGroupID,
 	FieldSubscriptionDays,
 	FieldProviderInstanceID,
@@ -131,6 +142,7 @@ var Columns = []string{
 	FieldProviderSnapshot,
 	FieldStatus,
 	FieldRefundAmount,
+	FieldProrateCredit,
 	FieldRefundReason,
 	FieldRefundAt,
 	FieldForceRefund,
@@ -166,6 +178,8 @@ var (
 	UserNameValidator func(string) error
 	// DefaultFeeRate holds the default value on creation for the "fee_rate" field.
 	DefaultFeeRate float64
+	// DefaultBalanceDeductAmount holds the default value on creation for the "balance_deduct_amount" field.
+	DefaultBalanceDeductAmount float64
 	// RechargeCodeValidator is a validator for the "recharge_code" field. It is called by the builders before save.
 	RechargeCodeValidator func(string) error
 	// DefaultOutTradeNo holds the default value on creation for the "out_trade_no" field.
@@ -190,6 +204,8 @@ var (
 	StatusValidator func(string) error
 	// DefaultRefundAmount holds the default value on creation for the "refund_amount" field.
 	DefaultRefundAmount float64
+	// DefaultProrateCredit holds the default value on creation for the "prorate_credit" field.
+	DefaultProrateCredit float64
 	// DefaultForceRefund holds the default value on creation for the "force_refund" field.
 	DefaultForceRefund bool
 	// RefundRequestedByValidator is a validator for the "refund_requested_by" field. It is called by the builders before save.
@@ -249,6 +265,11 @@ func ByFeeRate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFeeRate, opts...).ToFunc()
 }
 
+// ByBalanceDeductAmount orders the results by the balance_deduct_amount field.
+func ByBalanceDeductAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBalanceDeductAmount, opts...).ToFunc()
+}
+
 // ByRechargeCode orders the results by the recharge_code field.
 func ByRechargeCode(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRechargeCode, opts...).ToFunc()
@@ -294,6 +315,16 @@ func ByPlanID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPlanID, opts...).ToFunc()
 }
 
+// ByBundleSubscriptionID orders the results by the bundle_subscription_id field.
+func ByBundleSubscriptionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBundleSubscriptionID, opts...).ToFunc()
+}
+
+// BySourceBundleSubscriptionID orders the results by the source_bundle_subscription_id field.
+func BySourceBundleSubscriptionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSourceBundleSubscriptionID, opts...).ToFunc()
+}
+
 // BySubscriptionGroupID orders the results by the subscription_group_id field.
 func BySubscriptionGroupID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubscriptionGroupID, opts...).ToFunc()
@@ -322,6 +353,11 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByRefundAmount orders the results by the refund_amount field.
 func ByRefundAmount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRefundAmount, opts...).ToFunc()
+}
+
+// ByProrateCredit orders the results by the prorate_credit field.
+func ByProrateCredit(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProrateCredit, opts...).ToFunc()
 }
 
 // ByRefundReason orders the results by the refund_reason field.

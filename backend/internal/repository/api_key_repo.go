@@ -38,6 +38,23 @@ func (r *apiKeyRepository) activeQuery() *dbent.APIKeyQuery {
 	return r.client.APIKey.Query().Where(apikey.DeletedAtIsNil())
 }
 
+// RebindBundleKeys 把指定用户的所有 bundle APIKey（bundle_subscription_id 非 nil 且未软删除）
+// 批量迁移到新套餐订阅。用于套餐升级/换绑/重购后让旧 key 跟随到新 active bundle，避免旧 key
+// 仍指向失效（upgraded/revoked/expired）bundle 导致网关 BUNDLE_EXPIRED。业务上用户同一时间只有
+// 一个 active bundle，故迁移「该用户全部 bundle key」即可统一覆盖三类切换场景。
+// 通过 clientFromContext 支持 txCtx，可在套餐切换事务内执行以保证原子性。
+func (r *apiKeyRepository) RebindBundleKeys(ctx context.Context, userID, newBundleSubID int64) (int, error) {
+	client := clientFromContext(ctx, r.client)
+	return client.APIKey.Update().
+		Where(
+			apikey.UserIDEQ(userID),
+			apikey.BundleSubscriptionIDNotNil(),
+			apikey.DeletedAtIsNil(),
+		).
+		SetBundleSubscriptionID(newBundleSubID).
+		Save(ctx)
+}
+
 func (r *apiKeyRepository) Create(ctx context.Context, key *service.APIKey) error {
 	builder := r.client.APIKey.Create().
 		SetUserID(key.UserID).
@@ -45,6 +62,7 @@ func (r *apiKeyRepository) Create(ctx context.Context, key *service.APIKey) erro
 		SetName(key.Name).
 		SetStatus(key.Status).
 		SetNillableGroupID(key.GroupID).
+		SetNillableBundleSubscriptionID(key.BundleSubscriptionID).
 		SetNillableLastUsedAt(key.LastUsedAt).
 		SetQuota(key.Quota).
 		SetQuotaUsed(key.QuotaUsed).
@@ -130,6 +148,7 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 			apikey.FieldID,
 			apikey.FieldUserID,
 			apikey.FieldGroupID,
+			apikey.FieldBundleSubscriptionID,
 			apikey.FieldName,
 			apikey.FieldStatus,
 			apikey.FieldIPWhitelist,
@@ -231,6 +250,13 @@ func (r *apiKeyRepository) Update(ctx context.Context, key *service.APIKey) erro
 		builder.SetGroupID(*key.GroupID)
 	} else {
 		builder.ClearGroupID()
+	}
+
+	// Bundle subscription ID (key mode)
+	if key.BundleSubscriptionID != nil {
+		builder.SetBundleSubscriptionID(*key.BundleSubscriptionID)
+	} else {
+		builder.ClearBundleSubscriptionID()
 	}
 
 	// Expiration time
@@ -698,29 +724,30 @@ func apiKeyEntityToService(m *dbent.APIKey) *service.APIKey {
 		return nil
 	}
 	out := &service.APIKey{
-		ID:            m.ID,
-		UserID:        m.UserID,
-		Key:           m.Key,
-		Name:          m.Name,
-		Status:        m.Status,
-		IPWhitelist:   m.IPWhitelist,
-		IPBlacklist:   m.IPBlacklist,
-		LastUsedAt:    m.LastUsedAt,
-		CreatedAt:     m.CreatedAt,
-		UpdatedAt:     m.UpdatedAt,
-		GroupID:       m.GroupID,
-		Quota:         m.Quota,
-		QuotaUsed:     m.QuotaUsed,
-		ExpiresAt:     m.ExpiresAt,
-		RateLimit5h:   m.RateLimit5h,
-		RateLimit1d:   m.RateLimit1d,
-		RateLimit7d:   m.RateLimit7d,
-		Usage5h:       m.Usage5h,
-		Usage1d:       m.Usage1d,
-		Usage7d:       m.Usage7d,
-		Window5hStart: m.Window5hStart,
-		Window1dStart: m.Window1dStart,
-		Window7dStart: m.Window7dStart,
+		ID:                   m.ID,
+		UserID:               m.UserID,
+		Key:                  m.Key,
+		Name:                 m.Name,
+		Status:               m.Status,
+		IPWhitelist:          m.IPWhitelist,
+		IPBlacklist:          m.IPBlacklist,
+		LastUsedAt:           m.LastUsedAt,
+		CreatedAt:            m.CreatedAt,
+		UpdatedAt:            m.UpdatedAt,
+		GroupID:              m.GroupID,
+		BundleSubscriptionID: m.BundleSubscriptionID,
+		Quota:                m.Quota,
+		QuotaUsed:            m.QuotaUsed,
+		ExpiresAt:            m.ExpiresAt,
+		RateLimit5h:          m.RateLimit5h,
+		RateLimit1d:          m.RateLimit1d,
+		RateLimit7d:          m.RateLimit7d,
+		Usage5h:              m.Usage5h,
+		Usage1d:              m.Usage1d,
+		Usage7d:              m.Usage7d,
+		Window5hStart:        m.Window5hStart,
+		Window1dStart:        m.Window1dStart,
+		Window7dStart:        m.Window7dStart,
 	}
 	if m.Edges.User != nil {
 		out.User = userEntityToService(m.Edges.User)

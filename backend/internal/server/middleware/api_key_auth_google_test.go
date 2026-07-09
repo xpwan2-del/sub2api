@@ -32,6 +32,9 @@ type fakeGoogleSubscriptionRepo struct {
 	resetMonthly   func(ctx context.Context, id int64, start time.Time) error
 }
 
+func (f fakeAPIKeyRepo) RebindBundleKeys(context.Context, int64, int64) (int, error) {
+	return 0, nil
+}
 func (f fakeAPIKeyRepo) Create(ctx context.Context, key *service.APIKey) error {
 	return errors.New("not implemented")
 }
@@ -149,6 +152,9 @@ func (f fakeGoogleSubscriptionRepo) ExistsByUserIDAndGroupID(ctx context.Context
 }
 func (f fakeGoogleSubscriptionRepo) ExtendExpiry(ctx context.Context, subscriptionID int64, newExpiresAt time.Time) error {
 	return errors.New("not implemented")
+}
+func (f fakeGoogleSubscriptionRepo) ExtendExpiryByDays(ctx context.Context, subscriptionID int64, days int) error {
+	return nil
 }
 func (f fakeGoogleSubscriptionRepo) UpdateStatus(ctx context.Context, subscriptionID int64, status string) error {
 	if f.updateStatus != nil {
@@ -751,4 +757,7 @@ func TestApiKeyAuthWithSubscriptionGoogle_SubscriptionLimitExceededReturns429(t 
 	require.Equal(t, http.StatusTooManyRequests, resp.Error.Code)
 	require.Equal(t, "RESOURCE_EXHAUSTED", resp.Error.Status)
 	require.Contains(t, resp.Error.Message, "daily usage limit exceeded")
+}
+func (f fakeGoogleSubscriptionRepo) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) {
+	return 0, nil
 }

@@ -50,6 +50,10 @@ func (PaymentOrder) Fields() []ent.Field {
 		field.Float("fee_rate").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}).
 			Default(0),
+		// 余额抵扣金额（用于套餐混合支付：余额+在线支付）
+		field.Float("balance_deduct_amount").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,2)"}).
+			Default(0),
 		field.String("recharge_code").
 			MaxLen(64),
 
@@ -81,6 +85,11 @@ func (PaymentOrder) Fields() []ent.Field {
 		field.Int64("plan_id").
 			Optional().
 			Nillable(),
+		field.Int64("bundle_subscription_id").
+			Optional().
+			Nillable().
+			Comment("套餐订单激活后回写的 BundleSubscription ID，便于对账"),
+		field.Int64("source_bundle_subscription_id").Optional().Comment("升级订单：被升级的旧订阅ID"),
 		field.Int64("subscription_group_id").
 			Optional().
 			Nillable(),
@@ -108,6 +117,7 @@ func (PaymentOrder) Fields() []ent.Field {
 		field.Float("refund_amount").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,2)"}).
 			Default(0),
+		field.Float("prorate_credit").SchemaType(map[string]string{dialect.Postgres: "numeric(20,12)"}).Default(0).Comment("升级订单锁定的旧套餐剩余价值(credit)"),
 		field.String("refund_reason").
 			Optional().
 			Nillable().

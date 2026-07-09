@@ -250,6 +250,7 @@ describe('user KeysView column settings', () => {
     expect(visibleColumnKeys(wrapper)).toEqual([
       'name',
       'key',
+      'key_mode',
       'group',
       'usage',
       'expires_at',
@@ -282,6 +283,7 @@ describe('user KeysView column settings', () => {
     expect(visibleColumnKeys(wrapper)).toEqual([
       'name',
       'key',
+      'key_mode',
       'usage',
       'rate_limit',
       'expires_at',

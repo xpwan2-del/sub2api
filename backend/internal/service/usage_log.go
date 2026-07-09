@@ -168,6 +168,7 @@ type UsageLog struct {
 
 	// 图片生成字段
 	ImageCount         int
+	VideoCount         int
 	ImageSize          *string
 	ImageInputSize     *string
 	ImageOutputSize    *string

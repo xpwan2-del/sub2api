@@ -90,6 +90,11 @@ func FeeRate(v float64) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldFeeRate, v))
 }
 
+// BalanceDeductAmount applies equality check predicate on the "balance_deduct_amount" field. It's identical to BalanceDeductAmountEQ.
+func BalanceDeductAmount(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldBalanceDeductAmount, v))
+}
+
 // RechargeCode applies equality check predicate on the "recharge_code" field. It's identical to RechargeCodeEQ.
 func RechargeCode(v string) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldRechargeCode, v))
@@ -135,6 +140,16 @@ func PlanID(v int64) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldPlanID, v))
 }
 
+// BundleSubscriptionID applies equality check predicate on the "bundle_subscription_id" field. It's identical to BundleSubscriptionIDEQ.
+func BundleSubscriptionID(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldBundleSubscriptionID, v))
+}
+
+// SourceBundleSubscriptionID applies equality check predicate on the "source_bundle_subscription_id" field. It's identical to SourceBundleSubscriptionIDEQ.
+func SourceBundleSubscriptionID(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldSourceBundleSubscriptionID, v))
+}
+
 // SubscriptionGroupID applies equality check predicate on the "subscription_group_id" field. It's identical to SubscriptionGroupIDEQ.
 func SubscriptionGroupID(v int64) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldSubscriptionGroupID, v))
@@ -163,6 +178,11 @@ func Status(v string) predicate.PaymentOrder {
 // RefundAmount applies equality check predicate on the "refund_amount" field. It's identical to RefundAmountEQ.
 func RefundAmount(v float64) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldRefundAmount, v))
+}
+
+// ProrateCredit applies equality check predicate on the "prorate_credit" field. It's identical to ProrateCreditEQ.
+func ProrateCredit(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldProrateCredit, v))
 }
 
 // RefundReason applies equality check predicate on the "refund_reason" field. It's identical to RefundReasonEQ.
@@ -588,6 +608,46 @@ func FeeRateLT(v float64) predicate.PaymentOrder {
 // FeeRateLTE applies the LTE predicate on the "fee_rate" field.
 func FeeRateLTE(v float64) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldLTE(FieldFeeRate, v))
+}
+
+// BalanceDeductAmountEQ applies the EQ predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldBalanceDeductAmount, v))
+}
+
+// BalanceDeductAmountNEQ applies the NEQ predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountNEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldBalanceDeductAmount, v))
+}
+
+// BalanceDeductAmountIn applies the In predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldBalanceDeductAmount, vs...))
+}
+
+// BalanceDeductAmountNotIn applies the NotIn predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountNotIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldBalanceDeductAmount, vs...))
+}
+
+// BalanceDeductAmountGT applies the GT predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountGT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldBalanceDeductAmount, v))
+}
+
+// BalanceDeductAmountGTE applies the GTE predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountGTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldBalanceDeductAmount, v))
+}
+
+// BalanceDeductAmountLT applies the LT predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountLT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldBalanceDeductAmount, v))
+}
+
+// BalanceDeductAmountLTE applies the LTE predicate on the "balance_deduct_amount" field.
+func BalanceDeductAmountLTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldBalanceDeductAmount, v))
 }
 
 // RechargeCodeEQ applies the EQ predicate on the "recharge_code" field.
@@ -1190,6 +1250,106 @@ func PlanIDNotNil() predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldNotNull(FieldPlanID))
 }
 
+// BundleSubscriptionIDEQ applies the EQ predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDEQ(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldBundleSubscriptionID, v))
+}
+
+// BundleSubscriptionIDNEQ applies the NEQ predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDNEQ(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldBundleSubscriptionID, v))
+}
+
+// BundleSubscriptionIDIn applies the In predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDIn(vs ...int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldBundleSubscriptionID, vs...))
+}
+
+// BundleSubscriptionIDNotIn applies the NotIn predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDNotIn(vs ...int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldBundleSubscriptionID, vs...))
+}
+
+// BundleSubscriptionIDGT applies the GT predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDGT(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldBundleSubscriptionID, v))
+}
+
+// BundleSubscriptionIDGTE applies the GTE predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDGTE(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldBundleSubscriptionID, v))
+}
+
+// BundleSubscriptionIDLT applies the LT predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDLT(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldBundleSubscriptionID, v))
+}
+
+// BundleSubscriptionIDLTE applies the LTE predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDLTE(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldBundleSubscriptionID, v))
+}
+
+// BundleSubscriptionIDIsNil applies the IsNil predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDIsNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIsNull(FieldBundleSubscriptionID))
+}
+
+// BundleSubscriptionIDNotNil applies the NotNil predicate on the "bundle_subscription_id" field.
+func BundleSubscriptionIDNotNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotNull(FieldBundleSubscriptionID))
+}
+
+// SourceBundleSubscriptionIDEQ applies the EQ predicate on the "source_bundle_subscription_id" field.
+func SourceBundleSubscriptionIDEQ(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldSourceBundleSubscriptionID, v))
+}
+
+// SourceBundleSubscriptionIDNEQ applies the NEQ predicate on the "source_bundle_subscription_id" field.
+func SourceBundleSubscriptionIDNEQ(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldSourceBundleSubscriptionID, v))
+}
+
+// SourceBundleSubscriptionIDIn applies the In predicate on the "source_bundle_subscription_id" field.
+func SourceBundleSubscriptionIDIn(vs ...int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldSourceBundleSubscriptionID, vs...))
+}
+
+// SourceBundleSubscriptionIDNotIn applies the NotIn predicate on the "source_bundle_subscription_id" field.
+func SourceBundleSubscriptionIDNotIn(vs ...int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldSourceBundleSubscriptionID, vs...))
+}
+
+// SourceBundleSubscriptionIDGT applies the GT predicate on the "source_bundle_subscription_id" field.
+func SourceBundleSubscriptionIDGT(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldSourceBundleSubscriptionID, v))
+}
+
+// SourceBundleSubscriptionIDGTE applies the GTE predicate on the "source_bundle_subscription_id" field.
+func SourceBundleSubscriptionIDGTE(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldSourceBundleSubscriptionID, v))
+}
+
+// SourceBundleSubscriptionIDLT applies the LT predicate on the "source_bundle_subscription_id" field.
+func SourceBundleSubscriptionIDLT(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldSourceBundleSubscriptionID, v))
+}
+
+// SourceBundleSubscriptionIDLTE applies the LTE predicate on the "source_bundle_subscription_id" field.
+func SourceBundleSubscriptionIDLTE(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldSourceBundleSubscriptionID, v))
+}
+
+// SourceBundleSubscriptionIDIsNil applies the IsNil predicate on the "source_bundle_subscription_id" field.
+func SourceBundleSubscriptionIDIsNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIsNull(FieldSourceBundleSubscriptionID))
+}
+
+// SourceBundleSubscriptionIDNotNil applies the NotNil predicate on the "source_bundle_subscription_id" field.
+func SourceBundleSubscriptionIDNotNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotNull(FieldSourceBundleSubscriptionID))
+}
+
 // SubscriptionGroupIDEQ applies the EQ predicate on the "subscription_group_id" field.
 func SubscriptionGroupIDEQ(v int64) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldSubscriptionGroupID, v))
@@ -1553,6 +1713,46 @@ func RefundAmountLT(v float64) predicate.PaymentOrder {
 // RefundAmountLTE applies the LTE predicate on the "refund_amount" field.
 func RefundAmountLTE(v float64) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldLTE(FieldRefundAmount, v))
+}
+
+// ProrateCreditEQ applies the EQ predicate on the "prorate_credit" field.
+func ProrateCreditEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldProrateCredit, v))
+}
+
+// ProrateCreditNEQ applies the NEQ predicate on the "prorate_credit" field.
+func ProrateCreditNEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldProrateCredit, v))
+}
+
+// ProrateCreditIn applies the In predicate on the "prorate_credit" field.
+func ProrateCreditIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldProrateCredit, vs...))
+}
+
+// ProrateCreditNotIn applies the NotIn predicate on the "prorate_credit" field.
+func ProrateCreditNotIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldProrateCredit, vs...))
+}
+
+// ProrateCreditGT applies the GT predicate on the "prorate_credit" field.
+func ProrateCreditGT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldProrateCredit, v))
+}
+
+// ProrateCreditGTE applies the GTE predicate on the "prorate_credit" field.
+func ProrateCreditGTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldProrateCredit, v))
+}
+
+// ProrateCreditLT applies the LT predicate on the "prorate_credit" field.
+func ProrateCreditLT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldProrateCredit, v))
+}
+
+// ProrateCreditLTE applies the LTE predicate on the "prorate_credit" field.
+func ProrateCreditLTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldProrateCredit, v))
 }
 
 // RefundReasonEQ applies the EQ predicate on the "refund_reason" field.

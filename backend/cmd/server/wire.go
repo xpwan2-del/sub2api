@@ -65,6 +65,7 @@ func providePrivacyClientFactory() service.PrivacyClientFactory {
 func provideServiceBuildInfo(buildInfo handler.BuildInfo) service.BuildInfo {
 	return service.BuildInfo{
 		Version:   buildInfo.Version,
+		Build:     buildInfo.Build,
 		BuildType: buildInfo.BuildType,
 	}
 }
@@ -83,6 +84,7 @@ func provideCleanup(
 	accountExpiry *service.AccountExpiryService,
 	proxyExpiry *service.ProxyExpiryService,
 	subscriptionExpiry *service.SubscriptionExpiryService,
+	bundleExpiry *service.BundleExpiryService,
 	usageCleanup *service.UsageCleanupService,
 	idempotencyCleanup *service.IdempotencyCleanupService,
 	pricing *service.PricingService,
@@ -181,6 +183,12 @@ func provideCleanup(
 			}},
 			{"SubscriptionExpiryService", func() error {
 				subscriptionExpiry.Stop()
+				return nil
+			}},
+			{"BundleExpiryService", func() error {
+				if bundleExpiry != nil {
+					bundleExpiry.Stop()
+				}
 				return nil
 			}},
 			{"SubscriptionService", func() error {

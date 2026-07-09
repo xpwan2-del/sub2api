@@ -285,12 +285,18 @@ apiClient.interceptors.response.use(
       }
 
       // Return structured error
+      // Defense-in-depth: some non-standard endpoints nest the message under `error.message`
+      // (e.g. legacy `{ error: { type, message } }`). Fall back to it so the user still sees a
+      // meaningful message instead of axios's "Request failed with status code XXX".
+      const nestedError = (typeof apiData.error === 'object' && apiData.error !== null)
+        ? (apiData.error as Record<string, any>)
+        : null
       return Promise.reject({
         status,
         code: apiData.code,
         reason: apiData.reason,
         error: apiData.error,
-        message: apiData.message || apiData.detail || error.message,
+        message: apiData.message || apiData.detail || nestedError?.message || error.message,
         metadata: apiData.metadata,
       })
     }

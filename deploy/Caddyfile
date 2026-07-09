@@ -30,6 +30,32 @@ api.sub2api.com {
 	# =========================================================================
 	# 反向代理配置
 	# =========================================================================
+	handle /apps/canvas* {
+		header {
+			Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' http: https: ws: wss:"
+			X-Content-Type-Options "nosniff"
+			X-Frame-Options "DENY"
+			Referrer-Policy "strict-origin-when-cross-origin"
+			Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		}
+		reverse_proxy {$CANVAS_UPSTREAM:localhost:3000} {
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Prefix /apps/canvas
+			header_up CF-Connecting-IP {http.request.header.CF-Connecting-IP}
+
+			transport http {
+				keepalive 120s
+				keepalive_idle_conns 128
+				read_buffer 16KB
+				write_buffer 16KB
+				compression off
+			}
+		}
+	}
+
 	reverse_proxy localhost:8080 {
 		# 健康检查
 		health_uri /health

@@ -83,6 +83,7 @@ const chartOptions = {
       display: true,
       position: 'left' as const,
       title: { display: true, text: t('payment.admin.revenue') },
+      min: 0,
     },
     y1: {
       type: 'linear' as const,
@@ -90,6 +91,8 @@ const chartOptions = {
       position: 'right' as const,
       title: { display: true, text: t('payment.admin.orderCount') },
       grid: { drawOnChartArea: false },
+      min: 0,
+      ticks: { stepSize: 1 },
     }
   },
   plugins: {

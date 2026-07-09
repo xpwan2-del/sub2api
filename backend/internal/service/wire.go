@@ -16,7 +16,8 @@ import (
 
 // BuildInfo contains build information
 type BuildInfo struct {
-	Version   string
+	Version   string // 上游基线版本号
+	Build     string // 自研发布版本号（CalVer）
 	BuildType string
 }
 
@@ -32,7 +33,7 @@ func ProvidePricingService(cfg *config.Config, remoteClient PricingRemoteClient)
 
 // ProvideUpdateService creates UpdateService with BuildInfo
 func ProvideUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, buildInfo BuildInfo) *UpdateService {
-	return NewUpdateService(cache, githubClient, buildInfo.Version, buildInfo.BuildType)
+	return NewUpdateService(cache, githubClient, buildInfo.Version, buildInfo.Build, buildInfo.BuildType)
 }
 
 // ProvideEmailQueueService creates EmailQueueService with default worker count
@@ -496,8 +497,13 @@ func ProvideOpsService(
 }
 
 // ProvideSettingService wires SettingService with group reader and proxy repo.
-func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupRepository, proxyRepo ProxyRepository, cfg *config.Config) *SettingService {
+func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupRepository, proxyRepo ProxyRepository, cfg *config.Config, buildInfo BuildInfo) *SettingService {
 	svc := NewSettingService(settingRepo, cfg)
+	// version（主显示）= 自研发布号 Build；baseVersion（副显示）= 上游基线 Version。
+	// 注入到 SettingService，供 GetPublicSettingsForInjection 写入 window.__APP_CONFIG__，
+	// 否则前端首屏走 SSR 注入快路径时主版本号永远为空。
+	svc.SetVersion(buildInfo.Build)
+	svc.SetBaseVersion(buildInfo.Version)
 	svc.SetDefaultSubscriptionGroupReader(groupRepo)
 	svc.SetProxyRepository(proxyRepo)
 	if err := svc.LoadAPIKeyACLTrustForwardedIPSetting(context.Background()); err != nil {
@@ -643,6 +649,12 @@ var ProviderSet = wire.NewSet(
 	ProvideChannelMonitorRunner,
 	NewChannelMonitorRequestTemplateService,
 	ProvideUserPlatformQuotaUsageFlusher,
+	NewBundlePlanService,
+	NewBundleSubscriptionService,
+	wire.Bind(new(BundleKeyRebinder), new(*APIKeyService)),
+	NewBundleRouteResolver,
+	NewBundleUsageService,
+	ProvideBundleExpiryService,
 )
 
 // ProvideUserPlatformQuotaUsageFlusher 创建并启动 UserPlatformQuotaUsageFlusher。
@@ -666,8 +678,8 @@ func ProvideBalanceNotifyService(emailService *EmailService, settingRepo Setting
 }
 
 // ProvidePaymentService creates PaymentService and attaches notification email delivery.
-func ProvidePaymentService(entClient *dbent.Client, registry *payment.Registry, loadBalancer payment.LoadBalancer, redeemService *RedeemService, subscriptionSvc *SubscriptionService, configService *PaymentConfigService, userRepo UserRepository, groupRepo GroupRepository, affiliateService *AffiliateService, notificationEmailService *NotificationEmailService) *PaymentService {
-	svc := NewPaymentService(entClient, registry, loadBalancer, redeemService, subscriptionSvc, configService, userRepo, groupRepo, affiliateService)
+func ProvidePaymentService(entClient *dbent.Client, registry *payment.Registry, loadBalancer payment.LoadBalancer, redeemService *RedeemService, subscriptionSvc *SubscriptionService, bundleSubscriptionSvc *BundleSubscriptionService, configService *PaymentConfigService, userRepo UserRepository, groupRepo GroupRepository, affiliateService *AffiliateService, notificationEmailService *NotificationEmailService) *PaymentService {
+	svc := NewPaymentService(entClient, registry, loadBalancer, redeemService, subscriptionSvc, bundleSubscriptionSvc, configService, userRepo, groupRepo, affiliateService)
 	svc.SetNotificationEmailService(notificationEmailService)
 	return svc
 }
@@ -698,4 +710,12 @@ func ProvideChannelMonitorRunner(svc *ChannelMonitorService, settingService *Set
 	svc.SetScheduler(r)
 	r.Start()
 	return r
+}
+
+// ProvideBundleExpiryService creates and starts BundleExpiryService.
+func ProvideBundleExpiryService(bundleUsageRepo BundleUsageRepository, bundleSubRepo BundleSubscriptionRepository, userSubRepo UserSubscriptionRepository, lockCache LeaderLockCache, db *sql.DB) *BundleExpiryService {
+	svc := NewBundleExpiryService(bundleUsageRepo, bundleSubRepo, userSubRepo, time.Minute)
+	svc.SetLeaderLock(lockCache, db)
+	svc.Start()
+	return svc
 }

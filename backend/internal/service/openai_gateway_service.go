@@ -235,19 +235,27 @@ type OpenAIForwardResult struct {
 	// UpstreamModel is the actual model sent to the upstream provider after mapping.
 	// Empty when no mapping was applied (requested model was used as-is).
 	UpstreamModel string
+	// TaskID 是视频任务创建成功后上游返回的任务 ID（仅 videos 创建路径填充），
+	// 用于建立 task→{account,model} 绑定以供后续查询。
+	TaskID string
+	// TaskStatus 是视频任务查询返回的状态（仅 videos 查询路径填充），
+	// 用于判断是否到达终态并清理绑定。
+	TaskStatus string
 	// ServiceTier records the OpenAI Responses API service tier, e.g. "priority" / "flex".
 	// Nil means the request did not specify a recognized tier.
 	ServiceTier *string
 	// ReasoningEffort is extracted from request body (reasoning.effort) or derived from model suffix.
 	// Stored for usage records display; nil means not provided / not applicable.
-	ReasoningEffort    *string
-	Stream             bool
-	OpenAIWSMode       bool
-	ResponseHeaders    http.Header
-	Duration           time.Duration
-	FirstTokenMs       *int
-	ClientDisconnect   bool
-	ImageCount         int
+	ReasoningEffort  *string
+	Stream           bool
+	OpenAIWSMode     bool
+	ResponseHeaders  http.Header
+	Duration         time.Duration
+	FirstTokenMs     *int
+	ClientDisconnect bool
+	ImageCount       int
+	// VideoCount 视频产出段数（当前 1 请求=1 段）
+	VideoCount         int
 	ImageSize          string
 	ImageInputSize     string
 	ImageOutputSize    string
@@ -359,6 +367,7 @@ type OpenAIGatewayService struct {
 	balanceNotifyService  *BalanceNotifyService
 	settingService        *SettingService
 	userPlatformQuotaRepo UserPlatformQuotaRepository
+	bundleUsageService    *BundleUsageService
 
 	openaiWSPoolOnce              sync.Once
 	openaiWSStateStoreOnce        sync.Once
@@ -405,6 +414,7 @@ func NewOpenAIGatewayService(
 	balanceNotifyService *BalanceNotifyService,
 	settingService *SettingService,
 	userPlatformQuotaRepo UserPlatformQuotaRepository,
+	bundleUsageService *BundleUsageService,
 ) *OpenAIGatewayService {
 	svc := &OpenAIGatewayService{
 		accountRepo:         accountRepo,
@@ -438,6 +448,7 @@ func NewOpenAIGatewayService(
 		balanceNotifyService:  balanceNotifyService,
 		settingService:        settingService,
 		userPlatformQuotaRepo: userPlatformQuotaRepo,
+		bundleUsageService:    bundleUsageService,
 		responseHeaderFilter:  compileResponseHeaderFilter(cfg),
 		codexSnapshotThrottle: newAccountWriteThrottle(openAICodexSnapshotPersistMinInterval),
 	}
@@ -550,6 +561,8 @@ func (s *OpenAIGatewayService) billingDeps() *billingDeps {
 		deferredService:       s.deferredService,
 		balanceNotifyService:  s.balanceNotifyService,
 		userPlatformQuotaRepo: s.userPlatformQuotaRepo,
+		bundleUsageService:    s.bundleUsageService,
+		cfg:                   s.cfg,
 	}
 }
 
@@ -6461,7 +6474,11 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 			IsSubscriptionBill:    isSubscriptionBilling,
 			AccountRateMultiplier: accountRateMultiplier,
 			APIKeyService:         input.APIKeyService,
-			Platform:              quotaPlatform,
+			// Platform 使用 quotaPlatform：异步后扣无法从原 ctx 恢复 ForcePlatform，
+			// 故沿用前面 fallback 计算的平台（空时与 PlatformFromAPIKey 等价）。
+			Platform:   quotaPlatform,
+			ImageCount: result.ImageCount,
+			VideoCount: result.VideoCount,
 		}, s.billingDeps(), s.usageBillingRepo)
 		return err
 	}()

@@ -21,15 +21,21 @@ func (s *PaymentService) GetDashboardStats(ctx context.Context, days int) (*Dash
 		days = 30
 	}
 	now := time.Now()
-	since := now.AddDate(0, 0, -days)
-	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	loc := now.Location()
+	since := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc).AddDate(0, 0, -days)
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
 
 	paidStatuses := []string{OrderStatusCompleted, OrderStatusPaid, OrderStatusRecharging}
 
+	// Include orders with PaidAt >= since OR PaidAt is nil but status is paid
+	// (covers legacy pure-balance orders created without PaidAt).
 	orders, err := s.entClient.PaymentOrder.Query().
 		Where(
 			paymentorder.StatusIn(paidStatuses...),
-			paymentorder.PaidAtGTE(since),
+			paymentorder.Or(
+				paymentorder.PaidAtGTE(since),
+				paymentorder.PaidAtIsNil(),
+			),
 		).
 		All(ctx)
 	if err != nil {
@@ -37,7 +43,7 @@ func (s *PaymentService) GetDashboardStats(ctx context.Context, days int) (*Dash
 	}
 
 	st := &DashboardStats{}
-	computeBasicStats(st, orders, todayStart)
+	computeBasicStats(st, orders, todayStart, loc)
 
 	st.PendingOrders, err = s.entClient.PaymentOrder.Query().
 		Where(paymentorder.StatusEQ(OrderStatusPending)).
@@ -46,21 +52,31 @@ func (s *PaymentService) GetDashboardStats(ctx context.Context, days int) (*Dash
 		return nil, err
 	}
 
-	st.DailySeries = buildDailySeries(orders, since, days)
+	st.DailySeries = buildDailySeries(orders, since, days, loc)
 	st.PaymentMethods = buildMethodDistribution(orders)
 	st.TopUsers = buildTopUsers(orders)
 
 	return st, nil
 }
 
-func computeBasicStats(st *DashboardStats, orders []*dbent.PaymentOrder, todayStart time.Time) {
+func computeBasicStats(st *DashboardStats, orders []*dbent.PaymentOrder, todayStart time.Time, loc *time.Location) {
 	var totalAmount, todayAmount float64
 	var todayCount int
 	for _, o := range orders {
 		totalAmount += o.PayAmount
-		if o.PaidAt != nil && !o.PaidAt.Before(todayStart) {
-			todayAmount += o.PayAmount
-			todayCount++
+		if paidAt := o.PaidAt; paidAt != nil {
+			if !paidAt.Before(todayStart) {
+				todayAmount += o.PayAmount
+				todayCount++
+			}
+		} else {
+			// Legacy orders without PaidAt: use CreatedAt as fallback, converted to local timezone.
+			created := o.CreatedAt.In(loc)
+			dayStart := time.Date(created.Year(), created.Month(), created.Day(), 0, 0, 0, 0, loc)
+			if !dayStart.Before(todayStart) {
+				todayAmount += o.PayAmount
+				todayCount++
+			}
 		}
 	}
 	st.TotalAmount = math.Round(totalAmount*100) / 100
@@ -72,17 +88,20 @@ func computeBasicStats(st *DashboardStats, orders []*dbent.PaymentOrder, todaySt
 	}
 }
 
-func buildDailySeries(orders []*dbent.PaymentOrder, since time.Time, days int) []DailyStats {
+func buildDailySeries(orders []*dbent.PaymentOrder, since time.Time, days int, loc *time.Location) []DailyStats {
 	dailyMap := make(map[string]*DailyStats)
 	for _, o := range orders {
-		if o.PaidAt == nil {
-			continue
+		var dateStr string
+		if o.PaidAt != nil {
+			dateStr = o.PaidAt.In(loc).Format("2006-01-02")
+		} else {
+			// Fallback: use CreatedAt for legacy orders without PaidAt.
+			dateStr = o.CreatedAt.In(loc).Format("2006-01-02")
 		}
-		date := o.PaidAt.Format("2006-01-02")
-		ds, ok := dailyMap[date]
+		ds, ok := dailyMap[dateStr]
 		if !ok {
-			ds = &DailyStats{Date: date}
-			dailyMap[date] = ds
+			ds = &DailyStats{Date: dateStr}
+			dailyMap[dateStr] = ds
 		}
 		ds.Amount += o.PayAmount
 		ds.Count++
@@ -109,6 +128,7 @@ func buildMethodDistribution(orders []*dbent.PaymentOrder) []PaymentMethodStat {
 			methodMap[o.PaymentType] = ms
 		}
 		ms.Amount += o.PayAmount
+		ms.BalanceAmount += o.BalanceDeductAmount
 		ms.Count++
 	}
 	methods := make([]PaymentMethodStat, 0, len(methodMap))
@@ -128,6 +148,7 @@ func buildTopUsers(orders []*dbent.PaymentOrder) []TopUserStat {
 			userMap[o.UserID] = us
 		}
 		us.Amount += o.PayAmount
+		us.BalanceAmount += o.BalanceDeductAmount
 	}
 	userList := make([]*TopUserStat, 0, len(userMap))
 	for _, us := range userMap {

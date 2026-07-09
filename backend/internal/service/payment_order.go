@@ -38,6 +38,16 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	if err != nil {
 		return nil, err
 	}
+	// 中危3：bundle 与 bundle_upgrade 严格防重——同一用户存在未完成 bundle/bundle_upgrade 订单
+	// （PENDING/PAID/RECHARGING）时拒绝新建，在扣款前拦截。bundle 是唯一订阅，重复下单必失败；
+	// 双击/并发下单会导致两个订单都支付后第二个激活失败（纯余额有余额回滚，第三方支付 markFailed
+	// 不退款致资金滞留）。bundle_upgrade 同样防重：UpgradeBundle 的 status 校验在真实并发下是
+	// TOCTOU，两个并发升级支付回调可能各创建一个 active 新订阅，订单防重是其上游主防线。
+	if req.OrderType == payment.OrderTypeBundle || req.OrderType == payment.OrderTypeBundleUpgrade {
+		if err := s.ensureNoDuplicateBundleOrder(ctx, req.UserID); err != nil {
+			return nil, err
+		}
+	}
 	if err := s.checkCancelRateLimit(ctx, req.UserID, cfg); err != nil {
 		return nil, err
 	}
@@ -67,6 +77,28 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 			return nil, err
 		}
 	}
+	// --- Balance deduction for bundle orders ---
+	// bundle 与 bundle_upgrade 共享同一余额抵扣逻辑：planPrice 即"本次需支付总额"。
+	// bundle 的 planPrice = plan.Price（orderAmount 在 plan!=nil 时已被设为 plan.Price）；
+	// bundle_upgrade 的 planPrice = req.Amount = 升级差价 due（validateOrderInput 对 upgrade 返回
+	// nil plan，故 orderAmount 保持 req.Amount）。两者余额抵扣语义一致。
+	balanceDeduct := 0.0
+	if req.UseBalance && (req.OrderType == payment.OrderTypeBundle || req.OrderType == payment.OrderTypeBundleUpgrade) && user.Balance > 0 {
+		planPrice := orderAmount
+		balanceDeduct = math.Min(user.Balance, planPrice)
+		if balanceDeduct >= planPrice {
+			// Pure balance payment: deduct balance, create order as PAID, fulfill immediately
+			return s.createPureBalanceBundleOrder(ctx, req, user, cfg, orderAmount, feeRate)
+		}
+		// Mixed payment: deduct balance, reduce gateway amount
+		if err := s.userRepo.DeductBalance(ctx, user.ID, balanceDeduct); err != nil {
+			return nil, fmt.Errorf("deduct balance: %w", err)
+		}
+		slog.Info("balance deducted for mixed bundle payment", "orderID", 0, "userID", user.ID, "deductAmount", balanceDeduct, "planPrice", planPrice)
+		limitAmount = planPrice - balanceDeduct
+		orderAmount = planPrice // keep full price as order amount
+	}
+	_ = balanceDeduct // used below in createOrderInTx
 	// 订阅套餐 price 是直付价，余额充值倍率只影响余额充值到账，不参与订阅 pay_amount 计算。
 	payAmountStr, payAmount, err := calculateCreateOrderPayAmount(limitAmount, feeRate, methodCurrency)
 	if err != nil {
@@ -99,8 +131,10 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	if oauthResp != nil {
 		return oauthResp, nil
 	}
-	order, err := s.createOrderInTx(ctx, req, user, plan, cfg, orderAmount, limitAmount, feeRate, payAmount, sel)
+	order, err := s.createOrderInTx(ctx, req, user, plan, cfg, orderAmount, limitAmount, feeRate, payAmount, balanceDeduct, sel)
 	if err != nil {
+		// 混合支付已扣余额但下单失败：回滚余额，避免资金损失（撤销未生效扣减，非退款）。
+		s.rollbackBalanceDeduct(ctx, user.ID, balanceDeduct, "createOrderInTx")
 		return nil, err
 	}
 	resp, err := s.invokeProvider(ctx, order, req, cfg, limitAmount, payAmountStr, payAmount, plan, sel)
@@ -108,9 +142,21 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		_, _ = s.entClient.PaymentOrder.UpdateOneID(order.ID).
 			SetStatus(OrderStatusFailed).
 			Save(ctx)
+		s.rollbackBalanceDeduct(ctx, user.ID, balanceDeduct, "invokeProvider")
 		return nil, err
 	}
 	return resp, nil
+}
+
+// rollbackBalanceDeduct 回滚混合套餐支付中已扣的余额（仅当下单或调起支付失败时调用）。
+// 这是撤销"未生效的扣减"，不是订单退款（套餐暂不支持退款）。
+func (s *PaymentService) rollbackBalanceDeduct(ctx context.Context, userID int64, amount float64, stage string) {
+	if amount <= 0 {
+		return
+	}
+	if err := s.userRepo.UpdateBalance(ctx, userID, amount); err != nil {
+		slog.Error("rollback balance deduct failed", "stage", stage, "userID", userID, "amount", amount, "error", err)
+	}
 }
 
 func (s *PaymentService) validateOrderInput(ctx context.Context, req CreateOrderRequest, cfg *PaymentConfig) (*dbent.SubscriptionPlan, error) {
@@ -120,6 +166,17 @@ func (s *PaymentService) validateOrderInput(ctx context.Context, req CreateOrder
 	if req.OrderType == payment.OrderTypeSubscription {
 		return s.validateSubOrder(ctx, req)
 	}
+	if req.OrderType == payment.OrderTypeBundleUpgrade {
+		// 升级订单：不触发普通 bundle 的"已有 active 订阅"冲突预检——升级本就基于已有 active 订阅。
+		// 目标 plan 存在/在售、source 订阅 active 的深度校验由升级结账 handler 完成（与 bundle
+		// 下单一致，见 bundle_handler.go）。此处仅做输入完整性校验，金额范围校验沿用下方通用分支。
+		if req.PlanID == 0 {
+			return nil, infraerrors.BadRequest("INVALID_INPUT", "bundle upgrade order requires a target plan")
+		}
+		if req.SourceBundleSubscriptionID == 0 {
+			return nil, infraerrors.BadRequest("INVALID_INPUT", "bundle upgrade order requires a source subscription")
+		}
+	}
 	if math.IsNaN(req.Amount) || math.IsInf(req.Amount, 0) || req.Amount <= 0 {
 		return nil, infraerrors.BadRequest("INVALID_AMOUNT", "amount must be a positive number")
 	}
@@ -128,6 +185,96 @@ func (s *PaymentService) validateOrderInput(ctx context.Context, req CreateOrder
 			WithMetadata(map[string]string{"min": fmt.Sprintf("%.2f", cfg.MinAmount), "max": fmt.Sprintf("%.2f", cfg.MaxAmount)})
 	}
 	return nil, nil
+}
+
+// createPureBalanceBundleOrder handles pure balance payment for bundle orders.
+// Deducts balance, creates order as PAID, and fulfills immediately.
+func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req CreateOrderRequest, user *User, cfg *PaymentConfig, orderAmount, feeRate float64) (*CreateOrderResponse, error) {
+	if req.PlanID == 0 {
+		return nil, infraerrors.BadRequest("INVALID_INPUT", "bundle order requires a plan")
+	}
+	// Deduct balance in a transaction
+	if err := s.userRepo.DeductBalance(ctx, user.ID, orderAmount); err != nil {
+		return nil, fmt.Errorf("deduct balance for bundle: %w", err)
+	}
+	slog.Info("pure balance payment for bundle", "userID", user.ID, "planID", req.PlanID, "amount", orderAmount)
+
+	// Create order as PAID directly
+	outTradeNo, err := s.allocateOutTradeNoDirect(ctx)
+	if err != nil {
+		// Rollback balance deduction
+		_ = s.userRepo.UpdateBalance(ctx, user.ID, orderAmount)
+		return nil, fmt.Errorf("allocate trade no: %w", err)
+	}
+	b := s.entClient.PaymentOrder.Create().
+		SetUserID(req.UserID).
+		SetUserEmail(user.Email).
+		SetUserName(user.Username).
+		SetNillableUserNotes(psNilIfEmpty(user.Notes)).
+		SetAmount(orderAmount).
+		SetPayAmount(0).
+		SetFeeRate(0).
+		SetBalanceDeductAmount(orderAmount).
+		SetRechargeCode("").
+		SetOutTradeNo(outTradeNo).
+		SetPaymentType("balance").
+		SetPaymentTradeNo("").
+		SetOrderType(req.OrderType).
+		SetStatus(OrderStatusPaid).
+		SetPaidAt(time.Now()).                        // mark payment time for dashboard stats
+		SetExpiresAt(time.Now().Add(24 * time.Hour)). // already paid, set far-future expiry
+		SetClientIP(req.ClientIP).
+		SetSrcHost(req.SrcHost).
+		SetPlanID(req.PlanID)
+	if req.SrcURL != "" {
+		b.SetSrcURL(req.SrcURL)
+	}
+	// bundle_upgrade 订单需写入升级专属字段（source 订阅 + prorate credit），否则
+	// ExecuteBundleUpgradeFulfillment 会因 SourceBundleSubscriptionID 缺失拒绝履约。
+	if req.OrderType == payment.OrderTypeBundleUpgrade {
+		b.SetSourceBundleSubscriptionID(req.SourceBundleSubscriptionID).
+			SetProrateCredit(req.ProrateCredit)
+	}
+	order, err := b.Save(ctx)
+	if err != nil {
+		// Rollback balance deduction
+		_ = s.userRepo.UpdateBalance(ctx, user.ID, orderAmount)
+		return nil, fmt.Errorf("create pure balance order: %w", err)
+	}
+	code := fmt.Sprintf("PAY-%d-%d", order.ID, time.Now().UnixNano()%100000)
+	order, err = s.entClient.PaymentOrder.UpdateOneID(order.ID).SetRechargeCode(code).Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("set recharge code: %w", err)
+	}
+	s.writeAuditLog(ctx, order.ID, "ORDER_PAID", "balance", map[string]any{"paymentType": "balance", "balanceDeductAmount": orderAmount})
+
+	// Fulfill the bundle/upgrade immediately. 走统一分发器：bundle_upgrade 必须路由到
+	// ExecuteBundleUpgradeFulfillment（换套），否则 ExecuteBundleFulfillment 会 ActivateBundle
+	// 建新订阅而非升级，导致用户付了差价却拿到全新订阅、旧订阅未失效。
+	if err := s.executeFulfillment(ctx, order.ID); err != nil {
+		slog.Error("bundle fulfillment failed after pure balance payment", "orderID", order.ID, "error", err)
+		// 套餐暂不支持退款，但激活失败时必须回滚已扣余额，避免用户付款却未拿到套餐。
+		// (This rolls back an intermediate deduction for an order that never fulfilled —
+		// it is not a refund of a completed order.)
+		s.rollbackBalanceDeduct(ctx, user.ID, orderAmount, "pureBalanceFulfillment")
+		_, _ = s.entClient.PaymentOrder.UpdateOneID(order.ID).SetStatus(OrderStatusFailed).Save(ctx)
+		return nil, fmt.Errorf("activate bundle: %w", err)
+	}
+	// Re-read order to get updated status
+	order, _ = s.entClient.PaymentOrder.Get(ctx, order.ID)
+
+	return &CreateOrderResponse{
+		OrderID:             order.ID,
+		Amount:              order.Amount,
+		PayAmount:           0,
+		FeeRate:             0,
+		Status:              order.Status,
+		PaymentType:         "balance",
+		OutTradeNo:          order.OutTradeNo,
+		DirectSuccess:       true,
+		BalanceDeductAmount: orderAmount,
+		ExpiresAt:           order.ExpiresAt,
+	}, nil
 }
 
 func (s *PaymentService) validateSubOrder(ctx context.Context, req CreateOrderRequest) (*dbent.SubscriptionPlan, error) {
@@ -148,7 +295,7 @@ func (s *PaymentService) validateSubOrder(ctx context.Context, req CreateOrderRe
 	return plan, nil
 }
 
-func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderRequest, user *User, plan *dbent.SubscriptionPlan, cfg *PaymentConfig, orderAmount, limitAmount, feeRate, payAmount float64, sel *payment.InstanceSelection) (*dbent.PaymentOrder, error) {
+func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderRequest, user *User, plan *dbent.SubscriptionPlan, cfg *PaymentConfig, orderAmount, limitAmount, feeRate, payAmount, balanceDeduct float64, sel *payment.InstanceSelection) (*dbent.PaymentOrder, error) {
 	tx, err := s.entClient.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("begin transaction: %w", err)
@@ -184,6 +331,7 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		SetAmount(orderAmount).
 		SetPayAmount(payAmount).
 		SetFeeRate(feeRate).
+		SetBalanceDeductAmount(balanceDeduct).
 		SetRechargeCode("").
 		SetOutTradeNo(outTradeNo).
 		SetPaymentType(req.PaymentType).
@@ -207,6 +355,13 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 	}
 	if plan != nil {
 		b.SetPlanID(plan.ID).SetSubscriptionGroupID(plan.GroupID).SetSubscriptionDays(psComputeValidityDays(plan.ValidityDays, plan.ValidityUnit))
+	}
+	// bundle_upgrade 订单：plan 为 BundlePlan（非 SubscriptionPlan），不走上面的 plan 分支，
+	// 需显式写入目标 plan_id（fulfillment 要求 PlanID 非空）+ 升级专属字段（source 订阅、prorate credit）。
+	if req.OrderType == payment.OrderTypeBundleUpgrade {
+		b.SetPlanID(req.PlanID).
+			SetSourceBundleSubscriptionID(req.SourceBundleSubscriptionID).
+			SetProrateCredit(req.ProrateCredit)
 	}
 	order, err := b.Save(ctx)
 	if err != nil {
@@ -238,6 +393,22 @@ func (s *PaymentService) allocateOutTradeNo(ctx context.Context, tx *dbent.Tx) (
 	return "", fmt.Errorf("generate unique out_trade_no: exhausted %d attempts", maxAttempts)
 }
 
+// allocateOutTradeNoDirect allocates a unique out_trade_no without a transaction.
+func (s *PaymentService) allocateOutTradeNoDirect(ctx context.Context) (string, error) {
+	const maxAttempts = 5
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		candidate := generateOutTradeNo()
+		exists, err := s.entClient.PaymentOrder.Query().Where(paymentorder.OutTradeNo(candidate)).Exist(ctx)
+		if err != nil {
+			return "", fmt.Errorf("check out_trade_no uniqueness: %w", err)
+		}
+		if !exists {
+			return candidate, nil
+		}
+	}
+	return "", fmt.Errorf("generate unique out_trade_no: exhausted %d attempts", maxAttempts)
+}
+
 func (s *PaymentService) checkPendingLimit(ctx context.Context, tx *dbent.Tx, userID int64, max int) error {
 	if max <= 0 {
 		max = defaultMaxPendingOrders
@@ -249,6 +420,32 @@ func (s *PaymentService) checkPendingLimit(ctx context.Context, tx *dbent.Tx, us
 	if c >= max {
 		return infraerrors.TooManyRequests("TOO_MANY_PENDING", "too_many_pending").
 			WithMetadata(map[string]string{"max": strconv.Itoa(max)})
+	}
+	return nil
+}
+
+// ensureNoDuplicateBundleOrder 检查同一用户是否存在未完成的 bundle 或 bundle_upgrade 订单
+// （PENDING/PAID/RECHARGING）。存在则返回 Conflict，阻止重复下单（中危3）。
+//
+// bundle_upgrade 一并纳入防重（Task 6）：UpgradeBundle 的 status 校验在真实并发下是 TOCTOU，
+// 订单层防重是并发防护的上游主防线——若同一用户能同时持有两个未完成的 bundle/bundle_upgrade
+// 订单，两个支付回调并发履约可能各创建一个 active 新订阅。
+//
+// 已完成/失败/取消/过期或非 bundle 类订单不阻塞——用户可取消旧未支付订单后重新下单。
+// 查询用 entClient（非事务），与 checkPendingLimit 同为创建前的软校验。
+func (s *PaymentService) ensureNoDuplicateBundleOrder(ctx context.Context, userID int64) error {
+	count, err := s.entClient.PaymentOrder.Query().
+		Where(
+			paymentorder.UserIDEQ(userID),
+			paymentorder.OrderTypeIn(payment.OrderTypeBundle, payment.OrderTypeBundleUpgrade),
+			paymentorder.StatusIn(OrderStatusPending, OrderStatusPaid, OrderStatusRecharging),
+		).
+		Count(ctx)
+	if err != nil {
+		return fmt.Errorf("check duplicate bundle order: %w", err)
+	}
+	if count > 0 {
+		return infraerrors.Conflict("BUNDLE_ORDER_IN_PROGRESS", "已有未完成的套餐订单，请先完成或取消后再下单")
 	}
 	return nil
 }

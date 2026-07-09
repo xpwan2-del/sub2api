@@ -443,6 +443,22 @@ var allowedHeaders = map[string]bool{
 	"x-client-request-id":                       true,
 }
 
+// VideoTaskBinding 记录视频任务创建时选中的上游账号与模型，
+// 供 GET 查询进度时恢复模型并粘性命中同一上游账号。
+// Records the upstream account and model chosen when a video task was
+// created, so GET polling can recover the model and stick to the same account.
+type VideoTaskBinding struct {
+	AccountID int64  `json:"account_id"`
+	Model     string `json:"model"`
+	// BundleSubID 标记该视频任务由哪个 bundle 订阅创建，供 bundle key GET 反查做订阅归属
+	// 校验（防跨订阅 IDOR）。标准 Key 创建时为 nil。
+	BundleSubID *int64 `json:"bundle_sub_id,omitempty"`
+	// OwnerUserID 标记该视频任务的创建者用户 ID，供标准 Key GET 反查做用户归属校验
+	// （防同一 group 下不同用户的标准 Key 跨用户 IDOR）。标准 Key 无订阅维度，仅靠 groupID
+	// 无法隔离共享同一渠道组的多个用户，故必须按 userID 校验。bundle key 也写入以便审计。
+	OwnerUserID *int64 `json:"owner_user_id,omitempty"`
+}
+
 // GatewayCache 定义网关服务的缓存操作接口。
 // 提供粘性会话（Sticky Session）的存储、查询、刷新和删除功能。
 //
@@ -461,6 +477,15 @@ type GatewayCache interface {
 	// DeleteSessionAccountID 删除粘性会话绑定，用于账号不可用时主动清理
 	// Delete sticky session binding, used to proactively clean up when account becomes unavailable
 	DeleteSessionAccountID(ctx context.Context, groupID int64, sessionHash string) error
+	// SetVideoTaskBinding 保存视频任务绑定（创建成功后写入）。
+	// Set video task binding (written after task creation succeeds).
+	SetVideoTaskBinding(ctx context.Context, groupID int64, taskID string, binding VideoTaskBinding, ttl time.Duration) error
+	// GetVideoTaskBinding 读取视频任务绑定；未命中返回零值与 redis.Nil。
+	// Read video task binding; returns zero value and redis.Nil when missing.
+	GetVideoTaskBinding(ctx context.Context, groupID int64, taskID string) (VideoTaskBinding, error)
+	// DeleteVideoTaskBinding 删除视频任务绑定（任务终态后清理）。
+	// Delete video task binding (cleaned up after task reaches terminal state).
+	DeleteVideoTaskBinding(ctx context.Context, groupID int64, taskID string) error
 }
 
 // derefGroupID safely dereferences *int64 to int64, returning 0 if nil
@@ -565,6 +590,7 @@ type ForwardResult struct {
 
 	// 图片生成计费字段（图片生成模型使用）
 	ImageCount         int    // 生成的图片数量
+	VideoCount         int    // 视频产出段数（通用网关视频生成，如 Veo；由转发层填充，默认 0）
 	ImageSize          string // 最终计费尺寸 "1K", "2K", "4K"
 	ImageInputSize     string // 请求中的原始图片尺寸
 	ImageOutputSize    string // 上游响应中的图片尺寸
@@ -650,6 +676,7 @@ type GatewayService struct {
 	tlsFPProfileService   *TLSFingerprintProfileService
 	balanceNotifyService  *BalanceNotifyService
 	userPlatformQuotaRepo UserPlatformQuotaRepository
+	bundleUsageService    *BundleUsageService
 }
 
 // NewGatewayService creates a new GatewayService
@@ -681,6 +708,7 @@ func NewGatewayService(
 	resolver *ModelPricingResolver,
 	balanceNotifyService *BalanceNotifyService,
 	userPlatformQuotaRepo UserPlatformQuotaRepository,
+	bundleUsageService *BundleUsageService,
 ) *GatewayService {
 	userGroupRateTTL := resolveUserGroupRateCacheTTL(cfg)
 	modelsListTTL := resolveModelsListCacheTTL(cfg)
@@ -717,6 +745,7 @@ func NewGatewayService(
 		resolver:              resolver,
 		balanceNotifyService:  balanceNotifyService,
 		userPlatformQuotaRepo: userPlatformQuotaRepo,
+		bundleUsageService:    bundleUsageService,
 	}
 	svc.userGroupRateResolver = newUserGroupRateResolver(
 		userGroupRateRepo,
@@ -8854,6 +8883,9 @@ type postUsageBillingParams struct {
 	AccountRateMultiplier float64
 	APIKeyService         APIKeyQuotaUpdater
 	Platform              string // 来自 APIKey 关联 Group 的平台标识
+	// ImageCount/VideoCount 媒体产出数，用于套餐按次累加（图片张数 / 视频段数）。
+	ImageCount int
+	VideoCount int
 }
 
 // PlatformFromAPIKey 从 APIKey 关联的 Group 推导 platform 名称。
@@ -8892,6 +8924,17 @@ func (p *postUsageBillingParams) shouldUpdateAccountQuota() bool {
 	return p.Cost.TotalCost > 0 && p.Account.IsAPIKeyOrBedrock() && p.Account.HasAnyQuotaLimit()
 }
 
+// shouldAccumulateBundleUsage 判断是否需要累加套餐用量（bundle subsystem）。
+// 按次计费与成本解耦：只要有成本（ActualCost>0）或媒体产出（ImageCount/VideoCount>0）即累加，
+// 否则 ActualCost=0 的免费/低价媒体（如 0 定价图片/视频）不会计数 → 次数限额失效。
+func (p *postUsageBillingParams) shouldAccumulateBundleUsage() bool {
+	if p.Cost == nil || p.Subscription == nil {
+		return false
+	}
+	return p.Subscription.BundleSubscriptionID != nil && *p.Subscription.BundleSubscriptionID > 0 &&
+		p.Subscription.GroupID > 0 && (p.Cost.ActualCost > 0 || p.ImageCount > 0 || p.VideoCount > 0)
+}
+
 // postUsageBilling is the legacy fallback billing path used when the unified
 // billing repo is unavailable (nil). Production uses applyUsageBilling → repo.Apply
 // for atomic billing. This path only runs in tests or degraded mode.
@@ -8907,6 +8950,13 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 		if cost.ActualCost > 0 {
 			if err := deps.userSubRepo.IncrementUsage(billingCtx, p.Subscription.ID, cost.ActualCost); err != nil {
 				slog.Error("increment subscription usage failed", "subscription_id", p.Subscription.ID, "error", err)
+			}
+		}
+		// Bundle usage accumulation: also track usage in the bundle subsystem
+		// when this subscription is bridged from a bundle plan.
+		if deps.bundleUsageService != nil && p.shouldAccumulateBundleUsage() {
+			if err := deps.bundleUsageService.AccumulateUsage(billingCtx, *p.Subscription.BundleSubscriptionID, p.Subscription.GroupID, cost.ActualCost, p.ImageCount, p.VideoCount); err != nil {
+				slog.Error("accumulate bundle usage failed", "bundle_subscription_id", *p.Subscription.BundleSubscriptionID, "group_id", p.Subscription.GroupID, "error", err)
 			}
 		}
 	} else {
@@ -9096,6 +9146,15 @@ func finalizePostUsageBilling(ctx context.Context, p *postUsageBillingParams, de
 		if p.Cost.ActualCost > 0 && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
 			deps.billingCacheService.QueueUpdateSubscriptionUsage(p.User.ID, *p.APIKey.GroupID, p.Cost.ActualCost)
 		}
+		// Bundle usage accumulation: also track usage in the bundle subsystem
+		// when this subscription is bridged from a bundle plan.
+		// Mirrors the logic in postUsageBilling (legacy path) so that the
+		// production repo.Apply() path also accumulates bundle usage.
+		if deps.bundleUsageService != nil && p.shouldAccumulateBundleUsage() {
+			if err := deps.bundleUsageService.AccumulateUsage(ctx, *p.Subscription.BundleSubscriptionID, p.Subscription.GroupID, p.Cost.ActualCost, p.ImageCount, p.VideoCount); err != nil {
+				slog.Error("accumulate bundle usage failed (finalize)", "bundle_subscription_id", *p.Subscription.BundleSubscriptionID, "group_id", p.Subscription.GroupID, "error", err)
+			}
+		}
 	} else if p.Cost.ActualCost > 0 && p.User != nil {
 		syncBalanceCacheAfterDeduction(ctx, p, deps, result)
 	}
@@ -9270,6 +9329,7 @@ type billingDeps struct {
 	deferredService       *DeferredService
 	balanceNotifyService  *BalanceNotifyService
 	userPlatformQuotaRepo UserPlatformQuotaRepository
+	bundleUsageService    *BundleUsageService
 	cfg                   *config.Config
 }
 
@@ -9282,6 +9342,7 @@ func (s *GatewayService) billingDeps() *billingDeps {
 		deferredService:       s.deferredService,
 		balanceNotifyService:  s.balanceNotifyService,
 		userPlatformQuotaRepo: s.userPlatformQuotaRepo,
+		bundleUsageService:    s.bundleUsageService,
 		cfg:                   s.cfg,
 	}
 }
@@ -9511,6 +9572,10 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 		AccountRateMultiplier: accountRateMultiplier,
 		APIKeyService:         input.APIKeyService,
 		Platform:              quotaPlatform,
+		// 媒体产出数:图片张数 + 视频段数分开传递。视频通常经 OpenAI 网关(/videos),
+		// 通用网关亦支持:视频转发层(Veo 等走 Gemini 路径时)填充 ForwardResult.VideoCount。
+		ImageCount: result.ImageCount,
+		VideoCount: result.VideoCount,
 	}, s.billingDeps(), s.usageBillingRepo)
 
 	if billingErr != nil {
@@ -9699,6 +9764,7 @@ func (s *GatewayService) buildRecordUsageLog(
 		DurationMs:            &durationMs,
 		FirstTokenMs:          result.FirstTokenMs,
 		ImageCount:            result.ImageCount,
+		VideoCount:            result.VideoCount,
 		ImageSize:             optionalTrimmedStringPtr(result.ImageSize),
 		ImageInputSize:        optionalTrimmedStringPtr(result.ImageInputSize),
 		ImageOutputSize:       optionalTrimmedStringPtr(result.ImageOutputSize),
@@ -10542,6 +10608,42 @@ func (s *GatewayService) GetAvailableModels(ctx context.Context, groupID *int64,
 	return cloneStringSlice(models)
 }
 
+// GetBundleAvailableModels 返回套餐订阅可用的所有模型：遍历 plan 所有 group quota，
+// 对每个 group 复用 GetAvailableModels 取该 group 上游账号的模型并集（享 15s 缓存），
+// model 级别 quota 再用 model_pattern 收窄（与计费路由 ResolveGroup 同源 matchAnyGlob），
+// 最后去重排序。供 /v1/models 等只读端点向套餐 Key 返回其套餐范围内的模型列表，
+// 而非全系统模型。订阅缺失/无 quota 时返回 nil。
+// GetBundleAvailableModels returns all models available to a bundle subscription.
+func (s *GatewayService) GetBundleAvailableModels(ctx context.Context, bundleSubID int64) []string {
+	plan, err := s.bundleUsageService.GetBundlePlan(ctx, bundleSubID)
+	if err != nil || plan == nil || len(plan.GroupQuotas) == 0 {
+		return nil
+	}
+	set := make(map[string]struct{})
+	for _, gq := range plan.GroupQuotas {
+		groupID := gq.GroupID
+		models := s.GetAvailableModels(ctx, &groupID, gq.GroupPlatform)
+		if gq.QuotaScope == QuotaScopeModel && gq.ModelPattern != "" {
+			filtered := models[:0]
+			for _, m := range models {
+				if matchAnyGlob(gq.ModelPattern, m) {
+					filtered = append(filtered, m)
+				}
+			}
+			models = filtered
+		}
+		for _, m := range models {
+			set[m] = struct{}{}
+		}
+	}
+	out := make([]string, 0, len(set))
+	for m := range set {
+		out = append(out, m)
+	}
+	sort.Strings(out)
+	return out
+}
+
 func (s *GatewayService) InvalidateAvailableModelsCache(groupID *int64, platform string) {
 	if s == nil || s.modelsListCache == nil {
 		return
@@ -10605,19 +10707,19 @@ func (s *GatewayService) initDebugGatewayBodyFile(path string) {
 	}
 
 	// 如果 path 指向一个已存在的目录，自动追加默认文件名
-	if info, err := os.Stat(path); err == nil && info.IsDir() {
+	if info, err := os.Stat(path); err == nil && info.IsDir() { //nolint:gosec // path 来自管理员调试配置，非用户输入
 		path = filepath.Join(path, debugGatewayBodyDefaultFilename)
 	}
 
 	// 确保父目录存在
 	if dir := filepath.Dir(path); dir != "." {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0755); err != nil { //nolint:gosec // dir 来自管理员配置路径的父目录
 			slog.Error("failed to create gateway debug log directory", "dir", dir, "error", err)
 			return
 		}
 	}
 
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644) //nolint:gosec // path 来自管理员调试配置，非用户输入
 	if err != nil {
 		slog.Error("failed to open gateway debug log file", "path", path, "error", err)
 		return

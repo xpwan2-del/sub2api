@@ -101,6 +101,9 @@ func (userSubRepoNoop) ExistsByUserIDAndGroupID(context.Context, int64, int64) (
 func (userSubRepoNoop) ExtendExpiry(context.Context, int64, time.Time) error {
 	panic("unexpected ExtendExpiry call")
 }
+func (userSubRepoNoop) ExtendExpiryByDays(context.Context, int64, int) error {
+	panic("unexpected ExtendExpiryByDays call")
+}
 func (userSubRepoNoop) UpdateStatus(context.Context, int64, string) error {
 	panic("unexpected UpdateStatus call")
 }
@@ -404,4 +407,10 @@ func strconvFormatInt(v int64) string {
 
 func infraerrorsReason(err error) string {
 	return infraerrors.Reason(err)
+}
+func (s *subscriptionUserSubRepoStub) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) {
+	return 0, nil
+}
+func (userSubRepoNoop) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) {
+	return 0, nil
 }

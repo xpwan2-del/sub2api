@@ -12,6 +12,10 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/bundleplan"
+	"github.com/Wei-Shaw/sub2api/ent/bundleplangroupquota"
+	"github.com/Wei-Shaw/sub2api/ent/bundlesubscription"
+	"github.com/Wei-Shaw/sub2api/ent/bundlesubscriptionusage"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
@@ -104,41 +108,41 @@ func init() {
 		}
 	}()
 	// apikeyDescStatus is the schema descriptor for status field.
-	apikeyDescStatus := apikeyFields[4].Descriptor()
+	apikeyDescStatus := apikeyFields[5].Descriptor()
 	// apikey.DefaultStatus holds the default value on creation for the status field.
 	apikey.DefaultStatus = apikeyDescStatus.Default.(string)
 	// apikey.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	apikey.StatusValidator = apikeyDescStatus.Validators[0].(func(string) error)
 	// apikeyDescQuota is the schema descriptor for quota field.
-	apikeyDescQuota := apikeyFields[8].Descriptor()
+	apikeyDescQuota := apikeyFields[9].Descriptor()
 	// apikey.DefaultQuota holds the default value on creation for the quota field.
 	apikey.DefaultQuota = apikeyDescQuota.Default.(float64)
 	// apikeyDescQuotaUsed is the schema descriptor for quota_used field.
-	apikeyDescQuotaUsed := apikeyFields[9].Descriptor()
+	apikeyDescQuotaUsed := apikeyFields[10].Descriptor()
 	// apikey.DefaultQuotaUsed holds the default value on creation for the quota_used field.
 	apikey.DefaultQuotaUsed = apikeyDescQuotaUsed.Default.(float64)
 	// apikeyDescRateLimit5h is the schema descriptor for rate_limit_5h field.
-	apikeyDescRateLimit5h := apikeyFields[11].Descriptor()
+	apikeyDescRateLimit5h := apikeyFields[12].Descriptor()
 	// apikey.DefaultRateLimit5h holds the default value on creation for the rate_limit_5h field.
 	apikey.DefaultRateLimit5h = apikeyDescRateLimit5h.Default.(float64)
 	// apikeyDescRateLimit1d is the schema descriptor for rate_limit_1d field.
-	apikeyDescRateLimit1d := apikeyFields[12].Descriptor()
+	apikeyDescRateLimit1d := apikeyFields[13].Descriptor()
 	// apikey.DefaultRateLimit1d holds the default value on creation for the rate_limit_1d field.
 	apikey.DefaultRateLimit1d = apikeyDescRateLimit1d.Default.(float64)
 	// apikeyDescRateLimit7d is the schema descriptor for rate_limit_7d field.
-	apikeyDescRateLimit7d := apikeyFields[13].Descriptor()
+	apikeyDescRateLimit7d := apikeyFields[14].Descriptor()
 	// apikey.DefaultRateLimit7d holds the default value on creation for the rate_limit_7d field.
 	apikey.DefaultRateLimit7d = apikeyDescRateLimit7d.Default.(float64)
 	// apikeyDescUsage5h is the schema descriptor for usage_5h field.
-	apikeyDescUsage5h := apikeyFields[14].Descriptor()
+	apikeyDescUsage5h := apikeyFields[15].Descriptor()
 	// apikey.DefaultUsage5h holds the default value on creation for the usage_5h field.
 	apikey.DefaultUsage5h = apikeyDescUsage5h.Default.(float64)
 	// apikeyDescUsage1d is the schema descriptor for usage_1d field.
-	apikeyDescUsage1d := apikeyFields[15].Descriptor()
+	apikeyDescUsage1d := apikeyFields[16].Descriptor()
 	// apikey.DefaultUsage1d holds the default value on creation for the usage_1d field.
 	apikey.DefaultUsage1d = apikeyDescUsage1d.Default.(float64)
 	// apikeyDescUsage7d is the schema descriptor for usage_7d field.
-	apikeyDescUsage7d := apikeyFields[16].Descriptor()
+	apikeyDescUsage7d := apikeyFields[17].Descriptor()
 	// apikey.DefaultUsage7d holds the default value on creation for the usage_7d field.
 	apikey.DefaultUsage7d = apikeyDescUsage7d.Default.(float64)
 	accountMixin := schema.Account{}.Mixin()
@@ -432,6 +436,213 @@ func init() {
 	authidentitychannelDescMetadata := authidentitychannelFields[6].Descriptor()
 	// authidentitychannel.DefaultMetadata holds the default value on creation for the metadata field.
 	authidentitychannel.DefaultMetadata = authidentitychannelDescMetadata.Default.(func() map[string]interface{})
+	bundleplanFields := schema.BundlePlan{}.Fields()
+	_ = bundleplanFields
+	// bundleplanDescName is the schema descriptor for name field.
+	bundleplanDescName := bundleplanFields[0].Descriptor()
+	// bundleplan.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	bundleplan.NameValidator = bundleplanDescName.Validators[0].(func(string) error)
+	// bundleplanDescDescription is the schema descriptor for description field.
+	bundleplanDescDescription := bundleplanFields[1].Descriptor()
+	// bundleplan.DefaultDescription holds the default value on creation for the description field.
+	bundleplan.DefaultDescription = bundleplanDescDescription.Default.(string)
+	// bundleplanDescTier is the schema descriptor for tier field.
+	bundleplanDescTier := bundleplanFields[2].Descriptor()
+	// bundleplan.TierValidator is a validator for the "tier" field. It is called by the builders before save.
+	bundleplan.TierValidator = bundleplanDescTier.Validators[0].(func(string) error)
+	// bundleplanDescPrice is the schema descriptor for price field.
+	bundleplanDescPrice := bundleplanFields[3].Descriptor()
+	// bundleplan.DefaultPrice holds the default value on creation for the price field.
+	bundleplan.DefaultPrice = bundleplanDescPrice.Default.(float64)
+	// bundleplanDescOriginalPrice is the schema descriptor for original_price field.
+	bundleplanDescOriginalPrice := bundleplanFields[4].Descriptor()
+	// bundleplan.DefaultOriginalPrice holds the default value on creation for the original_price field.
+	bundleplan.DefaultOriginalPrice = bundleplanDescOriginalPrice.Default.(float64)
+	// bundleplanDescCurrency is the schema descriptor for currency field.
+	bundleplanDescCurrency := bundleplanFields[5].Descriptor()
+	// bundleplan.DefaultCurrency holds the default value on creation for the currency field.
+	bundleplan.DefaultCurrency = bundleplanDescCurrency.Default.(string)
+	// bundleplanDescValidityDays is the schema descriptor for validity_days field.
+	bundleplanDescValidityDays := bundleplanFields[6].Descriptor()
+	// bundleplan.DefaultValidityDays holds the default value on creation for the validity_days field.
+	bundleplan.DefaultValidityDays = bundleplanDescValidityDays.Default.(int)
+	// bundleplan.ValidityDaysValidator is a validator for the "validity_days" field. It is called by the builders before save.
+	bundleplan.ValidityDaysValidator = bundleplanDescValidityDays.Validators[0].(func(int) error)
+	// bundleplanDescConcurrencyLimit is the schema descriptor for concurrency_limit field.
+	bundleplanDescConcurrencyLimit := bundleplanFields[7].Descriptor()
+	// bundleplan.DefaultConcurrencyLimit holds the default value on creation for the concurrency_limit field.
+	bundleplan.DefaultConcurrencyLimit = bundleplanDescConcurrencyLimit.Default.(int)
+	// bundleplan.ConcurrencyLimitValidator is a validator for the "concurrency_limit" field. It is called by the builders before save.
+	bundleplan.ConcurrencyLimitValidator = bundleplanDescConcurrencyLimit.Validators[0].(func(int) error)
+	// bundleplanDescRpmLimit is the schema descriptor for rpm_limit field.
+	bundleplanDescRpmLimit := bundleplanFields[8].Descriptor()
+	// bundleplan.DefaultRpmLimit holds the default value on creation for the rpm_limit field.
+	bundleplan.DefaultRpmLimit = bundleplanDescRpmLimit.Default.(int)
+	// bundleplan.RpmLimitValidator is a validator for the "rpm_limit" field. It is called by the builders before save.
+	bundleplan.RpmLimitValidator = bundleplanDescRpmLimit.Validators[0].(func(int) error)
+	// bundleplanDescForSale is the schema descriptor for for_sale field.
+	bundleplanDescForSale := bundleplanFields[10].Descriptor()
+	// bundleplan.DefaultForSale holds the default value on creation for the for_sale field.
+	bundleplan.DefaultForSale = bundleplanDescForSale.Default.(bool)
+	// bundleplanDescSortOrder is the schema descriptor for sort_order field.
+	bundleplanDescSortOrder := bundleplanFields[11].Descriptor()
+	// bundleplan.DefaultSortOrder holds the default value on creation for the sort_order field.
+	bundleplan.DefaultSortOrder = bundleplanDescSortOrder.Default.(int)
+	// bundleplan.SortOrderValidator is a validator for the "sort_order" field. It is called by the builders before save.
+	bundleplan.SortOrderValidator = bundleplanDescSortOrder.Validators[0].(func(int) error)
+	// bundleplanDescStatus is the schema descriptor for status field.
+	bundleplanDescStatus := bundleplanFields[12].Descriptor()
+	// bundleplan.DefaultStatus holds the default value on creation for the status field.
+	bundleplan.DefaultStatus = bundleplanDescStatus.Default.(string)
+	// bundleplanDescCreatedAt is the schema descriptor for created_at field.
+	bundleplanDescCreatedAt := bundleplanFields[13].Descriptor()
+	// bundleplan.DefaultCreatedAt holds the default value on creation for the created_at field.
+	bundleplan.DefaultCreatedAt = bundleplanDescCreatedAt.Default.(func() time.Time)
+	// bundleplanDescUpdatedAt is the schema descriptor for updated_at field.
+	bundleplanDescUpdatedAt := bundleplanFields[14].Descriptor()
+	// bundleplan.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	bundleplan.DefaultUpdatedAt = bundleplanDescUpdatedAt.Default.(func() time.Time)
+	// bundleplan.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	bundleplan.UpdateDefaultUpdatedAt = bundleplanDescUpdatedAt.UpdateDefault.(func() time.Time)
+	bundleplangroupquotaFields := schema.BundlePlanGroupQuota{}.Fields()
+	_ = bundleplangroupquotaFields
+	// bundleplangroupquotaDescQuotaScope is the schema descriptor for quota_scope field.
+	bundleplangroupquotaDescQuotaScope := bundleplangroupquotaFields[2].Descriptor()
+	// bundleplangroupquota.DefaultQuotaScope holds the default value on creation for the quota_scope field.
+	bundleplangroupquota.DefaultQuotaScope = bundleplangroupquotaDescQuotaScope.Default.(string)
+	// bundleplangroupquotaDescModelPattern is the schema descriptor for model_pattern field.
+	bundleplangroupquotaDescModelPattern := bundleplangroupquotaFields[3].Descriptor()
+	// bundleplangroupquota.DefaultModelPattern holds the default value on creation for the model_pattern field.
+	bundleplangroupquota.DefaultModelPattern = bundleplangroupquotaDescModelPattern.Default.(string)
+	// bundleplangroupquotaDescDailyLimitUsd is the schema descriptor for daily_limit_usd field.
+	bundleplangroupquotaDescDailyLimitUsd := bundleplangroupquotaFields[4].Descriptor()
+	// bundleplangroupquota.DefaultDailyLimitUsd holds the default value on creation for the daily_limit_usd field.
+	bundleplangroupquota.DefaultDailyLimitUsd = bundleplangroupquotaDescDailyLimitUsd.Default.(float64)
+	// bundleplangroupquotaDescWeeklyLimitUsd is the schema descriptor for weekly_limit_usd field.
+	bundleplangroupquotaDescWeeklyLimitUsd := bundleplangroupquotaFields[5].Descriptor()
+	// bundleplangroupquota.DefaultWeeklyLimitUsd holds the default value on creation for the weekly_limit_usd field.
+	bundleplangroupquota.DefaultWeeklyLimitUsd = bundleplangroupquotaDescWeeklyLimitUsd.Default.(float64)
+	// bundleplangroupquotaDescMonthlyLimitUsd is the schema descriptor for monthly_limit_usd field.
+	bundleplangroupquotaDescMonthlyLimitUsd := bundleplangroupquotaFields[6].Descriptor()
+	// bundleplangroupquota.DefaultMonthlyLimitUsd holds the default value on creation for the monthly_limit_usd field.
+	bundleplangroupquota.DefaultMonthlyLimitUsd = bundleplangroupquotaDescMonthlyLimitUsd.Default.(float64)
+	// bundleplangroupquotaDescDailyImageLimitCount is the schema descriptor for daily_image_limit_count field.
+	bundleplangroupquotaDescDailyImageLimitCount := bundleplangroupquotaFields[7].Descriptor()
+	// bundleplangroupquota.DefaultDailyImageLimitCount holds the default value on creation for the daily_image_limit_count field.
+	bundleplangroupquota.DefaultDailyImageLimitCount = bundleplangroupquotaDescDailyImageLimitCount.Default.(int)
+	// bundleplangroupquotaDescWeeklyImageLimitCount is the schema descriptor for weekly_image_limit_count field.
+	bundleplangroupquotaDescWeeklyImageLimitCount := bundleplangroupquotaFields[8].Descriptor()
+	// bundleplangroupquota.DefaultWeeklyImageLimitCount holds the default value on creation for the weekly_image_limit_count field.
+	bundleplangroupquota.DefaultWeeklyImageLimitCount = bundleplangroupquotaDescWeeklyImageLimitCount.Default.(int)
+	// bundleplangroupquotaDescMonthlyImageLimitCount is the schema descriptor for monthly_image_limit_count field.
+	bundleplangroupquotaDescMonthlyImageLimitCount := bundleplangroupquotaFields[9].Descriptor()
+	// bundleplangroupquota.DefaultMonthlyImageLimitCount holds the default value on creation for the monthly_image_limit_count field.
+	bundleplangroupquota.DefaultMonthlyImageLimitCount = bundleplangroupquotaDescMonthlyImageLimitCount.Default.(int)
+	// bundleplangroupquotaDescDailyVideoLimitCount is the schema descriptor for daily_video_limit_count field.
+	bundleplangroupquotaDescDailyVideoLimitCount := bundleplangroupquotaFields[10].Descriptor()
+	// bundleplangroupquota.DefaultDailyVideoLimitCount holds the default value on creation for the daily_video_limit_count field.
+	bundleplangroupquota.DefaultDailyVideoLimitCount = bundleplangroupquotaDescDailyVideoLimitCount.Default.(int)
+	// bundleplangroupquotaDescWeeklyVideoLimitCount is the schema descriptor for weekly_video_limit_count field.
+	bundleplangroupquotaDescWeeklyVideoLimitCount := bundleplangroupquotaFields[11].Descriptor()
+	// bundleplangroupquota.DefaultWeeklyVideoLimitCount holds the default value on creation for the weekly_video_limit_count field.
+	bundleplangroupquota.DefaultWeeklyVideoLimitCount = bundleplangroupquotaDescWeeklyVideoLimitCount.Default.(int)
+	// bundleplangroupquotaDescMonthlyVideoLimitCount is the schema descriptor for monthly_video_limit_count field.
+	bundleplangroupquotaDescMonthlyVideoLimitCount := bundleplangroupquotaFields[12].Descriptor()
+	// bundleplangroupquota.DefaultMonthlyVideoLimitCount holds the default value on creation for the monthly_video_limit_count field.
+	bundleplangroupquota.DefaultMonthlyVideoLimitCount = bundleplangroupquotaDescMonthlyVideoLimitCount.Default.(int)
+	bundlesubscriptionMixin := schema.BundleSubscription{}.Mixin()
+	bundlesubscriptionMixinHooks1 := bundlesubscriptionMixin[1].Hooks()
+	bundlesubscription.Hooks[0] = bundlesubscriptionMixinHooks1[0]
+	bundlesubscriptionMixinInters1 := bundlesubscriptionMixin[1].Interceptors()
+	bundlesubscription.Interceptors[0] = bundlesubscriptionMixinInters1[0]
+	bundlesubscriptionMixinFields0 := bundlesubscriptionMixin[0].Fields()
+	_ = bundlesubscriptionMixinFields0
+	bundlesubscriptionFields := schema.BundleSubscription{}.Fields()
+	_ = bundlesubscriptionFields
+	// bundlesubscriptionDescCreatedAt is the schema descriptor for created_at field.
+	bundlesubscriptionDescCreatedAt := bundlesubscriptionMixinFields0[0].Descriptor()
+	// bundlesubscription.DefaultCreatedAt holds the default value on creation for the created_at field.
+	bundlesubscription.DefaultCreatedAt = bundlesubscriptionDescCreatedAt.Default.(func() time.Time)
+	// bundlesubscriptionDescUpdatedAt is the schema descriptor for updated_at field.
+	bundlesubscriptionDescUpdatedAt := bundlesubscriptionMixinFields0[1].Descriptor()
+	// bundlesubscription.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	bundlesubscription.DefaultUpdatedAt = bundlesubscriptionDescUpdatedAt.Default.(func() time.Time)
+	// bundlesubscription.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	bundlesubscription.UpdateDefaultUpdatedAt = bundlesubscriptionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// bundlesubscriptionDescStatus is the schema descriptor for status field.
+	bundlesubscriptionDescStatus := bundlesubscriptionFields[2].Descriptor()
+	// bundlesubscription.DefaultStatus holds the default value on creation for the status field.
+	bundlesubscription.DefaultStatus = bundlesubscriptionDescStatus.Default.(string)
+	// bundlesubscriptionDescConcurrencyLimit is the schema descriptor for concurrency_limit field.
+	bundlesubscriptionDescConcurrencyLimit := bundlesubscriptionFields[5].Descriptor()
+	// bundlesubscription.DefaultConcurrencyLimit holds the default value on creation for the concurrency_limit field.
+	bundlesubscription.DefaultConcurrencyLimit = bundlesubscriptionDescConcurrencyLimit.Default.(int)
+	// bundlesubscription.ConcurrencyLimitValidator is a validator for the "concurrency_limit" field. It is called by the builders before save.
+	bundlesubscription.ConcurrencyLimitValidator = bundlesubscriptionDescConcurrencyLimit.Validators[0].(func(int) error)
+	// bundlesubscriptionDescRpmLimit is the schema descriptor for rpm_limit field.
+	bundlesubscriptionDescRpmLimit := bundlesubscriptionFields[6].Descriptor()
+	// bundlesubscription.DefaultRpmLimit holds the default value on creation for the rpm_limit field.
+	bundlesubscription.DefaultRpmLimit = bundlesubscriptionDescRpmLimit.Default.(int)
+	// bundlesubscription.RpmLimitValidator is a validator for the "rpm_limit" field. It is called by the builders before save.
+	bundlesubscription.RpmLimitValidator = bundlesubscriptionDescRpmLimit.Validators[0].(func(int) error)
+	// bundlesubscriptionDescSource is the schema descriptor for source field.
+	bundlesubscriptionDescSource := bundlesubscriptionFields[7].Descriptor()
+	// bundlesubscription.DefaultSource holds the default value on creation for the source field.
+	bundlesubscription.DefaultSource = bundlesubscriptionDescSource.Default.(string)
+	bundlesubscriptionusageFields := schema.BundleSubscriptionUsage{}.Fields()
+	_ = bundlesubscriptionusageFields
+	// bundlesubscriptionusageDescModelPattern is the schema descriptor for model_pattern field.
+	bundlesubscriptionusageDescModelPattern := bundlesubscriptionusageFields[2].Descriptor()
+	// bundlesubscriptionusage.DefaultModelPattern holds the default value on creation for the model_pattern field.
+	bundlesubscriptionusage.DefaultModelPattern = bundlesubscriptionusageDescModelPattern.Default.(string)
+	// bundlesubscriptionusageDescDailyUsageUsd is the schema descriptor for daily_usage_usd field.
+	bundlesubscriptionusageDescDailyUsageUsd := bundlesubscriptionusageFields[3].Descriptor()
+	// bundlesubscriptionusage.DefaultDailyUsageUsd holds the default value on creation for the daily_usage_usd field.
+	bundlesubscriptionusage.DefaultDailyUsageUsd = bundlesubscriptionusageDescDailyUsageUsd.Default.(float64)
+	// bundlesubscriptionusageDescDailyWindowStart is the schema descriptor for daily_window_start field.
+	bundlesubscriptionusageDescDailyWindowStart := bundlesubscriptionusageFields[4].Descriptor()
+	// bundlesubscriptionusage.DefaultDailyWindowStart holds the default value on creation for the daily_window_start field.
+	bundlesubscriptionusage.DefaultDailyWindowStart = bundlesubscriptionusageDescDailyWindowStart.Default.(time.Time)
+	// bundlesubscriptionusageDescWeeklyUsageUsd is the schema descriptor for weekly_usage_usd field.
+	bundlesubscriptionusageDescWeeklyUsageUsd := bundlesubscriptionusageFields[5].Descriptor()
+	// bundlesubscriptionusage.DefaultWeeklyUsageUsd holds the default value on creation for the weekly_usage_usd field.
+	bundlesubscriptionusage.DefaultWeeklyUsageUsd = bundlesubscriptionusageDescWeeklyUsageUsd.Default.(float64)
+	// bundlesubscriptionusageDescWeeklyWindowStart is the schema descriptor for weekly_window_start field.
+	bundlesubscriptionusageDescWeeklyWindowStart := bundlesubscriptionusageFields[6].Descriptor()
+	// bundlesubscriptionusage.DefaultWeeklyWindowStart holds the default value on creation for the weekly_window_start field.
+	bundlesubscriptionusage.DefaultWeeklyWindowStart = bundlesubscriptionusageDescWeeklyWindowStart.Default.(time.Time)
+	// bundlesubscriptionusageDescMonthlyUsageUsd is the schema descriptor for monthly_usage_usd field.
+	bundlesubscriptionusageDescMonthlyUsageUsd := bundlesubscriptionusageFields[7].Descriptor()
+	// bundlesubscriptionusage.DefaultMonthlyUsageUsd holds the default value on creation for the monthly_usage_usd field.
+	bundlesubscriptionusage.DefaultMonthlyUsageUsd = bundlesubscriptionusageDescMonthlyUsageUsd.Default.(float64)
+	// bundlesubscriptionusageDescMonthlyWindowStart is the schema descriptor for monthly_window_start field.
+	bundlesubscriptionusageDescMonthlyWindowStart := bundlesubscriptionusageFields[8].Descriptor()
+	// bundlesubscriptionusage.DefaultMonthlyWindowStart holds the default value on creation for the monthly_window_start field.
+	bundlesubscriptionusage.DefaultMonthlyWindowStart = bundlesubscriptionusageDescMonthlyWindowStart.Default.(time.Time)
+	// bundlesubscriptionusageDescDailyImageUsageCount is the schema descriptor for daily_image_usage_count field.
+	bundlesubscriptionusageDescDailyImageUsageCount := bundlesubscriptionusageFields[9].Descriptor()
+	// bundlesubscriptionusage.DefaultDailyImageUsageCount holds the default value on creation for the daily_image_usage_count field.
+	bundlesubscriptionusage.DefaultDailyImageUsageCount = bundlesubscriptionusageDescDailyImageUsageCount.Default.(int)
+	// bundlesubscriptionusageDescWeeklyImageUsageCount is the schema descriptor for weekly_image_usage_count field.
+	bundlesubscriptionusageDescWeeklyImageUsageCount := bundlesubscriptionusageFields[10].Descriptor()
+	// bundlesubscriptionusage.DefaultWeeklyImageUsageCount holds the default value on creation for the weekly_image_usage_count field.
+	bundlesubscriptionusage.DefaultWeeklyImageUsageCount = bundlesubscriptionusageDescWeeklyImageUsageCount.Default.(int)
+	// bundlesubscriptionusageDescMonthlyImageUsageCount is the schema descriptor for monthly_image_usage_count field.
+	bundlesubscriptionusageDescMonthlyImageUsageCount := bundlesubscriptionusageFields[11].Descriptor()
+	// bundlesubscriptionusage.DefaultMonthlyImageUsageCount holds the default value on creation for the monthly_image_usage_count field.
+	bundlesubscriptionusage.DefaultMonthlyImageUsageCount = bundlesubscriptionusageDescMonthlyImageUsageCount.Default.(int)
+	// bundlesubscriptionusageDescDailyVideoUsageCount is the schema descriptor for daily_video_usage_count field.
+	bundlesubscriptionusageDescDailyVideoUsageCount := bundlesubscriptionusageFields[12].Descriptor()
+	// bundlesubscriptionusage.DefaultDailyVideoUsageCount holds the default value on creation for the daily_video_usage_count field.
+	bundlesubscriptionusage.DefaultDailyVideoUsageCount = bundlesubscriptionusageDescDailyVideoUsageCount.Default.(int)
+	// bundlesubscriptionusageDescWeeklyVideoUsageCount is the schema descriptor for weekly_video_usage_count field.
+	bundlesubscriptionusageDescWeeklyVideoUsageCount := bundlesubscriptionusageFields[13].Descriptor()
+	// bundlesubscriptionusage.DefaultWeeklyVideoUsageCount holds the default value on creation for the weekly_video_usage_count field.
+	bundlesubscriptionusage.DefaultWeeklyVideoUsageCount = bundlesubscriptionusageDescWeeklyVideoUsageCount.Default.(int)
+	// bundlesubscriptionusageDescMonthlyVideoUsageCount is the schema descriptor for monthly_video_usage_count field.
+	bundlesubscriptionusageDescMonthlyVideoUsageCount := bundlesubscriptionusageFields[14].Descriptor()
+	// bundlesubscriptionusage.DefaultMonthlyVideoUsageCount holds the default value on creation for the monthly_video_usage_count field.
+	bundlesubscriptionusage.DefaultMonthlyVideoUsageCount = bundlesubscriptionusageDescMonthlyVideoUsageCount.Default.(int)
 	channelmonitorMixin := schema.ChannelMonitor{}.Mixin()
 	channelmonitorMixinFields0 := channelmonitorMixin[0].Fields()
 	_ = channelmonitorMixinFields0
@@ -984,70 +1195,78 @@ func init() {
 	paymentorderDescFeeRate := paymentorderFields[6].Descriptor()
 	// paymentorder.DefaultFeeRate holds the default value on creation for the fee_rate field.
 	paymentorder.DefaultFeeRate = paymentorderDescFeeRate.Default.(float64)
+	// paymentorderDescBalanceDeductAmount is the schema descriptor for balance_deduct_amount field.
+	paymentorderDescBalanceDeductAmount := paymentorderFields[7].Descriptor()
+	// paymentorder.DefaultBalanceDeductAmount holds the default value on creation for the balance_deduct_amount field.
+	paymentorder.DefaultBalanceDeductAmount = paymentorderDescBalanceDeductAmount.Default.(float64)
 	// paymentorderDescRechargeCode is the schema descriptor for recharge_code field.
-	paymentorderDescRechargeCode := paymentorderFields[7].Descriptor()
+	paymentorderDescRechargeCode := paymentorderFields[8].Descriptor()
 	// paymentorder.RechargeCodeValidator is a validator for the "recharge_code" field. It is called by the builders before save.
 	paymentorder.RechargeCodeValidator = paymentorderDescRechargeCode.Validators[0].(func(string) error)
 	// paymentorderDescOutTradeNo is the schema descriptor for out_trade_no field.
-	paymentorderDescOutTradeNo := paymentorderFields[8].Descriptor()
+	paymentorderDescOutTradeNo := paymentorderFields[9].Descriptor()
 	// paymentorder.DefaultOutTradeNo holds the default value on creation for the out_trade_no field.
 	paymentorder.DefaultOutTradeNo = paymentorderDescOutTradeNo.Default.(string)
 	// paymentorder.OutTradeNoValidator is a validator for the "out_trade_no" field. It is called by the builders before save.
 	paymentorder.OutTradeNoValidator = paymentorderDescOutTradeNo.Validators[0].(func(string) error)
 	// paymentorderDescPaymentType is the schema descriptor for payment_type field.
-	paymentorderDescPaymentType := paymentorderFields[9].Descriptor()
+	paymentorderDescPaymentType := paymentorderFields[10].Descriptor()
 	// paymentorder.PaymentTypeValidator is a validator for the "payment_type" field. It is called by the builders before save.
 	paymentorder.PaymentTypeValidator = paymentorderDescPaymentType.Validators[0].(func(string) error)
 	// paymentorderDescPaymentTradeNo is the schema descriptor for payment_trade_no field.
-	paymentorderDescPaymentTradeNo := paymentorderFields[10].Descriptor()
+	paymentorderDescPaymentTradeNo := paymentorderFields[11].Descriptor()
 	// paymentorder.PaymentTradeNoValidator is a validator for the "payment_trade_no" field. It is called by the builders before save.
 	paymentorder.PaymentTradeNoValidator = paymentorderDescPaymentTradeNo.Validators[0].(func(string) error)
 	// paymentorderDescOrderType is the schema descriptor for order_type field.
-	paymentorderDescOrderType := paymentorderFields[14].Descriptor()
+	paymentorderDescOrderType := paymentorderFields[15].Descriptor()
 	// paymentorder.DefaultOrderType holds the default value on creation for the order_type field.
 	paymentorder.DefaultOrderType = paymentorderDescOrderType.Default.(string)
 	// paymentorder.OrderTypeValidator is a validator for the "order_type" field. It is called by the builders before save.
 	paymentorder.OrderTypeValidator = paymentorderDescOrderType.Validators[0].(func(string) error)
 	// paymentorderDescProviderInstanceID is the schema descriptor for provider_instance_id field.
-	paymentorderDescProviderInstanceID := paymentorderFields[18].Descriptor()
+	paymentorderDescProviderInstanceID := paymentorderFields[21].Descriptor()
 	// paymentorder.ProviderInstanceIDValidator is a validator for the "provider_instance_id" field. It is called by the builders before save.
 	paymentorder.ProviderInstanceIDValidator = paymentorderDescProviderInstanceID.Validators[0].(func(string) error)
 	// paymentorderDescProviderKey is the schema descriptor for provider_key field.
-	paymentorderDescProviderKey := paymentorderFields[19].Descriptor()
+	paymentorderDescProviderKey := paymentorderFields[22].Descriptor()
 	// paymentorder.ProviderKeyValidator is a validator for the "provider_key" field. It is called by the builders before save.
 	paymentorder.ProviderKeyValidator = paymentorderDescProviderKey.Validators[0].(func(string) error)
 	// paymentorderDescStatus is the schema descriptor for status field.
-	paymentorderDescStatus := paymentorderFields[21].Descriptor()
+	paymentorderDescStatus := paymentorderFields[24].Descriptor()
 	// paymentorder.DefaultStatus holds the default value on creation for the status field.
 	paymentorder.DefaultStatus = paymentorderDescStatus.Default.(string)
 	// paymentorder.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	paymentorder.StatusValidator = paymentorderDescStatus.Validators[0].(func(string) error)
 	// paymentorderDescRefundAmount is the schema descriptor for refund_amount field.
-	paymentorderDescRefundAmount := paymentorderFields[22].Descriptor()
+	paymentorderDescRefundAmount := paymentorderFields[25].Descriptor()
 	// paymentorder.DefaultRefundAmount holds the default value on creation for the refund_amount field.
 	paymentorder.DefaultRefundAmount = paymentorderDescRefundAmount.Default.(float64)
+	// paymentorderDescProrateCredit is the schema descriptor for prorate_credit field.
+	paymentorderDescProrateCredit := paymentorderFields[26].Descriptor()
+	// paymentorder.DefaultProrateCredit holds the default value on creation for the prorate_credit field.
+	paymentorder.DefaultProrateCredit = paymentorderDescProrateCredit.Default.(float64)
 	// paymentorderDescForceRefund is the schema descriptor for force_refund field.
-	paymentorderDescForceRefund := paymentorderFields[25].Descriptor()
+	paymentorderDescForceRefund := paymentorderFields[29].Descriptor()
 	// paymentorder.DefaultForceRefund holds the default value on creation for the force_refund field.
 	paymentorder.DefaultForceRefund = paymentorderDescForceRefund.Default.(bool)
 	// paymentorderDescRefundRequestedBy is the schema descriptor for refund_requested_by field.
-	paymentorderDescRefundRequestedBy := paymentorderFields[28].Descriptor()
+	paymentorderDescRefundRequestedBy := paymentorderFields[32].Descriptor()
 	// paymentorder.RefundRequestedByValidator is a validator for the "refund_requested_by" field. It is called by the builders before save.
 	paymentorder.RefundRequestedByValidator = paymentorderDescRefundRequestedBy.Validators[0].(func(string) error)
 	// paymentorderDescClientIP is the schema descriptor for client_ip field.
-	paymentorderDescClientIP := paymentorderFields[34].Descriptor()
+	paymentorderDescClientIP := paymentorderFields[38].Descriptor()
 	// paymentorder.ClientIPValidator is a validator for the "client_ip" field. It is called by the builders before save.
 	paymentorder.ClientIPValidator = paymentorderDescClientIP.Validators[0].(func(string) error)
 	// paymentorderDescSrcHost is the schema descriptor for src_host field.
-	paymentorderDescSrcHost := paymentorderFields[35].Descriptor()
+	paymentorderDescSrcHost := paymentorderFields[39].Descriptor()
 	// paymentorder.SrcHostValidator is a validator for the "src_host" field. It is called by the builders before save.
 	paymentorder.SrcHostValidator = paymentorderDescSrcHost.Validators[0].(func(string) error)
 	// paymentorderDescCreatedAt is the schema descriptor for created_at field.
-	paymentorderDescCreatedAt := paymentorderFields[37].Descriptor()
+	paymentorderDescCreatedAt := paymentorderFields[41].Descriptor()
 	// paymentorder.DefaultCreatedAt holds the default value on creation for the created_at field.
 	paymentorder.DefaultCreatedAt = paymentorderDescCreatedAt.Default.(func() time.Time)
 	// paymentorderDescUpdatedAt is the schema descriptor for updated_at field.
-	paymentorderDescUpdatedAt := paymentorderFields[38].Descriptor()
+	paymentorderDescUpdatedAt := paymentorderFields[42].Descriptor()
 	// paymentorder.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	paymentorder.DefaultUpdatedAt = paymentorderDescUpdatedAt.Default.(func() time.Time)
 	// paymentorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1751,28 +1970,32 @@ func init() {
 	usagelogDescImageCount := usagelogFields[33].Descriptor()
 	// usagelog.DefaultImageCount holds the default value on creation for the image_count field.
 	usagelog.DefaultImageCount = usagelogDescImageCount.Default.(int)
+	// usagelogDescVideoCount is the schema descriptor for video_count field.
+	usagelogDescVideoCount := usagelogFields[34].Descriptor()
+	// usagelog.DefaultVideoCount holds the default value on creation for the video_count field.
+	usagelog.DefaultVideoCount = usagelogDescVideoCount.Default.(int)
 	// usagelogDescImageSize is the schema descriptor for image_size field.
-	usagelogDescImageSize := usagelogFields[34].Descriptor()
+	usagelogDescImageSize := usagelogFields[35].Descriptor()
 	// usagelog.ImageSizeValidator is a validator for the "image_size" field. It is called by the builders before save.
 	usagelog.ImageSizeValidator = usagelogDescImageSize.Validators[0].(func(string) error)
 	// usagelogDescImageInputSize is the schema descriptor for image_input_size field.
-	usagelogDescImageInputSize := usagelogFields[35].Descriptor()
+	usagelogDescImageInputSize := usagelogFields[36].Descriptor()
 	// usagelog.ImageInputSizeValidator is a validator for the "image_input_size" field. It is called by the builders before save.
 	usagelog.ImageInputSizeValidator = usagelogDescImageInputSize.Validators[0].(func(string) error)
 	// usagelogDescImageOutputSize is the schema descriptor for image_output_size field.
-	usagelogDescImageOutputSize := usagelogFields[36].Descriptor()
+	usagelogDescImageOutputSize := usagelogFields[37].Descriptor()
 	// usagelog.ImageOutputSizeValidator is a validator for the "image_output_size" field. It is called by the builders before save.
 	usagelog.ImageOutputSizeValidator = usagelogDescImageOutputSize.Validators[0].(func(string) error)
 	// usagelogDescImageSizeSource is the schema descriptor for image_size_source field.
-	usagelogDescImageSizeSource := usagelogFields[37].Descriptor()
+	usagelogDescImageSizeSource := usagelogFields[38].Descriptor()
 	// usagelog.ImageSizeSourceValidator is a validator for the "image_size_source" field. It is called by the builders before save.
 	usagelog.ImageSizeSourceValidator = usagelogDescImageSizeSource.Validators[0].(func(string) error)
 	// usagelogDescCacheTTLOverridden is the schema descriptor for cache_ttl_overridden field.
-	usagelogDescCacheTTLOverridden := usagelogFields[39].Descriptor()
+	usagelogDescCacheTTLOverridden := usagelogFields[40].Descriptor()
 	// usagelog.DefaultCacheTTLOverridden holds the default value on creation for the cache_ttl_overridden field.
 	usagelog.DefaultCacheTTLOverridden = usagelogDescCacheTTLOverridden.Default.(bool)
 	// usagelogDescCreatedAt is the schema descriptor for created_at field.
-	usagelogDescCreatedAt := usagelogFields[40].Descriptor()
+	usagelogDescCreatedAt := usagelogFields[41].Descriptor()
 	// usagelog.DefaultCreatedAt holds the default value on creation for the created_at field.
 	usagelog.DefaultCreatedAt = usagelogDescCreatedAt.Default.(func() time.Time)
 	userMixin := schema.User{}.Mixin()
@@ -2109,6 +2332,42 @@ func init() {
 	usersubscriptionDescAssignedAt := usersubscriptionFields[12].Descriptor()
 	// usersubscription.DefaultAssignedAt holds the default value on creation for the assigned_at field.
 	usersubscription.DefaultAssignedAt = usersubscriptionDescAssignedAt.Default.(func() time.Time)
+	// usersubscriptionDescDailyLimitUsd is the schema descriptor for daily_limit_usd field.
+	usersubscriptionDescDailyLimitUsd := usersubscriptionFields[15].Descriptor()
+	// usersubscription.DefaultDailyLimitUsd holds the default value on creation for the daily_limit_usd field.
+	usersubscription.DefaultDailyLimitUsd = usersubscriptionDescDailyLimitUsd.Default.(float64)
+	// usersubscriptionDescWeeklyLimitUsd is the schema descriptor for weekly_limit_usd field.
+	usersubscriptionDescWeeklyLimitUsd := usersubscriptionFields[16].Descriptor()
+	// usersubscription.DefaultWeeklyLimitUsd holds the default value on creation for the weekly_limit_usd field.
+	usersubscription.DefaultWeeklyLimitUsd = usersubscriptionDescWeeklyLimitUsd.Default.(float64)
+	// usersubscriptionDescMonthlyLimitUsd is the schema descriptor for monthly_limit_usd field.
+	usersubscriptionDescMonthlyLimitUsd := usersubscriptionFields[17].Descriptor()
+	// usersubscription.DefaultMonthlyLimitUsd holds the default value on creation for the monthly_limit_usd field.
+	usersubscription.DefaultMonthlyLimitUsd = usersubscriptionDescMonthlyLimitUsd.Default.(float64)
+	// usersubscriptionDescDailyImageLimitCount is the schema descriptor for daily_image_limit_count field.
+	usersubscriptionDescDailyImageLimitCount := usersubscriptionFields[18].Descriptor()
+	// usersubscription.DefaultDailyImageLimitCount holds the default value on creation for the daily_image_limit_count field.
+	usersubscription.DefaultDailyImageLimitCount = usersubscriptionDescDailyImageLimitCount.Default.(int)
+	// usersubscriptionDescWeeklyImageLimitCount is the schema descriptor for weekly_image_limit_count field.
+	usersubscriptionDescWeeklyImageLimitCount := usersubscriptionFields[19].Descriptor()
+	// usersubscription.DefaultWeeklyImageLimitCount holds the default value on creation for the weekly_image_limit_count field.
+	usersubscription.DefaultWeeklyImageLimitCount = usersubscriptionDescWeeklyImageLimitCount.Default.(int)
+	// usersubscriptionDescMonthlyImageLimitCount is the schema descriptor for monthly_image_limit_count field.
+	usersubscriptionDescMonthlyImageLimitCount := usersubscriptionFields[20].Descriptor()
+	// usersubscription.DefaultMonthlyImageLimitCount holds the default value on creation for the monthly_image_limit_count field.
+	usersubscription.DefaultMonthlyImageLimitCount = usersubscriptionDescMonthlyImageLimitCount.Default.(int)
+	// usersubscriptionDescDailyVideoLimitCount is the schema descriptor for daily_video_limit_count field.
+	usersubscriptionDescDailyVideoLimitCount := usersubscriptionFields[21].Descriptor()
+	// usersubscription.DefaultDailyVideoLimitCount holds the default value on creation for the daily_video_limit_count field.
+	usersubscription.DefaultDailyVideoLimitCount = usersubscriptionDescDailyVideoLimitCount.Default.(int)
+	// usersubscriptionDescWeeklyVideoLimitCount is the schema descriptor for weekly_video_limit_count field.
+	usersubscriptionDescWeeklyVideoLimitCount := usersubscriptionFields[22].Descriptor()
+	// usersubscription.DefaultWeeklyVideoLimitCount holds the default value on creation for the weekly_video_limit_count field.
+	usersubscription.DefaultWeeklyVideoLimitCount = usersubscriptionDescWeeklyVideoLimitCount.Default.(int)
+	// usersubscriptionDescMonthlyVideoLimitCount is the schema descriptor for monthly_video_limit_count field.
+	usersubscriptionDescMonthlyVideoLimitCount := usersubscriptionFields[23].Descriptor()
+	// usersubscription.DefaultMonthlyVideoLimitCount holds the default value on creation for the monthly_video_limit_count field.
+	usersubscription.DefaultMonthlyVideoLimitCount = usersubscriptionDescMonthlyVideoLimitCount.Default.(int)
 }
 
 const (

@@ -29,7 +29,7 @@
           v-for="subscription in subscriptions"
           :key="subscription.id"
           class="overflow-hidden rounded-2xl border bg-white dark:bg-dark-800"
-          :class="platformBorderClass(subscription.group?.platform || '')"
+          :class="isBundleSub(subscription) ? getTierTheme(subscription.bundle_plan_tier ?? undefined).borderClass : platformBorderClass(subscription.group?.platform || '')"
         >
           <!-- Header -->
           <div
@@ -42,6 +42,13 @@
                   <h3 class="font-semibold text-gray-900 dark:text-white">
                     {{ subscription.group?.name || `Group #${subscription.group_id}` }}
                   </h3>
+                  <!-- Bundle tier badge -->
+                  <span v-if="isBundleSub(subscription)" :class="getTierTheme(subscription.bundle_plan_tier ?? undefined).badgeClass">
+                    {{ t(getTierI18nKey(subscription.bundle_plan_tier ?? undefined)) }}
+                  </span>
+                  <span v-if="isBundleSub(subscription)" class="rounded-md bg-primary-500/10 px-2 py-0.5 text-[11px] font-medium text-primary-600 dark:text-primary-400">
+                    {{ t('userSubscriptions.bundleBadge') }}
+                  </span>
                   <span :class="['rounded-md border px-2 py-0.5 text-[11px] font-medium', platformBadgeClass(subscription.group?.platform || '')]">
                     {{ platformLabel(subscription.group?.platform || '') }}
                   </span>
@@ -67,9 +74,9 @@
               <button
                 v-if="subscription.status === 'active'"
                 :class="['rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-colors', platformButtonClass(subscription.group?.platform || '')]"
-                @click="router.push({ path: '/purchase', query: { tab: 'subscription', group: String(subscription.group_id) } })"
+                @click="isBundleSub(subscription) ? router.push('/bundles') : router.push({ path: '/purchase', query: { tab: 'subscription', group: String(subscription.group_id) } })"
               >
-                {{ t('payment.renewNow') }}
+                {{ isBundleSub(subscription) ? t('userSubscriptions.bundleRenew') : t('payment.renewNow') }}
               </button>
             </div>
           </div>
@@ -252,6 +259,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { formatDateOnly } from '@/utils/format'
 import { platformBorderClass, platformBadgeClass, platformButtonClass, platformLabel } from '@/utils/platformColors'
+import { getTierTheme, getTierI18nKey } from '@/constants/bundleTiers'
 import { getRemainingDurationParts, isOneTimeDailyQuota, type RemainingDurationParts } from '@/utils/subscriptionQuota'
 
 function platformAccentDotClass(p: string): string {
@@ -262,6 +270,10 @@ function platformAccentDotClass(p: string): string {
     case 'gemini': return 'bg-blue-500'
     default: return 'bg-gray-400'
   }
+}
+
+function isBundleSub(sub: UserSubscription): boolean {
+  return sub.bundle_subscription_id != null && sub.bundle_subscription_id > 0
 }
 
 const { t } = useI18n()

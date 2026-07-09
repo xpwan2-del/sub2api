@@ -44,6 +44,7 @@ func (APIKey) Fields() []ent.Field {
 		field.Int64("group_id").
 			Optional().
 			Nillable(),
+		field.Int64("bundle_subscription_id").Optional().Nillable().Comment("关联的套餐实例ID（单Key模式）"),
 		field.String("status").
 			MaxLen(20).
 			Default(domain.StatusActive),

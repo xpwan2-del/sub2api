@@ -44,7 +44,7 @@
           <div class="relative" ref="columnDropdownRef">
             <button
               @click="showColumnDropdown = !showColumnDropdown"
-              class="btn btn-secondary px-2 md:px-3"
+              class="px-2 btn btn-secondary md:px-3"
               :title="t('keys.columnSettings')"
             >
               <svg class="h-4 w-4 md:mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
@@ -54,13 +54,13 @@
             </button>
             <div
               v-if="showColumnDropdown"
-              class="absolute right-0 top-full z-50 mt-1 max-h-80 w-48 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-dark-600 dark:bg-dark-800"
+              class="absolute right-0 z-50 w-48 py-1 mt-1 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg top-full max-h-80 dark:border-dark-600 dark:bg-dark-800"
             >
               <button
                 v-for="col in toggleableColumns"
                 :key="col.key"
                 @click="toggleColumn(col.key)"
-                class="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700"
+                class="flex items-center justify-between w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700"
               >
                 <span>{{ col.label }}</span>
                 <Icon
@@ -92,12 +92,12 @@
         >
           <template #cell-key="{ value, row }">
             <div class="flex items-center gap-2">
-              <code class="code text-xs">
+              <code class="text-xs code">
                 {{ maskApiKey(value) }}
               </code>
               <button
                 @click="copyToClipboard(value, row.id)"
-                class="rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-dark-700"
+                class="p-1 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700"
                 :class="
                   copiedKeyId === row.id
                     ? 'text-green-500'
@@ -129,12 +129,19 @@
             </div>
           </template>
 
+          <template #cell-key_mode="{ row }">
+            <span :class="['badge', getKeyModeBadgeClass(getKeyMode(row))]">
+              {{ keyModeLabels[getKeyMode(row)] }}
+            </span>
+          </template>
+
           <template #cell-group="{ row }">
-            <div class="group/dropdown relative">
+            <!-- Normal key: allow inline group change -->
+            <div v-if="getKeyMode(row) === 'normal'" class="relative group/dropdown">
               <button
                 :ref="(el) => setGroupButtonRef(row.id, el)"
                 @click="openGroupSelector(row)"
-                class="-mx-2 -my-1 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-dark-700"
+                class="flex items-center gap-2 px-2 py-1 -mx-2 -my-1 transition-all duration-200 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-700"
                 :title="t('keys.clickToChangeGroup')"
               >
                 <GroupBadge
@@ -163,6 +170,20 @@
                   />
                 </svg>
               </button>
+            </div>
+            <!-- Universal / Dedicated key: read-only display -->
+            <div v-else class="flex items-center gap-2">
+              <GroupBadge
+                v-if="row.group"
+                :name="row.group.name"
+                :platform="row.group.platform"
+                :subscription-type="row.group.subscription_type"
+                :rate-multiplier="row.group.rate_multiplier"
+                :user-rate-multiplier="userGroupRates[row.group.id]"
+              />
+              <span v-else class="text-sm text-gray-400 dark:text-dark-500">{{
+                getKeyMode(row) === 'universal' ? t('bundles.keyModeUniversal') : t('keys.noGroup')
+              }}</span>
             </div>
           </template>
 
@@ -223,7 +244,7 @@
                     ${{ row.usage_5h?.toFixed(2) || '0.00' }}/${{ row.rate_limit_5h?.toFixed(2) }}
                   </span>
                 </div>
-                <div class="h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                <div class="w-full h-1 overflow-hidden bg-gray-200 rounded-full dark:bg-dark-600">
                   <div
                     :class="[
                       'h-full rounded-full transition-all',
@@ -251,7 +272,7 @@
                     ${{ row.usage_1d?.toFixed(2) || '0.00' }}/${{ row.rate_limit_1d?.toFixed(2) }}
                   </span>
                 </div>
-                <div class="h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                <div class="w-full h-1 overflow-hidden bg-gray-200 rounded-full dark:bg-dark-600">
                   <div
                     :class="[
                       'h-full rounded-full transition-all',
@@ -279,7 +300,7 @@
                     ${{ row.usage_7d?.toFixed(2) || '0.00' }}/${{ row.rate_limit_7d?.toFixed(2) }}
                   </span>
                 </div>
-                <div class="h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-600">
+                <div class="w-full h-1 overflow-hidden bg-gray-200 rounded-full dark:bg-dark-600">
                   <div
                     :class="[
                       'h-full rounded-full transition-all',
@@ -437,44 +458,129 @@
         </div>
 
         <div>
-          <label class="input-label">{{ t('keys.groupLabel') }}</label>
-          <Select
-            v-model="formData.group_id"
-            :options="groupOptions"
-            :placeholder="t('keys.selectGroup')"
-            :searchable="true"
-            :search-placeholder="t('keys.searchGroup')"
-            data-tour="key-form-group"
-          >
-            <template #selected="{ option }">
-              <GroupBadge
-                v-if="option"
-                :name="(option as unknown as GroupOption).label"
-                :platform="(option as unknown as GroupOption).platform"
-                :subscription-type="(option as unknown as GroupOption).subscriptionType"
-                :rate-multiplier="(option as unknown as GroupOption).rate"
-                :user-rate-multiplier="(option as unknown as GroupOption).userRate"
-              />
-              <span v-else class="text-gray-400">{{ t('keys.selectGroup') }}</span>
-            </template>
-            <template #option="{ option, selected }">
-              <GroupOptionItem
-                :name="(option as unknown as GroupOption).label"
-                :platform="(option as unknown as GroupOption).platform"
-                :subscription-type="(option as unknown as GroupOption).subscriptionType"
-                :rate-multiplier="(option as unknown as GroupOption).rate"
-                :user-rate-multiplier="(option as unknown as GroupOption).userRate"
-                :description="(option as unknown as GroupOption).description"
-                :selected="selected"
-              />
-            </template>
-          </Select>
+          <!-- Key Mode Selector (when user has active bundle, both create and edit) -->
+          <div v-if="hasActiveBundle" class="mb-4">
+            <label class="input-label">{{ t('bundles.keyMode') }}</label>
+            <div class="mt-2 space-y-2">
+              <!-- 标准 Key（默认，绑定普通分组，按量计费） -->
+              <label
+                class="flex items-start gap-3 p-3 transition-colors border-2 rounded-lg cursor-pointer"
+                :class="keyMode === 'normal'
+                  ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-900/20'
+                  : 'border-gray-200 hover:border-gray-300 dark:border-dark-600 dark:hover:border-dark-500'"
+              >
+                <input
+                  type="radio"
+                  v-model="keyMode"
+                  value="normal"
+                  class="mt-0.5"
+                />
+                <div class="flex-1">
+                  <div class="text-sm font-medium text-gray-900 dark:text-white">
+                    {{ t('bundles.keyModeNormal') }}
+                  </div>
+                  <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('bundles.keyModeNormalDesc') }}
+                  </div>
+                </div>
+              </label>
+              <!-- 指定平台 Key（绑定套餐内某个特定平台的订阅分组） 选项已隐藏（代码注释保留，未删除）。
+                        如需恢复“专用 Key（指定平台）”模式，移除下方 HTML 注释即可。 -->
+              <!--
+              <label
+                class="flex items-start gap-3 p-3 transition-colors border-2 rounded-lg cursor-pointer"
+                :class="keyMode === 'dedicated'
+                  ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-900/20'
+                  : 'border-gray-200 hover:border-gray-300 dark:border-dark-600 dark:hover:border-dark-500'"
+              >
+                <input
+                  type="radio"
+                  v-model="keyMode"
+                  value="dedicated"
+                  class="mt-0.5"
+                />
+                <div class="flex-1">
+                  <div class="text-sm font-medium text-gray-900 dark:text-white">
+                    {{ t('bundles.keyModeDedicated') }}
+                  </div>
+                  <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('bundles.keyModeDedicatedDesc') }}
+                  </div>
+                </div>
+              </label>
+              -->
+              <!-- 通用 Key（自动路由，使用套餐配额） -->
+              <label
+                class="flex items-start gap-3 p-3 transition-colors border-2 rounded-lg cursor-pointer"
+                :class="keyMode === 'universal'
+                  ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-900/20'
+                  : 'border-gray-200 hover:border-gray-300 dark:border-dark-600 dark:hover:border-dark-500'"
+              >
+                <input
+                  type="radio"
+                  v-model="keyMode"
+                  value="universal"
+                  class="mt-0.5"
+                />
+                <div class="flex-1">
+                  <div class="text-sm font-medium text-gray-900 dark:text-white">
+                    {{ t('bundles.keyModeUniversal') }}
+                  </div>
+                  <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('bundles.keyModeUniversalDesc') }}
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Group Selector (hidden for universal mode) -->
+          <div v-if="!(hasActiveBundle && keyMode === 'universal')">
+            <label class="input-label">
+              {{ hasActiveBundle && keyMode === 'dedicated'
+                ? t('bundles.selectBundleGroup')
+                : t('keys.groupLabel') }}
+            </label>
+            <Select
+              v-model="formData.group_id"
+              :options="effectiveGroupOptions"
+              :placeholder="hasActiveBundle && !showEditModal && keyMode === 'dedicated'
+                ? t('bundles.selectBundleGroup')
+                : t('keys.selectGroup')"
+              :searchable="true"
+              :search-placeholder="t('keys.searchGroup')"
+              data-tour="key-form-group"
+            >
+              <template #selected="{ option }">
+                <GroupBadge
+                  v-if="option"
+                  :name="(option as unknown as GroupOption).label"
+                  :platform="(option as unknown as GroupOption).platform"
+                  :subscription-type="(option as unknown as GroupOption).subscriptionType"
+                  :rate-multiplier="(option as unknown as GroupOption).rate"
+                  :user-rate-multiplier="(option as unknown as GroupOption).userRate"
+                />
+                <span v-else class="text-gray-400">{{ t('keys.selectGroup') }}</span>
+              </template>
+              <template #option="{ option, selected }">
+                <GroupOptionItem
+                  :name="(option as unknown as GroupOption).label"
+                  :platform="(option as unknown as GroupOption).platform"
+                  :subscription-type="(option as unknown as GroupOption).subscriptionType"
+                  :rate-multiplier="(option as unknown as GroupOption).rate"
+                  :user-rate-multiplier="(option as unknown as GroupOption).userRate"
+                  :description="(option as unknown as GroupOption).description"
+                  :selected="selected"
+                />
+              </template>
+            </Select>
+          </div>
         </div>
 
         <!-- Custom Key Section (only for create) -->
         <div v-if="!showEditModal" class="space-y-3">
           <div class="flex items-center justify-between">
-            <label class="input-label mb-0">{{ t('keys.customKeyLabel') }}</label>
+            <label class="mb-0 input-label">{{ t('keys.customKeyLabel') }}</label>
             <button
               type="button"
               @click="formData.use_custom_key = !formData.use_custom_key"
@@ -495,7 +601,7 @@
             <input
               v-model="formData.custom_key"
               type="text"
-              class="input font-mono"
+              class="font-mono input"
               :placeholder="t('keys.customKeyPlaceholder')"
               :class="{ 'border-red-500 dark:border-red-500': customKeyError }"
             />
@@ -516,7 +622,7 @@
         <!-- IP Restriction Section -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
-            <label class="input-label mb-0">{{ t('keys.ipRestriction') }}</label>
+            <label class="mb-0 input-label">{{ t('keys.ipRestriction') }}</label>
             <button
               type="button"
               @click="formData.enable_ip_restriction = !formData.enable_ip_restriction"
@@ -534,13 +640,13 @@
             </button>
           </div>
 
-          <div v-if="formData.enable_ip_restriction" class="space-y-4 pt-2">
+          <div v-if="formData.enable_ip_restriction" class="pt-2 space-y-4">
             <div>
               <label class="input-label">{{ t('keys.ipWhitelist') }}</label>
               <textarea
                 v-model="formData.ip_whitelist"
                 rows="3"
-                class="input font-mono text-sm"
+                class="font-mono text-sm input"
                 :placeholder="t('keys.ipWhitelistPlaceholder')"
               />
               <p class="input-hint">{{ t('keys.ipWhitelistHint') }}</p>
@@ -551,7 +657,7 @@
               <textarea
                 v-model="formData.ip_blacklist"
                 rows="3"
-                class="input font-mono text-sm"
+                class="font-mono text-sm input"
                 :placeholder="t('keys.ipBlacklistPlaceholder')"
               />
               <p class="input-hint">{{ t('keys.ipBlacklistHint') }}</p>
@@ -559,12 +665,12 @@
           </div>
         </div>
 
-        <!-- Quota Limit Section -->
-        <div class="space-y-3">
+        <!-- Quota Limit Section（通用 Key 自动路由模式下隐藏，标准 Key 正常显示） -->
+        <div v-if="!(hasActiveBundle && keyMode === 'universal')" class="space-y-3">
           <label class="input-label">{{ t('keys.quotaLimit') }}</label>
           <!-- Switch commented out - always show input, 0 = unlimited
           <div class="flex items-center justify-between">
-            <label class="input-label mb-0">{{ t('keys.quotaLimit') }}</label>
+            <label class="mb-0 input-label">{{ t('keys.quotaLimit') }}</label>
             <button
               type="button"
               @click="formData.enable_quota = !formData.enable_quota"
@@ -586,7 +692,7 @@
           <div class="space-y-4">
             <div>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span class="absolute text-gray-500 -translate-y-1/2 left-3 top-1/2">$</span>
                 <input
                   v-model.number="formData.quota"
                   type="number"
@@ -603,7 +709,7 @@
             <div v-if="showEditModal && selectedKey && selectedKey.quota > 0">
               <label class="input-label">{{ t('keys.quotaUsed') }}</label>
               <div class="flex items-center gap-2">
-                <div class="flex-1 rounded-lg bg-gray-100 px-3 py-2 dark:bg-dark-700">
+                <div class="flex-1 px-3 py-2 bg-gray-100 rounded-lg dark:bg-dark-700">
                   <span class="font-medium text-gray-900 dark:text-white">
                     ${{ selectedKey.quota_used?.toFixed(4) || '0.0000' }}
                   </span>
@@ -615,7 +721,7 @@
                 <button
                   type="button"
                   @click="confirmResetQuota"
-                  class="btn btn-secondary text-sm"
+                  class="text-sm btn btn-secondary"
                   :title="t('keys.resetQuotaUsed')"
                 >
                   {{ t('keys.reset') }}
@@ -625,10 +731,10 @@
           </div>
         </div>
 
-        <!-- Rate Limit Section -->
-        <div class="space-y-3">
+        <!-- Rate Limit Section（通用 Key 自动路由模式下隐藏，标准 Key 正常显示） -->
+        <div v-if="!(hasActiveBundle && keyMode === 'universal')" class="space-y-3">
           <div class="flex items-center justify-between">
-            <label class="input-label mb-0">{{ t('keys.rateLimitSection') }}</label>
+            <label class="mb-0 input-label">{{ t('keys.rateLimitSection') }}</label>
             <button
               type="button"
               @click="formData.enable_rate_limit = !formData.enable_rate_limit"
@@ -646,13 +752,13 @@
             </button>
           </div>
 
-          <div v-if="formData.enable_rate_limit" class="space-y-4 pt-2">
-            <p class="input-hint -mt-2">{{ t('keys.rateLimitHint') }}</p>
+          <div v-if="formData.enable_rate_limit" class="pt-2 space-y-4">
+            <p class="-mt-2 input-hint">{{ t('keys.rateLimitHint') }}</p>
             <!-- 5-Hour Limit -->
             <div>
               <label class="input-label">{{ t('keys.rateLimit5h') }}</label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span class="absolute text-gray-500 -translate-y-1/2 left-3 top-1/2">$</span>
                 <input
                   v-model.number="formData.rate_limit_5h"
                   type="number"
@@ -665,7 +771,7 @@
               <!-- Usage info (edit mode only) -->
               <div v-if="showEditModal && selectedKey && selectedKey.rate_limit_5h > 0" class="mt-2">
                 <div class="flex items-center gap-2">
-                  <div class="flex-1 rounded-lg bg-gray-100 px-3 py-2 dark:bg-dark-700 text-sm">
+                  <div class="flex-1 px-3 py-2 text-sm bg-gray-100 rounded-lg dark:bg-dark-700">
                     <span :class="[
                       'font-medium',
                       selectedKey.usage_5h >= selectedKey.rate_limit_5h ? 'text-red-500' :
@@ -698,7 +804,7 @@
             <div>
               <label class="input-label">{{ t('keys.rateLimit1d') }}</label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span class="absolute text-gray-500 -translate-y-1/2 left-3 top-1/2">$</span>
                 <input
                   v-model.number="formData.rate_limit_1d"
                   type="number"
@@ -711,7 +817,7 @@
               <!-- Usage info (edit mode only) -->
               <div v-if="showEditModal && selectedKey && selectedKey.rate_limit_1d > 0" class="mt-2">
                 <div class="flex items-center gap-2">
-                  <div class="flex-1 rounded-lg bg-gray-100 px-3 py-2 dark:bg-dark-700 text-sm">
+                  <div class="flex-1 px-3 py-2 text-sm bg-gray-100 rounded-lg dark:bg-dark-700">
                     <span :class="[
                       'font-medium',
                       selectedKey.usage_1d >= selectedKey.rate_limit_1d ? 'text-red-500' :
@@ -744,7 +850,7 @@
             <div>
               <label class="input-label">{{ t('keys.rateLimit7d') }}</label>
               <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span class="absolute text-gray-500 -translate-y-1/2 left-3 top-1/2">$</span>
                 <input
                   v-model.number="formData.rate_limit_7d"
                   type="number"
@@ -757,7 +863,7 @@
               <!-- Usage info (edit mode only) -->
               <div v-if="showEditModal && selectedKey && selectedKey.rate_limit_7d > 0" class="mt-2">
                 <div class="flex items-center gap-2">
-                  <div class="flex-1 rounded-lg bg-gray-100 px-3 py-2 dark:bg-dark-700 text-sm">
+                  <div class="flex-1 px-3 py-2 text-sm bg-gray-100 rounded-lg dark:bg-dark-700">
                     <span :class="[
                       'font-medium',
                       selectedKey.usage_7d >= selectedKey.rate_limit_7d ? 'text-red-500' :
@@ -791,7 +897,7 @@
               <button
                 type="button"
                 @click="confirmResetRateLimit"
-                class="btn btn-secondary text-sm"
+                class="text-sm btn btn-secondary"
               >
                 {{ t('keys.resetRateLimitUsage') }}
               </button>
@@ -802,7 +908,7 @@
         <!-- Expiration Section -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
-            <label class="input-label mb-0">{{ t('keys.expiration') }}</label>
+            <label class="mb-0 input-label">{{ t('keys.expiration') }}</label>
             <button
               type="button"
               @click="formData.enable_expiration = !formData.enable_expiration"
@@ -820,7 +926,7 @@
             </button>
           </div>
 
-          <div v-if="formData.enable_expiration" class="space-y-4 pt-2">
+          <div v-if="formData.enable_expiration" class="pt-2 space-y-4">
             <!-- Quick select buttons (for both create and edit mode) -->
             <div class="flex flex-wrap gap-2">
               <button
@@ -886,7 +992,7 @@
           >
             <svg
               v-if="submitting"
-              class="-ml-1 mr-2 h-4 w-4 animate-spin"
+              class="w-4 h-4 mr-2 -ml-1 animate-spin"
               fill="none"
               viewBox="0 0 24 24"
             >
@@ -959,6 +1065,7 @@
       :base-url="publicSettings?.api_base_url || ''"
       :platform="selectedKey?.group?.platform || null"
       :allow-messages-dispatch="selectedKey?.group?.allow_messages_dispatch || false"
+      :is-universal-key="!!selectedKey?.bundle_subscription_id && !selectedKey?.group_id"
       @close="closeUseKeyModal"
     />
 
@@ -976,7 +1083,7 @@
 	        <div class="grid grid-cols-2 gap-3">
 	          <button
 	            @click="handleCcsClientSelect('claude')"
-	            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all"
+	            class="flex flex-col items-center gap-2 p-4 transition-all border-2 border-gray-200 rounded-xl dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20"
 	          >
 	            <Icon name="terminal" size="xl" class="text-gray-600 dark:text-gray-400" />
 	            <span class="font-medium text-gray-900 dark:text-white">{{
@@ -988,7 +1095,7 @@
 	          </button>
 	          <button
 	            @click="handleCcsClientSelect('gemini')"
-	            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all"
+	            class="flex flex-col items-center gap-2 p-4 transition-all border-2 border-gray-200 rounded-xl dark:border-dark-600 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20"
 	          >
 	            <Icon name="sparkles" size="xl" class="text-gray-600 dark:text-gray-400" />
 	            <span class="font-medium text-gray-900 dark:text-white">{{
@@ -1023,7 +1130,7 @@
         }"
       >
         <!-- Search box -->
-        <div class="border-b border-gray-100 p-2 dark:border-dark-700">
+        <div class="p-2 border-b border-gray-100 dark:border-dark-700">
           <div class="relative">
             <svg class="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1067,7 +1174,7 @@
             />
           </button>
           <!-- Empty state when search has no results -->
-          <div v-if="filteredGroupOptions.length === 0" class="py-4 text-center text-sm text-gray-400 dark:text-gray-500">
+          <div v-if="filteredGroupOptions.length === 0" class="py-4 text-sm text-center text-gray-400 dark:text-gray-500">
             {{ t('keys.noGroupFound') }}
           </div>
         </div>
@@ -1077,7 +1184,7 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, reactive, computed, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
+	import { ref, reactive, computed, watch, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useAppStore } from '@/stores/app'
 	import { useOnboardingStore } from '@/stores/onboarding'
@@ -1086,6 +1193,8 @@ import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 
 const { t } = useI18n()
 import { keysAPI, authAPI, usageAPI, userGroupsAPI } from '@/api'
+import bundlesAPI from '@/api/bundles'
+import type { BundleSubscription } from '@/types/bundle'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 	import DataTable from '@/components/common/DataTable.vue'
@@ -1131,9 +1240,31 @@ const appStore = useAppStore()
 const onboardingStore = useOnboardingStore()
 const { copyToClipboard: clipboardCopy } = useClipboard()
 
+// Derive key mode from bundle_subscription_id + group_id
+const getKeyMode = (row: { bundle_subscription_id?: number | null; group_id: number | null }): 'universal' | 'dedicated' | 'normal' => {
+  if (row.bundle_subscription_id && !row.group_id) return 'universal'
+  if (row.bundle_subscription_id && row.group_id) return 'dedicated'
+  return 'normal'
+}
+
+const getKeyModeBadgeClass = (mode: 'universal' | 'dedicated' | 'normal'): string => {
+  switch (mode) {
+    case 'universal': return 'badge-primary'
+    case 'dedicated': return 'badge-warning'
+    default: return 'badge-gray'
+  }
+}
+
+const keyModeLabels: Record<'universal' | 'dedicated' | 'normal', string> = {
+  universal: t('bundles.keyModeUniversal'),
+  dedicated: t('bundles.keyModeDedicated'),
+  normal: t('bundles.keyModeNormal')
+}
+
 const allColumns = computed<Column[]>(() => [
   { key: 'name', label: t('common.name'), sortable: true },
   { key: 'key', label: t('keys.apiKey'), sortable: false },
+  { key: 'key_mode', label: t('bundles.keyMode'), sortable: false },
   { key: 'group', label: t('keys.group'), sortable: false },
   { key: 'usage', label: t('keys.usage'), sortable: false },
   { key: 'rate_limit', label: t('keys.rateLimitColumn'), sortable: false },
@@ -1244,6 +1375,12 @@ const copiedKeyId = ref<number | null>(null)
 const groupSelectorKeyId = ref<number | null>(null)
 const publicSettings = ref<PublicSettings | null>(null)
 const dropdownRef = ref<HTMLElement | null>(null)
+
+// Bundle dual-mode state
+const activeBundle = ref<BundleSubscription | null>(null)
+const hasActiveBundle = ref(false)
+const keyMode = ref<'normal' | 'universal' | 'dedicated'>('normal')
+
 const columnDropdownRef = ref<HTMLElement | null>(null)
 const dropdownPosition = ref<{ top?: number; bottom?: number; left: number } | null>(null)
 const groupButtonRefs = ref<Map<number, HTMLElement>>(new Map())
@@ -1359,9 +1496,11 @@ const groupOptions = computed(() =>
 // Group dropdown search
 const groupSearchQuery = ref('')
 const filteredGroupOptions = computed(() => {
+  // 过滤掉订阅分组：切换分组下拉不展示 subscription 类型（用户选了也会被后端拒绝）
+  const base = groupOptions.value.filter((opt) => opt.subscriptionType !== 'subscription')
   const query = groupSearchQuery.value.trim().toLowerCase()
-  if (!query) return groupOptions.value
-  return groupOptions.value.filter((opt) => {
+  if (!query) return base
+  return base.filter((opt) => {
     return opt.label.toLowerCase().includes(query) ||
       (opt.description && opt.description.toLowerCase().includes(query))
   })
@@ -1461,6 +1600,60 @@ const loadPublicSettings = async () => {
   }
 }
 
+const loadActiveBundle = async () => {
+  try {
+    const bundles = await bundlesAPI.getMyBundle()
+    const bundle = bundles.find(b => b.status === 'active') ?? null
+    if (bundle) {
+      activeBundle.value = bundle
+      hasActiveBundle.value = true
+    } else {
+      activeBundle.value = null
+      hasActiveBundle.value = false
+    }
+  } catch (error) {
+    // Silently ignore - bundle feature may not be available
+    activeBundle.value = null
+    hasActiveBundle.value = false
+  }
+}
+
+// Bundle group options: groups included in the active bundle plan
+const bundleGroupOptions = computed(() => {
+  if (!activeBundle.value?.plan?.group_quotas) return []
+  return activeBundle.value.plan.group_quotas
+    .filter(gq => gq.group_name)
+    .map(gq => {
+      const matchedGroup = groups.value.find(g => g.id === gq.group_id)
+      return {
+        value: gq.group_id,
+        label: gq.group_name!,
+        description: matchedGroup?.description || null,
+        rate: matchedGroup?.rate_multiplier || 1,
+        userRate: matchedGroup ? (userGroupRates.value[matchedGroup.id] ?? null) : null,
+        subscriptionType: matchedGroup?.subscription_type || ('standard' as SubscriptionType),
+        platform: (gq.group_platform || 'openai') as GroupPlatform
+      }
+    })
+})
+
+// Effective group options based on key mode
+const effectiveGroupOptions = computed(() => {
+  if (hasActiveBundle.value && keyMode.value === 'dedicated') {
+    return bundleGroupOptions.value
+  }
+  // 标准 Key 不允许使用订阅分组，仅保留普通（standard）分组
+  if (keyMode.value === 'normal') {
+    return groupOptions.value.filter((g) => g.subscriptionType !== 'subscription')
+  }
+  return groupOptions.value
+})
+
+// Reset group_id when switching key modes
+watch(keyMode, () => {
+  formData.value.group_id = null
+})
+
 const openUseKeyModal = (key: ApiKey) => {
   selectedKey.value = key
   showUseKeyModal.value = true
@@ -1491,6 +1684,8 @@ const handleSort = (key: string, order: 'asc' | 'desc') => {
 
 const editKey = (key: ApiKey) => {
   selectedKey.value = key
+  // Derive key mode from bundle_subscription_id + group_id
+  keyMode.value = getKeyMode(key)
   const hasIPRestriction = (key.ip_whitelist?.length > 0) || (key.ip_blacklist?.length > 0)
   const hasExpiration = !!key.expires_at
   formData.value = {
@@ -1591,8 +1786,9 @@ const confirmDelete = (key: ApiKey) => {
 }
 
 const handleSubmit = async () => {
-  // Validate group_id is required
-  if (formData.value.group_id === null) {
+  // Validate group_id is required (unless universal bundle mode)
+  const isUniversalBundle = hasActiveBundle.value && keyMode.value === 'universal'
+  if (formData.value.group_id === null && !isUniversalBundle) {
     appStore.showError(t('keys.groupRequired'))
     return
   }
@@ -1615,8 +1811,11 @@ const handleSubmit = async () => {
   const ipWhitelist = formData.value.enable_ip_restriction ? parseIPList(formData.value.ip_whitelist) : []
   const ipBlacklist = formData.value.enable_ip_restriction ? parseIPList(formData.value.ip_blacklist) : []
 
+  // Universal/auto-route mode uses bundle quota — ignore any stale per-key quota/rate_limit
+  // values left in the form when the user previously filled them under standard mode.
+  const isUniversalMode = hasActiveBundle.value && keyMode.value === 'universal'
   // Calculate quota value (null/empty/0 = unlimited, stored as 0)
-  const quota = formData.value.quota && formData.value.quota > 0 ? formData.value.quota : 0
+  const quota = isUniversalMode ? 0 : (formData.value.quota && formData.value.quota > 0 ? formData.value.quota : 0)
 
   // Calculate expiration
   let expiresInDays: number | undefined
@@ -1637,8 +1836,8 @@ const handleSubmit = async () => {
     expiresAt = ''
   }
 
-  // Calculate rate limit values (send 0 when toggle is off)
-  const rateLimitData = formData.value.enable_rate_limit ? {
+  // Calculate rate limit values (send 0 when toggle is off or universal/auto-route mode)
+  const rateLimitData = (!isUniversalMode && formData.value.enable_rate_limit) ? {
     rate_limit_5h: formData.value.rate_limit_5h && formData.value.rate_limit_5h > 0 ? formData.value.rate_limit_5h : 0,
     rate_limit_1d: formData.value.rate_limit_1d && formData.value.rate_limit_1d > 0 ? formData.value.rate_limit_1d : 0,
     rate_limit_7d: formData.value.rate_limit_7d && formData.value.rate_limit_7d > 0 ? formData.value.rate_limit_7d : 0,
@@ -1647,9 +1846,22 @@ const handleSubmit = async () => {
   submitting.value = true
   try {
     if (showEditModal.value && selectedKey.value) {
+      // Determine group_id and bundle_subscription_id based on key mode for edit
+      let editGroupId: number | null = formData.value.group_id
+      let editBundleSubscriptionId: number | null | undefined = undefined
+      if (hasActiveBundle.value && keyMode.value === 'universal') {
+        editGroupId = null
+        editBundleSubscriptionId = activeBundle.value!.id
+      } else if (hasActiveBundle.value && keyMode.value === 'dedicated') {
+        editBundleSubscriptionId = activeBundle.value!.id
+      } else {
+        // Normal mode: clear bundle_subscription_id
+        editBundleSubscriptionId = null
+      }
+
       const updates: UpdateApiKeyRequest = {
         name: formData.value.name,
-        group_id: formData.value.group_id,
+        group_id: editGroupId,
         ip_whitelist: ipWhitelist,
         ip_blacklist: ipBlacklist,
         quota: quota,
@@ -1657,6 +1869,8 @@ const handleSubmit = async () => {
         rate_limit_5h: rateLimitData.rate_limit_5h,
         rate_limit_1d: rateLimitData.rate_limit_1d,
         rate_limit_7d: rateLimitData.rate_limit_7d,
+        bundle_subscription_id: editBundleSubscriptionId,
+        key_mode: hasActiveBundle.value ? keyMode.value : '',
       }
       if (shouldSubmitEditStatus(selectedKey.value, formData.value.status)) {
         updates.status = formData.value.status
@@ -1665,15 +1879,29 @@ const handleSubmit = async () => {
       appStore.showSuccess(t('keys.keyUpdatedSuccess'))
     } else {
       const customKey = formData.value.use_custom_key ? formData.value.custom_key : undefined
+      // Determine group_id and bundle_subscription_id based on key mode
+      let createGroupId: number | null = formData.value.group_id
+      let bundleSubscriptionId: number | null = null
+      if (hasActiveBundle.value && keyMode.value === 'universal') {
+        // Universal key: no group_id, pass bundle_subscription_id
+        createGroupId = null
+        bundleSubscriptionId = activeBundle.value!.id
+      } else if (hasActiveBundle.value && keyMode.value === 'dedicated') {
+        // Dedicated key: group_id from bundle groups, also pass bundle_subscription_id
+        bundleSubscriptionId = activeBundle.value!.id
+      }
+      // else: normal mode - use formData.group_id as-is, no bundle_subscription_id
+
       await keysAPI.create(
         formData.value.name,
-        formData.value.group_id,
+        createGroupId,
         customKey,
         ipWhitelist,
         ipBlacklist,
         quota,
         expiresInDays,
-        rateLimitData
+        rateLimitData,
+        bundleSubscriptionId
       )
       appStore.showSuccess(t('keys.keyCreatedSuccess'))
       // Only advance tour if active, on submit step, and creation succeeded
@@ -1735,6 +1963,8 @@ const closeModals = () => {
     expiration_preset: '30',
     expiration_date: ''
   }
+  // Reset bundle key mode
+  keyMode.value = 'normal'
 }
 
 // Show reset quota confirmation dialog
@@ -1888,6 +2118,7 @@ onMounted(() => {
   loadGroups()
   loadUserGroupRates()
   loadPublicSettings()
+  loadActiveBundle()
   document.addEventListener('click', closeGroupSelector)
   resetTimer = setInterval(() => { now.value = new Date() }, 60000)
 })

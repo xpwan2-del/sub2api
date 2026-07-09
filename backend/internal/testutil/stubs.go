@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/redis/go-redis/v9"
 )
 
 // ============================================================
@@ -98,6 +99,15 @@ func (c StubGatewayCache) RefreshSessionTTL(_ context.Context, _ int64, _ string
 	return nil
 }
 func (c StubGatewayCache) DeleteSessionAccountID(_ context.Context, _ int64, _ string) error {
+	return nil
+}
+func (c StubGatewayCache) SetVideoTaskBinding(_ context.Context, _ int64, _ string, _ service.VideoTaskBinding, _ time.Duration) error {
+	return nil
+}
+func (c StubGatewayCache) GetVideoTaskBinding(_ context.Context, _ int64, _ string) (service.VideoTaskBinding, error) {
+	return service.VideoTaskBinding{}, redis.Nil
+}
+func (c StubGatewayCache) DeleteVideoTaskBinding(_ context.Context, _ int64, _ string) error {
 	return nil
 }
 

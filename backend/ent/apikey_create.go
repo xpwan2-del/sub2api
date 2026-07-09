@@ -99,6 +99,20 @@ func (_c *APIKeyCreate) SetNillableGroupID(v *int64) *APIKeyCreate {
 	return _c
 }
 
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (_c *APIKeyCreate) SetBundleSubscriptionID(v int64) *APIKeyCreate {
+	_c.mutation.SetBundleSubscriptionID(v)
+	return _c
+}
+
+// SetNillableBundleSubscriptionID sets the "bundle_subscription_id" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableBundleSubscriptionID(v *int64) *APIKeyCreate {
+	if v != nil {
+		_c.SetBundleSubscriptionID(*v)
+	}
+	return _c
+}
+
 // SetStatus sets the "status" field.
 func (_c *APIKeyCreate) SetStatus(v string) *APIKeyCreate {
 	_c.mutation.SetStatus(v)
@@ -531,6 +545,10 @@ func (_c *APIKeyCreate) createSpec() (*APIKey, *sqlgraph.CreateSpec) {
 		_spec.SetField(apikey.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
+	if value, ok := _c.mutation.BundleSubscriptionID(); ok {
+		_spec.SetField(apikey.FieldBundleSubscriptionID, field.TypeInt64, value)
+		_node.BundleSubscriptionID = &value
+	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(apikey.FieldStatus, field.TypeString, value)
 		_node.Status = value
@@ -778,6 +796,30 @@ func (u *APIKeyUpsert) UpdateGroupID() *APIKeyUpsert {
 // ClearGroupID clears the value of the "group_id" field.
 func (u *APIKeyUpsert) ClearGroupID() *APIKeyUpsert {
 	u.SetNull(apikey.FieldGroupID)
+	return u
+}
+
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (u *APIKeyUpsert) SetBundleSubscriptionID(v int64) *APIKeyUpsert {
+	u.Set(apikey.FieldBundleSubscriptionID, v)
+	return u
+}
+
+// UpdateBundleSubscriptionID sets the "bundle_subscription_id" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateBundleSubscriptionID() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldBundleSubscriptionID)
+	return u
+}
+
+// AddBundleSubscriptionID adds v to the "bundle_subscription_id" field.
+func (u *APIKeyUpsert) AddBundleSubscriptionID(v int64) *APIKeyUpsert {
+	u.Add(apikey.FieldBundleSubscriptionID, v)
+	return u
+}
+
+// ClearBundleSubscriptionID clears the value of the "bundle_subscription_id" field.
+func (u *APIKeyUpsert) ClearBundleSubscriptionID() *APIKeyUpsert {
+	u.SetNull(apikey.FieldBundleSubscriptionID)
 	return u
 }
 
@@ -1203,6 +1245,34 @@ func (u *APIKeyUpsertOne) UpdateGroupID() *APIKeyUpsertOne {
 func (u *APIKeyUpsertOne) ClearGroupID() *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.ClearGroupID()
+	})
+}
+
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (u *APIKeyUpsertOne) SetBundleSubscriptionID(v int64) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetBundleSubscriptionID(v)
+	})
+}
+
+// AddBundleSubscriptionID adds v to the "bundle_subscription_id" field.
+func (u *APIKeyUpsertOne) AddBundleSubscriptionID(v int64) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddBundleSubscriptionID(v)
+	})
+}
+
+// UpdateBundleSubscriptionID sets the "bundle_subscription_id" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateBundleSubscriptionID() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateBundleSubscriptionID()
+	})
+}
+
+// ClearBundleSubscriptionID clears the value of the "bundle_subscription_id" field.
+func (u *APIKeyUpsertOne) ClearBundleSubscriptionID() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearBundleSubscriptionID()
 	})
 }
 
@@ -1841,6 +1911,34 @@ func (u *APIKeyUpsertBulk) UpdateGroupID() *APIKeyUpsertBulk {
 func (u *APIKeyUpsertBulk) ClearGroupID() *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.ClearGroupID()
+	})
+}
+
+// SetBundleSubscriptionID sets the "bundle_subscription_id" field.
+func (u *APIKeyUpsertBulk) SetBundleSubscriptionID(v int64) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetBundleSubscriptionID(v)
+	})
+}
+
+// AddBundleSubscriptionID adds v to the "bundle_subscription_id" field.
+func (u *APIKeyUpsertBulk) AddBundleSubscriptionID(v int64) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddBundleSubscriptionID(v)
+	})
+}
+
+// UpdateBundleSubscriptionID sets the "bundle_subscription_id" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateBundleSubscriptionID() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateBundleSubscriptionID()
+	})
+}
+
+// ClearBundleSubscriptionID clears the value of the "bundle_subscription_id" field.
+func (u *APIKeyUpsertBulk) ClearBundleSubscriptionID() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearBundleSubscriptionID()
 	})
 }
 

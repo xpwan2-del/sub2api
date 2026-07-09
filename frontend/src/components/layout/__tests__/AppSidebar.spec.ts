@@ -30,3 +30,15 @@ describe('AppSidebar header styles', () => {
     expect(sidebarBrandBlockMatch?.[0]).not.toContain('overflow: hidden;')
   })
 })
+
+describe('AppSidebar canvas entry', () => {
+  it('exposes the Canvas entry in the user main menu (uncommented)', () => {
+    // The user main-menu entry must be live code, not a `//` comment.
+    // The simple-mode admin entry (a different line) uses
+    // `filtered.push({ path: '/apps/canvas' ...`, which does not match this
+    // commented shape, so this assertion targets only the main-menu entry.
+    expect(componentSource).not.toContain(
+      "// { path: '/apps/canvas', label: t('nav.canvas'), icon: GlobeIcon, external: true },",
+    )
+  })
+})

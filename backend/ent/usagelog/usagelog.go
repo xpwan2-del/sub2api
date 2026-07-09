@@ -82,6 +82,8 @@ const (
 	FieldIPAddress = "ip_address"
 	// FieldImageCount holds the string denoting the image_count field in the database.
 	FieldImageCount = "image_count"
+	// FieldVideoCount holds the string denoting the video_count field in the database.
+	FieldVideoCount = "video_count"
 	// FieldImageSize holds the string denoting the image_size field in the database.
 	FieldImageSize = "image_size"
 	// FieldImageInputSize holds the string denoting the image_input_size field in the database.
@@ -182,6 +184,7 @@ var Columns = []string{
 	FieldUserAgent,
 	FieldIPAddress,
 	FieldImageCount,
+	FieldVideoCount,
 	FieldImageSize,
 	FieldImageInputSize,
 	FieldImageOutputSize,
@@ -252,6 +255,8 @@ var (
 	IPAddressValidator func(string) error
 	// DefaultImageCount holds the default value on creation for the "image_count" field.
 	DefaultImageCount int
+	// DefaultVideoCount holds the default value on creation for the "video_count" field.
+	DefaultVideoCount int
 	// ImageSizeValidator is a validator for the "image_size" field. It is called by the builders before save.
 	ImageSizeValidator func(string) error
 	// ImageInputSizeValidator is a validator for the "image_input_size" field. It is called by the builders before save.
@@ -442,6 +447,11 @@ func ByIPAddress(opts ...sql.OrderTermOption) OrderOption {
 // ByImageCount orders the results by the image_count field.
 func ByImageCount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldImageCount, opts...).ToFunc()
+}
+
+// ByVideoCount orders the results by the video_count field.
+func ByVideoCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVideoCount, opts...).ToFunc()
 }
 
 // ByImageSize orders the results by the image_size field.

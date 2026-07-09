@@ -193,6 +193,16 @@ func (c *openAIWSStateStoreTimeoutProbeCache) DeleteSessionAccountID(ctx context
 	return nil
 }
 
+func (c *openAIWSStateStoreTimeoutProbeCache) SetVideoTaskBinding(_ context.Context, _ int64, _ string, _ VideoTaskBinding, _ time.Duration) error {
+	return nil
+}
+func (c *openAIWSStateStoreTimeoutProbeCache) GetVideoTaskBinding(_ context.Context, _ int64, _ string) (VideoTaskBinding, error) {
+	return VideoTaskBinding{}, errors.New("not found")
+}
+func (c *openAIWSStateStoreTimeoutProbeCache) DeleteVideoTaskBinding(_ context.Context, _ int64, _ string) error {
+	return nil
+}
+
 func TestOpenAIWSStateStore_RedisOpsUseShortTimeout(t *testing.T) {
 	probe := &openAIWSStateStoreTimeoutProbeCache{}
 	store := NewOpenAIWSStateStore(probe)

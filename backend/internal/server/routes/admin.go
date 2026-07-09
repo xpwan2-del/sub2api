@@ -107,6 +107,9 @@ func RegisterAdminRoutes(
 		// 邀请返利（专属用户管理）
 		registerAffiliateRoutes(admin, h)
 	}
+
+	// 套餐管理
+	registerBundleRoutes(admin, h)
 }
 
 func registerAdminComplianceRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
@@ -146,6 +149,7 @@ func registerOpsRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		ops.GET("/user-concurrency", h.Admin.Ops.GetUserConcurrencyStats)
 		ops.GET("/account-availability", h.Admin.Ops.GetAccountAvailability)
 		ops.GET("/realtime-traffic", h.Admin.Ops.GetRealtimeTrafficSummary)
+		ops.GET("/model-status/snapshot", h.Admin.Ops.GetModelStatusSnapshot)
 
 		// Alerts (rules + events)
 		ops.GET("/alert-rules", h.Admin.Ops.ListAlertRules)
@@ -680,6 +684,30 @@ func registerAffiliateRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 			users.GET("/:user_id/overview", h.Admin.Affiliate.GetUserOverview)
 			users.PUT("/:user_id", h.Admin.Affiliate.UpdateUserSettings)
 			users.DELETE("/:user_id", h.Admin.Affiliate.ClearUserSettings)
+		}
+	}
+}
+
+func registerBundleRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	bundles := admin.Group("/bundle")
+	{
+		// Plan management
+		plans := bundles.Group("/plans")
+		{
+			plans.POST("", h.Admin.Bundle.CreatePlan)
+			plans.PUT("/:id", h.Admin.Bundle.UpdatePlan)
+			plans.GET("", h.Admin.Bundle.ListPlans)
+			plans.GET("/:id", h.Admin.Bundle.GetPlanDetail)
+			plans.DELETE("/:id", h.Admin.Bundle.DisablePlan)
+		}
+
+		// Subscription management
+		subs := bundles.Group("/subscriptions")
+		{
+			subs.GET("", h.Admin.Bundle.ListSubscriptions)
+			subs.GET("/:id/usage-progress", h.Admin.Bundle.GetSubscriptionUsageProgress)
+			subs.POST("/:id/revoke", h.Admin.Bundle.RevokeSubscription)
+			subs.POST("/:id/extend", h.Admin.Bundle.ExtendSubscription)
 		}
 	}
 }

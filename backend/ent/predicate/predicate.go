@@ -27,6 +27,18 @@ type AuthIdentity func(*sql.Selector)
 // AuthIdentityChannel is the predicate function for authidentitychannel builders.
 type AuthIdentityChannel func(*sql.Selector)
 
+// BundlePlan is the predicate function for bundleplan builders.
+type BundlePlan func(*sql.Selector)
+
+// BundlePlanGroupQuota is the predicate function for bundleplangroupquota builders.
+type BundlePlanGroupQuota func(*sql.Selector)
+
+// BundleSubscription is the predicate function for bundlesubscription builders.
+type BundleSubscription func(*sql.Selector)
+
+// BundleSubscriptionUsage is the predicate function for bundlesubscriptionusage builders.
+type BundleSubscriptionUsage func(*sql.Selector)
+
 // ChannelMonitor is the predicate function for channelmonitor builders.
 type ChannelMonitor func(*sql.Selector)
 

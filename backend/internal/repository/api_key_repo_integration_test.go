@@ -54,6 +54,36 @@ func (s *APIKeyRepoSuite) TestCreate() {
 	s.Require().Equal("sk-create-test", got.Key)
 }
 
+// TestRebindBundleKeys 验证套餐切换时 bundle APIKey 批量迁移到新套餐订阅：
+// 仅迁移该用户 bundle_subscription_id 非 nil 的 key（2 个），普通 group key 不受影响。
+func (s *APIKeyRepoSuite) TestRebindBundleKeys() {
+	user := s.mustCreateUser("rebind@test.com")
+	oldBundle := int64(100)
+	newBundle := int64(200)
+
+	bundleKey1 := &service.APIKey{UserID: user.ID, Key: "sk-rebind-1", Name: "bk1", Status: service.StatusActive, BundleSubscriptionID: &oldBundle}
+	bundleKey2 := &service.APIKey{UserID: user.ID, Key: "sk-rebind-2", Name: "bk2", Status: service.StatusActive, BundleSubscriptionID: &oldBundle}
+	group := s.mustCreateGroup("g-rebind")
+	plainKey := &service.APIKey{UserID: user.ID, Key: "sk-rebind-plain", Name: "plain", GroupID: &group.ID, Status: service.StatusActive}
+	s.Require().NoError(s.repo.Create(s.ctx, bundleKey1))
+	s.Require().NoError(s.repo.Create(s.ctx, bundleKey2))
+	s.Require().NoError(s.repo.Create(s.ctx, plainKey))
+
+	affected, err := s.repo.RebindBundleKeys(s.ctx, user.ID, newBundle)
+	s.Require().NoError(err)
+	s.Require().Equal(2, affected, "应迁移 2 个 bundle key")
+
+	got1, err := s.repo.GetByID(s.ctx, bundleKey1.ID)
+	s.Require().NoError(err)
+	s.Require().Equal(newBundle, *got1.BundleSubscriptionID, "bundle key1 应迁移到新 bundle")
+	got2, err := s.repo.GetByID(s.ctx, bundleKey2.ID)
+	s.Require().NoError(err)
+	s.Require().Equal(newBundle, *got2.BundleSubscriptionID, "bundle key2 应迁移到新 bundle")
+	gotPlain, err := s.repo.GetByID(s.ctx, plainKey.ID)
+	s.Require().NoError(err)
+	s.Require().Nil(gotPlain.BundleSubscriptionID, "普通 group key 不应被迁移")
+}
+
 func (s *APIKeyRepoSuite) TestGetByID_NotFound() {
 	_, err := s.repo.GetByID(s.ctx, 999999)
 	s.Require().Error(err, "expected error for non-existent ID")

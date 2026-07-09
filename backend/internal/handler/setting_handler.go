@@ -16,14 +16,17 @@ import (
 type SettingHandler struct {
 	settingService           *service.SettingService
 	notificationEmailService *service.NotificationEmailService
-	version                  string
+	version                  string // 自研发布版本号（CalVer），展示为主版本
+	baseVersion              string // 上游 sub2api 基线版本号，展示为副信息
 }
 
-// NewSettingHandler 创建公开设置处理器
-func NewSettingHandler(settingService *service.SettingService, version string) *SettingHandler {
+// NewSettingHandler 创建公开设置处理器。version 为自研发布版本号（主显示），
+// baseVersion 为上游 sub2api 基线版本号（副显示）。
+func NewSettingHandler(settingService *service.SettingService, version, baseVersion string) *SettingHandler {
 	return &SettingHandler{
 		settingService: settingService,
 		version:        version,
+		baseVersion:    baseVersion,
 	}
 }
 
@@ -85,6 +88,7 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		BackendModeEnabled:               settings.BackendModeEnabled,
 		PaymentEnabled:                   settings.PaymentEnabled,
 		Version:                          h.version,
+		BaseVersion:                      h.baseVersion,
 		BalanceLowNotifyEnabled:          settings.BalanceLowNotifyEnabled,
 		AccountQuotaNotifyEnabled:        settings.AccountQuotaNotifyEnabled,
 		BalanceLowNotifyThreshold:        settings.BalanceLowNotifyThreshold,

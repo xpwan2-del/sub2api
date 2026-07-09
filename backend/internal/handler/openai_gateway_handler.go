@@ -85,6 +85,11 @@ func usageRecordContext(parent context.Context, base context.Context) context.Co
 	if requestID, _ := parent.Value(ctxkey.RequestID).(string); strings.TrimSpace(requestID) != "" {
 		base = context.WithValue(base, ctxkey.RequestID, strings.TrimSpace(requestID))
 	}
+	// 透传套餐路由中间件已解析的分组额度（含 model_pattern），让异步计费 worker 命中正确的
+	// usage 行；否则 AccumulateUsage 会 fallback 重查 plan，同一 group 配多条模型级 quota 时取错 pattern。
+	if q := parent.Value(ctxkey.BundleResolvedQuota); q != nil {
+		base = context.WithValue(base, ctxkey.BundleResolvedQuota, q)
+	}
 	return base
 }
 
@@ -1769,7 +1774,10 @@ func (h *OpenAIGatewayHandler) submitUsageRecordTask(parent context.Context, tas
 }
 
 func (h *OpenAIGatewayHandler) submitOpenAIUsageRecordTask(parent context.Context, result *service.OpenAIForwardResult, task service.UsageRecordTask) {
-	if result != nil && result.ImageCount > 0 {
+	// 媒体产出（图片或视频）的计费任务必须 mandatory：worker 池饱和时不可丢弃，
+	// 否则该次产出的 count/USD 不被累加 → 次数与额度限额永不增长、形同虚设。
+	// 视频单位成本最高，丢弃代价最大（历史 bug：曾仅对 ImageCount 强制，纯视频被丢）。
+	if result != nil && (result.ImageCount > 0 || result.VideoCount > 0) {
 		h.submitMandatoryUsageRecordTask(parent, task)
 		return
 	}

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/bundlesubscription"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
@@ -50,6 +51,20 @@ func (r *userSubscriptionRepository) Create(ctx context.Context, sub *service.Us
 	}
 	// Keep compatibility with historical behavior: always store notes as a string value.
 	builder.SetNotes(sub.Notes)
+
+	// Bundle-related fields
+	if sub.BundleSubscriptionID != nil {
+		builder.SetBundleSubscriptionID(*sub.BundleSubscriptionID)
+	}
+	builder.SetDailyLimitUsd(sub.DailyLimitUSD)
+	builder.SetWeeklyLimitUsd(sub.WeeklyLimitUSD)
+	builder.SetMonthlyLimitUsd(sub.MonthlyLimitUSD)
+	builder.SetDailyImageLimitCount(sub.DailyImageLimitCount)
+	builder.SetWeeklyImageLimitCount(sub.WeeklyImageLimitCount)
+	builder.SetMonthlyImageLimitCount(sub.MonthlyImageLimitCount)
+	builder.SetDailyVideoLimitCount(sub.DailyVideoLimitCount)
+	builder.SetWeeklyVideoLimitCount(sub.WeeklyVideoLimitCount)
+	builder.SetMonthlyVideoLimitCount(sub.MonthlyVideoLimitCount)
 
 	created, err := builder.Save(ctx)
 	if err == nil {
@@ -283,6 +298,16 @@ func (r *userSubscriptionRepository) ExtendExpiry(ctx context.Context, subscript
 	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
 }
 
+// ExtendExpiryByDays 原子增量延期：expires_at = expires_at + days 天。
+// 用于 bundle ExtendBundle 桥接 userSub，用原生 SQL 原子加避免覆盖写导致并发延期丢失
+// （lost update，中危1）。
+func (r *userSubscriptionRepository) ExtendExpiryByDays(ctx context.Context, subscriptionID int64, days int) error {
+	client := clientFromContext(ctx, r.client)
+	const sql = `UPDATE user_subscriptions SET expires_at = expires_at + $1 * interval '1 day' WHERE id = $2`
+	_, err := client.ExecContext(ctx, sql, days, subscriptionID)
+	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+}
+
 func (r *userSubscriptionRepository) UpdateStatus(ctx context.Context, subscriptionID int64, status string) error {
 	client := clientFromContext(ctx, r.client)
 	_, err := client.UserSubscription.UpdateOneID(subscriptionID).
@@ -457,6 +482,16 @@ func userSubscriptionEntityToService(m *dbent.UserSubscription) *service.UserSub
 	if m.Edges.AssignedByUser != nil {
 		out.AssignedByUser = userEntityToService(m.Edges.AssignedByUser)
 	}
+	out.BundleSubscriptionID = m.BundleSubscriptionID
+	out.DailyLimitUSD = m.DailyLimitUsd
+	out.WeeklyLimitUSD = m.WeeklyLimitUsd
+	out.MonthlyLimitUSD = m.MonthlyLimitUsd
+	out.DailyImageLimitCount = m.DailyImageLimitCount
+	out.WeeklyImageLimitCount = m.WeeklyImageLimitCount
+	out.MonthlyImageLimitCount = m.MonthlyImageLimitCount
+	out.DailyVideoLimitCount = m.DailyVideoLimitCount
+	out.WeeklyVideoLimitCount = m.WeeklyVideoLimitCount
+	out.MonthlyVideoLimitCount = m.MonthlyVideoLimitCount
 	return out
 }
 
@@ -477,4 +512,46 @@ func applyUserSubscriptionEntityToService(dst *service.UserSubscription, src *db
 	dst.ID = src.ID
 	dst.CreatedAt = src.CreatedAt
 	dst.UpdatedAt = src.UpdatedAt
+	dst.BundleSubscriptionID = src.BundleSubscriptionID
+	dst.DailyLimitUSD = src.DailyLimitUsd
+	dst.WeeklyLimitUSD = src.WeeklyLimitUsd
+	dst.MonthlyLimitUSD = src.MonthlyLimitUsd
+	dst.DailyImageLimitCount = src.DailyImageLimitCount
+	dst.WeeklyImageLimitCount = src.WeeklyImageLimitCount
+	dst.MonthlyImageLimitCount = src.MonthlyImageLimitCount
+	dst.DailyVideoLimitCount = src.DailyVideoLimitCount
+	dst.WeeklyVideoLimitCount = src.WeeklyVideoLimitCount
+	dst.MonthlyVideoLimitCount = src.MonthlyVideoLimitCount
+}
+
+// ExpireBridgedSubscriptionsForExpiredBundles expires UserSubscriptions that are
+// bridged from expired bundle subscriptions.
+func (r *userSubscriptionRepository) ExpireBridgedSubscriptionsForExpiredBundles(ctx context.Context) (int64, error) {
+	client := clientFromContext(ctx, r.client)
+
+	// Find bundle subscriptions that are expired
+	expiredBundleIDs, err := client.BundleSubscription.Query().
+		Where(bundlesubscription.Status("expired")).
+		IDs(ctx)
+	if err != nil {
+		return 0, translatePersistenceError(err, service.ErrBundleNotFound, nil)
+	}
+	if len(expiredBundleIDs) == 0 {
+		return 0, nil
+	}
+
+	// 软删除 expired bundle 桥接的 active userSub：Delete 经 SoftDeleteMixin Hook 转为
+	// UPDATE deleted_at=NOW()。必须软删除而非置 status=expired——partial unique index
+	// (user_id,group_id) WHERE deleted_at IS NULL 只认 deleted_at，仅置 expired 会让旧行继续
+	// 占用唯一槽，用户过期后重购含相同 group 的套餐时撞约束 → ErrSubscriptionAlreadyExists。
+	affected, err := client.UserSubscription.Delete().
+		Where(
+			usersubscription.BundleSubscriptionIDIn(expiredBundleIDs...),
+			usersubscription.Status("active"),
+		).
+		Exec(ctx)
+	if err != nil {
+		return 0, translatePersistenceError(err, service.ErrBundleNotFound, nil)
+	}
+	return int64(affected), nil
 }

@@ -15,14 +15,14 @@
         <span v-if="currentVersion" class="font-medium">v{{ currentVersion }}</span>
         <span
           v-else
-          class="h-3 w-12 animate-pulse rounded bg-gray-200 font-medium dark:bg-dark-600"
+          class="w-12 h-3 font-medium bg-gray-200 rounded animate-pulse dark:bg-dark-600"
         ></span>
         <!-- Update indicator -->
-        <span v-if="hasUpdate" class="relative flex h-2 w-2">
+        <span v-if="hasUpdate" class="relative flex w-2 h-2">
           <span
-            class="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"
+            class="absolute inline-flex w-full h-full rounded-full opacity-75 animate-ping bg-amber-400"
           ></span>
-          <span class="relative inline-flex h-2 w-2 rounded-full bg-amber-500"></span>
+          <span class="relative inline-flex w-2 h-2 rounded-full bg-amber-500"></span>
         </span>
       </button>
 
@@ -31,11 +31,11 @@
         <div
           v-if="dropdownOpen"
           ref="dropdownRef"
-          class="absolute left-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-dark-700 dark:bg-dark-800"
+          class="absolute left-0 z-50 w-64 mt-2 overflow-hidden bg-white border border-gray-200 shadow-lg rounded-xl dark:border-dark-700 dark:bg-dark-800"
         >
           <!-- Header with refresh button -->
           <div
-            class="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-dark-700"
+            class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-dark-700"
           >
             <span class="text-sm font-medium text-gray-700 dark:text-dark-300">{{
               t('version.currentVersion')
@@ -58,7 +58,7 @@
           <div class="p-4">
             <!-- Loading state -->
             <div v-if="loading" class="flex items-center justify-center py-6">
-              <svg class="h-6 w-6 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
+              <svg class="w-6 h-6 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
                 <circle
                   class="opacity-25"
                   cx="12"
@@ -89,10 +89,10 @@
                   <!-- Show check mark when up to date -->
                   <span
                     v-if="!hasUpdate"
-                    class="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30"
+                    class="flex items-center justify-center w-5 h-5 bg-green-100 rounded-full dark:bg-green-900/30"
                   >
                     <svg
-                      class="h-3 w-3 text-green-600 dark:text-green-400"
+                      class="w-3 h-3 text-green-600 dark:text-green-400"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -111,15 +111,18 @@
                       : t('version.upToDate')
                   }}
                 </p>
+                <p v-if="baseVersion" class="mt-0.5 text-xs text-gray-400 dark:text-dark-500">
+                  {{ t('version.basedOn', { version: baseVersion }) }}
+                </p>
               </div>
 
               <!-- Priority 1: Update error (must check before hasUpdate) -->
               <div v-if="updateError" class="space-y-2">
                 <div
-                  class="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800/50 dark:bg-red-900/20"
+                  class="flex items-center gap-3 p-3 border border-red-200 rounded-lg bg-red-50 dark:border-red-800/50 dark:bg-red-900/20"
                 >
                   <div
-                    class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50"
+                    class="flex items-center justify-center flex-shrink-0 w-8 h-8 bg-red-100 rounded-full dark:bg-red-900/50"
                   >
                     <Icon
                       name="x"
@@ -128,11 +131,11 @@
                       class="text-red-600 dark:text-red-400"
                     />
                   </div>
-                  <div class="min-w-0 flex-1">
+                  <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-red-700 dark:text-red-300">
                       {{ t('version.updateFailed') }}
                     </p>
-                    <p class="truncate text-xs text-red-600/70 dark:text-red-400/70">
+                    <p class="text-xs truncate text-red-600/70 dark:text-red-400/70">
                       {{ updateError }}
                     </p>
                   </div>
@@ -142,7 +145,7 @@
                 <button
                   @click="handleUpdate"
                   :disabled="updating"
-                  class="flex w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-white transition-colors bg-red-500 rounded-lg hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {{ t('version.retry') }}
                 </button>
@@ -151,13 +154,13 @@
               <!-- Priority 2: Update success - need restart -->
               <div v-else-if="updateSuccess && needRestart" class="space-y-2">
                 <div
-                  class="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800/50 dark:bg-green-900/20"
+                  class="flex items-center gap-3 p-3 border border-green-200 rounded-lg bg-green-50 dark:border-green-800/50 dark:bg-green-900/20"
                 >
                   <div
-                    class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50"
+                    class="flex items-center justify-center flex-shrink-0 w-8 h-8 bg-green-100 rounded-full dark:bg-green-900/50"
                   >
                     <svg
-                      class="h-4 w-4 text-green-600 dark:text-green-400"
+                      class="w-4 h-4 text-green-600 dark:text-green-400"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -166,7 +169,7 @@
                       <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <div class="min-w-0 flex-1">
+                  <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-green-700 dark:text-green-300">
                       {{ t('version.updateComplete') }}
                     </p>
@@ -180,11 +183,11 @@
                 <button
                   @click="handleRestart"
                   :disabled="restarting"
-                  class="flex w-full items-center justify-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <svg
                     v-if="restarting"
-                    class="h-4 w-4 animate-spin"
+                    class="w-4 h-4 animate-spin"
                     fill="none"
                     viewBox="0 0 24 24"
                   >
@@ -204,7 +207,7 @@
                   </svg>
                   <svg
                     v-else
-                    class="h-4 w-4"
+                    class="w-4 h-4"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -233,10 +236,10 @@
                   :href="releaseInfo.html_url"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="group flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 transition-colors hover:bg-amber-100 dark:border-amber-800/50 dark:bg-amber-900/20 dark:hover:bg-amber-900/30"
+                  class="flex items-center gap-3 p-3 transition-colors border rounded-lg group border-amber-200 bg-amber-50 hover:bg-amber-100 dark:border-amber-800/50 dark:bg-amber-900/20 dark:hover:bg-amber-900/30"
                 >
                   <div
-                    class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50"
+                    class="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50"
                   >
                     <Icon
                       name="download"
@@ -245,7 +248,7 @@
                       class="text-amber-600 dark:text-amber-400"
                     />
                   </div>
-                  <div class="min-w-0 flex-1">
+                  <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-amber-700 dark:text-amber-300">
                       {{ t('version.updateAvailable') }}
                     </p>
@@ -265,7 +268,7 @@
                 </a>
                 <!-- Source build hint -->
                 <div
-                  class="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2 dark:border-blue-800/50 dark:bg-blue-900/20"
+                  class="flex items-center gap-2 p-2 border border-blue-200 rounded-lg bg-blue-50 dark:border-blue-800/50 dark:bg-blue-900/20"
                 >
                   <svg
                     class="h-3.5 w-3.5 flex-shrink-0 text-blue-500 dark:text-blue-400"
@@ -290,10 +293,10 @@
               <div v-else-if="hasUpdate && isReleaseBuild" class="space-y-2">
                 <!-- Update info card -->
                 <div
-                  class="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800/50 dark:bg-amber-900/20"
+                  class="flex items-center gap-3 p-3 border rounded-lg border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-900/20"
                 >
                 <div
-                  class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50"
+                  class="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50"
                 >
                   <Icon
                     name="download"
@@ -302,7 +305,7 @@
                     class="text-amber-600 dark:text-amber-400"
                   />
                 </div>
-                  <div class="min-w-0 flex-1">
+                  <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-amber-700 dark:text-amber-300">
                       {{ t('version.updateAvailable') }}
                     </p>
@@ -316,9 +319,9 @@
                 <button
                   @click="handleUpdate"
                   :disabled="updating"
-                  class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-primary-500 hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <svg v-if="updating" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <svg v-if="updating" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle
                       class="opacity-25"
                       cx="12"
@@ -350,15 +353,19 @@
                 </a>
               </div>
 
-              <!-- Priority 5: Up to date - show GitHub link -->
-              <a
-                v-else-if="releaseInfo?.html_url && releaseInfo.html_url !== '#'"
-                :href="releaseInfo.html_url"
+              <!-- Priority 5: 暂时隐藏「查看发布」GitHub 链接
+                   原因：releaseInfo.html_url 当前指向上游 sub2api 的 GitHub release
+                   （update_service 仍查上游），点击会误导用户跳到上游仓库。
+                   待 Phase 2 切到自有发布源后，将下方 v-else-if 恢复为：
+                   releaseInfo?.html_url && releaseInfo.html_url !== '#' -->
+              <!-- <a
+                v-else-if="false"
+                :href="releaseInfo?.html_url"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="flex items-center justify-center gap-2 py-2 text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-dark-200"
               >
-                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path
                     fill-rule="evenodd"
                     clip-rule="evenodd"
@@ -366,7 +373,7 @@
                   />
                 </svg>
                 {{ t('version.viewRelease') }}
-              </a>
+              </a> -->
             </template>
           </div>
         </div>
@@ -403,11 +410,13 @@ const dropdownRef = ref<HTMLElement | null>(null)
 
 // Use store's cached version state
 const loading = computed(() => appStore.versionLoading)
-const currentVersion = computed(() => appStore.currentVersion || props.version || '')
+// 优先展示自研发布号（props.version = siteVersion）；update 检查的 currentVersion 仅作兜底
+const currentVersion = computed(() => props.version || appStore.currentVersion || '')
 const latestVersion = computed(() => appStore.latestVersion)
 const hasUpdate = computed(() => appStore.hasUpdate)
 const releaseInfo = computed(() => appStore.releaseInfo)
 const buildType = computed(() => appStore.buildType)
+const baseVersion = computed(() => appStore.siteBaseVersion || '')
 
 // Update process states (local to this component)
 const updating = ref(false)

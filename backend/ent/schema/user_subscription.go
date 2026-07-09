@@ -79,6 +79,24 @@ func (UserSubscription) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "text"}),
+
+		// ========== Bundle subscription fields ==========
+		field.Int64("bundle_subscription_id").Optional().Nillable().Comment("关联的套餐实例ID"),
+		field.Float("daily_limit_usd").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Default(0).Comment("独立日限额（0=fallback到Group配置）"),
+		field.Float("weekly_limit_usd").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Default(0).Comment("独立周限额"),
+		field.Float("monthly_limit_usd").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Default(0).Comment("独立月限额"),
+		field.Int("daily_image_limit_count").Default(0).Comment("独立日图片次数限额快照（0=不限）"),
+		field.Int("weekly_image_limit_count").Default(0).Comment("独立周图片次数限额快照"),
+		field.Int("monthly_image_limit_count").Default(0).Comment("独立月图片次数限额快照"),
+		field.Int("daily_video_limit_count").Default(0).Comment("独立日视频次数限额快照（0=不限）"),
+		field.Int("weekly_video_limit_count").Default(0).Comment("独立周视频次数限额快照"),
+		field.Int("monthly_video_limit_count").Default(0).Comment("独立月视频次数限额快照"),
 	}
 }
 
@@ -115,5 +133,6 @@ func (UserSubscription) Indexes() []ent.Index {
 		// 见迁移文件 016_soft_delete_partial_unique_indexes.sql
 		index.Fields("user_id", "group_id"),
 		index.Fields("deleted_at"),
+		index.Fields("bundle_subscription_id"),
 	}
 }

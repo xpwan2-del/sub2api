@@ -25,6 +25,9 @@ builds:
       - -X main.Commit={{.Commit}}
       - -X main.Date={{.Date}}
       - -X main.BuildType=release
+      # Build（自研 CalVer）由运行 goreleaser 的 CI 在环境变量 AUTO_BUILD 中算好
+      # （git commit date + short SHA），未提供时留空 → init 置为 "dev"。
+      - -X main.Build={{ default "" .Env.AUTO_BUILD }}
 
 # 跳过 archives
 archives: []

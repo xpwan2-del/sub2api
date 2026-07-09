@@ -226,6 +226,7 @@ func newOpenAIRecordUsageServiceForTest(usageRepo UsageLogRepository, userRepo U
 		nil,
 		nil,
 		nil, // userPlatformQuotaRepo
+		nil, // bundleUsageService
 	)
 	svc.userGroupRateResolver = newUserGroupRateResolver(
 		rateRepo,
@@ -311,6 +312,39 @@ func TestOpenAIGatewayServiceRecordUsage_ZeroUsageStillWritesUsageLog(t *testing
 	require.Zero(t, billingRepo.lastCmd.APIKeyQuotaCost)
 	require.Zero(t, billingRepo.lastCmd.APIKeyRateLimitCost)
 	require.Zero(t, billingRepo.lastCmd.AccountQuotaCost)
+}
+
+// newOpenAIGatewayServiceWithBundleUsageForTest 构造一个注入了 bundleUsageService 的
+// OpenAIGatewayService，用于回归「OpenAI 网关 billingDeps 必须暴露 bundleUsageService」。
+func newOpenAIGatewayServiceWithBundleUsageForTest(t *testing.T, bundleUsageSvc *BundleUsageService) *OpenAIGatewayService {
+	t.Helper()
+	cfg := &config.Config{}
+	cfg.Default.RateMultiplier = 1.1
+	return NewOpenAIGatewayService(
+		nil, nil, nil, nil, nil, nil,
+		nil, cfg,
+		nil, nil,
+		NewBillingService(cfg, nil),
+		nil, &BillingCacheService{},
+		nil, &DeferredService{},
+		nil, nil, nil, nil, nil, nil, nil,
+		bundleUsageSvc,
+	)
+}
+
+// TestOpenAIGatewayService_BillingDeps_InjectsBundleUsageService 锁定 OpenAI 网关 billingDeps
+// 必须注入 bundleUsageService。历史上该字段漏注入（OpenAIGatewayService 连字段都没有），
+// 导致所有走 OpenAI 网关的套餐请求（/v1/videos、/v1/chat/completions 等）只写 usage_log
+// 却不累加 bundle_subscription_usage（套餐各分组用量统计恒为 0），表现为「有记录、没用量」。
+// 守卫 shouldAccumulateBundleUsage 与累加 AccumulateUsage 已分别被各自单测覆盖，这里只锁定注入契约。
+func TestOpenAIGatewayService_BillingDeps_InjectsBundleUsageService(t *testing.T) {
+	bundleUsageSvc := NewBundleUsageService(&fakeUsageRepo{}, &fakeSubRepo{}, &fakePlanRepo{})
+	svc := newOpenAIGatewayServiceWithBundleUsageForTest(t, bundleUsageSvc)
+
+	deps := svc.billingDeps()
+	require.NotNil(t, deps.bundleUsageService, "OpenAI 网关 billingDeps 必须注入 bundleUsageService")
+	require.Same(t, bundleUsageSvc, deps.bundleUsageService, "必须注入构造时传入的同一实例")
+	require.NotNil(t, deps.cfg, "cfg 也应已注入（与 bundleUsageService 同批历史漏填）")
 }
 
 func TestOpenAIGatewayServiceRecordUsage_MissingPricingRecordsZeroCostUsageLog(t *testing.T) {

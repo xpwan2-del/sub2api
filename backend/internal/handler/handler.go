@@ -37,31 +37,35 @@ type AdminHandlers struct {
 	ContentModeration      *admin.ContentModerationHandler
 	Payment                *admin.PaymentHandler
 	Affiliate              *admin.AffiliateHandler
+	Bundle                 *admin.BundleAdminHandler
 	Compliance             *admin.ComplianceHandler
 }
 
 // Handlers contains all HTTP handlers
 type Handlers struct {
-	Auth             *AuthHandler
-	User             *UserHandler
-	APIKey           *APIKeyHandler
-	Usage            *UsageHandler
-	Redeem           *RedeemHandler
-	Subscription     *SubscriptionHandler
-	Announcement     *AnnouncementHandler
-	ChannelMonitor   *ChannelMonitorUserHandler
-	Admin            *AdminHandlers
-	Gateway          *GatewayHandler
-	OpenAIGateway    *OpenAIGatewayHandler
-	Setting          *SettingHandler
-	Totp             *TotpHandler
-	Payment          *PaymentHandler
-	PaymentWebhook   *PaymentWebhookHandler
-	AvailableChannel *AvailableChannelHandler
+	Auth               *AuthHandler
+	User               *UserHandler
+	APIKey             *APIKeyHandler
+	Usage              *UsageHandler
+	Redeem             *RedeemHandler
+	Subscription       *SubscriptionHandler
+	Announcement       *AnnouncementHandler
+	ChannelMonitor     *ChannelMonitorUserHandler
+	Admin              *AdminHandlers
+	Gateway            *GatewayHandler
+	OpenAIGateway      *OpenAIGatewayHandler
+	Setting            *SettingHandler
+	Totp               *TotpHandler
+	Payment            *PaymentHandler
+	PaymentWebhook     *PaymentWebhookHandler
+	AvailableChannel   *AvailableChannelHandler
+	PublicModelCatalog *PublicModelCatalogHandler
+	Bundle             *BundleHandler
 }
 
 // BuildInfo contains build-time information
 type BuildInfo struct {
-	Version   string
+	Version   string // 上游基线版本号
+	Build     string // 自研发布版本号（CalVer，如 2026.06.24-abc12345）
 	BuildType string // "source" for manual builds, "release" for CI builds
 }

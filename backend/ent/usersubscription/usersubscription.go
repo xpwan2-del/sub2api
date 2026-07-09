@@ -49,6 +49,26 @@ const (
 	FieldAssignedAt = "assigned_at"
 	// FieldNotes holds the string denoting the notes field in the database.
 	FieldNotes = "notes"
+	// FieldBundleSubscriptionID holds the string denoting the bundle_subscription_id field in the database.
+	FieldBundleSubscriptionID = "bundle_subscription_id"
+	// FieldDailyLimitUsd holds the string denoting the daily_limit_usd field in the database.
+	FieldDailyLimitUsd = "daily_limit_usd"
+	// FieldWeeklyLimitUsd holds the string denoting the weekly_limit_usd field in the database.
+	FieldWeeklyLimitUsd = "weekly_limit_usd"
+	// FieldMonthlyLimitUsd holds the string denoting the monthly_limit_usd field in the database.
+	FieldMonthlyLimitUsd = "monthly_limit_usd"
+	// FieldDailyImageLimitCount holds the string denoting the daily_image_limit_count field in the database.
+	FieldDailyImageLimitCount = "daily_image_limit_count"
+	// FieldWeeklyImageLimitCount holds the string denoting the weekly_image_limit_count field in the database.
+	FieldWeeklyImageLimitCount = "weekly_image_limit_count"
+	// FieldMonthlyImageLimitCount holds the string denoting the monthly_image_limit_count field in the database.
+	FieldMonthlyImageLimitCount = "monthly_image_limit_count"
+	// FieldDailyVideoLimitCount holds the string denoting the daily_video_limit_count field in the database.
+	FieldDailyVideoLimitCount = "daily_video_limit_count"
+	// FieldWeeklyVideoLimitCount holds the string denoting the weekly_video_limit_count field in the database.
+	FieldWeeklyVideoLimitCount = "weekly_video_limit_count"
+	// FieldMonthlyVideoLimitCount holds the string denoting the monthly_video_limit_count field in the database.
+	FieldMonthlyVideoLimitCount = "monthly_video_limit_count"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// EdgeGroup holds the string denoting the group edge name in mutations.
@@ -109,6 +129,16 @@ var Columns = []string{
 	FieldAssignedBy,
 	FieldAssignedAt,
 	FieldNotes,
+	FieldBundleSubscriptionID,
+	FieldDailyLimitUsd,
+	FieldWeeklyLimitUsd,
+	FieldMonthlyLimitUsd,
+	FieldDailyImageLimitCount,
+	FieldWeeklyImageLimitCount,
+	FieldMonthlyImageLimitCount,
+	FieldDailyVideoLimitCount,
+	FieldWeeklyVideoLimitCount,
+	FieldMonthlyVideoLimitCount,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -147,6 +177,24 @@ var (
 	DefaultMonthlyUsageUsd float64
 	// DefaultAssignedAt holds the default value on creation for the "assigned_at" field.
 	DefaultAssignedAt func() time.Time
+	// DefaultDailyLimitUsd holds the default value on creation for the "daily_limit_usd" field.
+	DefaultDailyLimitUsd float64
+	// DefaultWeeklyLimitUsd holds the default value on creation for the "weekly_limit_usd" field.
+	DefaultWeeklyLimitUsd float64
+	// DefaultMonthlyLimitUsd holds the default value on creation for the "monthly_limit_usd" field.
+	DefaultMonthlyLimitUsd float64
+	// DefaultDailyImageLimitCount holds the default value on creation for the "daily_image_limit_count" field.
+	DefaultDailyImageLimitCount int
+	// DefaultWeeklyImageLimitCount holds the default value on creation for the "weekly_image_limit_count" field.
+	DefaultWeeklyImageLimitCount int
+	// DefaultMonthlyImageLimitCount holds the default value on creation for the "monthly_image_limit_count" field.
+	DefaultMonthlyImageLimitCount int
+	// DefaultDailyVideoLimitCount holds the default value on creation for the "daily_video_limit_count" field.
+	DefaultDailyVideoLimitCount int
+	// DefaultWeeklyVideoLimitCount holds the default value on creation for the "weekly_video_limit_count" field.
+	DefaultWeeklyVideoLimitCount int
+	// DefaultMonthlyVideoLimitCount holds the default value on creation for the "monthly_video_limit_count" field.
+	DefaultMonthlyVideoLimitCount int
 )
 
 // OrderOption defines the ordering options for the UserSubscription queries.
@@ -240,6 +288,56 @@ func ByAssignedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByNotes orders the results by the notes field.
 func ByNotes(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldNotes, opts...).ToFunc()
+}
+
+// ByBundleSubscriptionID orders the results by the bundle_subscription_id field.
+func ByBundleSubscriptionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBundleSubscriptionID, opts...).ToFunc()
+}
+
+// ByDailyLimitUsd orders the results by the daily_limit_usd field.
+func ByDailyLimitUsd(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDailyLimitUsd, opts...).ToFunc()
+}
+
+// ByWeeklyLimitUsd orders the results by the weekly_limit_usd field.
+func ByWeeklyLimitUsd(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeeklyLimitUsd, opts...).ToFunc()
+}
+
+// ByMonthlyLimitUsd orders the results by the monthly_limit_usd field.
+func ByMonthlyLimitUsd(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMonthlyLimitUsd, opts...).ToFunc()
+}
+
+// ByDailyImageLimitCount orders the results by the daily_image_limit_count field.
+func ByDailyImageLimitCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDailyImageLimitCount, opts...).ToFunc()
+}
+
+// ByWeeklyImageLimitCount orders the results by the weekly_image_limit_count field.
+func ByWeeklyImageLimitCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeeklyImageLimitCount, opts...).ToFunc()
+}
+
+// ByMonthlyImageLimitCount orders the results by the monthly_image_limit_count field.
+func ByMonthlyImageLimitCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMonthlyImageLimitCount, opts...).ToFunc()
+}
+
+// ByDailyVideoLimitCount orders the results by the daily_video_limit_count field.
+func ByDailyVideoLimitCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDailyVideoLimitCount, opts...).ToFunc()
+}
+
+// ByWeeklyVideoLimitCount orders the results by the weekly_video_limit_count field.
+func ByWeeklyVideoLimitCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeeklyVideoLimitCount, opts...).ToFunc()
+}
+
+// ByMonthlyVideoLimitCount orders the results by the monthly_video_limit_count field.
+func ByMonthlyVideoLimitCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMonthlyVideoLimitCount, opts...).ToFunc()
 }
 
 // ByUserField orders the results by user field.

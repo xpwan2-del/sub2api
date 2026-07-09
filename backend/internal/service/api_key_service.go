@@ -68,6 +68,8 @@ type APIKeyRepository interface {
 	ClearGroupIDByGroupID(ctx context.Context, groupID int64) (int64, error)
 	// UpdateGroupIDByUserAndGroup 将用户下绑定 oldGroupID 的所有 Key 迁移到 newGroupID
 	UpdateGroupIDByUserAndGroup(ctx context.Context, userID, oldGroupID, newGroupID int64) (int64, error)
+	// RebindBundleKeys 将用户的所有 bundle APIKey 迁移到新套餐订阅（升级/换绑/重购时跟随切换）。
+	RebindBundleKeys(ctx context.Context, userID, newBundleSubID int64) (int, error)
 	CountByGroupID(ctx context.Context, groupID int64) (int64, error)
 	ListKeysByUserID(ctx context.Context, userID int64) ([]string, error)
 	ListKeysByGroupID(ctx context.Context, groupID int64) ([]string, error)
@@ -158,6 +160,8 @@ type CreateAPIKeyRequest struct {
 	IPWhitelist []string `json:"ip_whitelist"` // IP 白名单
 	IPBlacklist []string `json:"ip_blacklist"` // IP 黑名单
 
+	// Bundle subscription ID for universal bundle keys (no group_id).
+	BundleSubscriptionID *int64 `json:"bundle_subscription_id"`
 	// Quota fields
 	Quota         float64 `json:"quota"`           // Quota limit in USD (0 = unlimited)
 	ExpiresInDays *int    `json:"expires_in_days"` // Days until expiry (nil = never expires)
@@ -175,6 +179,11 @@ type UpdateAPIKeyRequest struct {
 	Status      *string  `json:"status"`
 	IPWhitelist []string `json:"ip_whitelist"` // IP 白名单（空数组清空）
 	IPBlacklist []string `json:"ip_blacklist"` // IP 黑名单（空数组清空）
+
+	// Key mode: "universal" (auto-route), "dedicated" (bundle+group), "normal" (standard). Empty = no change.
+	KeyMode string `json:"key_mode"`
+	// Bundle subscription ID for universal/dedicated modes
+	BundleSubscriptionID *int64 `json:"bundle_subscription_id"`
 
 	// Quota fields
 	Quota           *float64   `json:"quota"`       // Quota limit in USD (nil = no change, 0 = unlimited)
@@ -238,6 +247,13 @@ func NewAPIKeyService(
 // Called after construction (e.g. in wire) to avoid circular dependencies.
 func (s *APIKeyService) SetRateLimitCacheInvalidator(inv RateLimitCacheInvalidator) {
 	s.rateLimitCacheInvalid = inv
+}
+
+// RebindUserBundleKeys 把用户的所有 bundle APIKey 迁移到新套餐订阅（实现 BundleKeyRebinder）。
+// 用于套餐升级/换绑/重购后让旧 key 跟随到新 active bundle，避免 BUNDLE_EXPIRED。
+func (s *APIKeyService) RebindUserBundleKeys(ctx context.Context, userID, newBundleSubID int64) error {
+	_, err := s.apiKeyRepo.RebindBundleKeys(ctx, userID, newBundleSubID)
+	return err
 }
 
 func (s *APIKeyService) compileAPIKeyIPRules(apiKey *APIKey) {
@@ -400,18 +416,19 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 
 	// 创建API Key记录
 	apiKey := &APIKey{
-		UserID:      userID,
-		Key:         key,
-		Name:        html.EscapeString(req.Name),
-		GroupID:     req.GroupID,
-		Status:      StatusActive,
-		IPWhitelist: req.IPWhitelist,
-		IPBlacklist: req.IPBlacklist,
-		Quota:       req.Quota,
-		QuotaUsed:   0,
-		RateLimit5h: req.RateLimit5h,
-		RateLimit1d: req.RateLimit1d,
-		RateLimit7d: req.RateLimit7d,
+		UserID:               userID,
+		Key:                  key,
+		Name:                 html.EscapeString(req.Name),
+		GroupID:              req.GroupID,
+		BundleSubscriptionID: req.BundleSubscriptionID,
+		Status:               StatusActive,
+		IPWhitelist:          req.IPWhitelist,
+		IPBlacklist:          req.IPBlacklist,
+		Quota:                req.Quota,
+		QuotaUsed:            0,
+		RateLimit5h:          req.RateLimit5h,
+		RateLimit1d:          req.RateLimit1d,
+		RateLimit7d:          req.RateLimit7d,
 	}
 
 	// Set expiration time if specified
@@ -561,6 +578,20 @@ func (s *APIKeyService) Update(ctx context.Context, id int64, userID int64, req 
 		}
 
 		apiKey.GroupID = req.GroupID
+	}
+
+	// Handle key mode switch based on explicit KeyMode field
+	switch req.KeyMode {
+	case "universal":
+		// Universal mode: set bundle, clear group
+		apiKey.BundleSubscriptionID = req.BundleSubscriptionID
+		apiKey.GroupID = nil
+	case "dedicated":
+		// Dedicated mode: set bundle, keep/set group (handled by GroupID above)
+		apiKey.BundleSubscriptionID = req.BundleSubscriptionID
+	case "normal":
+		// Standard mode: clear bundle, keep/set group (handled by GroupID above)
+		apiKey.BundleSubscriptionID = nil
 	}
 
 	if req.Status != nil {

@@ -28,6 +28,7 @@ export const useAppStore = defineStore('app', () => {
   const siteName = ref<string>('Sub2API')
   const siteLogo = ref<string>('')
   const siteVersion = ref<string>('')
+  const siteBaseVersion = ref<string>('')
   const contactInfo = ref<string>('')
   const apiBaseUrl = ref<string>('')
   const docUrl = ref<string>('')
@@ -295,6 +296,7 @@ export const useAppStore = defineStore('app', () => {
     siteName.value = config.site_name || 'Sub2API'
     siteLogo.value = config.site_logo || ''
     siteVersion.value = config.version || ''
+    siteBaseVersion.value = config.base_version || ''
     contactInfo.value = config.contact_info || ''
     apiBaseUrl.value = config.api_base_url || ''
     docUrl.value = config.doc_url || ''
@@ -351,6 +353,7 @@ export const useAppStore = defineStore('app', () => {
         google_oauth_enabled: false,
         backend_mode_enabled: false,
         version: siteVersion.value,
+        base_version: siteBaseVersion.value,
         balance_low_notify_enabled: false,
         account_quota_notify_enabled: false,
         balance_low_notify_threshold: 0,
@@ -417,6 +420,7 @@ export const useAppStore = defineStore('app', () => {
     siteName,
     siteLogo,
     siteVersion,
+    siteBaseVersion,
     contactInfo,
     apiBaseUrl,
     docUrl,

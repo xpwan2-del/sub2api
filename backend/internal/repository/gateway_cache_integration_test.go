@@ -104,6 +104,33 @@ func (s *GatewayCacheSuite) TestGetSessionAccountID_CorruptedValue() {
 	require.False(s.T(), errors.Is(err, redis.Nil), "expected parsing error, not redis.Nil")
 }
 
+func (s *GatewayCacheSuite) TestSetAndGetVideoTaskBinding() {
+	taskID := "task-abc"
+	groupID := int64(7)
+	binding := service.VideoTaskBinding{AccountID: 42, Model: "sora-2"}
+	ttl := 1 * time.Minute
+
+	require.NoError(s.T(), s.cache.SetVideoTaskBinding(s.ctx, groupID, taskID, binding, ttl))
+
+	got, err := s.cache.GetVideoTaskBinding(s.ctx, groupID, taskID)
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), binding, got)
+}
+
+func (s *GatewayCacheSuite) TestGetVideoTaskBinding_Missing() {
+	_, err := s.cache.GetVideoTaskBinding(s.ctx, 7, "nonexistent")
+	require.True(s.T(), errors.Is(err, redis.Nil), "expected redis.Nil for missing binding")
+}
+
+func (s *GatewayCacheSuite) TestDeleteVideoTaskBinding() {
+	taskID := "task-del"
+	groupID := int64(7)
+	require.NoError(s.T(), s.cache.SetVideoTaskBinding(s.ctx, groupID, taskID, service.VideoTaskBinding{AccountID: 1, Model: "sora-2"}, time.Minute))
+	require.NoError(s.T(), s.cache.DeleteVideoTaskBinding(s.ctx, groupID, taskID))
+	_, err := s.cache.GetVideoTaskBinding(s.ctx, groupID, taskID)
+	require.True(s.T(), errors.Is(err, redis.Nil))
+}
+
 func TestGatewayCacheSuite(t *testing.T) {
 	suite.Run(t, new(GatewayCacheSuite))
 }

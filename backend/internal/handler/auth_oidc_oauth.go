@@ -1141,7 +1141,7 @@ func (k oidcJWK) publicKey() (any, error) {
 		if err != nil {
 			return nil, fmt.Errorf("decode ec y: %w", err)
 		}
-		if !curve.IsOnCurve(x, y) {
+		if !curve.IsOnCurve(x, y) { //nolint:staticcheck // 保持 ecdsa.PublicKey 与下游 JWT/OIDC 验证兼容；迁移 crypto/ecdh 需改返回类型与调用方，风险高于收益
 			return nil, errors.New("ec point is not on curve")
 		}
 		return &ecdsa.PublicKey{Curve: curve, X: x, Y: y}, nil

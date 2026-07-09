@@ -85,30 +85,38 @@ type CreateOrderRequest struct {
 	OrderType       string
 	PlanID          int64
 	Locale          string
+	UseBalance      bool // 使用账户余额抵扣（用于套餐购买）
+	// 升级订单（OrderType=bundle_upgrade）专属字段：
+	// SourceBundleSubscriptionID 指向被升级的旧订阅；ProrateCredit 为锁定的旧套餐剩余价值。
+	// 由 PreviewUpgrade 计算、升级结账 handler 透传，履约时 UpgradeBundle 据此抵扣差价。
+	SourceBundleSubscriptionID int64
+	ProrateCredit              float64
 }
 
 type CreateOrderResponse struct {
-	OrderID      int64                           `json:"order_id"`
-	Amount       float64                         `json:"amount"`
-	PayAmount    float64                         `json:"pay_amount"`
-	FeeRate      float64                         `json:"fee_rate"`
-	Status       string                          `json:"status"`
-	ResultType   payment.CreatePaymentResultType `json:"result_type,omitempty"`
-	PaymentType  string                          `json:"payment_type"`
-	OutTradeNo   string                          `json:"out_trade_no,omitempty"`
-	PayURL       string                          `json:"pay_url,omitempty"`
-	QRCode       string                          `json:"qr_code,omitempty"`
-	ClientSecret string                          `json:"client_secret,omitempty"`
-	IntentID     string                          `json:"intent_id,omitempty"`
-	Currency     string                          `json:"currency,omitempty"`
-	CountryCode  string                          `json:"country_code,omitempty"`
-	PaymentEnv   string                          `json:"payment_env,omitempty"`
-	OAuth        *payment.WechatOAuthInfo        `json:"oauth,omitempty"`
-	JSAPI        *payment.WechatJSAPIPayload     `json:"jsapi,omitempty"`
-	JSAPIPayload *payment.WechatJSAPIPayload     `json:"jsapi_payload,omitempty"`
-	ExpiresAt    time.Time                       `json:"expires_at"`
-	PaymentMode  string                          `json:"payment_mode,omitempty"`
-	ResumeToken  string                          `json:"resume_token,omitempty"`
+	OrderID             int64                           `json:"order_id"`
+	Amount              float64                         `json:"amount"`
+	PayAmount           float64                         `json:"pay_amount"`
+	FeeRate             float64                         `json:"fee_rate"`
+	Status              string                          `json:"status"`
+	ResultType          payment.CreatePaymentResultType `json:"result_type,omitempty"`
+	PaymentType         string                          `json:"payment_type"`
+	OutTradeNo          string                          `json:"out_trade_no,omitempty"`
+	PayURL              string                          `json:"pay_url,omitempty"`
+	QRCode              string                          `json:"qr_code,omitempty"`
+	ClientSecret        string                          `json:"client_secret,omitempty"`
+	IntentID            string                          `json:"intent_id,omitempty"`
+	Currency            string                          `json:"currency,omitempty"`
+	CountryCode         string                          `json:"country_code,omitempty"`
+	PaymentEnv          string                          `json:"payment_env,omitempty"`
+	OAuth               *payment.WechatOAuthInfo        `json:"oauth,omitempty"`
+	JSAPI               *payment.WechatJSAPIPayload     `json:"jsapi,omitempty"`
+	JSAPIPayload        *payment.WechatJSAPIPayload     `json:"jsapi_payload,omitempty"`
+	ExpiresAt           time.Time                       `json:"expires_at"`
+	PaymentMode         string                          `json:"payment_mode,omitempty"`
+	ResumeToken         string                          `json:"resume_token,omitempty"`
+	DirectSuccess       bool                            `json:"direct_success,omitempty"`        // 纯余额支付立即成功
+	BalanceDeductAmount float64                         `json:"balance_deduct_amount,omitempty"` // 余额抵扣金额
 }
 
 type OrderListParams struct {
@@ -162,15 +170,17 @@ type DailyStats struct {
 }
 
 type PaymentMethodStat struct {
-	Type   string  `json:"type"`
-	Amount float64 `json:"amount"`
-	Count  int     `json:"count"`
+	Type          string  `json:"type"`
+	Amount        float64 `json:"amount"`
+	BalanceAmount float64 `json:"balance_amount"`
+	Count         int     `json:"count"`
 }
 
 type TopUserStat struct {
-	UserID int64   `json:"user_id"`
-	Email  string  `json:"email"`
-	Amount float64 `json:"amount"`
+	UserID        int64   `json:"user_id"`
+	Email         string  `json:"email"`
+	Amount        float64 `json:"amount"`
+	BalanceAmount float64 `json:"balance_amount"`
 }
 
 // --- Service ---
@@ -183,6 +193,7 @@ type PaymentService struct {
 	loadBalancer             payment.LoadBalancer
 	redeemService            *RedeemService
 	subscriptionSvc          *SubscriptionService
+	bundleSubscriptionSvc    *BundleSubscriptionService
 	configService            *PaymentConfigService
 	userRepo                 UserRepository
 	groupRepo                GroupRepository
@@ -191,8 +202,8 @@ type PaymentService struct {
 	notificationEmailService *NotificationEmailService
 }
 
-func NewPaymentService(entClient *dbent.Client, registry *payment.Registry, loadBalancer payment.LoadBalancer, redeemService *RedeemService, subscriptionSvc *SubscriptionService, configService *PaymentConfigService, userRepo UserRepository, groupRepo GroupRepository, affiliateService *AffiliateService) *PaymentService {
-	svc := &PaymentService{entClient: entClient, registry: registry, loadBalancer: newVisibleMethodLoadBalancer(loadBalancer, configService), redeemService: redeemService, subscriptionSvc: subscriptionSvc, configService: configService, userRepo: userRepo, groupRepo: groupRepo, affiliateService: affiliateService}
+func NewPaymentService(entClient *dbent.Client, registry *payment.Registry, loadBalancer payment.LoadBalancer, redeemService *RedeemService, subscriptionSvc *SubscriptionService, bundleSubscriptionSvc *BundleSubscriptionService, configService *PaymentConfigService, userRepo UserRepository, groupRepo GroupRepository, affiliateService *AffiliateService) *PaymentService {
+	svc := &PaymentService{entClient: entClient, registry: registry, loadBalancer: newVisibleMethodLoadBalancer(loadBalancer, configService), redeemService: redeemService, subscriptionSvc: subscriptionSvc, bundleSubscriptionSvc: bundleSubscriptionSvc, configService: configService, userRepo: userRepo, groupRepo: groupRepo, affiliateService: affiliateService}
 	svc.resumeService = psNewPaymentResumeService(configService)
 	return svc
 }
