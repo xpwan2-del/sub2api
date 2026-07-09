@@ -116,7 +116,7 @@
 
           <div v-else :class="planGridClass">
             <div
-              v-for="plan in sortedPlans"
+              v-for="plan in plans"
               :key="plan.id"
               class="group relative flex flex-col overflow-hidden rounded-2xl border transition-all hover:shadow-xl hover:-translate-y-0.5 bg-white dark:bg-dark-800"
               :class="tierBorderClass(plan.tier)"
@@ -377,11 +377,6 @@ const activePlan = computed<BundlePlan | null>(() => {
   if (!activeBundle.value) return null
   return plans.value.find(p => p.id === activeBundle.value!.plan_id) ?? null
 })
-
-// 按 sort_order 排序后的计划列表
-const sortedPlans = computed(() =>
-  [...plans.value].sort((a, b) => a.sort_order - b.sort_order)
-)
 
 // 根据计划数量动态调整网格列数
 const planGridClass = computed(() => {

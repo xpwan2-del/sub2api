@@ -246,7 +246,10 @@ func (r *bundlePlanRepository) ListForSale(ctx context.Context) ([]service.Bundl
 			bundleplan.StatusEQ("active"),
 			bundleplan.ForSaleEQ(true),
 		).
-		Order(dbent.Asc(bundleplan.FieldSortOrder)).
+		Order(
+			dbent.Asc(bundleplan.FieldSortOrder),
+			dbent.Asc(bundleplan.FieldID),
+		).
 		All(ctx)
 	if err != nil {
 		return nil, err
