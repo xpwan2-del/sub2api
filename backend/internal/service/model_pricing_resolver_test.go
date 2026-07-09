@@ -162,6 +162,35 @@ func TestGetRequestTierPrice_NilPerRequestPrice(t *testing.T) {
 }
 
 // ===========================================================================
+// 10. GetRequestTierPrice case-insensitive matching (bug fix)
+// ===========================================================================
+
+func TestGetRequestTierPriceCaseInsensitive(t *testing.T) {
+	price := func(v float64) *float64 { return &v }
+	resolved := &ResolvedPricing{
+		RequestTiers: []PricingInterval{
+			{TierLabel: "1K", PerRequestPrice: price(0.04)},
+			{TierLabel: "2K", PerRequestPrice: price(0.08)},
+		},
+	}
+	r := &ModelPricingResolver{}
+	cases := []struct {
+		label string
+		want  float64
+	}{
+		{"1K", 0.04},  // 完全匹配
+		{"1k", 0.04},  // 小写请求应命中（修复前返回 0）
+		{"2k", 0.08},
+		{"4K", 0},     // 无此档
+	}
+	for _, c := range cases {
+		if got := r.GetRequestTierPrice(resolved, c.label); got != c.want {
+			t.Errorf("GetRequestTierPrice(%q) = %v, want %v", c.label, got, c.want)
+		}
+	}
+}
+
+// ===========================================================================
 // Channel override tests — exercises applyChannelOverrides via Resolve
 // ===========================================================================
 
