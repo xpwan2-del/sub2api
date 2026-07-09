@@ -7135,6 +7135,7 @@ export default {
     sourcePurchase: '购买',
     sourceRedeem: '兑换',
     sourceAdmin: '管理员分配',
+    sourceUpgrade: '升级',
     moreFeatures: '项更多特性'
   },
 
@@ -7884,6 +7885,7 @@ export default {
       sourcePurchase: '购买',
       sourceRedeem: '兑换',
       sourceAdminAssign: '管理员分配',
+      sourceUpgrade: '升级',
       revoke: '撤销',
       revokeConfirm: '确定要撤销该用户的套餐吗？',
       revokeSubscription: '撤销订阅',

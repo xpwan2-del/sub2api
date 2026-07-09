@@ -58,7 +58,7 @@ export interface BundleSubscription {
   expires_at: string
   concurrency_limit: number
   rpm_limit: number
-  source: 'purchase' | 'redeem' | 'admin_assign'
+  source: 'purchase' | 'redeem' | 'admin_assign' | 'upgrade'
   /** 管理端列表 enrich 的用户邮箱 */
   user_email?: string
 }

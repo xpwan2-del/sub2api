@@ -6979,6 +6979,7 @@ export default {
     sourcePurchase: 'Purchase',
     sourceRedeem: 'Redeem',
     sourceAdmin: 'Admin Assigned',
+    sourceUpgrade: 'Upgrade',
     moreFeatures: 'more features'
   },
 
@@ -7702,6 +7703,7 @@ export default {
       sourcePurchase: 'Purchase',
       sourceRedeem: 'Redeem',
       sourceAdminAssign: 'Admin Assigned',
+      sourceUpgrade: 'Upgrade',
       revoke: 'Revoke',
       revokeConfirm: 'Are you sure you want to revoke this subscription?',
       revokeSubscription: 'Revoke Subscription',

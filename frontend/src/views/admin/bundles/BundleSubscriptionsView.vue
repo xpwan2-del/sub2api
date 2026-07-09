@@ -484,6 +484,7 @@ function sourceBadgeClass(source: string): string {
     case 'purchase': return `${base} bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300`
     case 'redeem': return `${base} bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300`
     case 'admin_assign': return `${base} bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300`
+    case 'upgrade': return `${base} bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300`
     default: return `${base} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300`
   }
 }
@@ -493,6 +494,7 @@ function sourceLabel(source: string): string {
     case 'purchase': return t('bundles.admin.sourcePurchase')
     case 'redeem': return t('bundles.admin.sourceRedeem')
     case 'admin_assign': return t('bundles.admin.sourceAdminAssign')
+    case 'upgrade': return t('bundles.admin.sourceUpgrade')
     default: return source
   }
 }
