@@ -1,4 +1,10 @@
 import type { BillingMode, PricingInterval } from '@/api/admin/channels'
+import {
+  BILLING_MODE_IMAGE,
+  BILLING_MODE_VIDEO,
+  IMAGE_RESOLUTION_OPTIONS,
+  VIDEO_RESOLUTION_OPTIONS,
+} from '@/constants/channel'
 
 export interface IntervalFormEntry {
   min_tokens: number
@@ -115,6 +121,24 @@ export function findModelConflict(models: string[]): [string, string] | null {
 
 // ── 区间校验 ──────────────────────────────────────────────
 
+/** 返回指定模式可用的分辨率档位选项（image/video）；其他模式返回空数组。 */
+export function resolutionOptionsForMode(mode: BillingMode): { value: string; label: string }[] {
+  switch (mode) {
+    case BILLING_MODE_IMAGE:
+      return [...IMAGE_RESOLUTION_OPTIONS]
+    case BILLING_MODE_VIDEO:
+      return [...VIDEO_RESOLUTION_OPTIONS]
+    default:
+      return []
+  }
+}
+
+/** 按 mode 的预设档位顺序，返回第 count+1 个预填 label；超出范围返回空串。 */
+export function nextDefaultTierLabel(mode: BillingMode, count: number): string {
+  const opts = resolutionOptionsForMode(mode)
+  return count >= 0 && count < opts.length ? opts[count].value : ''
+}
+
 /** 校验区间列表的合法性，返回错误消息；通过则返回 null
  *
  * mode 决定区间语义：
@@ -136,7 +160,24 @@ export function validateIntervals(
     if (err) return err
   }
 
-  // per_request / image 模式按 tier_label 匹配，不做 token 区间重叠校验
+  // image / video 模式：tier_label 必须是合法枚举值，且不可重复
+  if (mode === 'image' || mode === 'video') {
+    const allowed = resolutionOptionsForMode(mode).map((o) => o.value)
+    const seen = new Set<string>()
+    for (let i = 0; i < sorted.length; i++) {
+      const label = sorted[i].tier_label
+      if (!allowed.includes(label)) {
+        return `层级 #${i + 1}: 分辨率「${label || '空'}」不在可选范围（${allowed.join('/')}）`
+      }
+      if (seen.has(label)) {
+        return `层级 #${i + 1}: 分辨率「${label}」重复`
+      }
+      seen.add(label)
+    }
+    return null
+  }
+
+  // per_request 模式按 tier_label 自由文本匹配，不做 token 区间重叠校验
   if (mode !== 'token') return null
   return checkIntervalOverlap(sorted)
 }

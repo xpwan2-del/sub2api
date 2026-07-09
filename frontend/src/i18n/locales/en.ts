@@ -2579,7 +2579,8 @@ export default {
       billingMode: {
         token: 'Token',
         perRequest: 'Per Request',
-        image: 'Image (Per Request)'
+        image: 'Image (Per Request)',
+        video: 'Video (per request)'
       },
       form: {
         name: 'Name',
@@ -2607,6 +2608,7 @@ export default {
         addInterval: 'Add Interval',
         requestTiers: 'Request Tiers',
         imageTiers: 'Image Tiers (Per Request)',
+        videoTiers: 'Video billing tiers (per request)',
         addTier: 'Add Tier',
         noTiersYet: 'No tiers yet. Click add to configure per-request pricing.',
         noPricingRules: 'No pricing rules yet. Click "Add" to create one.',
@@ -2614,6 +2616,7 @@ export default {
         perRequestPriceRequired: 'Per-request price or billing tiers required for per-request/image billing mode',
         tierLabel: 'Tier',
         resolution: 'Resolution',
+        resolutionNotMatched: 'This tier cannot be matched, please reselect',
         modelMapping: 'Model Mapping',
         modelMappingHint: 'Map request model names to actual model names. Runs before account-level mapping.',
         noMappingRules: 'No mapping rules. Click "Add" to create one.',
