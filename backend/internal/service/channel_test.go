@@ -756,3 +756,23 @@ func TestSupportedModels_ExactMappingTargetMissingFromPricing(t *testing.T) {
 	require.Equal(t, "some-priced-model", got[1].Name)
 	require.NotNil(t, got[1].Pricing)
 }
+
+// --- BillingModeVideo 新增测试 ---
+
+func TestBillingModeVideoIsValid(t *testing.T) {
+	if !BillingModeVideo.IsValid() {
+		t.Fatal("BillingModeVideo should be a valid billing mode")
+	}
+}
+
+func TestValidateIntervalsVideoSkipsOverlap(t *testing.T) {
+	price := func(v float64) *float64 { return &v }
+	// 两个区间 token 范围重叠，但 video 模式按 tier_label 分层，应跳过重叠校验
+	intervals := []PricingInterval{
+		{TierLabel: "480P", MinTokens: 0, MaxTokens: nil, PerRequestPrice: price(0.1)},
+		{TierLabel: "720P", MinTokens: 0, MaxTokens: nil, PerRequestPrice: price(0.2)},
+	}
+	if err := ValidateIntervals(intervals, BillingModeVideo); err != nil {
+		t.Fatalf("video mode should skip token-overlap check, got err: %v", err)
+	}
+}
