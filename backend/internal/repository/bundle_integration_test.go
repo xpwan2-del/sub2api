@@ -929,13 +929,12 @@ func (s *BundleExpiryIntegrationSuite) TestSyncExpiredBridgedUserSubscriptions_E
 	s.Require().NoError(err)
 	s.Require().Equal(int64(2), affected, "both bridged UserSubscriptions should be expired")
 
-	// Verify bridged UserSubscriptions are now expired
+	// Verify bridged UserSubscriptions are now soft-deleted: ExpireBridgedSubscriptionsForExpiredBundles
+	// 软删除过期 bundle 的桥接 userSub 以释放 (user_id,group_id) partial unique index 槽位
+	// （此前仅置 expired 会让旧行继续占槽，用户重购同 group 套餐时撞约束 → 409）。
 	subs, err = s.userSubRepo.ListByUserID(s.ctx, user.ID)
 	s.Require().NoError(err)
-	for _, us := range subs {
-		s.Require().Equal(service.SubscriptionStatusExpired, us.Status,
-			"bridged UserSubscription for group %d should be expired", us.GroupID)
-	}
+	s.Require().Empty(subs, "桥接 userSub 应被软删除（ListByUserID 默认过滤 deleted_at IS NULL）")
 }
 
 // TestActivateBundle_AllowedAfterPreviousBundleExpired
@@ -960,18 +959,10 @@ func (s *BundleExpiryIntegrationSuite) TestActivateBundle_AllowedAfterPreviousBu
 	time.Sleep(100 * time.Millisecond)
 	_, err = s.usageRepo.BatchUpdateExpiredStatus(s.ctx)
 	s.Require().NoError(err)
-	// Expire bridged UserSubscriptions too (the partial unique index on user_id+group_id
-	// prevents creating new subscriptions for the same groups).
+	// ExpireBridgedSubscriptionsForExpiredBundles 软删除过期 bundle 的桥接 userSub，释放
+	// (user_id,group_id) partial unique index 槽位（此前需测试手动软删除 workaround，现已内置）。
 	_, err = s.userSubRepo.ExpireBridgedSubscriptionsForExpiredBundles(s.ctx)
 	s.Require().NoError(err)
-	// Soft-delete the bridged UserSubscriptions to clear the partial unique index.
-	oldSubs, listErr := s.userSubRepo.ListByUserID(s.ctx, user.ID)
-	s.Require().NoError(listErr)
-	for _, sub := range oldSubs {
-		if sub.BundleSubscriptionID != nil && *sub.BundleSubscriptionID == bundle1.ID {
-			s.Require().NoError(s.userSubRepo.Delete(s.ctx, sub.ID))
-		}
-	}
 
 	// Renew: activate second bundle using admin_assign to bypass conflict check
 	bundle2, err := s.subSvc.ActivateBundle(s.ctx, &service.ActivateBundleRequest{

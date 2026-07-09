@@ -235,8 +235,12 @@ func (s *BundleSubscriptionService) RevokeBundle(ctx context.Context, bundleSubI
 		if err := s.bundleSubRepo.UpdateStatus(txCtx, bundleSubID, BundleStatusRevoked); err != nil {
 			return fmt.Errorf("revoke bundle subscription: %w", err)
 		}
+		// 旧桥接 userSub 软删除（设 deleted_at）而非仅置 status=expired：释放 (user_id,group_id)
+		// 唯一槽，否则 admin 换绑/重绑含相同 group 的套餐时，新桥接 userSub 会撞 partial unique
+		// index (user_id,group_id) WHERE deleted_at IS NULL → ErrSubscriptionAlreadyExists(409)。
+		// Delete 经 SoftDeleteMixin Hook 转为 UPDATE deleted_at=NOW()，正确释放槽位。
 		return s.syncBridgedUserSubscriptions(txCtx, bundleSub.UserID, bundleSubID, func(sub *UserSubscription) error {
-			return s.userSubRepo.UpdateStatus(txCtx, sub.ID, domain.SubscriptionStatusExpired)
+			return s.userSubRepo.Delete(txCtx, sub.ID)
 		})
 	}); err != nil {
 		return err

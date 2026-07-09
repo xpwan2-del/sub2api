@@ -540,14 +540,16 @@ func (r *userSubscriptionRepository) ExpireBridgedSubscriptionsForExpiredBundles
 		return 0, nil
 	}
 
-	// Expire UserSubscriptions bridged from these expired bundles
-	affected, err := client.UserSubscription.Update().
+	// 软删除 expired bundle 桥接的 active userSub：Delete 经 SoftDeleteMixin Hook 转为
+	// UPDATE deleted_at=NOW()。必须软删除而非置 status=expired——partial unique index
+	// (user_id,group_id) WHERE deleted_at IS NULL 只认 deleted_at，仅置 expired 会让旧行继续
+	// 占用唯一槽，用户过期后重购含相同 group 的套餐时撞约束 → ErrSubscriptionAlreadyExists。
+	affected, err := client.UserSubscription.Delete().
 		Where(
 			usersubscription.BundleSubscriptionIDIn(expiredBundleIDs...),
 			usersubscription.Status("active"),
 		).
-		SetStatus("expired").
-		Save(ctx)
+		Exec(ctx)
 	if err != nil {
 		return 0, translatePersistenceError(err, service.ErrBundleNotFound, nil)
 	}

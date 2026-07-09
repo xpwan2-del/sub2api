@@ -84,13 +84,13 @@ func (s *BundleSubscriptionService) PreviewUpgrade(ctx context.Context, userID, 
 	}, nil
 }
 
-// UpgradeBundle 原子切换：旧订阅 → upgraded + 桥接 userSub 失效；新订阅 active + 桥接 userSub 激活。
+// UpgradeBundle 原子切换：旧订阅 → upgraded + 桥接 userSub 软删除；新订阅 active + 桥接 userSub 激活。
 // 全流程在单个 withTx 内完成，任一步失败整体回滚，杜绝「旧已 upgraded 但新未激活」的悬空状态。
 // 这是支付成功履约时被调用的核心切换方法（被 doBundleUpgrade 调用）。
 //
 // 事务 5 步：
 //  1. 校验旧订阅：归属（IDOR 防护：不泄露存在性）+ active（防并发升级 / 支付期间过期）
-//  2. 旧订阅 → upgraded，桥接 userSub → expired
+//  2. 旧订阅 → upgraded，桥接 userSub → 软删除（设 deleted_at 释放 (user_id,group_id) 唯一槽）
 //  3. 加载目标 plan，校验 ForSale + Active
 //  4. 创建新订阅：source=upgrade, upgraded_from_id=旧ID, 完整有效期从当下起算
 //  5. 每个 plan.GroupQuota 建 usage tracker + 桥接 userSub(active) —— 字段集与 ActivateBundle 完全一致
@@ -118,14 +118,19 @@ func (s *BundleSubscriptionService) UpgradeBundle(ctx context.Context, req *Upgr
 			return ErrBundleExpired
 		}
 
-		// ② 旧订阅 → upgraded，桥接 userSub → expired
+		// ② 旧订阅 → upgraded，桥接 userSub → 软删除（设 deleted_at，释放 (user_id,group_id) 唯一槽）
 		if err := s.bundleSubRepo.UpdateStatus(txCtx, old.ID, BundleStatusUpgraded); err != nil {
 			return fmt.Errorf("mark old subscription upgraded: %w", err)
 		}
+		// 旧桥接 userSub 必须「软删除」而非仅置 status=expired：user_subscriptions 上的 partial
+		// unique index (user_id,group_id) WHERE deleted_at IS NULL 只认 deleted_at。若只改 status，
+		// 旧行 deleted_at 仍为 NULL 继续占用唯一槽，⑤ 步为含相同 group 的新套餐建桥接 userSub 时
+		// 必撞唯一约束 → ErrSubscriptionAlreadyExists(409)。Delete 经 SoftDeleteMixin Hook 转为
+		// UPDATE deleted_at=NOW()，正确释放槽位；数据保留，可经 SkipSoftDelete 审计回查。
 		if err := s.syncBridgedUserSubscriptions(txCtx, old.UserID, old.ID, func(sub *UserSubscription) error {
-			return s.userSubRepo.UpdateStatus(txCtx, sub.ID, domain.SubscriptionStatusExpired)
+			return s.userSubRepo.Delete(txCtx, sub.ID)
 		}); err != nil {
-			return fmt.Errorf("expire bridged user subscriptions: %w", err)
+			return fmt.Errorf("soft-delete bridged user subscriptions: %w", err)
 		}
 
 		// ③ 加载目标 plan，校验 ForSale + Active

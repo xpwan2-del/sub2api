@@ -710,3 +710,80 @@ func TestBundleUpgradeE2E_IDOR_OwnerMismatch(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, bAllSubs, "攻击者 B 不应拥有任何套餐订阅")
 }
+
+// =============================================================================
+// 场景 7：admin 换绑共享 group 套餐（RevokeBundle 软删除回归）
+// =============================================================================
+
+// TestBundleUpgradeE2E_AdminReassign_SharedGroup_NoConflict 验证 admin 换绑路径不撞唯一约束：
+//
+//	用户已有 bundle A（含 group g1）→ admin 换绑到 bundle B（共享同一 group g1）。
+//	ActivateBundle(admin-assign) 先 RevokeBundle(A) 再激活 B。修复前 RevokeBundle 把 A 的桥接
+//	userSub 仅置 status=expired（占 (user,g1) 唯一槽），B 建桥接 userSub 时撞 partial unique
+//	index (user_id,group_id) WHERE deleted_at IS NULL → ErrSubscriptionAlreadyExists。
+//	修复后 RevokeBundle 软删除 A 的桥接 userSub（释放槽），B 顺利激活。
+func TestBundleUpgradeE2E_AdminReassign_SharedGroup_NoConflict(t *testing.T) {
+	e := newBundleUpgradeE2E(t)
+
+	user := e.mustCreateUser("e2e-reassign@example.com")
+	group := e.mustCreateGroup("e2e-reassign-group", domain.PlatformOpenAI)
+	planA := e.mustCreatePlan("E2E R-A", service.BundleTierStarter, 100, 30, group.ID)
+	planB := e.mustCreatePlan("E2E R-B", service.BundleTierPro, 200, 30, group.ID)
+
+	// 用户先持有 bundle A（共享 group g1）。
+	subA := e.mustActivateBundle(user.ID, planA.ID)
+
+	// admin 换绑到 bundle B（共享同一 group g1）—— 修复前在此 409。
+	subB, err := e.subSvc.ActivateBundle(e.ctx, &service.ActivateBundleRequest{
+		UserID: user.ID, PlanID: planB.ID, Source: service.BundleSourceAdminAssign,
+	})
+	require.NoError(t, err, "admin 换绑共享 group 的套餐不应撞唯一约束")
+	require.NotNil(t, subB)
+	require.Equal(t, service.BundleStatusActive, subB.Status)
+
+	// A 被 revoke，B active。
+	require.Equal(t, service.BundleStatusRevoked, e.reloadSub(subA.ID).Status,
+		"换绑后旧 bundle 应 revoked")
+}
+
+// =============================================================================
+// 场景 8：套餐过期清扫后重购共享 group（ExpireBridged 软删除回归）
+// =============================================================================
+
+// TestBundleUpgradeE2E_ExpiredThenRepurchase_SharedGroup_NoConflict 验证过期路径不撞唯一约束：
+//
+//	用户持有 bundle A（含 group g1）→ 套餐自然过期（status=expired）→ 过期清扫
+//	ExpireBridgedSubscriptionsForExpiredBundles 处理 A 的桥接 userSub → 用户重新购买 bundle B
+//	（共享 g1）。修复前清扫把 A 的桥接 userSub 置 status=expired（仍占 (user,g1) 唯一槽），
+//	B 建桥接 userSub 撞 partial unique index → 409。修复后过期清扫软删除 A 的桥接 userSub
+//	（释放槽），B 顺利激活。
+func TestBundleUpgradeE2E_ExpiredThenRepurchase_SharedGroup_NoConflict(t *testing.T) {
+	e := newBundleUpgradeE2E(t)
+	ctx := e.ctx
+
+	user := e.mustCreateUser("e2e-expired-rebuy@example.com")
+	group := e.mustCreateGroup("e2e-expired-rebuy-group", domain.PlatformOpenAI)
+	planA := e.mustCreatePlan("E2E X-A", service.BundleTierStarter, 100, 30, group.ID)
+	planB := e.mustCreatePlan("E2E X-B", service.BundleTierPro, 200, 30, group.ID)
+
+	// 用户持有 bundle A。
+	subA := e.mustActivateBundle(user.ID, planA.ID)
+
+	// 模拟自然过期：bundle A → expired。
+	_, err := e.client.BundleSubscription.UpdateOneID(subA.ID).
+		SetStatus(service.BundleStatusExpired).
+		Save(ctx)
+	require.NoError(t, err)
+
+	// 跑过期清扫：处理 expired bundle 的桥接 active userSub。
+	affected, err := e.userSubRepo.ExpireBridgedSubscriptionsForExpiredBundles(ctx)
+	require.NoError(t, err)
+	require.Greater(t, affected, int64(0), "应清扫到至少 1 条桥接 userSub")
+
+	// 用户重新购买 bundle B（共享 g1）—— A 已 expired 不算 active，放行；修复前在此 409。
+	subB := e.mustActivateBundle(user.ID, planB.ID)
+	require.Equal(t, service.BundleStatusActive, subB.Status)
+
+	// A 保持 expired（未被改动）。
+	require.Equal(t, service.BundleStatusExpired, e.reloadSub(subA.ID).Status)
+}

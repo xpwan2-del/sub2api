@@ -176,7 +176,7 @@ func (s *activateBundleUsageRepoStub) Create(_ context.Context, usage *BundleSub
 	return nil
 }
 
-// activateUserSubRepoStub supports Create, ListByUserID, UpdateStatus, ExtendExpiry.
+// activateUserSubRepoStub supports Create, ListByUserID, UpdateStatus, ExtendExpiry, Delete.
 type activateUserSubRepoStub struct {
 	userSubRepoNoop
 
@@ -185,8 +185,10 @@ type activateUserSubRepoStub struct {
 	createErr       error
 	updateStatusErr error
 	extendExpiryErr error
+	deleteErr       error
 
 	updatedStatusIDs  []int64
+	deletedIDs        []int64 // 记录 Delete 调用（UpgradeBundle ②步软删除旧桥接 userSub）
 	extendedIDs       []int64
 	extendedByDaysIDs []int64 // 记录 ExtendExpiryByDays 调用（中危1 增量延期）
 }
@@ -225,6 +227,15 @@ func (s *activateUserSubRepoStub) ExtendExpiryByDays(_ context.Context, id int64
 		return s.extendExpiryErr
 	}
 	s.extendedByDaysIDs = append(s.extendedByDaysIDs, id)
+	return nil
+}
+
+// Delete 记录软删除调用（UpgradeBundle ②步：旧桥接 userSub 软删除以释放 (user_id,group_id) 唯一槽）。
+func (s *activateUserSubRepoStub) Delete(_ context.Context, id int64) error {
+	if s.deleteErr != nil {
+		return s.deleteErr
+	}
+	s.deletedIDs = append(s.deletedIDs, id)
 	return nil
 }
 
@@ -273,8 +284,8 @@ func TestRevokeBundle_UserSubSyncFailureReturnsError(t *testing.T) {
 	bundleSub := &BundleSubscription{ID: bundleSubID, UserID: 7, PlanID: 1, Status: BundleStatusActive}
 	subRepo := &activateBundleSubRepoStub{created: bundleSub}
 	userSubRepo := &activateUserSubRepoStub{
-		existingSubs:    []UserSubscription{{ID: 55, UserID: 7, BundleSubscriptionID: &bundleSubID}},
-		updateStatusErr: errors.New("db down"),
+		existingSubs: []UserSubscription{{ID: 55, UserID: 7, BundleSubscriptionID: &bundleSubID}},
+		deleteErr:    errors.New("db down"),
 	}
 	svc := newBundleSubSvc(subRepo, &activateBundlePlanRepoStub{}, &activateBundleUsageRepoStub{}, userSubRepo)
 
@@ -737,10 +748,10 @@ func TestBundleSubscriptionService_RevokeBundle_SyncsBridgedUserSubs(t *testing.
 	err := svc.RevokeBundle(context.Background(), 100)
 
 	require.NoError(t, err)
-	// Should have updated status for the 2 bridged subs only.
-	require.Len(t, userSubRepo.updatedStatusIDs, 2)
-	require.Contains(t, userSubRepo.updatedStatusIDs, int64(200))
-	require.Contains(t, userSubRepo.updatedStatusIDs, int64(201))
+	// Should have soft-deleted the 2 bridged subs only（RevokeBundle 软删除释放唯一槽）。
+	require.Len(t, userSubRepo.deletedIDs, 2)
+	require.Contains(t, userSubRepo.deletedIDs, int64(200))
+	require.Contains(t, userSubRepo.deletedIDs, int64(201))
 }
 
 // ──────────────────────────────────────────────────────

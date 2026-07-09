@@ -373,8 +373,8 @@ func TestUpgradeBundle_Success(t *testing.T) {
 	require.Len(t, subRepo.updateStatusCalls, 1)
 	require.Equal(t, upgradeStatusCall{id: oldSubID, status: BundleStatusUpgraded}, subRepo.updateStatusCalls[0])
 
-	// 旧桥接 userSub → expired
-	require.Contains(t, userSubRepo.updatedStatusIDs, int64(900))
+	// 旧桥接 userSub → 软删除（释放 (user_id,group_id) 唯一槽，详见 UpgradeBundle ②步注释）
+	require.Contains(t, userSubRepo.deletedIDs, int64(900))
 
 	// 每个渠道组建 1 条 usage + 1 条桥接 userSub(active)，usage 回填到新订阅
 	require.Len(t, usageRepo.createdUsages, 2)
