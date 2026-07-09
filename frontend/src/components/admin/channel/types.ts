@@ -142,9 +142,11 @@ export function nextDefaultTierLabel(mode: BillingMode, count: number): string {
 /** 校验区间列表的合法性，返回错误消息；通过则返回 null
  *
  * mode 决定区间语义：
- * - token：区间是上下文 token 数分段 (min, max]，不能重叠，无上限段必须放最后
- * - per_request / image：区间是按 tier_label 分层（1K/2K/4K 等），后端按 label
- *   匹配，不依赖 min/max，因此跳过重叠 / last-unlimited 校验
+ * - token：区间是上下文 token 数分段 (min, max]，需做重叠校验，无上限段必须放最后
+ * - per_request：区间按 tier_label 自由文本分层，后端按 label 匹配，不依赖
+ *   min/max，跳过重叠 / last-unlimited 校验
+ * - image / video：区间按 tier_label 枚举分层（分辨率档位），需校验 label 属于
+ *   合法枚举且不重复，跳过 token 区间重叠校验
  */
 export function validateIntervals(
   intervals: IntervalFormEntry[],

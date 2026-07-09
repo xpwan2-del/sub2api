@@ -225,7 +225,7 @@
         <!-- Video mode -->
         <div v-else-if="entry.billing_mode === 'video'">
           <label class="mt-3 block text-xs font-medium text-gray-500 dark:text-gray-400">
-            {{ t('admin.channels.form.defaultImagePrice', '默认单次价格（未命中层级时使用）') }}
+            {{ t('admin.channels.form.defaultVideoPrice', '默认单次价格（未命中层级时使用）') }}
             <span class="ml-1 font-normal text-gray-400">$</span>
           </label>
           <div class="mt-1 w-48">
