@@ -89,15 +89,24 @@ func (s *previewSubRepo) GetByID(_ context.Context, _ int64) (*BundleSubscriptio
 }
 
 // previewPlanRepo 仅实现 GetByID，嵌入 bundlePlanRepoNoop 防止其他方法被误调即 panic。
+// byID 提供"按 plan id 精确返回"能力：PreviewUpgrade 修复后分别按 source/target id
+// 查询套餐名（与真实 planRepo.GetByID 按 id 查一致），stub 必须能区分两者。
+// byID 命中优先；未命中回落到 plan（保持旧用例 {plan: ...} 构造向后兼容）。
 type previewPlanRepo struct {
 	bundlePlanRepoNoop
 	plan *BundlePlan
+	byID map[int64]*BundlePlan
 	err  error
 }
 
-func (s *previewPlanRepo) GetByID(_ context.Context, _ int64) (*BundlePlan, error) {
+func (s *previewPlanRepo) GetByID(_ context.Context, id int64) (*BundlePlan, error) {
 	if s.err != nil {
 		return nil, s.err
+	}
+	if s.byID != nil {
+		if p, ok := s.byID[id]; ok {
+			return p, nil
+		}
 	}
 	return s.plan, nil
 }
@@ -127,7 +136,13 @@ func previewProPlan(price float64, forSale bool, status string) *BundlePlan {
 
 func TestPreviewUpgrade_UpgradeableWhenDuePositive(t *testing.T) {
 	// 实付 100，剩 28/30 天 → credit≈93.33；目标 200 → due≈106.67 > 0
-	svc := newPreviewSvc(&previewSubRepo{sub: previewActiveOld()}, &previewPlanRepo{plan: previewProPlan(200, true, BundlePlanStatusActive)}, &previewPaidReader{amt: 100})
+	// planRepo 按 id 区分 source(starter,id=5)/target(pro,id=6)：修复后 PreviewUpgrade
+	// 经 planRepo.GetByID(old.PlanID) 解析当前套餐名，stub 须按 id 精确返回。
+	planRepo := &previewPlanRepo{byID: map[int64]*BundlePlan{
+		5: {ID: 5, Name: "starter", Price: 100},
+		6: previewProPlan(200, true, BundlePlanStatusActive),
+	}}
+	svc := newPreviewSvc(&previewSubRepo{sub: previewActiveOld()}, planRepo, &previewPaidReader{amt: 100})
 	pv, err := svc.PreviewUpgrade(context.Background(), 10, 1, 6)
 	require.NoError(t, err)
 	require.True(t, pv.Upgradeable, "差价>0 应 upgradeable")
@@ -137,6 +152,31 @@ func TestPreviewUpgrade_UpgradeableWhenDuePositive(t *testing.T) {
 	require.Equal(t, "starter", pv.OldPlanName)
 	require.Equal(t, "pro", pv.NewPlanName)
 	require.Equal(t, 30, pv.ValidityDays)
+}
+
+// TestPreviewUpgrade_OldPlanNameResolvedWithoutPreloadedPlan 回归守护：
+// 真实仓储 GetByID 不预加载 Plan 关联（old.Plan 恒为 nil）。PreviewUpgrade 必须通过
+// planRepo.GetByID(old.PlanID) 补载当前套餐名，否则前端"当前套餐"展示恒为空。
+func TestPreviewUpgrade_OldPlanNameResolvedWithoutPreloadedPlan(t *testing.T) {
+	now := time.Now()
+	oldNoPlan := &BundleSubscription{
+		ID:        1,
+		UserID:    10,
+		PlanID:    5,
+		Status:    BundleStatusActive,
+		StartsAt:  now.AddDate(0, 0, -2),
+		ExpiresAt: now.AddDate(0, 0, 28),
+		// Plan 故意留空，模拟 GetByID 未预加载关联
+	}
+	planRepo := &previewPlanRepo{byID: map[int64]*BundlePlan{
+		5: {ID: 5, Name: "starter", Price: 100},
+		6: previewProPlan(200, true, BundlePlanStatusActive),
+	}}
+	svc := newPreviewSvc(&previewSubRepo{sub: oldNoPlan}, planRepo, &previewPaidReader{amt: 100})
+	pv, err := svc.PreviewUpgrade(context.Background(), 10, 1, 6)
+	require.NoError(t, err)
+	require.Equal(t, "starter", pv.OldPlanName, "old.Plan 未预加载时也应经 planRepo 解析出当前套餐名")
+	require.Equal(t, "pro", pv.NewPlanName)
 }
 
 func TestPreviewUpgrade_NotUpgradeableWhenDueLeqZero(t *testing.T) {

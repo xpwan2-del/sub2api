@@ -67,9 +67,11 @@ func (s *BundleSubscriptionService) PreviewUpgrade(ctx context.Context, userID, 
 	credit := computeProrateCredit(paid, old.StartsAt, old.ExpiresAt, time.Now())
 	due := plan.Price - credit
 
+	// 旧订阅当前套餐名：仓储 GetByID 不预加载 Plan 关联（old.Plan 恒为 nil），
+	// 显式按 PlanID 补载，否则前端"当前套餐"展示恒为空。
 	oldPlanName := ""
-	if old.Plan != nil {
-		oldPlanName = old.Plan.Name
+	if oldPlan, perr := s.planRepo.GetByID(ctx, old.PlanID); perr == nil {
+		oldPlanName = oldPlan.Name
 	}
 	return &UpgradePreview{
 		Credit:       credit,
