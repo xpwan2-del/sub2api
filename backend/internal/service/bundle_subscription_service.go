@@ -9,11 +9,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"golang.org/x/text/collate"
+	"golang.org/x/text/language"
 )
 
 // BundleKeyRebinder 在套餐切换（升级/换绑/重购）时把用户的 bundle APIKey 迁移到新 active
@@ -437,7 +441,109 @@ func (s *BundleSubscriptionService) GetBundleUsageProgress(ctx context.Context, 
 			MonthlyVideoLimitCount: meta.monthlyVideoLimitCount,
 		})
 	}
+
+	// 统一排序：Usages edge 在 repo GetByIDWithUsages 中无 ORDER BY（PG 不保证返回序），
+	// 此处集中排序，使前端各 group 用量卡片顺序稳定可读，且对所有调用方一致。
+	sortBundleUsageProgress(progress)
+
 	return progress, nil
+}
+
+// bundleUsageNameCollator 分组名排序器：中文按拼音（CLDR zh-Hans 默认 collation 即拼音序），
+// 英文/数字按各自惯例，混合文本由 collator 统一处理、大小写不敏感。
+var bundleUsageNameCollator = collate.New(language.SimplifiedChinese)
+
+// bundleUsageScopeOrder 用量限额作用域的展示序：日 < 周 < 月；未识别/空排末尾。
+var bundleUsageScopeOrder = map[string]int{
+	"daily":   0,
+	"weekly":  1,
+	"monthly": 2,
+}
+
+func bundleUsageScopeRank(scope string) int {
+	if r, ok := bundleUsageScopeOrder[scope]; ok {
+		return r
+	}
+	return len(bundleUsageScopeOrder) // 未识别值排到已知作用域之后
+}
+
+// sortBundleUsageProgress 按统一规则对套餐用量进度做稳定排序：
+//  1. platform 升序（空/未知平台排末尾，使同平台卡片聚成一块）；
+//  2. group_name 拼音/字母升序（CLDR zh-Hans），空名退回 group_id 数值序；
+//  3. model_pattern：空串（整组通配，语义最宽泛）排前，其余按字母序；
+//  4. quota_scope：daily < weekly < monthly，未识别排后；
+//  5. group_id 兜底，保证全序确定（理论上前序键已能区分）。
+func sortBundleUsageProgress(items []BundleUsageProgress) {
+	sort.SliceStable(items, func(i, j int) bool {
+		a, b := items[i], items[j]
+
+		// 1) platform：空排后。
+		if c := cmpStringEmptyLast(a.Platform, b.Platform); c != 0 {
+			return c < 0
+		}
+		// 2) group_name：拼音/字母序，空退回 group_id。
+		if c := cmpGroupName(a.GroupName, a.GroupID, b.GroupName, b.GroupID); c != 0 {
+			return c < 0
+		}
+		// 3) model_pattern：空（整组通配）排前，其余字母序。
+		if c := cmpStringEmptyFirst(a.ModelPattern, b.ModelPattern); c != 0 {
+			return c < 0
+		}
+		// 4) quota_scope：日 < 周 < 月，未知排后。
+		if c := bundleUsageScopeRank(a.QuotaScope) - bundleUsageScopeRank(b.QuotaScope); c != 0 {
+			return c < 0
+		}
+		// 5) group_id 兜底，确保全序确定。
+		return a.GroupID < b.GroupID
+	})
+}
+
+// cmpStringEmptyLast 空串视为最大（排到末尾），用于 platform 等枚举字段。
+func cmpStringEmptyLast(a, b string) int {
+	aEmpty, bEmpty := a == "", b == ""
+	if aEmpty != bEmpty {
+		if aEmpty {
+			return 1
+		}
+		return -1
+	}
+	return strings.Compare(a, b)
+}
+
+// cmpStringEmptyFirst 空串视为最小（排到最前），用于 model_pattern——
+// 空串表示整组通配配额，语义最宽泛，应排在具体模型模式之前。
+func cmpStringEmptyFirst(a, b string) int {
+	aEmpty, bEmpty := a == "", b == ""
+	if aEmpty != bEmpty {
+		if aEmpty {
+			return -1
+		}
+		return 1
+	}
+	return strings.Compare(a, b)
+}
+
+// cmpGroupName 分组名比较：均非空按 collator（拼音/字母）序；一空一非空时非空排前；
+// 均空则退回 group_id 数值序，避免空名分组的相对顺序不稳定。
+func cmpGroupName(aName string, aID int64, bName string, bID int64) int {
+	aEmpty, bEmpty := aName == "", bName == ""
+	if aEmpty && bEmpty {
+		switch {
+		case aID < bID:
+			return -1
+		case aID > bID:
+			return 1
+		default:
+			return 0
+		}
+	}
+	if aEmpty != bEmpty {
+		if aEmpty {
+			return 1
+		}
+		return -1
+	}
+	return bundleUsageNameCollator.CompareString(aName, bName)
 }
 
 // List 分页查询套餐订阅，支持按用户ID和状态过滤

@@ -771,6 +771,74 @@ func TestBundleSubscriptionService_GetBundleUsageProgress_ZeroesExpiredWindows(t
 	require.Equal(t, 0.0, progress[0].MonthlyUsageUSD, "expired monthly window should display as 0")
 }
 
+// TestBundleSubscriptionService_GetBundleUsageProgress_Ordering 守护各 group 用量卡片的统一排序：
+// repo GetByIDWithUsages 对 Usages edge 无 ORDER BY（PG 不保证返回序），service 层必须集中排序，
+// 否则前端卡片顺序随写入/物理序漂移。验证规则：platform↑ → group_name(拼音/字母)↑ →
+// model_pattern(空=整组通配优先) → quota_scope(日<周<月)。
+func TestBundleSubscriptionService_GetBundleUsageProgress_Ordering(t *testing.T) {
+	bundleSubID := int64(100)
+	today0 := timezone.StartOfDay(time.Now())
+
+	// 故意按 ID 乱序输入（20,15,40,30,50,10），排序后应得到稳定可读顺序。
+	usages := []BundleSubscriptionUsage{
+		{BundleSubscriptionID: 100, GroupID: 20, ModelPattern: "gpt-4*", DailyWindowStart: today0, WeeklyWindowStart: today0, MonthlyWindowStart: today0},
+		{BundleSubscriptionID: 100, GroupID: 15, DailyWindowStart: today0, WeeklyWindowStart: today0, MonthlyWindowStart: today0},
+		{BundleSubscriptionID: 100, GroupID: 40, ModelPattern: "gemini-*", DailyWindowStart: today0, WeeklyWindowStart: today0, MonthlyWindowStart: today0},
+		{BundleSubscriptionID: 100, GroupID: 30, DailyWindowStart: today0, WeeklyWindowStart: today0, MonthlyWindowStart: today0},
+		{BundleSubscriptionID: 100, GroupID: 50, ModelPattern: "gemini-1.5*", DailyWindowStart: today0, WeeklyWindowStart: today0, MonthlyWindowStart: today0},
+		{BundleSubscriptionID: 100, GroupID: 10, DailyWindowStart: today0, WeeklyWindowStart: today0, MonthlyWindowStart: today0},
+	}
+
+	subRepo := &activateBundleSubRepoStub{}
+	subRepo.created = &BundleSubscription{ID: 100, UserID: 42, PlanID: 1, Status: BundleStatusActive, Usages: usages}
+
+	userSubRepo := &activateUserSubRepoStub{}
+	userSubRepo.existingSubs = []UserSubscription{
+		{ID: 1, UserID: 42, GroupID: 10, BundleSubscriptionID: &bundleSubID, Group: &Group{Name: "Claude Pro", Platform: "anthropic"}},
+		{ID: 2, UserID: 42, GroupID: 15, BundleSubscriptionID: &bundleSubID, Group: &Group{Name: "Claude Basic", Platform: "anthropic"}},
+		{ID: 3, UserID: 42, GroupID: 20, BundleSubscriptionID: &bundleSubID, Group: &Group{Name: "GPT组", Platform: "openai"}},
+		{ID: 4, UserID: 42, GroupID: 30, BundleSubscriptionID: &bundleSubID, Group: &Group{Name: "GPT组", Platform: "openai"}},
+		{ID: 5, UserID: 42, GroupID: 40, BundleSubscriptionID: &bundleSubID, Group: &Group{Platform: "gemini"}}, // 空 group_name
+		{ID: 6, UserID: 42, GroupID: 50, BundleSubscriptionID: &bundleSubID, Group: &Group{Platform: "gemini"}}, // 空 group_name
+	}
+
+	planRepo := &activateBundlePlanRepoStub{plan: &BundlePlan{ID: 1, GroupQuotas: []BundlePlanGroupQuota{
+		{GroupID: 10, ModelPattern: "", QuotaScope: "daily"},
+		{GroupID: 15, ModelPattern: "", QuotaScope: "daily"},
+		{GroupID: 20, ModelPattern: "gpt-4*", QuotaScope: "monthly"},
+		{GroupID: 30, ModelPattern: "", QuotaScope: "weekly"},
+		{GroupID: 40, ModelPattern: "gemini-*", QuotaScope: "daily"},
+		{GroupID: 50, ModelPattern: "gemini-1.5*", QuotaScope: "daily"},
+	}}}
+
+	svc := newBundleSubSvc(subRepo, planRepo, &activateBundleUsageRepoStub{}, userSubRepo)
+
+	progress, err := svc.GetBundleUsageProgress(context.Background(), 100)
+	require.NoError(t, err)
+	require.Len(t, progress, 6)
+
+	// 期望：anthropic(字母序 Basic<Pro) → gemini(空名退回 group_id 40<50) → openai(空 pattern 排前)。
+	wantGroupIDs := []int64{15, 10, 40, 50, 30, 20}
+	gotIDs := make([]int64, len(progress))
+	for i, p := range progress {
+		gotIDs[i] = p.GroupID
+	}
+	require.Equal(t, wantGroupIDs, gotIDs, "usage progress must be sorted by platform→name→pattern→scope")
+
+	// 抽查：platform 升序聚类（anthropic < gemini < openai）。
+	require.Equal(t, "anthropic", progress[0].Platform)
+	require.Equal(t, "gemini", progress[2].Platform)
+	require.Equal(t, "openai", progress[4].Platform)
+
+	// 抽查：同平台内英文分组名按字母序——Claude Basic 排在 Claude Pro 前。
+	require.Equal(t, "Claude Basic", progress[0].GroupName)
+	require.Equal(t, "Claude Pro", progress[1].GroupName)
+
+	// 抽查：同名同平台分组内，空 model_pattern（整组通配）排在具体 pattern 之前。
+	require.Equal(t, "", progress[4].ModelPattern, "empty model_pattern (group-wide) sorts first within same group")
+	require.Equal(t, "gpt-4*", progress[5].ModelPattern)
+}
+
 // ──────────────────────────────────────────────────────
 // Tests: RevokeBundle syncs bridged UserSubscriptions
 // ──────────────────────────────────────────────────────
