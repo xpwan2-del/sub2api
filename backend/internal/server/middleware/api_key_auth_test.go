@@ -1064,6 +1064,9 @@ type stubApiKeyRepo struct {
 	updateLastUsed func(ctx context.Context, id int64, usedAt time.Time) error
 }
 
+func (r *stubApiKeyRepo) RebindBundleKeys(context.Context, int64, int64) (int, error) {
+	return 0, nil
+}
 func (r *stubApiKeyRepo) Create(ctx context.Context, key *service.APIKey) error {
 	return errors.New("not implemented")
 }

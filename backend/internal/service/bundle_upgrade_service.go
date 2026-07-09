@@ -201,6 +201,13 @@ func (s *BundleSubscriptionService) UpgradeBundle(ctx context.Context, req *Upgr
 				return fmt.Errorf("bridge user subscription for group %d: %w", gq.GroupID, err)
 			}
 		}
+		// 把该用户的 bundle APIKey 迁移到新套餐订阅（事务内，原子）：升级后旧 key 仍指向
+		// upgraded 旧 bundle 会报 BUNDLE_EXPIRED，必须跟随切到新 active bundle。
+		if s.keyRebinder != nil {
+			if err := s.keyRebinder.RebindUserBundleKeys(txCtx, req.UserID, newSub.ID); err != nil {
+				return fmt.Errorf("rebind bundle api keys: %w", err)
+			}
+		}
 		upgraded = newSub
 		return nil
 	}); err != nil {
@@ -210,6 +217,10 @@ func (s *BundleSubscriptionService) UpgradeBundle(ctx context.Context, req *Upgr
 	// 缓存失效在事务提交后执行，避免回滚后脏失效（与 ActivateBundle / RevokeBundle 同款）。
 	if s.cache != nil {
 		_ = s.cache.InvalidateBundleSubscriptionCache(ctx, req.UserID)
+	}
+	// 失效该用户的 APIKey 认证缓存（bundle_subscription_id 已迁移，旧缓存指向 upgraded 旧 bundle）。
+	if s.keyRebinder != nil {
+		s.keyRebinder.InvalidateAuthCacheByUserID(ctx, req.UserID)
 	}
 	return upgraded, nil
 }

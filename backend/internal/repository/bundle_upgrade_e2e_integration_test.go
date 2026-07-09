@@ -90,7 +90,7 @@ func newBundleUpgradeE2E(t *testing.T) *bundleUpgradeE2E {
 	paidReader := NewPaymentOrderReader(client)
 
 	planSvc := service.NewBundlePlanService(planRepo, nil)
-	subSvc := service.NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, client, paidReader)
+	subSvc := service.NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, client, paidReader, nil)
 	redeemSvc := service.NewRedeemService(redeemRepo, userRepo, nil, nil, nil, client, nil, nil)
 	// NewPaymentService 的 registry/loadBalancer/subscriptionSvc/configService/groupRepo/affiliateService
 	// 传 nil：升级履约路径不依赖它们（notificationEmailService 也为 nil，markCompleted 内有 nil 守卫；

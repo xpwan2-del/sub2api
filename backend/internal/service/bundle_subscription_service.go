@@ -16,6 +16,15 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
 
+// BundleKeyRebinder 在套餐切换（升级/换绑/重购）时把用户的 bundle APIKey 迁移到新 active
+// 套餐订阅并失效其认证缓存。APIKeyService 实现该接口；nil 表示不迁移（unit test 场景）。
+// 业务约束：用户同一时间只有一个 active bundle，故迁移「该用户所有 bundle key」到新订阅即可
+// 统一覆盖三类切换场景，避免旧 key 仍指向失效 bundle 导致网关 BUNDLE_EXPIRED。
+type BundleKeyRebinder interface {
+	RebindUserBundleKeys(ctx context.Context, userID, newBundleSubID int64) error
+	InvalidateAuthCacheByUserID(ctx context.Context, userID int64)
+}
+
 // BundleSubscriptionService 套餐订阅服务，管理订阅的完整生命周期
 // BundleSubscriptionService handles bundle subscription lifecycle.
 type BundleSubscriptionService struct {
@@ -26,6 +35,7 @@ type BundleSubscriptionService struct {
 	cache            BillingCache
 	entClient        *dbent.Client
 	paidAmountReader PaymentOrderReader
+	keyRebinder      BundleKeyRebinder // nillable: nil 时跳过 APIKey 迁移（unit test）
 }
 
 // NewBundleSubscriptionService 创建套餐订阅服务实例
@@ -38,6 +48,7 @@ func NewBundleSubscriptionService(
 	cache BillingCache,
 	entClient *dbent.Client,
 	paidAmountReader PaymentOrderReader,
+	keyRebinder BundleKeyRebinder,
 ) *BundleSubscriptionService {
 	return &BundleSubscriptionService{
 		bundleSubRepo:    bundleSubRepo,
@@ -47,6 +58,7 @@ func NewBundleSubscriptionService(
 		cache:            cache,
 		entClient:        entClient,
 		paidAmountReader: paidAmountReader,
+		keyRebinder:      keyRebinder,
 	}
 }
 
@@ -203,6 +215,14 @@ func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *Act
 			}
 		}
 
+		// 把该用户的 bundle APIKey 迁移到新套餐订阅（事务内，与新订阅创建原子）：避免旧 key
+		// 仍指向被替换/过期的旧 bundle 导致网关 BUNDLE_EXPIRED。覆盖升级/换绑/重购三类切换。
+		if s.keyRebinder != nil {
+			if err := s.keyRebinder.RebindUserBundleKeys(txCtx, req.UserID, bundleSub.ID); err != nil {
+				return fmt.Errorf("rebind bundle api keys: %w", err)
+			}
+		}
+
 		activated = bundleSub
 		return nil
 	}); err != nil {
@@ -213,6 +233,11 @@ func (s *BundleSubscriptionService) ActivateBundle(ctx context.Context, req *Act
 	// invalidation if the transaction rolled back).
 	if s.cache != nil {
 		_ = s.cache.InvalidateBundleSubscriptionCache(ctx, req.UserID)
+	}
+	// 失效该用户的 APIKey 认证缓存：bundle_subscription_id 已迁移到新套餐，旧缓存里仍指向
+	// 被替换/过期的旧 bundle，不失效会继续报 BUNDLE_EXPIRED。
+	if s.keyRebinder != nil {
+		s.keyRebinder.InvalidateAuthCacheByUserID(ctx, req.UserID)
 	}
 
 	return activated, nil

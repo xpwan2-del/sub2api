@@ -651,6 +651,7 @@ var ProviderSet = wire.NewSet(
 	ProvideUserPlatformQuotaUsageFlusher,
 	NewBundlePlanService,
 	NewBundleSubscriptionService,
+	wire.Bind(new(BundleKeyRebinder), new(*APIKeyService)),
 	NewBundleRouteResolver,
 	NewBundleUsageService,
 	ProvideBundleExpiryService,

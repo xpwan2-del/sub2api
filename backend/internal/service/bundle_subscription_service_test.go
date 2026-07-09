@@ -249,7 +249,7 @@ func newBundleSubSvc(
 	usageRepo BundleUsageRepository,
 	userSubRepo UserSubscriptionRepository,
 ) *BundleSubscriptionService {
-	return NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil) // nil cache + nil entClient + nil paidAmountReader for unit tests
+	return NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil, nil) // nil cache + nil entClient + nil paidAmountReader for unit tests
 }
 
 func sampleActivePlan() *BundlePlan {
@@ -430,6 +430,50 @@ func TestBundleSubscriptionService_ActivateBundle_Success(t *testing.T) {
 	require.Equal(t, 5, userSubRepo.createdSubs[0].DailyVideoLimitCount, "daily video limit must be snapshotted from plan quota")
 	require.Equal(t, 25, userSubRepo.createdSubs[0].WeeklyVideoLimitCount)
 	require.Equal(t, 100, userSubRepo.createdSubs[0].MonthlyVideoLimitCount)
+}
+
+
+// bundleKeyRebinderStub 记录 BundleKeyRebinder 调用，用于断言套餐切换时 APIKey 迁移 + 缓存失效。
+type bundleKeyRebinderStub struct {
+	rebindCalls     []bundleKeyRebindCall
+	rebindErr       error
+	invalidateCalls []int64
+}
+
+type bundleKeyRebindCall struct {
+	userID      int64
+	bundleSubID int64
+}
+
+func (s *bundleKeyRebinderStub) RebindUserBundleKeys(_ context.Context, userID, newBundleSubID int64) error {
+	s.rebindCalls = append(s.rebindCalls, bundleKeyRebindCall{userID: userID, bundleSubID: newBundleSubID})
+	return s.rebindErr
+}
+
+func (s *bundleKeyRebinderStub) InvalidateAuthCacheByUserID(_ context.Context, userID int64) {
+	s.invalidateCalls = append(s.invalidateCalls, userID)
+}
+
+// TestActivateBundle_RebindsAPIKeys 验证激活套餐后把用户的 bundle APIKey 迁移到新套餐 +
+// 失效认证缓存（升级/换绑/重购三类切换统一在此触发），避免旧 key 指向失效 bundle 报 BUNDLE_EXPIRED。
+func TestActivateBundle_RebindsAPIKeys(t *testing.T) {
+	subRepo := &activateBundleSubRepoStub{activeBundles: nil}
+	planRepo := &activateBundlePlanRepoStub{plan: sampleActivePlan()}
+	usageRepo := &activateBundleUsageRepoStub{}
+	userSubRepo := &activateUserSubRepoStub{}
+	rebinder := &bundleKeyRebinderStub{}
+	svc := NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil, rebinder)
+
+	result, err := svc.ActivateBundle(context.Background(), &ActivateBundleRequest{
+		UserID: 42, PlanID: 1, Source: BundleSourcePurchase,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	require.Len(t, rebinder.rebindCalls, 1, "激活后应迁移该用户 bundle APIKey 到新套餐")
+	require.Equal(t, int64(42), rebinder.rebindCalls[0].userID)
+	require.Equal(t, result.ID, rebinder.rebindCalls[0].bundleSubID)
+	require.Contains(t, rebinder.invalidateCalls, int64(42), "应失效该用户的 APIKey 认证缓存")
 }
 
 func TestBundleSubscriptionService_ActivateBundle_ConflictExistingBundle(t *testing.T) {

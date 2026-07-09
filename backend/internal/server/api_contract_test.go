@@ -2083,6 +2083,9 @@ func (r *stubApiKeyRepo) MustSeed(key *service.APIKey) {
 	r.byKey[clone.Key] = &clone
 }
 
+func (r *stubApiKeyRepo) RebindBundleKeys(context.Context, int64, int64) (int, error) {
+	return 0, nil
+}
 func (r *stubApiKeyRepo) Create(ctx context.Context, key *service.APIKey) error {
 	if key == nil {
 		return errors.New("nil key")

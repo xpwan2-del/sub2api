@@ -165,7 +165,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	usageHandler := handler.NewUsageHandler(usageService, apiKeyService, opsService, settingService)
 	redeemHandler := handler.NewRedeemHandler(redeemService)
 	paymentOrderReader := repository.NewPaymentOrderReader(client)
-	bundleSubscriptionService := service.NewBundleSubscriptionService(bundleSubscriptionRepository, bundlePlanRepository, bundleUsageRepository, userSubscriptionRepository, billingCache, client, paymentOrderReader)
+	bundleSubscriptionService := service.NewBundleSubscriptionService(bundleSubscriptionRepository, bundlePlanRepository, bundleUsageRepository, userSubscriptionRepository, billingCache, client, paymentOrderReader, apiKeyService)
 	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService, bundleSubscriptionService)
 	announcementRepository := repository.NewAnnouncementRepository(client)
 	announcementReadRepository := repository.NewAnnouncementReadRepository(client)

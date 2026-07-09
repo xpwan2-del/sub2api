@@ -113,7 +113,7 @@ func (s *previewPlanRepo) GetByID(_ context.Context, id int64) (*BundlePlan, err
 
 // newPreviewSvc 构造仅用于 PreviewUpgrade 的 service（paidAmountReader 必须非 nil）。
 func newPreviewSvc(subRepo *previewSubRepo, planRepo *previewPlanRepo, paid *previewPaidReader) *BundleSubscriptionService {
-	return NewBundleSubscriptionService(subRepo, planRepo, bundleUsageRepoNoop{}, userSubRepoNoop{}, nil, nil, paid)
+	return NewBundleSubscriptionService(subRepo, planRepo, bundleUsageRepoNoop{}, userSubRepoNoop{}, nil, nil, paid, nil)
 }
 
 // previewActiveOld 构造一个 active 且属 userID=10 的旧订阅（套餐 starter，实付由 paidReader 注入）。
@@ -302,7 +302,7 @@ func newUpgradeSvc(
 	usageRepo *activateBundleUsageRepoStub,
 	userSubRepo *activateUserSubRepoStub,
 ) *BundleSubscriptionService {
-	return NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil)
+	return NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil, nil)
 }
 
 // upgradeActiveOld 构造属 userID=10、PlanID=5 的活跃旧订阅（已桥接的 userSub 由调用方注入 userSubRepo.existingSubs）。
@@ -397,6 +397,32 @@ func TestUpgradeBundle_Success(t *testing.T) {
 	require.Equal(t, 5, first.DailyVideoLimitCount)
 	require.Equal(t, 25, first.WeeklyVideoLimitCount)
 	require.Equal(t, 100, first.MonthlyVideoLimitCount)
+}
+
+
+// TestUpgradeBundle_RebindsAPIKeys 验证升级套餐后把用户的 bundle APIKey 迁移到新套餐 +
+// 失效认证缓存，避免旧 key 指向 upgraded 旧 bundle 报 BUNDLE_EXPIRED。
+func TestUpgradeBundle_RebindsAPIKeys(t *testing.T) {
+	oldSubID := int64(1)
+	subRepo := &upgradeSubRepoStub{old: upgradeActiveOld()}
+	planRepo := &activateBundlePlanRepoStub{plan: upgradeTargetPlan(true, BundlePlanStatusActive)}
+	usageRepo := &activateBundleUsageRepoStub{}
+	userSubRepo := &activateUserSubRepoStub{
+		existingSubs: []UserSubscription{{ID: 900, UserID: 10, GroupID: 100, BundleSubscriptionID: &oldSubID}},
+	}
+	rebinder := &bundleKeyRebinderStub{}
+	svc := NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil, rebinder)
+
+	got, err := svc.UpgradeBundle(context.Background(), &UpgradeBundleRequest{
+		UserID: 10, SourceSubID: 1, TargetPlanID: 6,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, got)
+
+	require.Len(t, rebinder.rebindCalls, 1, "升级后应迁移 bundle APIKey 到新套餐")
+	require.Equal(t, int64(10), rebinder.rebindCalls[0].userID)
+	require.Equal(t, got.ID, rebinder.rebindCalls[0].bundleSubID)
+	require.Contains(t, rebinder.invalidateCalls, int64(10), "应失效该用户的 APIKey 认证缓存")
 }
 
 func TestUpgradeBundle_AtomicRollbackOnBridgeFailure(t *testing.T) {

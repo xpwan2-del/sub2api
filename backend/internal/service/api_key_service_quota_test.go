@@ -79,6 +79,9 @@ type quotaBaseAPIKeyRepoStub struct {
 	getByIDCalls int
 }
 
+func (s *quotaBaseAPIKeyRepoStub) RebindBundleKeys(context.Context, int64, int64) (int, error) {
+	panic("unexpected RebindBundleKeys call")
+}
 func (s *quotaBaseAPIKeyRepoStub) Create(context.Context, *APIKey) error {
 	panic("unexpected Create call")
 }

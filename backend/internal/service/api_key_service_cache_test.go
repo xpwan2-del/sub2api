@@ -22,6 +22,10 @@ type authRepoStub struct {
 	listKeysByGroupID func(ctx context.Context, groupID int64) ([]string, error)
 }
 
+func (s *authRepoStub) RebindBundleKeys(context.Context, int64, int64) (int, error) {
+	panic("unexpected RebindBundleKeys call")
+}
+
 func (s *authRepoStub) Create(ctx context.Context, key *APIKey) error {
 	panic("unexpected Create call")
 }

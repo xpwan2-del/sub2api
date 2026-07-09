@@ -68,6 +68,8 @@ type APIKeyRepository interface {
 	ClearGroupIDByGroupID(ctx context.Context, groupID int64) (int64, error)
 	// UpdateGroupIDByUserAndGroup 将用户下绑定 oldGroupID 的所有 Key 迁移到 newGroupID
 	UpdateGroupIDByUserAndGroup(ctx context.Context, userID, oldGroupID, newGroupID int64) (int64, error)
+	// RebindBundleKeys 将用户的所有 bundle APIKey 迁移到新套餐订阅（升级/换绑/重购时跟随切换）。
+	RebindBundleKeys(ctx context.Context, userID, newBundleSubID int64) (int, error)
 	CountByGroupID(ctx context.Context, groupID int64) (int64, error)
 	ListKeysByUserID(ctx context.Context, userID int64) ([]string, error)
 	ListKeysByGroupID(ctx context.Context, groupID int64) ([]string, error)
@@ -245,6 +247,13 @@ func NewAPIKeyService(
 // Called after construction (e.g. in wire) to avoid circular dependencies.
 func (s *APIKeyService) SetRateLimitCacheInvalidator(inv RateLimitCacheInvalidator) {
 	s.rateLimitCacheInvalid = inv
+}
+
+// RebindUserBundleKeys 把用户的所有 bundle APIKey 迁移到新套餐订阅（实现 BundleKeyRebinder）。
+// 用于套餐升级/换绑/重购后让旧 key 跟随到新 active bundle，避免 BUNDLE_EXPIRED。
+func (s *APIKeyService) RebindUserBundleKeys(ctx context.Context, userID, newBundleSubID int64) error {
+	_, err := s.apiKeyRepo.RebindBundleKeys(ctx, userID, newBundleSubID)
+	return err
 }
 
 func (s *APIKeyService) compileAPIKeyIPRules(apiKey *APIKey) {

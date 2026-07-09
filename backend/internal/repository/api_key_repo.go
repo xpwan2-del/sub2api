@@ -38,6 +38,23 @@ func (r *apiKeyRepository) activeQuery() *dbent.APIKeyQuery {
 	return r.client.APIKey.Query().Where(apikey.DeletedAtIsNil())
 }
 
+// RebindBundleKeys 把指定用户的所有 bundle APIKey（bundle_subscription_id 非 nil 且未软删除）
+// 批量迁移到新套餐订阅。用于套餐升级/换绑/重购后让旧 key 跟随到新 active bundle，避免旧 key
+// 仍指向失效（upgraded/revoked/expired）bundle 导致网关 BUNDLE_EXPIRED。业务上用户同一时间只有
+// 一个 active bundle，故迁移「该用户全部 bundle key」即可统一覆盖三类切换场景。
+// 通过 clientFromContext 支持 txCtx，可在套餐切换事务内执行以保证原子性。
+func (r *apiKeyRepository) RebindBundleKeys(ctx context.Context, userID, newBundleSubID int64) (int, error) {
+	client := clientFromContext(ctx, r.client)
+	return client.APIKey.Update().
+		Where(
+			apikey.UserIDEQ(userID),
+			apikey.BundleSubscriptionIDNotNil(),
+			apikey.DeletedAtIsNil(),
+		).
+		SetBundleSubscriptionID(newBundleSubID).
+		Save(ctx)
+}
+
 func (r *apiKeyRepository) Create(ctx context.Context, key *service.APIKey) error {
 	builder := r.client.APIKey.Create().
 		SetUserID(key.UserID).

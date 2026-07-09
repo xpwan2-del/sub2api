@@ -32,6 +32,9 @@ type fakeGoogleSubscriptionRepo struct {
 	resetMonthly   func(ctx context.Context, id int64, start time.Time) error
 }
 
+func (f fakeAPIKeyRepo) RebindBundleKeys(context.Context, int64, int64) (int, error) {
+	return 0, nil
+}
 func (f fakeAPIKeyRepo) Create(ctx context.Context, key *service.APIKey) error {
 	return errors.New("not implemented")
 }

@@ -49,7 +49,7 @@ func TestCreatePureBalanceBundleOrder_UpgradeRoutesToUpgradeFulfillment(t *testi
 	planRepo := &activateBundlePlanRepoStub{plan: upgradeTargetPlan(true, BundlePlanStatusActive)}
 	usageRepo := &activateBundleUsageRepoStub{}
 	userSubRepo := &activateUserSubRepoStub{}
-	bundleSvc := NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil)
+	bundleSvc := NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil, nil)
 
 	svc := &PaymentService{
 		entClient:             client,
@@ -134,7 +134,7 @@ func TestCreatePureBalanceBundleOrder_BundleStillRoutesToBundleFulfillment(t *te
 	planRepo := &activateBundlePlanRepoStub{plan: upgradeTargetPlan(true, BundlePlanStatusActive)}
 	usageRepo := &activateBundleUsageRepoStub{}
 	userSubRepo := &activateUserSubRepoStub{}
-	bundleSvc := NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil)
+	bundleSvc := NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil, nil)
 
 	svc := &PaymentService{
 		entClient:             client,
@@ -218,7 +218,7 @@ func TestCreateOrder_PureBalanceUpgradeSkipsGateway(t *testing.T) {
 	planRepo := &activateBundlePlanRepoStub{plan: upgradeTargetPlan(true, BundlePlanStatusActive)}
 	usageRepo := &activateBundleUsageRepoStub{}
 	userSubRepo := &activateUserSubRepoStub{}
-	bundleSvc := NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil)
+	bundleSvc := NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil, nil)
 
 	// 真实 PaymentConfigService：GetPaymentConfig 经 settingRepo 取 payment_enabled=true；
 	// 其余配置缺省（CancelRateLimit 关闭、无日限）即可让 CreateOrder 顺利抵达余额 gate。

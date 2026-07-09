@@ -197,7 +197,7 @@ func newUpgradeFulfillBundleSvc(subRepo *upgradeSubRepoStub, planRepo *activateB
 	return NewBundleSubscriptionService(
 		subRepo, planRepo,
 		&activateBundleUsageRepoStub{}, &activateUserSubRepoStub{},
-		nil, nil, nil,
+		nil, nil, nil, nil,
 	)
 }
 
@@ -317,7 +317,7 @@ func TestDoBundleUpgrade_SuccessWritesBackSubscriptionID(t *testing.T) {
 	usageRepo := &activateBundleUsageRepoStub{}
 	userSubRepo := &activateUserSubRepoStub{}
 	// success 路径需要完整 stub（usage 创建 + 桥接 userSub 创建）。
-	bundleSvc := NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil)
+	bundleSvc := NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil, nil)
 
 	svc := &PaymentService{
 		entClient:             client,
