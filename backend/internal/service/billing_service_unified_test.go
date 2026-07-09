@@ -147,6 +147,49 @@ func TestCalculateCostUnified_ImageMode(t *testing.T) {
 	require.Equal(t, string(BillingModeImage), cost.BillingMode)
 }
 
+func TestCalculateCostUnified_VideoMode(t *testing.T) {
+	cs := newTestChannelServiceWithCache(t, &channelCache{
+		pricingByGroupModel: map[channelModelKey]*ChannelModelPricing{
+			{groupID: 3, model: "sora-video"}: {
+				BillingMode:     BillingModeVideo,
+				PerRequestPrice: testPtrFloat64(0.20),
+			},
+		},
+		channelByGroupID: map[int64]*Channel{
+			3: {ID: 3, Status: StatusActive},
+		},
+		groupPlatform:           map[int64]string{3: ""},
+		wildcardByGroupPlatform: map[channelGroupPlatformKey][]*wildcardPricingEntry{},
+		mappingByGroupModel:     map[channelModelKey]string{},
+		wildcardMappingByGP:     map[channelGroupPlatformKey][]*wildcardMappingEntry{},
+		byID:                    map[int64]*Channel{},
+	})
+
+	bs := &BillingService{
+		cfg:            &config.Config{},
+		fallbackPrices: map[string]*ModelPricing{},
+	}
+	resolver := NewModelPricingResolver(cs, bs)
+	groupID := int64(3)
+
+	input := CostInput{
+		Ctx:            context.Background(),
+		Model:          "sora-video",
+		GroupID:        &groupID,
+		Tokens:         UsageTokens{},
+		RequestCount:   2,
+		RateMultiplier: 1.0,
+		Resolver:       resolver,
+	}
+	cost, err := bs.CalculateCostUnified(input)
+	require.NoError(t, err)
+	require.NotNil(t, cost)
+
+	// video 走 calculatePerRequestCost，用默认兜底价：2 * $0.20 = $0.40
+	require.InDelta(t, 0.40, cost.TotalCost, 1e-10)
+	require.Equal(t, string(BillingModeVideo), cost.BillingMode)
+}
+
 // TestCalculateCostUnified_RateMultiplierZeroProducesZero 锁定新行为：
 // 保存时强制 > 0；若 0 仍泄漏到计费层，按 0 计费（而非历史上的 1.0）。
 func TestCalculateCostUnified_RateMultiplierZeroProducesZero(t *testing.T) {
