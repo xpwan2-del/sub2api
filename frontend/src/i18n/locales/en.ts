@@ -7458,6 +7458,8 @@ export default {
       orders: 'Orders',
       balanceOrder: 'Balance Top-Up',
       subscriptionOrder: 'Subscription',
+      bundleOrder: 'Bundle',
+      bundleUpgradeOrder: 'Bundle Upgrade',
       paidAt: 'Paid At',
       completedAt: 'Completed At',
       expiresAt: 'Expires At',
