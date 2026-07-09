@@ -7293,6 +7293,7 @@ export default {
       amount: 'Amount',
       payAmount: 'Paid',
       creditedAmount: 'Credited Amount',
+      balanceDeductAmount: 'Balance Deduction',
       fee: 'Fee',
       baseAmount: 'Base Amount',
       includedInPayAmount: 'included in paid amount',

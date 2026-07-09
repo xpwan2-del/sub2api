@@ -109,7 +109,7 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.paymentMethod') }}</p>
             <p class="text-sm text-gray-700 dark:text-gray-300">{{ t('payment.methods.' + detailOrder.payment_type, detailOrder.payment_type) }}</p>
           </div>
-          <div v-if="detailOrder.payment_type === 'balance'">
+          <div v-if="(detailOrder.balance_deduct_amount ?? 0) > 0">
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.balanceDeductAmount') }}</p>
             <p class="text-sm font-medium text-blue-600 dark:text-blue-400">${{ (detailOrder.balance_deduct_amount ?? 0).toFixed(2) }}</p>
           </div>

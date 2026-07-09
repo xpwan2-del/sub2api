@@ -462,6 +462,7 @@ type PublicOrderResult struct {
 	OutTradeNo          string     `json:"out_trade_no"`
 	Amount              float64    `json:"amount"`
 	PayAmount           float64    `json:"pay_amount"`
+	BalanceDeductAmount float64    `json:"balance_deduct_amount,omitempty"`
 	FeeRate             float64    `json:"fee_rate"`
 	Currency            string     `json:"currency"`
 	PaymentType         string     `json:"payment_type"`
@@ -497,6 +498,7 @@ func buildPublicOrderResult(order *dbent.PaymentOrder) PublicOrderResult {
 		OutTradeNo:          order.OutTradeNo,
 		Amount:              order.Amount,
 		PayAmount:           order.PayAmount,
+		BalanceDeductAmount: order.BalanceDeductAmount,
 		FeeRate:             order.FeeRate,
 		Currency:            service.PaymentOrderCurrency(order),
 		PaymentType:         order.PaymentType,
@@ -605,6 +607,7 @@ type PaymentOrderResult struct {
 	UserID              int64      `json:"user_id"`
 	Amount              float64    `json:"amount"`
 	PayAmount           float64    `json:"pay_amount"`
+	BalanceDeductAmount float64    `json:"balance_deduct_amount,omitempty"`
 	FeeRate             float64    `json:"fee_rate"`
 	Currency            string     `json:"currency"`
 	PaymentType         string     `json:"payment_type"`
@@ -643,6 +646,7 @@ func sanitizePaymentOrderForResponse(order *dbent.PaymentOrder) *PaymentOrderRes
 		UserID:              order.UserID,
 		Amount:              order.Amount,
 		PayAmount:           order.PayAmount,
+		BalanceDeductAmount: order.BalanceDeductAmount,
 		FeeRate:             order.FeeRate,
 		Currency:            service.PaymentOrderCurrency(order),
 		PaymentType:         order.PaymentType,
