@@ -123,8 +123,9 @@
           </template>
 
           <!-- Inline expanded row: group usage details -->
+          <!-- NOTE: this slot relies on component-level usageProgress/usageLoading primed by toggleRow (single-open accordion), not per-row state -->
           <template #row-expansion>
-            <div class="px-5 py-4">
+            <div class="border-t border-gray-100 px-5 py-4 dark:border-dark-800">
           <template v-if="usageLoading">
             <p class="text-sm text-gray-400 dark:text-gray-500">{{ t('common.loading') }}</p>
           </template>
@@ -410,7 +411,7 @@ const usageLoading = ref(false)
 
 const filters = ref<{
   user_id: number | undefined
-  status: '' | 'active' | 'expired' | 'revoked'
+  status: '' | 'active' | 'expired' | 'revoked' | 'upgraded'
 }>({
   user_id: undefined,
   status: '',
