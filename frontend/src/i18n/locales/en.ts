@@ -7687,6 +7687,7 @@ export default {
       statusDisabled: 'Disabled',
       statusExpired: 'Expired',
       statusRevoked: 'Revoked',
+      statusUpgraded: 'Upgraded',
       disable: 'Disable',
       enable: 'Enable',
       disableConfirm: 'Are you sure you want to disable this plan?',

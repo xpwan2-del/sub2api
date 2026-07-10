@@ -7869,6 +7869,7 @@ export default {
       statusDisabled: '停用',
       statusExpired: '已过期',
       statusRevoked: '已撤销',
+      statusUpgraded: '已升级',
       disable: '停用',
       enable: '启用',
       disableConfirm: '确定要停用该套餐吗？',

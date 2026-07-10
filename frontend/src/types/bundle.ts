@@ -53,7 +53,7 @@ export interface BundleSubscription {
   user_id: number
   plan_id: number
   plan?: BundlePlan
-  status: 'active' | 'expired' | 'revoked'
+  status: 'active' | 'expired' | 'revoked' | 'upgraded'
   starts_at: string
   expires_at: string
   concurrency_limit: number
