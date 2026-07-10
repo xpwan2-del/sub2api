@@ -153,7 +153,7 @@
           </div>
         </div>
 
-        <!-- Per-request mode -->
+        <!-- Per-request mode (single flat price, no tiers) -->
         <div v-else-if="entry.billing_mode === 'per_request'">
           <!-- Default per-request price -->
           <label class="mt-3 block text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -163,29 +163,6 @@
           <div class="mt-1 w-48">
             <input :value="entry.per_request_price" @input="emitField('per_request_price', ($event.target as HTMLInputElement).value)"
               type="number" step="any" min="0" class="input text-sm" :placeholder="t('admin.channels.form.pricePlaceholder')" />
-          </div>
-
-          <!-- Tiers -->
-          <div class="mt-3 flex items-center justify-between">
-            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">
-              {{ t('admin.channels.form.requestTiers') }}
-            </label>
-            <button type="button" @click="addInterval" class="text-xs text-primary-600 hover:text-primary-700">
-              + {{ t('admin.channels.form.addTier') }}
-            </button>
-          </div>
-          <div v-if="entry.intervals && entry.intervals.length > 0" class="mt-2 space-y-2">
-            <IntervalRow
-              v-for="(iv, idx) in entry.intervals"
-              :key="idx"
-              :interval="iv"
-              :mode="entry.billing_mode"
-              @update="updateInterval(idx, $event)"
-              @remove="removeInterval(idx)"
-            />
-          </div>
-          <div v-else class="mt-2 rounded border border-dashed border-gray-300 p-3 text-center text-xs text-gray-400 dark:border-dark-500">
-            {{ t('admin.channels.form.noTiersYet') }}
           </div>
         </div>
 
