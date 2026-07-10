@@ -135,6 +135,24 @@ export function formatDateOnly(date: string | Date | null | undefined): string {
 }
 
 /**
+ * 格式化日期（只显示时间部分，24 小时制带秒）
+ * @param date 日期字符串或 Date 对象
+ * @param localeOverride 可选 locale 覆盖
+ * @returns 格式化后的时间字符串，如 "14:30:45"
+ */
+export function formatTimeOnly(
+  date: string | Date | null | undefined,
+  localeOverride?: string
+): string {
+  return formatDate(date, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }, localeOverride)
+}
+
+/**
  * 格式化日期时间（完整格式）
  * @param date 日期字符串或 Date 对象
  * @param options Intl.DateTimeFormatOptions
