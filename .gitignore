@@ -143,6 +143,7 @@ docs/*
 !docs/SECURITY_AUDIT_REPORT.md
 !docs/IMAGE_VIDEO_SPLIT_QUOTA_DESIGN.md
 !docs/IMAGE_VIDEO_SPLIT_QUOTA_PLAN.md
+!docs/PER_REQUEST_NO_TIERS_DESIGN.md
 !docs/legal/
 !docs/legal/*.md
 !docs/designs/
