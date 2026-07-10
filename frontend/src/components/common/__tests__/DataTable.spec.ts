@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { h } from 'vue'
 
 import DataTable from '../DataTable.vue'
 
@@ -61,5 +62,73 @@ describe('DataTable', () => {
     expect(nameHeader.attributes('aria-sort')).toBe('descending')
     expect(nameHeader.findAll('svg')[0].classes()).toContain('text-gray-300')
     expect(nameHeader.findAll('svg')[1].classes()).toContain('text-primary-600')
+  })
+})
+
+describe('DataTable inline row expansion (virtual=false)', () => {
+  beforeEach(() => {
+    stubDesktopMatchMedia()
+    localStorage.clear()
+  })
+
+  it('renders row-expansion slot under the matching row', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        virtual: false,
+        rowKey: 'id',
+        expandedRowKey: 2,
+        columns: [{ key: 'name', label: 'Name' }],
+        data: [
+          { id: 1, name: 'Alpha' },
+          { id: 2, name: 'Beta' }
+        ]
+      },
+      slots: {
+        'row-expansion': ({ row }: { row: { id: number } }) =>
+          h('div', { class: 'expansion' }, `usage-${row.id}`)
+      }
+    })
+
+    await wrapper.vm.$nextTick()
+
+    const expansions = wrapper.findAll('.expansion')
+    expect(expansions).toHaveLength(1)
+    expect(expansions[0].text()).toBe('usage-2')
+    expect(wrapper.find('tr.expanded-row td').attributes('colspan')).toBe('1')
+  })
+
+  it('does not render row-expansion when expandedRowKey is null', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        virtual: false,
+        rowKey: 'id',
+        expandedRowKey: null,
+        columns: [{ key: 'name', label: 'Name' }],
+        data: [{ id: 1, name: 'Alpha' }]
+      },
+      slots: {
+        'row-expansion': () => h('div', { class: 'expansion' }, 'x')
+      }
+    })
+
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findAll('.expansion')).toHaveLength(0)
+  })
+
+  it('does not render row-expansion in virtual mode (default)', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        rowKey: 'id',
+        expandedRowKey: 1,
+        columns: [{ key: 'name', label: 'Name' }],
+        data: [{ id: 1, name: 'Alpha' }]
+      },
+      slots: {
+        'row-expansion': () => h('div', { class: 'expansion' }, 'x')
+      }
+    })
+
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findAll('.expansion')).toHaveLength(0)
   })
 })
