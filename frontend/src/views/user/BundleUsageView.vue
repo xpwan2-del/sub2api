@@ -57,6 +57,7 @@
                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('bundles.expiresAt') }}</p>
                 <p :class="expirationClass">
                   {{ formatExpirationDate(bundle.expires_at) }}
+                  <span class="ml-1 align-middle text-sm font-normal text-gray-400 dark:text-gray-500">{{ formatExpirationTime(bundle.expires_at) }}</span>
                 </p>
                 <p :class="['mt-0.5 text-xs', remainingDaysColorClass]">
                   {{ remainingDaysText(bundle.expires_at) }}
@@ -263,7 +264,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { platformBadgeLightClass, platformBorderClass, platformLabel } from '@/utils/platformColors'
 import { getTierTheme, getTierI18nKey } from '@/constants/bundleTiers'
-import { formatDateOnly } from '@/utils/format'
+import { formatDateOnly, formatTimeOnly } from '@/utils/format'
 import { splitModelPatterns } from '@/utils/bundleQuota'
 
 // ==================== BundleUsageView：用户套餐用量页 ====================
@@ -357,6 +358,11 @@ function countMetrics(u: BundleUsageProgress, kind: 'image' | 'video') {
 
 function formatExpirationDate(expiresAt: string): string {
   return formatDateOnly(expiresAt)
+}
+
+// 格式化到期时间（时分秒，弱化展示）
+function formatExpirationTime(expiresAt: string): string {
+  return formatTimeOnly(expiresAt)
 }
 
 function remainingDaysText(expiresAt: string): string {
