@@ -26,6 +26,11 @@
         </div>
       </div>
     </template>
+    <template #cell-order_type="{ value }">
+      <span :class="orderTypeClass(value)">
+        {{ orderTypeLabel(value) }}
+      </span>
+    </template>
     <template #cell-payment_type="{ value }">
       <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('payment.methods.' + value, value) }}</span>
     </template>
@@ -66,6 +71,27 @@ function paymentAmountSymbol(order: PaymentOrder): string {
   return currencySymbol(order.currency)
 }
 
+function orderTypeLabel(type: string): string {
+  switch (type) {
+    case 'balance': return t('payment.admin.balanceOrder')
+    case 'subscription': return t('payment.admin.subscriptionOrder')
+    case 'bundle': return t('payment.admin.bundleOrder')
+    case 'bundle_upgrade': return t('payment.admin.bundleUpgradeOrder')
+    default: return type
+  }
+}
+
+function orderTypeClass(type: string): string {
+  const base = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium'
+  switch (type) {
+    case 'balance': return `${base} bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300`
+    case 'subscription': return `${base} bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300`
+    case 'bundle': return `${base} bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300`
+    case 'bundle_upgrade': return `${base} bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300`
+    default: return `${base} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300`
+  }
+}
+
 const columns = computed((): Column[] => {
   const cols: Column[] = [
     { key: 'id', label: t('payment.orders.orderId') },
@@ -76,6 +102,7 @@ const columns = computed((): Column[] => {
   }
   cols.push(
     { key: 'pay_amount', label: t('payment.orders.payAmount') },
+    { key: 'order_type', label: t('payment.orders.orderType') },
     { key: 'payment_type', label: t('payment.orders.paymentMethod') },
     { key: 'status', label: t('payment.orders.status') },
     { key: 'created_at', label: t('payment.orders.createdAt') },

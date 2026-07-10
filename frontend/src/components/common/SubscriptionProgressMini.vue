@@ -128,6 +128,7 @@ function sourceLabel(source: string): string {
     case 'purchase': return t('subscriptionProgress.sourcePurchase')
     case 'redeem': return t('subscriptionProgress.sourceRedeem')
     case 'admin_assign': return t('subscriptionProgress.sourceAdmin')
+    case 'upgrade': return t('subscriptionProgress.sourceUpgrade')
     default: return source
   }
 }

@@ -703,18 +703,18 @@ const routes: RouteRecordRaw[] = [
       requiresPayment: true
     }
   },
-  {
-    path: '/admin/orders/plans',
-    name: 'AdminPaymentPlans',
-    component: () => import('@/views/admin/orders/AdminPaymentPlansView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: 'Subscription Plans',
-      titleKey: 'nav.paymentPlans',
-      requiresPayment: true
-    }
-  },
+  // {
+  //   path: '/admin/orders/plans',
+  //   name: 'AdminPaymentPlans',
+  //   component: () => import('@/views/admin/orders/AdminPaymentPlansView.vue'),
+  //   meta: {
+  //     requiresAuth: true,
+  //     requiresAdmin: true,
+  //     title: 'Subscription Plans',
+  //     titleKey: 'nav.paymentPlans',
+  //     requiresPayment: true
+  //   }
+  // },
 
   // ==================== Bundle Admin Routes ====================
   {

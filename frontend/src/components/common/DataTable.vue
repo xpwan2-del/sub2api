@@ -152,46 +152,87 @@
           </td>
         </tr>
 
-        <!-- Data rows (virtual scroll) -->
+        <!-- Data rows -->
         <template v-else>
-          <tr v-if="virtualPaddingTop > 0" aria-hidden="true">
-            <td :colspan="columns.length"
-                :style="{ height: virtualPaddingTop + 'px', padding: 0, border: 'none' }">
-            </td>
-          </tr>
-          <tr
-            v-for="virtualRow in virtualItems"
-            :key="resolveRowKey(sortedData[virtualRow.index], virtualRow.index)"
-            :data-row-id="resolveRowKey(sortedData[virtualRow.index], virtualRow.index)"
-            :data-index="virtualRow.index"
-            :ref="measureElement"
-            class="hover:bg-gray-50 dark:hover:bg-dark-800"
-          >
-            <td
-              v-for="(column, colIndex) in columns"
-              :key="column.key"
-              :class="[
-                'whitespace-nowrap py-4 text-sm text-gray-900 dark:text-gray-100',
-                getAdaptivePaddingClass(),
-                getStickyColumnClass(column, colIndex),
-                column.class
-              ]"
+          <!-- Virtual scroll branch (default) -->
+          <template v-if="virtual">
+            <tr v-if="virtualPaddingTop > 0" aria-hidden="true">
+              <td :colspan="columns.length"
+                  :style="{ height: virtualPaddingTop + 'px', padding: 0, border: 'none' }">
+              </td>
+            </tr>
+            <tr
+              v-for="virtualRow in virtualItems"
+              :key="resolveRowKey(sortedData[virtualRow.index], virtualRow.index)"
+              :data-row-id="resolveRowKey(sortedData[virtualRow.index], virtualRow.index)"
+              :data-index="virtualRow.index"
+              :ref="measureElement"
+              class="hover:bg-gray-50 dark:hover:bg-dark-800"
             >
-              <slot :name="`cell-${column.key}`"
-                    :row="sortedData[virtualRow.index]"
-                    :value="sortedData[virtualRow.index][column.key]"
-                    :expanded="actionsExpanded">
-                {{ column.formatter
-                   ? column.formatter(sortedData[virtualRow.index][column.key], sortedData[virtualRow.index])
-                   : sortedData[virtualRow.index][column.key] }}
-              </slot>
-            </td>
-          </tr>
-          <tr v-if="virtualPaddingBottom > 0" aria-hidden="true">
-            <td :colspan="columns.length"
-                :style="{ height: virtualPaddingBottom + 'px', padding: 0, border: 'none' }">
-            </td>
-          </tr>
+              <td
+                v-for="(column, colIndex) in columns"
+                :key="column.key"
+                :class="[
+                  'whitespace-nowrap py-4 text-sm text-gray-900 dark:text-gray-100',
+                  getAdaptivePaddingClass(),
+                  getStickyColumnClass(column, colIndex),
+                  column.class
+                ]"
+              >
+                <slot :name="`cell-${column.key}`"
+                      :row="sortedData[virtualRow.index]"
+                      :value="sortedData[virtualRow.index][column.key]"
+                      :expanded="actionsExpanded">
+                  {{ column.formatter
+                     ? column.formatter(sortedData[virtualRow.index][column.key], sortedData[virtualRow.index])
+                     : sortedData[virtualRow.index][column.key] }}
+                </slot>
+              </td>
+            </tr>
+            <tr v-if="virtualPaddingBottom > 0" aria-hidden="true">
+              <td :colspan="columns.length"
+                  :style="{ height: virtualPaddingBottom + 'px', padding: 0, border: 'none' }">
+              </td>
+            </tr>
+          </template>
+
+          <!-- Non-virtual branch: render all rows + inline expansion -->
+          <template v-else>
+            <template
+              v-for="(row, index) in sortedData"
+              :key="resolveRowKey(row, index)"
+            >
+              <tr class="hover:bg-gray-50 dark:hover:bg-dark-800">
+                <td
+                  v-for="(column, colIndex) in columns"
+                  :key="column.key"
+                  :class="[
+                    'whitespace-nowrap py-4 text-sm text-gray-900 dark:text-gray-100',
+                    getAdaptivePaddingClass(),
+                    getStickyColumnClass(column, colIndex),
+                    column.class
+                  ]"
+                >
+                  <slot :name="`cell-${column.key}`"
+                        :row="row"
+                        :value="row[column.key]"
+                        :expanded="actionsExpanded">
+                    {{ column.formatter
+                       ? column.formatter(row[column.key], row)
+                       : row[column.key] }}
+                  </slot>
+                </td>
+              </tr>
+              <tr
+                v-if="expandedRowKey !== null && expandedRowKey === resolveRowKey(row, index)"
+                class="expanded-row"
+              >
+                <td :colspan="columns.length" class="bg-gray-50 dark:bg-dark-800/50">
+                  <slot name="row-expansion" :row="row" />
+                </td>
+              </tr>
+            </template>
+          </template>
         </template>
       </tbody>
     </table>
@@ -385,6 +426,10 @@ interface Props {
   estimateRowHeight?: number
   /** Number of rows to render beyond the visible area (default 5) */
   overscan?: number
+  /** 启用虚拟滚动（默认 true）。数据量小的分页页可设为 false 以支持行内展开。 */
+  virtual?: boolean
+  /** 当前展开行的 key；与 row-expansion 插槽配合，仅在 virtual=false 时生效 */
+  expandedRowKey?: string | number | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -393,7 +438,9 @@ const props = withDefaults(defineProps<Props>(), {
   stickyActionsColumn: true,
   expandableActions: true,
   defaultSortOrder: 'asc',
-  serverSideSort: false
+  serverSideSort: false,
+  virtual: true,
+  expandedRowKey: null
 })
 
 const sortKey = ref<string>('')
@@ -609,7 +656,7 @@ const sortedData = computed(() => {
 
 // --- Virtual scrolling ---
 const rowVirtualizer = useVirtualizer(computed(() => ({
-  count: isDesktopViewport.value ? (sortedData.value?.length ?? 0) : 0,
+  count: isDesktopViewport.value && props.virtual ? (sortedData.value?.length ?? 0) : 0,
   getScrollElement: () => tableWrapperRef.value,
   estimateSize: () => props.estimateRowHeight ?? 56,
   overscan: props.overscan ?? 5,

@@ -7139,6 +7139,7 @@ export default {
     sourcePurchase: '购买',
     sourceRedeem: '兑换',
     sourceAdmin: '管理员分配',
+    sourceUpgrade: '升级',
     moreFeatures: '项更多特性'
   },
 
@@ -7644,6 +7645,8 @@ export default {
       orders: '订单',
       balanceOrder: '余额充值',
       subscriptionOrder: '订阅',
+      bundleOrder: '套餐',
+      bundleUpgradeOrder: '套餐升级',
       paidAt: '支付时间',
       completedAt: '完成时间',
       expiresAt: '过期时间',
@@ -7870,6 +7873,7 @@ export default {
       statusDisabled: '停用',
       statusExpired: '已过期',
       statusRevoked: '已撤销',
+      statusUpgraded: '已升级',
       disable: '停用',
       enable: '启用',
       disableConfirm: '确定要停用该套餐吗？',
@@ -7888,6 +7892,7 @@ export default {
       sourcePurchase: '购买',
       sourceRedeem: '兑换',
       sourceAdminAssign: '管理员分配',
+      sourceUpgrade: '升级',
       revoke: '撤销',
       revokeConfirm: '确定要撤销该用户的套餐吗？',
       revokeSubscription: '撤销订阅',

@@ -53,12 +53,12 @@ export interface BundleSubscription {
   user_id: number
   plan_id: number
   plan?: BundlePlan
-  status: 'active' | 'expired' | 'revoked'
+  status: 'active' | 'expired' | 'revoked' | 'upgraded'
   starts_at: string
   expires_at: string
   concurrency_limit: number
   rpm_limit: number
-  source: 'purchase' | 'redeem' | 'admin_assign'
+  source: 'purchase' | 'redeem' | 'admin_assign' | 'upgrade'
   /** 管理端列表 enrich 的用户邮箱 */
   user_email?: string
 }

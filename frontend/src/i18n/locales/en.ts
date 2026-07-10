@@ -6983,6 +6983,7 @@ export default {
     sourcePurchase: 'Purchase',
     sourceRedeem: 'Redeem',
     sourceAdmin: 'Admin Assigned',
+    sourceUpgrade: 'Upgrade',
     moreFeatures: 'more features'
   },
 
@@ -7461,6 +7462,8 @@ export default {
       orders: 'Orders',
       balanceOrder: 'Balance Top-Up',
       subscriptionOrder: 'Subscription',
+      bundleOrder: 'Bundle',
+      bundleUpgradeOrder: 'Bundle Upgrade',
       paidAt: 'Paid At',
       completedAt: 'Completed At',
       expiresAt: 'Expires At',
@@ -7688,6 +7691,7 @@ export default {
       statusDisabled: 'Disabled',
       statusExpired: 'Expired',
       statusRevoked: 'Revoked',
+      statusUpgraded: 'Upgraded',
       disable: 'Disable',
       enable: 'Enable',
       disableConfirm: 'Are you sure you want to disable this plan?',
@@ -7706,6 +7710,7 @@ export default {
       sourcePurchase: 'Purchase',
       sourceRedeem: 'Redeem',
       sourceAdminAssign: 'Admin Assigned',
+      sourceUpgrade: 'Upgrade',
       revoke: 'Revoke',
       revokeConfirm: 'Are you sure you want to revoke this subscription?',
       revokeSubscription: 'Revoke Subscription',
