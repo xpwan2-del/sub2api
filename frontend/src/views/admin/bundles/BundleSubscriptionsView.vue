@@ -38,7 +38,14 @@
 
       <!-- Subscriptions Table -->
       <template #table>
-        <DataTable :columns="columns" :data="subscriptions" :loading="loading">
+        <DataTable
+          :columns="columns"
+          :data="subscriptions"
+          :loading="loading"
+          row-key="id"
+          :virtual="false"
+          :expanded-row-key="expandedRowId"
+        >
           <!-- Clickable row toggle -->
           <template #cell-id="{ row }">
             <div class="flex items-center gap-2">
@@ -114,13 +121,10 @@
           <template #empty>
             <EmptyState :title="t('bundles.admin.noSubscriptions')" />
           </template>
-        </DataTable>
 
-        <!-- Expanded Row Detail -->
-        <div
-          v-if="expandedRowId !== null"
-          class="border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-dark-800 dark:bg-dark-800/50"
-        >
+          <!-- Inline expanded row: group usage details -->
+          <template #row-expansion>
+            <div class="px-5 py-4">
           <template v-if="usageLoading">
             <p class="text-sm text-gray-400 dark:text-gray-500">{{ t('common.loading') }}</p>
           </template>
@@ -296,7 +300,9 @@
           <div v-else class="text-sm text-gray-400 dark:text-gray-500">
             {{ t('bundles.admin.noGroupUsage') }}
           </div>
-        </div>
+            </div>
+          </template>
+        </DataTable>
       </template>
 
       <!-- Pagination -->
@@ -449,6 +455,7 @@ const statusOptions = computed(() => [
   { value: 'active', label: t('bundles.admin.statusActive') },
   { value: 'expired', label: t('bundles.admin.statusExpired') },
   { value: 'revoked', label: t('bundles.admin.statusRevoked') },
+  { value: 'upgraded', label: t('bundles.admin.statusUpgraded') },
 ])
 
 // ==================== 工具函数 ====================
@@ -465,6 +472,7 @@ function statusBadgeClass(status: string): string {
     case 'active': return `${base} bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300`
     case 'expired': return `${base} bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400`
     case 'revoked': return `${base} bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300`
+    case 'upgraded': return `${base} bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300`
     default: return `${base} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300`
   }
 }
@@ -474,6 +482,7 @@ function statusLabel(status: string): string {
     case 'active': return t('bundles.admin.statusActive')
     case 'expired': return t('bundles.admin.statusExpired')
     case 'revoked': return t('bundles.admin.statusRevoked')
+    case 'upgraded': return t('bundles.admin.statusUpgraded')
     default: return status
   }
 }
