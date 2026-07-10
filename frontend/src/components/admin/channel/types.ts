@@ -68,7 +68,17 @@ export function apiIntervalsToForm(intervals: PricingInterval[]): IntervalFormEn
   }))
 }
 
-export function formIntervalsToAPI(intervals: IntervalFormEntry[]): PricingInterval[] {
+/** 表单区间 → API 区间。
+ *
+ * mode 决定是否提交层级：
+ * - per_request：不支持层级，UI 已移除层级入口，提交时（含历史数据）一律清空
+ * - token / image：按原逻辑转换
+ */
+export function formIntervalsToAPI(
+  intervals: IntervalFormEntry[],
+  mode: BillingMode = 'token',
+): PricingInterval[] {
+  if (mode === 'per_request') return []
   return (intervals || []).map(iv => ({
     min_tokens: iv.min_tokens,
     max_tokens: iv.max_tokens,

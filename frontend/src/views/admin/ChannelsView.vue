@@ -1068,7 +1068,7 @@ function accountStatsRulesToAPI(): AccountStatsPricingRule[] {
             cache_read_price: mTokToPerToken(p.cache_read_price),
             image_output_price: mTokToPerToken(p.image_output_price),
             per_request_price: p.per_request_price != null && p.per_request_price !== '' ? Number(p.per_request_price) : null,
-            intervals: formIntervalsToAPI(p.intervals || [])
+            intervals: formIntervalsToAPI(p.intervals || [], p.billing_mode)
           }))
       })
     }
@@ -1108,7 +1108,7 @@ function formToAPI(): { group_ids: number[], model_pricing: ChannelModelPricing[
         cache_read_price: mTokToPerToken(entry.cache_read_price),
         image_output_price: mTokToPerToken(entry.image_output_price),
         per_request_price: entry.per_request_price != null && entry.per_request_price !== '' ? Number(entry.per_request_price) : null,
-        intervals: formIntervalsToAPI(entry.intervals || [])
+        intervals: formIntervalsToAPI(entry.intervals || [], entry.billing_mode)
       })
     }
   }

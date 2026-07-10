@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   resolutionOptionsForMode,
   nextDefaultTierLabel,
+  formIntervalsToAPI,
   validateIntervals,
   type IntervalFormEntry,
 } from '../types'
@@ -145,5 +146,34 @@ describe('validateIntervals image/video', () => {
   })
   it('video 非白名单报错', () => {
     expect(validateIntervals([tier('5K')], BILLING_MODE_VIDEO)).not.toBeNull()
+  })
+})
+
+describe('formIntervalsToAPI', () => {
+  it('returns empty array for per_request mode (tiers not supported)', () => {
+    const intervals: IntervalFormEntry[] = [
+      makeInterval({ tier_label: '1K', per_request_price: 0.04 }),
+      makeInterval({ tier_label: '2K', per_request_price: 0.06 }),
+    ]
+    expect(formIntervalsToAPI(intervals, 'per_request')).toEqual([])
+  })
+
+  it('still converts intervals for image mode', () => {
+    const intervals: IntervalFormEntry[] = [
+      makeInterval({ tier_label: '1K', per_request_price: 0.04 }),
+    ]
+    const result = formIntervalsToAPI(intervals, 'image')
+    expect(result).toHaveLength(1)
+    expect(result[0].tier_label).toBe('1K')
+    expect(result[0].per_request_price).toBe(0.04)
+  })
+
+  it('converts intervals for token mode when mode omitted', () => {
+    const intervals: IntervalFormEntry[] = [
+      makeInterval({ min_tokens: 0, max_tokens: 200000, input_price: 1 }),
+    ]
+    const result = formIntervalsToAPI(intervals)
+    expect(result).toHaveLength(1)
+    expect(result[0].per_request_price).toBeNull()
   })
 })
