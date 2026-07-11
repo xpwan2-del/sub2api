@@ -195,6 +195,8 @@ export default {
         resolutionNotMatched: '该档位无法匹配，请重新选择',
         defaultVideoPrice: '默认单次价格（未命中层级时使用）',
       },
+      noGroupsSelected: '未为 {platform} 选择分组',
+      emptyModelsInPricing: '{platform} 下未配置计费模型',
     },
     accounts: {
       openai: {
@@ -210,6 +212,17 @@ export default {
         codexImageGenerationBridgeBadgeEnabled: '账号开启',
         codexImageGenerationBridgeBadgeDisabled: '账号关闭',
       },
+      oauth: {
+        openai: {
+          mobileRefreshTokenAuth: '手动输入 Mobile RT',
+          accessTokenAuth: '手动输入 AT',
+        },
+      },
+      messages: {
+        accountCreated: '账号创建成功',
+      },
+      fromModel: '原模型',
+      toModel: '目标模型',
     },
     ops: {
       modelStatus: {
@@ -286,6 +299,18 @@ export default {
           real_traffic: '流量',
         },
       },
+      runtime: {
+        metricThresholds: '指标阈值配置',
+        metricThresholdsHint: '配置各项指标的告警阈值，超出阈值时将以红色显示',
+        slaMinPercent: 'SLA最低百分比',
+        slaMinPercentHint: 'SLA低于此值时显示为红色（默认：99.5%）',
+        ttftP99MaxMs: 'TTFT P99最大值（毫秒）',
+        ttftP99MaxMsHint: 'TTFT P99高于此值时显示为红色（默认：500ms）',
+        requestErrorRateMaxPercent: '请求错误率最大值（%）',
+        requestErrorRateMaxPercentHint: '请求错误率高于此值时显示为红色（默认：5%）',
+        upstreamErrorRateMaxPercent: '上游错误率最大值（%）',
+        upstreamErrorRateMaxPercentHint: '上游错误率高于此值时显示为红色（默认：5%）',
+      },
     },
     bundlePlans: {
       description: '管理套餐方案，包括创建、编辑和停用套餐',
@@ -293,6 +318,26 @@ export default {
     bundleSubscriptions: {
       description: '查看和管理用户套餐订阅，支持延长和撤销',
     },
+    settings: {
+      openaiFastPolicy: {
+        userIds: '指定用户 ID',
+        userIdsHint: '留空表示对全部 Sub2API 用户生效。指定后仅匹配这些用户的 API Key 请求，且优先于全局规则。',
+        addUserId: '添加用户 ID',
+        removeUserId: '移除用户 ID',
+        userIdPlaceholder: '例如: 1001',
+      },
+    },
+    users: {
+      passwordCopied: '密码已复制到剪贴板',
+    },
+  },
+  common: {
+    apply: '应用',
+    clear: '清除',
+    creating: '创建中...',
+    required: '必填',
+    sending: '发送中...',
+    tryAgain: '请重试',
   },
   subscriptionProgress: {
     viewCurrent: '查看当前订阅',

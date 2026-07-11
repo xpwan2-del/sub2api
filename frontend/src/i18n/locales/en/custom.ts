@@ -195,6 +195,8 @@ export default {
         resolutionNotMatched: 'This tier cannot be matched, please reselect',
         defaultVideoPrice: 'Default per-request price (fallback when no tier matches)',
       },
+      noGroupsSelected: 'No groups selected for {platform}',
+      emptyModelsInPricing: 'No models configured for pricing on {platform}',
     },
     accounts: {
       openai: {
@@ -210,6 +212,17 @@ export default {
         codexImageGenerationBridgeBadgeEnabled: 'Account on',
         codexImageGenerationBridgeBadgeDisabled: 'Account off',
       },
+      oauth: {
+        openai: {
+          mobileRefreshTokenAuth: 'Manual Mobile RT Input',
+          accessTokenAuth: 'Manual AT Input',
+        },
+      },
+      messages: {
+        accountCreated: 'Account created successfully',
+      },
+      fromModel: 'From Model',
+      toModel: 'To Model',
     },
     ops: {
       modelStatus: {
@@ -286,6 +299,18 @@ export default {
           real_traffic: 'Traffic',
         },
       },
+      runtime: {
+        metricThresholds: 'Metric Thresholds',
+        metricThresholdsHint: 'Configure alert thresholds for metrics, values exceeding thresholds will be displayed in red',
+        slaMinPercent: 'SLA Minimum Percentage',
+        slaMinPercentHint: 'SLA below this value will be displayed in red (default: 99.5%)',
+        ttftP99MaxMs: 'TTFT P99 Maximum (ms)',
+        ttftP99MaxMsHint: 'TTFT P99 above this value will be displayed in red (default: 500ms)',
+        requestErrorRateMaxPercent: 'Request Error Rate Maximum (%)',
+        requestErrorRateMaxPercentHint: 'Request error rate above this value will be displayed in red (default: 5%)',
+        upstreamErrorRateMaxPercent: 'Upstream Error Rate Maximum (%)',
+        upstreamErrorRateMaxPercentHint: 'Upstream error rate above this value will be displayed in red (default: 5%)',
+      },
     },
     bundlePlans: {
       description: 'Manage bundle plans including creation, editing, and disabling',
@@ -293,6 +318,30 @@ export default {
     bundleSubscriptions: {
       description: 'View and manage user bundle subscriptions, support extending and revoking',
     },
+    settings: {
+      openaiFastPolicy: {
+        userIds: 'Specific user IDs',
+        userIdsHint: 'Leave empty to apply to all Sub2API users. Specified users match requests from their API keys and take precedence over global rules.',
+        addUserId: 'Add user ID',
+        removeUserId: 'Remove user ID',
+        userIdPlaceholder: 'e.g., 1001',
+      },
+    },
+    users: {
+      passwordCopied: 'Password copied to clipboard',
+    },
+  },
+  common: {
+    apply: 'Apply',
+    clear: 'Clear',
+    creating: 'Creating...',
+    required: 'Required',
+    sending: 'Sending...',
+    tryAgain: 'Please try again',
+  },
+  userSubscriptions: {
+    bundleBadge: 'Bundle Subscription',
+    bundleRenew: 'Renew Bundle',
   },
   subscriptionProgress: {
     viewCurrent: 'View current subscription',
