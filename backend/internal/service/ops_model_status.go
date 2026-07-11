@@ -67,7 +67,7 @@ func (s *OpsService) GetModelStatusSnapshot(ctx context.Context, filter *OpsMode
 		trafficByKey[key] = st
 	}
 
-	accounts, _ := s.listAllAccountsForOps(ctx, filter.Platform)
+	accounts, _ := s.listAllAccountsForOps(ctx, filter.Platform, nil)
 	inventory := buildOpsModelInventory(accounts, trafficByKey, filter.Query)
 	items := make([]*OpsModelStatusItem, 0, len(inventory))
 	for key, inv := range inventory {

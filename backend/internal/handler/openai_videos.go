@@ -132,6 +132,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 			service.OpenAIUpstreamTransportHTTPSSE,
 			"",
 			false,
+			false,
 		)
 		if err != nil {
 			reqLog.Warn("openai.videos.account_select_failed", zap.Error(err), zap.Int("excluded_account_count", len(failedAccountIDs)))

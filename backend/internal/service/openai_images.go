@@ -461,6 +461,7 @@ func applyOpenAIImagesDefaults(req *OpenAIImagesRequest) {
 var openAIImageGenerationModelPrefixes = []string{
 	"gpt-image-",         // OpenAI 原生图片生成
 	"grok-imagine-image", // xAI Grok 图片生成（grok-imagine-image / -2 / ...）
+	"grok-imagine-edit",  // xAI Grok 图片编辑
 }
 
 // isOpenAIImageGenerationModel 判定 model 是否为 images 端点支持的图片生成模型。
@@ -780,6 +781,8 @@ func (s *OpenAIGatewayService) buildOpenAIImagesRequest(
 	if strings.TrimSpace(contentType) != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
+	// 账号级请求头覆写（仅 openai api_key 账号启用时生效；OAuth 路径 no-op）
+	account.ApplyHeaderOverrides(req.Header)
 	return req, nil
 }
 
