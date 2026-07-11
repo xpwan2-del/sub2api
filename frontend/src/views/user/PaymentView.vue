@@ -513,8 +513,10 @@ function platformDotClass(p: string): string {
 
 function subscriptionHasPeakRate(sub: { group?: PeakRateFields | null }): boolean {
   return hasPeakRate(sub.group)
+}
 function subscriptionPeakRateLabel(sub: { group?: PeakRateFields | null }): string {
   return formatPeakRateWindow(sub.group, serverTimezoneLabel(appStore.cachedPublicSettings?.server_utc_offset))
+}
 const loading = ref(true)
 const submitting = ref(false)
 const errorMessage = ref('')
