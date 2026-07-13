@@ -221,10 +221,13 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 
 		if err == nil && result != nil {
 			if isGET {
-				// GET 查询：到达终态或内容已取回则清理绑定
 				isContent := strings.HasSuffix(strings.TrimRight(endpoint, "/"), "/content")
-				if service.IsTerminalOpenAIVideosTaskStatus(result.TaskStatus) || isContent {
-					h.gatewayService.UnbindVideoTask(c.Request.Context(), apiKey.GroupID, taskID)
+				// 仅在内容已取回（isContent）时清理 binding。status 查询发现终态【不】清理——
+				// 画布标准流程是「轮询 status → 完成 → 取 content」，若 status 一发现终态就清掉
+				// binding，紧随其后的 GET /content 会因 bundle 反查 miss 而返回 "not supported"。
+				// 终态后未取 content 的情况由 VideoTaskBindingTTL（2h）兜底自然过期。
+				if isContent {
+					h.gatewayService.UnbindVideoTask(c.Request.Context(), resolvedVideoGroupID(c, apiKey), taskID)
 				}
 			} else if strings.TrimSpace(result.TaskID) != "" {
 				// POST 创建成功：写入 task→{account,model} 绑定 + 粘性账号
