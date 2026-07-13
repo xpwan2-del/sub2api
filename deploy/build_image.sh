@@ -25,14 +25,20 @@ fi
 
 IMAGE_NAME="${IMAGE_NAME:-topai/sub2api}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
+# 前端 npm/pnpm/corepack 镜像源，默认淘宝镜像（与 deploy/docker-compose.dev.yml 一致）。
+# corepack 下载 pnpm 本体也走此源（Dockerfile 内映射为 COREPACK_NPM_REGISTRY）。
+# 想直连官方源：NPM_REGISTRY=https://registry.npmjs.org ./deploy/build_image.sh
+NPM_REGISTRY="${NPM_REGISTRY:-https://registry.npmmirror.com}"
 
 echo "==> 自研版本号 Build: ${BUILD}"
 echo "==> 构建镜像: ${IMAGE_NAME}:${IMAGE_TAG}"
+echo "==> 前端镜像源: ${NPM_REGISTRY}"
 
 docker build --no-cache -t "${IMAGE_NAME}:${IMAGE_TAG}" \
   --build-arg BUILD="${BUILD}" \
   --build-arg GOPROXY=https://goproxy.cn,direct \
   --build-arg GOSUMDB=sum.golang.google.cn \
+  --build-arg NPM_CONFIG_REGISTRY="${NPM_REGISTRY}" \
   -f "${REPO_ROOT}/Dockerfile" \
   "${REPO_ROOT}"
 

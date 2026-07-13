@@ -23,8 +23,16 @@ ARG NPM_CONFIG_REGISTRY
 
 WORKDIR /app/frontend
 
-# Install pnpm (pinned to v9 to match CI and keep builds reproducible)
-RUN corepack enable && corepack prepare pnpm@9 --activate
+# Install pnpm (pinned to v9 to match CI and keep builds reproducible).
+# corepack 解析 pnpm@9 需查 registry 版本列表，国内直连 registry.npmjs.org 不稳；
+# 故把 COREPACK_NPM_REGISTRY 对齐到 NPM_CONFIG_REGISTRY（默认 npmmirror，由
+# build_image.sh 传入）。双通道：corepack 失败则回退 npm 全局安装 pnpm。
+RUN if [ -n "${NPM_CONFIG_REGISTRY}" ]; then \
+      export COREPACK_NPM_REGISTRY="${NPM_CONFIG_REGISTRY}" NPM_CONFIG_REGISTRY="${NPM_CONFIG_REGISTRY}"; \
+    fi && \
+    corepack enable && \
+    ( corepack prepare pnpm@9 --activate || npm install -g pnpm@9 ) && \
+    pnpm --version
 
 # Install dependencies first (better caching)
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
