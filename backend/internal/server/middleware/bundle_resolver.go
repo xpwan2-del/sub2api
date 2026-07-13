@@ -267,6 +267,20 @@ func (m *BundleRouteResolverMiddleware) BundleResolver() gin.HandlerFunc {
 		// Inject resolved group_id into context for downstream middleware/handlers.
 		c.Set("bundle_resolved_group_id", resolved.GroupID)
 
+		// VIDEO_DIAG: 诊断 bundle 解析结果。resolved.Group 是否为 nil 决定 apiKey.GroupID 是否被注入
+		// (下方 if resolved.Group != nil)，进而决定 POST BindVideoTask 写入 binding 的 group 维度。
+		// 若 resolved_group_nil=true 而 ctx 已 set bundle_resolved_group_id，说明 apiKey.GroupID 未被
+		// 注入（合并前 handler 靠 getGroupPlatform 不受影响；合并后靠 bundleRouteResolved 反查会 miss）。
+		slog.Info("VIDEO_DIAG: bundle resolved",
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"model", modelName,
+			"resolved_group_id", resolved.GroupID,
+			"resolved_group_nil", resolved.Group == nil,
+			"bundle_sub_id", *apiKey.BundleSubscriptionID,
+			"api_key_id", apiKey.ID,
+		)
+
 		// 将解析出的 Group 注入到 apiKey 对象，使下游 handler 自动获得正确的 group 信息。
 		// apiKey 是指针，修改其字段对后续所有中间件和 handler 可见。
 		if resolved.Group != nil {

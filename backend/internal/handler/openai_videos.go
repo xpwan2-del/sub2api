@@ -67,8 +67,20 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 			h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "video task id is required")
 			return
 		}
-		model, ok := h.gatewayService.GetVideoTaskModel(c.Request.Context(), resolvedVideoGroupID(c, apiKey), taskID, apiKey.BundleSubscriptionID, &apiKey.UserID)
+		queryGroupID := resolvedVideoGroupID(c, apiKey)
+		ctxGID, _ := getContextInt64(c, "bundle_resolved_group_id")
+		queryGIDVal := int64(0)
+		if queryGroupID != nil {
+			queryGIDVal = *queryGroupID
+		}
+		logger.L().Info("VIDEO_DIAG: GetVideoTaskModel (GET)",
+			zap.String("task_id", taskID),
+			zap.Int64("query_group_id", queryGIDVal),
+			zap.Int64("ctx_bundle_resolved_group_id", ctxGID),
+		)
+		model, ok := h.gatewayService.GetVideoTaskModel(c.Request.Context(), queryGroupID, taskID, apiKey.BundleSubscriptionID, &apiKey.UserID)
 		if !ok {
+			logger.L().Info("VIDEO_DIAG: GetVideoTaskModel MISS", zap.String("task_id", taskID), zap.Int64("query_group_id", queryGIDVal))
 			h.errorResponse(c, http.StatusNotFound, "invalid_request_error", "video task session expired or not found, please recreate the task")
 			return
 		}
@@ -216,7 +228,21 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 				}
 			} else if strings.TrimSpace(result.TaskID) != "" {
 				// POST 创建成功：写入 task→{account,model} 绑定 + 粘性账号
-				if bindErr := h.gatewayService.BindVideoTask(c.Request.Context(), resolvedVideoGroupID(c, apiKey), result.TaskID, account.ID, reqModel, apiKey.BundleSubscriptionID, &apiKey.UserID, service.VideoTaskBindingTTL); bindErr != nil {
+				bindGroupID := resolvedVideoGroupID(c, apiKey)
+				bindCtxGID, _ := getContextInt64(c, "bundle_resolved_group_id")
+				bindGIDVal := int64(0)
+				if bindGroupID != nil {
+					bindGIDVal = *bindGroupID
+				}
+				// VIDEO_DIAG: POST 写入 binding 的 group 维度。对照 GET ResolveGroupByVideoTask 遍历的
+				// probed_group_id：若 bind_group_id 不在其中（常见为 0），反查必然 miss。
+				logger.L().Info("VIDEO_DIAG: BindVideoTask (POST create)",
+					zap.String("task_id", result.TaskID),
+					zap.Int64("bind_group_id", bindGIDVal),
+					zap.Int64("ctx_bundle_resolved_group_id", bindCtxGID),
+					zap.Int64("account_id", account.ID),
+				)
+				if bindErr := h.gatewayService.BindVideoTask(c.Request.Context(), bindGroupID, result.TaskID, account.ID, reqModel, apiKey.BundleSubscriptionID, &apiKey.UserID, service.VideoTaskBindingTTL); bindErr != nil {
 					reqLog.Warn("openai.videos.bind_task_failed", zap.Error(bindErr), zap.String("task_id", result.TaskID))
 				}
 			}

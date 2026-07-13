@@ -182,6 +182,13 @@ func (r *BundleRouteResolver) ResolveGroupByVideoTask(ctx context.Context, bundl
 		}
 		seen[gq.GroupID] = struct{}{}
 		binding, gErr := r.cache.GetVideoTaskBinding(ctx, gq.GroupID, taskID)
+		// VIDEO_DIAG: 反查遍历的每个 plan group 及其命中情况。对照 POST BindVideoTask 写入的
+		// bind_group_id 即可判定维度是否一致（一致则此处必然 found=true 命中一次）。
+		slog.Info("VIDEO_DIAG: ResolveGroupByVideoTask probe",
+			"task_id", taskID,
+			"probed_group_id", gq.GroupID,
+			"found", gErr == nil && strings.TrimSpace(binding.Model) != "",
+		)
 		if gErr != nil || strings.TrimSpace(binding.Model) == "" {
 			continue
 		}
@@ -205,6 +212,13 @@ func (r *BundleRouteResolver) ResolveGroupByVideoTask(ctx context.Context, bundl
 			Group:            group,
 		}, nil
 	}
+	// VIDEO_DIAG: 反查全部 miss。若此处触发，对照 POST 的 bind_group_id 检查：
+	// bind_group_id 不在 probed_group_id 列表里 → POST 写入维度错误（apiKey.GroupID 未注入）。
+	slog.Warn("VIDEO_DIAG: ResolveGroupByVideoTask MISS",
+		"task_id", taskID,
+		"bundle_sub_id", bundleSubID,
+		"probed_group_count", len(seen),
+	)
 	return nil, ErrBundleModelNotIncluded
 }
 
