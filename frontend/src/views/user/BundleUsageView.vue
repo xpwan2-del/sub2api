@@ -240,7 +240,7 @@
                 <!-- No limits：不限额度——圆角浅绿色块，与卡片壁留距，撑满剩余高度 -->
                 <div v-else class="flex flex-1 flex-col min-h-[120px] p-3">
                   <div class="flex flex-1 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
-                    <span class="text-base font-medium text-emerald-600 dark:text-emerald-400">∞ {{ t('bundles.unlimited') }}</span>
+                    <span class="text-sm text-emerald-600 dark:text-emerald-400">∞ {{ t('bundles.unlimited') }}</span>
                   </div>
                 </div>
               </div>
