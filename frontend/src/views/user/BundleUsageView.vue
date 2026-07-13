@@ -235,12 +235,15 @@
                     </template>
                   </template>
 
-                  <!-- No limits -->
+                  <!-- No limits：不限额度——绿色色块撑满卡片内容区，文案居中 -->
                   <div
                     v-if="!hasAnyUsageLimit(usage)"
-                    class="flex items-center justify-center py-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20"
+                    class="flex items-center justify-center min-h-[120px] -mx-3 -my-3 bg-emerald-500"
                   >
-                    <span class="text-sm text-emerald-600 dark:text-emerald-400">∞ {{ t('bundles.unlimited') }}</span>
+                    <span class="flex items-center gap-1.5 text-base font-semibold text-white">
+                      <span class="text-xl leading-none">∞</span>
+                      {{ t('bundles.unlimited') }}
+                    </span>
                   </div>
                 </div>
               </div>
