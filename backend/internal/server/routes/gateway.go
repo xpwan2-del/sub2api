@@ -217,6 +217,10 @@ func RegisterGatewayRoutes(
 		gateway.DELETE("/images/batches/:id", h.BatchImage.DeleteRecord)
 		gateway.DELETE("/images/batches/:id/outputs", h.BatchImage.DeleteOutputs)
 		gateway.POST("/videos/generations", videoGenerationHandler)
+		// OpenAI Video API（含画布/Sora 类客户端）创建任务的标准端点是 POST /v1/videos
+		// （无 /generations 后缀）。/videos/generations 作为兼容别名保留。两者按 method 独立
+		// 基数树与 GET /videos/:request_id 共存，无冲突。
+		gateway.POST("/videos", videoGenerationHandler)
 		gateway.GET("/videos/:request_id", videoStatusHandler)
 		gateway.GET("/videos/:request_id/content", videoContentHandler)
 	}
@@ -284,6 +288,8 @@ func RegisterGatewayRoutes(
 	r.POST("/images/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), bundleRouteResolver.BundleResolver(), requireGroupAnthropic, imagesHandler)
 	r.POST("/images/edits", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), bundleRouteResolver.BundleResolver(), requireGroupAnthropic, imagesHandler)
 	r.POST("/videos/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), bundleRouteResolver.BundleResolver(), requireGroupAnthropic, videoGenerationHandler)
+	// POST /videos：OpenAI Video API 标准创建端点（画布/Sora 类客户端使用），与 /videos/generations 等价。
+	r.POST("/videos", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), bundleRouteResolver.BundleResolver(), requireGroupAnthropic, videoGenerationHandler)
 	r.GET("/videos/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), bundleRouteResolver.BundleResolver(), requireGroupAnthropic, videoStatusHandler)
 	r.GET("/videos/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), bundleRouteResolver.BundleResolver(), requireGroupAnthropic, videoContentHandler)
 
