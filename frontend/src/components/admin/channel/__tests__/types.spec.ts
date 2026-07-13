@@ -44,6 +44,8 @@ function tier(label: string): IntervalFormEntry {
 
 function t(key: string, params?: Record<string, unknown>): string {
   return `${key}${params ? ` ${JSON.stringify(params)}` : ''}`
+}
+
 describe('validateIntervals', () => {
   describe('token mode', () => {
     it('rejects unbounded interval that is not last', () => {
