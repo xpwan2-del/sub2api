@@ -120,7 +120,7 @@
               <div
                 v-for="usage in usages"
                 :key="usage.group_id"
-                class="overflow-hidden bg-white border rounded-2xl dark:bg-dark-800"
+                class="flex flex-col overflow-hidden bg-white border rounded-2xl dark:bg-dark-800"
                 :class="platformBorderClass(usage.platform)"
               >
                 <!-- Group Header -->
@@ -141,8 +141,8 @@
                   </div>
                 </div>
 
-                <!-- Progress Bars -->
-                <div class="p-3 space-y-3">
+                <!-- Progress Bars（有限额时展示进度条） -->
+                <div v-if="hasAnyUsageLimit(usage)" class="p-3 space-y-3">
                   <!-- 限额（日/周/月 USD 用量） -->
                   <template v-if="hasUsdLimit(usage)">
                     <!-- <div class="pt-2 border-t border-gray-100 dark:border-dark-700"></div> -->
@@ -235,16 +235,14 @@
                     </template>
                   </template>
 
-                  <!-- No limits：不限额度——绿色色块撑满卡片内容区，文案居中 -->
-                  <div
-                    v-if="!hasAnyUsageLimit(usage)"
-                    class="flex items-center justify-center min-h-[120px] -mx-3 -my-3 bg-emerald-500"
-                  >
-                    <span class="flex items-center gap-1.5 text-base font-semibold text-white">
-                      <span class="text-xl leading-none">∞</span>
-                      {{ t('bundles.unlimited') }}
-                    </span>
-                  </div>
+                </div>
+
+                <!-- No limits：不限额度——浅绿色块撑满卡片剩余空间，文案居中 -->
+                <div
+                  v-else
+                  class="flex flex-1 items-center justify-center min-h-[120px] bg-emerald-50 dark:bg-emerald-900/20"
+                >
+                  <span class="text-sm text-emerald-600 dark:text-emerald-400">∞ {{ t('bundles.unlimited') }}</span>
                 </div>
               </div>
             </div>
