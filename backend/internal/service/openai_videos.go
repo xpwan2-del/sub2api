@@ -263,7 +263,9 @@ func isOpenAIVideosContentEndpoint(endpoint string) bool {
 }
 
 func isOpenAIVideosContentFallbackStatus(statusCode int) bool {
-	return statusCode == http.StatusNotFound || statusCode == http.StatusMethodNotAllowed
+	// 404/405：上游无 content 端点；400：上游 content 端点不支持 GET（如返回 "model is required"）。
+	// 三者都改走 fallback——从 task status 取 video URL 直接下载，绕过上游 content 端点。
+	return statusCode == http.StatusNotFound || statusCode == http.StatusMethodNotAllowed || statusCode == http.StatusBadRequest
 }
 
 func openAIVideosTaskEndpointFromContent(endpoint string) (string, bool) {
