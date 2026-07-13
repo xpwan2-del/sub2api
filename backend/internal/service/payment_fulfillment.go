@@ -910,7 +910,17 @@ func (s *PaymentService) doBundle(ctx context.Context, o *dbent.PaymentOrder) er
 	if err != nil {
 		return fmt.Errorf("activate bundle: %w", err)
 	}
-	// 回写套餐订阅 ID 到订单，便于财务对账与追溯（当前套餐不支持退款，仍保留关联）。
+	// 必须先用 lease.version（此时仍是回写前的 UpdatedAt）CAS 翻转订单到 Completed，
+	// 再回写 bundle_subscription_id。回写 SetBundleSubscriptionID 会触发 ent 的
+	// UpdateDefault 刷新 updated_at；若在 markCompleted 之前回写，markCompleted 的乐观锁
+	// UpdatedAtEQ(lease.version) 会匹配 0 行 → Conflict → 外层 markFailed 把订单标 Failed，
+	// 而订阅已在 ActivateBundle 事务里 commit 为 active，造成「订单 failed + 订阅 active」
+	// 的状态分裂（纯余额路径还会回滚余额 → 用户未付款却拿到套餐的资金漏洞）。
+	if err := s.markCompleted(ctx, o, &paymentFulfillmentLease{version: o.UpdatedAt}, "BUNDLE_ACTIVATION_SUCCESS"); err != nil {
+		return err
+	}
+	// 回写套餐订阅 ID（status 已 Completed，回写刷新 updated_at 不再破坏任何 lease），
+	// 便于财务对账与追溯。失败仅 warn：订单已完成、订阅已激活，丢字段不影响业务。
 	if bundleSub != nil {
 		if _, uErr := s.entClient.PaymentOrder.UpdateOneID(o.ID).
 			SetBundleSubscriptionID(bundleSub.ID).
@@ -918,7 +928,7 @@ func (s *PaymentService) doBundle(ctx context.Context, o *dbent.PaymentOrder) er
 			slog.Warn("bundle order: write back bundle_subscription_id failed", "orderID", o.ID, "error", uErr)
 		}
 	}
-	return s.markCompleted(ctx, o, &paymentFulfillmentLease{version: o.UpdatedAt}, "BUNDLE_ACTIVATION_SUCCESS")
+	return nil
 }
 
 // ExecuteBundleUpgradeFulfillment fulfills a bundle-upgrade order by swapping the
@@ -997,7 +1007,12 @@ func (s *PaymentService) doBundleUpgrade(ctx context.Context, o *dbent.PaymentOr
 		}
 		return fmt.Errorf("upgrade bundle: %w", err)
 	}
-	// 回写新订阅 ID，便于财务对账与追溯。
+	// 先 CAS 翻转 Completed（同 doBundle：回写会刷新 updated_at，必须在其之前 markCompleted，
+	// 否则 lease 的 UpdatedAtEQ 失效 → 订单 Failed 而新订阅已 active）。详见 doBundle 注释。
+	if err := s.markCompleted(ctx, o, &paymentFulfillmentLease{version: o.UpdatedAt}, "BUNDLE_UPGRADE_SUCCESS"); err != nil {
+		return err
+	}
+	// 回写新订阅 ID（status 已 Completed，不再破坏 lease），便于财务对账与追溯。
 	if newSub != nil {
 		if _, uErr := s.entClient.PaymentOrder.UpdateOneID(o.ID).
 			SetBundleSubscriptionID(newSub.ID).Save(ctx); uErr != nil {
@@ -1005,7 +1020,7 @@ func (s *PaymentService) doBundleUpgrade(ctx context.Context, o *dbent.PaymentOr
 				"orderID", o.ID, "error", uErr)
 		}
 	}
-	return s.markCompleted(ctx, o, &paymentFulfillmentLease{version: o.UpdatedAt}, "BUNDLE_UPGRADE_SUCCESS")
+	return nil
 }
 
 // refundUpgradeToBalance 把升级履约失败时的已付差价退到用户余额。
