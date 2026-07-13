@@ -67,7 +67,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 			h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "video task id is required")
 			return
 		}
-		model, ok := h.gatewayService.GetVideoTaskModel(c.Request.Context(), apiKey.GroupID, taskID, apiKey.BundleSubscriptionID, &apiKey.UserID)
+		model, ok := h.gatewayService.GetVideoTaskModel(c.Request.Context(), resolvedVideoGroupID(c, apiKey), taskID, apiKey.BundleSubscriptionID, &apiKey.UserID)
 		if !ok {
 			h.errorResponse(c, http.StatusNotFound, "invalid_request_error", "video task session expired or not found, please recreate the task")
 			return
@@ -216,7 +216,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 				}
 			} else if strings.TrimSpace(result.TaskID) != "" {
 				// POST 创建成功：写入 task→{account,model} 绑定 + 粘性账号
-				if bindErr := h.gatewayService.BindVideoTask(c.Request.Context(), apiKey.GroupID, result.TaskID, account.ID, reqModel, apiKey.BundleSubscriptionID, &apiKey.UserID, service.VideoTaskBindingTTL); bindErr != nil {
+				if bindErr := h.gatewayService.BindVideoTask(c.Request.Context(), resolvedVideoGroupID(c, apiKey), result.TaskID, account.ID, reqModel, apiKey.BundleSubscriptionID, &apiKey.UserID, service.VideoTaskBindingTTL); bindErr != nil {
 					reqLog.Warn("openai.videos.bind_task_failed", zap.Error(bindErr), zap.String("task_id", result.TaskID))
 				}
 			}
@@ -319,4 +319,24 @@ func extractVideoTaskID(endpoint string) string {
 		}
 	}
 	return idSegment
+}
+
+
+// resolvedVideoGroupID 返回 bundle resolver 为本次请求解析出的实际 groupID，用作 video task
+// binding 的 group 维度。openai_videos.go 的 Videos handler 仅在 bundleRouteResolved=true 时
+// 被调用（见 gateway.go videoGeneration/videoStatus/videoContentHandler），故 ctx 必有
+// bundle_resolved_group_id；该值与 ResolveGroupByVideoTask 反查遍历命中的 plan 实际 groupID 一致。
+//
+// 必须用此实际 groupID 而非 apiKey.GroupID：bundle key 的 apiKey.GroupID 为 nil（derefGroupID=0），
+// 若直接用它存/查 binding，GET /v1/videos/:id(/content) 时 ResolveGroupByVideoTask 按 plan 真实
+// groupID 反查将永远 miss（binding 存在 groupID=0 下），bundleRouteResolved=false，handler 返回
+// "Videos API is not supported for this platform"。缺失 ctx 值时回退 apiKey.GroupID（理论兼容）。
+func resolvedVideoGroupID(c *gin.Context, apiKey *service.APIKey) *int64 {
+	if gid, ok := getContextInt64(c, "bundle_resolved_group_id"); ok {
+		return &gid
+	}
+	if apiKey != nil {
+		return apiKey.GroupID
+	}
+	return nil
 }
