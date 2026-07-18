@@ -1026,6 +1026,9 @@ func (s *PaymentService) doBundleUpgrade(ctx context.Context, o *dbent.PaymentOr
 // refundUpgradeToBalance 把升级履约失败时的已付差价退到用户余额。
 // 复用 doBalance 的 redeem 机制（resolveRedeemAction 幂等决策）：建一个 balance 兑换码并 Redeem，
 // 资金始终留在平台内（不退回支付渠道）。兑换码 code 固定格式保证跨重试唯一且可识别。
+// 退款金额 = o.Amount − o.ProrateCredit（实付差价）：升级订单 Amount 是目标套餐总价，
+// 必须减去旧套餐剩余价值抵扣 ProrateCredit，否则会按总价退款（用户只付了差价却退总价，平台亏钱）。
+// 依赖历史数据迁移 bundle_upgrade_amount_to_total.sql（迁移前老订单 Amount 仍是差价）。
 func (s *PaymentService) refundUpgradeToBalance(ctx context.Context, o *dbent.PaymentOrder) error {
 	if s.hasAuditLog(ctx, o.ID, "BUNDLE_UPGRADE_REFUND_BALANCE") {
 		// 上次退款已闭环、markCompleted 前崩溃 → 直接补 markCompleted。
@@ -1038,7 +1041,7 @@ func (s *PaymentService) refundUpgradeToBalance(ctx context.Context, o *dbent.Pa
 		// 兑换码已被消费（上次 Redeem 成功、markCompleted 前崩溃）→ 补 markCompleted。
 		return s.markCompleted(ctx, o, &paymentFulfillmentLease{version: o.UpdatedAt}, "BUNDLE_UPGRADE_REFUND_BALANCE")
 	case redeemActionCreate:
-		rc := &RedeemCode{Code: refundCode, Type: RedeemTypeBalance, Value: o.Amount, Status: StatusUnused}
+		rc := &RedeemCode{Code: refundCode, Type: RedeemTypeBalance, Value: o.Amount - o.ProrateCredit, Status: StatusUnused}
 		if err := s.redeemService.CreateCode(ctx, rc); err != nil {
 			return fmt.Errorf("create refund redeem code: %w", err)
 		}

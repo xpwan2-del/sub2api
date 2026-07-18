@@ -97,19 +97,42 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.status') }}</p>
             <OrderStatusBadge :status="detailOrder.status" />
           </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.amount') }}</p>
-            <p class="text-sm font-medium text-gray-900 dark:text-white">{{ detailOrder.order_type === 'balance' ? '$' : '¥' }}{{ (detailOrder.amount ?? 0).toFixed(2) }}</p>
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.payAmount') }}</p>
-            <p class="text-sm font-medium text-gray-900 dark:text-white">¥{{ (detailOrder.pay_amount ?? 0).toFixed(2) }}</p>
-          </div>
+          <!-- 非升级订单：金额 + 实付（原样） -->
+          <template v-if="detailOrder.order_type !== 'bundle_upgrade'">
+            <div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.amount') }}</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ detailOrder.order_type === 'balance' ? '$' : '¥' }}{{ (detailOrder.amount ?? 0).toFixed(2) }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.payAmount') }}</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">¥{{ (detailOrder.pay_amount ?? 0).toFixed(2) }}</p>
+            </div>
+          </template>
+          <!-- 升级订单：套餐总价 / 旧套餐抵扣 / 余额抵扣 / 实付（完整构成，金额不再等于抵扣金额） -->
+          <template v-else>
+            <div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.bundleTotalPrice') }}</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">¥{{ (detailOrder.amount ?? 0).toFixed(2) }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.prorateCredit') }}</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">¥{{ (detailOrder.prorate_credit ?? 0).toFixed(2) }}</p>
+            </div>
+            <div v-if="(detailOrder.balance_deduct_amount ?? 0) > 0">
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.balanceDeductAmount') }}</p>
+              <p class="text-sm font-medium text-blue-600 dark:text-blue-400">¥{{ (detailOrder.balance_deduct_amount ?? 0).toFixed(2) }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.payAmount') }}</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">¥{{ (detailOrder.pay_amount ?? 0).toFixed(2) }}</p>
+            </div>
+          </template>
           <div>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.paymentMethod') }}</p>
             <p class="text-sm text-gray-700 dark:text-gray-300">{{ t('payment.methods.' + detailOrder.payment_type, detailOrder.payment_type) }}</p>
           </div>
-          <div v-if="(detailOrder.balance_deduct_amount ?? 0) > 0">
+          <!-- 非升级订单的余额抵扣（升级订单的余额抵扣已在上方四行内展示） -->
+          <div v-if="detailOrder.order_type !== 'bundle_upgrade' && (detailOrder.balance_deduct_amount ?? 0) > 0">
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.balanceDeductAmount') }}</p>
             <p class="text-sm font-medium text-blue-600 dark:text-blue-400">${{ (detailOrder.balance_deduct_amount ?? 0).toFixed(2) }}</p>
           </div>

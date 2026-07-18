@@ -367,6 +367,8 @@ export default {
     },
     orders: {
       balanceDeductAmount: '余额抵扣金额',
+      bundleTotalPrice: '套餐总价',
+      prorateCredit: '旧套餐抵扣',
       viewDetail: '查看详情',
       amountInfo: '金额明细',
       timeline: '订单进度',

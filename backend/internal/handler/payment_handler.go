@@ -482,6 +482,7 @@ type PublicOrderResult struct {
 	Amount              float64    `json:"amount"`
 	PayAmount           float64    `json:"pay_amount"`
 	BalanceDeductAmount float64    `json:"balance_deduct_amount,omitempty"`
+	ProrateCredit       float64    `json:"prorate_credit,omitempty"`
 	FeeRate             float64    `json:"fee_rate"`
 	Currency            string     `json:"currency"`
 	PaymentType         string     `json:"payment_type"`
@@ -518,6 +519,7 @@ func buildPublicOrderResult(order *dbent.PaymentOrder) PublicOrderResult {
 		Amount:              order.Amount,
 		PayAmount:           order.PayAmount,
 		BalanceDeductAmount: order.BalanceDeductAmount,
+		ProrateCredit:       order.ProrateCredit,
 		FeeRate:             order.FeeRate,
 		Currency:            service.PaymentOrderCurrency(order),
 		PaymentType:         order.PaymentType,
@@ -627,6 +629,10 @@ type PaymentOrderResult struct {
 	Amount              float64    `json:"amount"`
 	PayAmount           float64    `json:"pay_amount"`
 	BalanceDeductAmount float64    `json:"balance_deduct_amount,omitempty"`
+	// ProrateCredit 仅 bundle_upgrade 订单有值：旧套餐剩余价值折算的抵扣额。
+	// 前端据此反推套餐总价（amount + prorate_credit）并展示"旧套餐抵扣"明细，
+	// 仅展示透传，不影响 Amount 的计费语义（Amount 仍是差价 due）。
+	ProrateCredit       float64    `json:"prorate_credit,omitempty"`
 	FeeRate             float64    `json:"fee_rate"`
 	Currency            string     `json:"currency"`
 	PaymentType         string     `json:"payment_type"`
@@ -666,6 +672,7 @@ func sanitizePaymentOrderForResponse(order *dbent.PaymentOrder) *PaymentOrderRes
 		Amount:              order.Amount,
 		PayAmount:           order.PayAmount,
 		BalanceDeductAmount: order.BalanceDeductAmount,
+		ProrateCredit:       order.ProrateCredit,
 		FeeRate:             order.FeeRate,
 		Currency:            service.PaymentOrderCurrency(order),
 		PaymentType:         order.PaymentType,

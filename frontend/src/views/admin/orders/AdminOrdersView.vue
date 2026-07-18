@@ -66,10 +66,21 @@
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderId') }}</p><p class="font-mono text-sm font-medium text-gray-900 dark:text-white">#{{ selectedOrder.id }}</p></div>
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderNo') }}</p><p class="text-sm font-medium text-gray-900 dark:text-white">{{ selectedOrder.out_trade_no }}</p></div>
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.status') }}</p><OrderStatusBadge :status="selectedOrder.status" /></div>
-          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.amount') }}</p><p class="text-sm font-medium text-gray-900 dark:text-white">{{ creditedAmountSymbol }}{{ selectedOrder.amount.toFixed(2) }}</p></div>
-          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.payAmount') }}</p><p class="text-sm font-medium text-gray-900 dark:text-white">{{ paymentAmountSymbol(selectedOrder) }}{{ selectedOrder.pay_amount.toFixed(2) }}</p></div>
+          <!-- 非升级订单：金额 + 实付（原样） -->
+          <template v-if="selectedOrder.order_type !== 'bundle_upgrade'">
+            <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.amount') }}</p><p class="text-sm font-medium text-gray-900 dark:text-white">{{ creditedAmountSymbol }}{{ selectedOrder.amount.toFixed(2) }}</p></div>
+            <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.payAmount') }}</p><p class="text-sm font-medium text-gray-900 dark:text-white">{{ paymentAmountSymbol(selectedOrder) }}{{ selectedOrder.pay_amount.toFixed(2) }}</p></div>
+          </template>
+          <!-- 升级订单：套餐总价 / 旧套餐抵扣 / 余额抵扣 / 实付（完整构成，金额不再等于抵扣金额） -->
+          <template v-else>
+            <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.bundleTotalPrice') }}</p><p class="text-sm font-medium text-gray-900 dark:text-white">{{ creditedAmountSymbol }}{{ selectedOrder.amount.toFixed(2) }}</p></div>
+            <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.prorateCredit') }}</p><p class="text-sm font-medium text-gray-900 dark:text-white">{{ creditedAmountSymbol }}{{ (selectedOrder.prorate_credit ?? 0).toFixed(2) }}</p></div>
+            <div v-if="(selectedOrder.balance_deduct_amount ?? 0) > 0"><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.balanceDeductAmount') }}</p><p class="text-sm font-medium text-blue-600 dark:text-blue-400">${{ (selectedOrder.balance_deduct_amount ?? 0).toFixed(2) }}</p></div>
+            <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.payAmount') }}</p><p class="text-sm font-medium text-gray-900 dark:text-white">{{ paymentAmountSymbol(selectedOrder) }}{{ selectedOrder.pay_amount.toFixed(2) }}</p></div>
+          </template>
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.paymentMethod') }}</p><p class="text-sm text-gray-700 dark:text-gray-300">{{ t('payment.methods.' + selectedOrder.payment_type, selectedOrder.payment_type) }}</p></div>
-          <div v-if="(selectedOrder.balance_deduct_amount ?? 0) > 0"><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.balanceDeductAmount') }}</p><p class="text-sm font-medium text-blue-600 dark:text-blue-400">${{ (selectedOrder.balance_deduct_amount ?? 0).toFixed(2) }}</p></div>
+          <!-- 非升级订单的余额抵扣（升级订单的已在上方四行内展示） -->
+          <div v-if="selectedOrder.order_type !== 'bundle_upgrade' && (selectedOrder.balance_deduct_amount ?? 0) > 0"><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.balanceDeductAmount') }}</p><p class="text-sm font-medium text-blue-600 dark:text-blue-400">${{ (selectedOrder.balance_deduct_amount ?? 0).toFixed(2) }}</p></div>
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.feeRate') }}</p><p class="text-sm text-gray-700 dark:text-gray-300">{{ selectedOrder.fee_rate ?? 0 }}%</p></div>
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.createdAt') }}</p><p class="text-sm text-gray-700 dark:text-gray-300">{{ formatDateTime(selectedOrder.created_at) }}</p></div>
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.expiresAt') }}</p><p class="text-sm text-gray-700 dark:text-gray-300">{{ formatDateTime(selectedOrder.expires_at) }}</p></div>

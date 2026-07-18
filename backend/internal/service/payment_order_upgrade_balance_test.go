@@ -69,8 +69,8 @@ func TestCreatePureBalanceBundleOrder_UpgradeRoutesToUpgradeFulfillment(t *testi
 		ClientIP:                   "127.0.0.1",
 		SrcHost:                    "api.example.com",
 	}
-	// createPureBalanceBundleOrder(ctx, req, user, cfg, orderAmount=due, feeRate)
-	resp, err := svc.createPureBalanceBundleOrder(ctx, req, userRepo.getByIDUser, &PaymentConfig{}, upgradeDue, 0)
+	// createPureBalanceBundleOrder(ctx, req, user, cfg, orderAmount=总价, payableAmount=差价due, feeRate)
+	resp, err := svc.createPureBalanceBundleOrder(ctx, req, userRepo.getByIDUser, &PaymentConfig{}, upgradeDue+req.ProrateCredit, upgradeDue, 0)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	require.True(t, resp.DirectSuccess, "纯余额支付应直接成功")
@@ -84,7 +84,7 @@ func TestCreatePureBalanceBundleOrder_UpgradeRoutesToUpgradeFulfillment(t *testi
 	reloaded, err := client.PaymentOrder.Get(ctx, resp.OrderID)
 	require.NoError(t, err)
 	require.Equal(t, payment.OrderTypeBundleUpgrade, reloaded.OrderType)
-	require.Equal(t, upgradeDue, reloaded.Amount)
+	require.Equal(t, upgradeDue+req.ProrateCredit, reloaded.Amount, "Amount 应为目标套餐总价（差价+旧套餐抵扣，回归主干语义）")
 	require.Equal(t, upgradeDue, reloaded.BalanceDeductAmount)
 	require.Equal(t, 0.0, reloaded.PayAmount)
 	require.Equal(t, OrderStatusCompleted, reloaded.Status)
@@ -152,7 +152,7 @@ func TestCreatePureBalanceBundleOrder_BundleStillRoutesToBundleFulfillment(t *te
 		ClientIP:    "127.0.0.1",
 		SrcHost:     "api.example.com",
 	}
-	resp, err := svc.createPureBalanceBundleOrder(ctx, req, userRepo.getByIDUser, &PaymentConfig{}, planPrice, 0)
+	resp, err := svc.createPureBalanceBundleOrder(ctx, req, userRepo.getByIDUser, &PaymentConfig{}, planPrice, planPrice, 0)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	require.True(t, resp.DirectSuccess)

@@ -367,6 +367,8 @@ export default {
     },
     orders: {
       balanceDeductAmount: 'Balance Deduction',
+      bundleTotalPrice: 'Bundle Total Price',
+      prorateCredit: 'Previous Bundle Credit',
       viewDetail: 'View Details',
       amountInfo: 'Amount Breakdown',
       timeline: 'Order Timeline',

@@ -67,6 +67,11 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	if plan != nil {
 		orderAmount = plan.Price
 		limitAmount = plan.Price
+	} else if req.OrderType == payment.OrderTypeBundleUpgrade {
+		// 升级订单 Amount 字段存目标套餐总价（回归主干"订单总金额"语义，与 bundle/subscription 一致），
+		// 用户本次实付仍是差价 req.Amount（旧套餐剩余价值由 ProrateCredit 抵扣）。
+		// limitAmount 保持 req.Amount（差价），作为余额抵扣与渠道实付基准。
+		orderAmount = req.Amount + req.ProrateCredit
 	} else if req.OrderType == payment.OrderTypeBalance {
 		orderAmount = calculateCreditedBalance(req.Amount, cfg.BalanceRechargeMultiplier)
 	}
@@ -79,25 +84,28 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		}
 	}
 	// --- Balance deduction for bundle orders ---
-	// bundle 与 bundle_upgrade 共享同一余额抵扣逻辑：planPrice 即"本次需支付总额"。
-	// bundle 的 planPrice = plan.Price（orderAmount 在 plan!=nil 时已被设为 plan.Price）；
-	// bundle_upgrade 的 planPrice = req.Amount = 升级差价 due（validateOrderInput 对 upgrade 返回
-	// nil plan，故 orderAmount 保持 req.Amount）。两者余额抵扣语义一致。
+	// payableAmount = 用户本次需支付的金额（余额抵扣 / 渠道实付基准）：
+	//   bundle = 套餐总价；bundle_upgrade = 升级差价 req.Amount（旧套餐剩余价值已用 ProrateCredit 抵扣）。
+	// 注意 orderAmount（写入 Amount 字段）对 bundle_upgrade 是套餐总价，二者不同——
+	// 余额只抵"本次需付的差价"，不抵旧套餐已折算的 ProrateCredit。
+	payableAmount := orderAmount
+	if req.OrderType == payment.OrderTypeBundleUpgrade {
+		payableAmount = req.Amount
+	}
 	balanceDeduct := 0.0
 	if req.UseBalance && (req.OrderType == payment.OrderTypeBundle || req.OrderType == payment.OrderTypeBundleUpgrade) && user.Balance > 0 {
-		planPrice := orderAmount
-		balanceDeduct = math.Min(user.Balance, planPrice)
-		if balanceDeduct >= planPrice {
+		balanceDeduct = math.Min(user.Balance, payableAmount)
+		if balanceDeduct >= payableAmount {
 			// Pure balance payment: deduct balance, create order as PAID, fulfill immediately
-			return s.createPureBalanceBundleOrder(ctx, req, user, cfg, orderAmount, feeRate)
+			return s.createPureBalanceBundleOrder(ctx, req, user, cfg, orderAmount, payableAmount, feeRate)
 		}
 		// Mixed payment: deduct balance, reduce gateway amount
 		if err := s.userRepo.DeductBalance(ctx, user.ID, balanceDeduct); err != nil {
 			return nil, fmt.Errorf("deduct balance: %w", err)
 		}
-		slog.Info("balance deducted for mixed bundle payment", "orderID", 0, "userID", user.ID, "deductAmount", balanceDeduct, "planPrice", planPrice)
-		limitAmount = planPrice - balanceDeduct
-		orderAmount = planPrice // keep full price as order amount
+		slog.Info("balance deducted for mixed bundle payment", "orderID", 0, "userID", user.ID, "deductAmount", balanceDeduct, "payableAmount", payableAmount)
+		limitAmount = payableAmount - balanceDeduct
+		// orderAmount 保持套餐总价（Amount 字段语义），不被余额抵扣覆盖
 	}
 	_ = balanceDeduct // used below in createOrderInTx
 	// 订阅套餐 price 是直付价，余额充值倍率只影响余额充值到账，不参与订阅 pay_amount 计算。
@@ -190,21 +198,21 @@ func (s *PaymentService) validateOrderInput(ctx context.Context, req CreateOrder
 
 // createPureBalanceBundleOrder handles pure balance payment for bundle orders.
 // Deducts balance, creates order as PAID, and fulfills immediately.
-func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req CreateOrderRequest, user *User, cfg *PaymentConfig, orderAmount, feeRate float64) (*CreateOrderResponse, error) {
+func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req CreateOrderRequest, user *User, cfg *PaymentConfig, orderAmount, payableAmount, feeRate float64) (*CreateOrderResponse, error) {
 	if req.PlanID == 0 {
 		return nil, infraerrors.BadRequest("INVALID_INPUT", "bundle order requires a plan")
 	}
 	// Deduct balance in a transaction
-	if err := s.userRepo.DeductBalance(ctx, user.ID, orderAmount); err != nil {
+	if err := s.userRepo.DeductBalance(ctx, user.ID, payableAmount); err != nil {
 		return nil, fmt.Errorf("deduct balance for bundle: %w", err)
 	}
-	slog.Info("pure balance payment for bundle", "userID", user.ID, "planID", req.PlanID, "amount", orderAmount)
+	slog.Info("pure balance payment for bundle", "userID", user.ID, "planID", req.PlanID, "amount", payableAmount)
 
 	// Create order as PAID directly
 	outTradeNo, err := s.allocateOutTradeNoDirect(ctx)
 	if err != nil {
 		// Rollback balance deduction
-		_ = s.userRepo.UpdateBalance(ctx, user.ID, orderAmount)
+		_ = s.userRepo.UpdateBalance(ctx, user.ID, payableAmount)
 		return nil, fmt.Errorf("allocate trade no: %w", err)
 	}
 	b := s.entClient.PaymentOrder.Create().
@@ -215,7 +223,7 @@ func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req C
 		SetAmount(orderAmount).
 		SetPayAmount(0).
 		SetFeeRate(0).
-		SetBalanceDeductAmount(orderAmount).
+		SetBalanceDeductAmount(payableAmount).
 		SetRechargeCode("").
 		SetOutTradeNo(outTradeNo).
 		SetPaymentType("balance").
@@ -239,7 +247,7 @@ func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req C
 	order, err := b.Save(ctx)
 	if err != nil {
 		// Rollback balance deduction
-		_ = s.userRepo.UpdateBalance(ctx, user.ID, orderAmount)
+		_ = s.userRepo.UpdateBalance(ctx, user.ID, payableAmount)
 		return nil, fmt.Errorf("create pure balance order: %w", err)
 	}
 	code := fmt.Sprintf("PAY-%d-%d", order.ID, time.Now().UnixNano()%100000)
@@ -247,7 +255,7 @@ func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req C
 	if err != nil {
 		return nil, fmt.Errorf("set recharge code: %w", err)
 	}
-	s.writeAuditLog(ctx, order.ID, "ORDER_PAID", "balance", map[string]any{"paymentType": "balance", "balanceDeductAmount": orderAmount})
+	s.writeAuditLog(ctx, order.ID, "ORDER_PAID", "balance", map[string]any{"paymentType": "balance", "balanceDeductAmount": payableAmount})
 
 	// Fulfill the bundle/upgrade immediately. 走统一分发器：bundle_upgrade 必须路由到
 	// ExecuteBundleUpgradeFulfillment（换套），否则 ExecuteBundleFulfillment 会 ActivateBundle
@@ -257,7 +265,7 @@ func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req C
 		// 套餐暂不支持退款，但激活失败时必须回滚已扣余额，避免用户付款却未拿到套餐。
 		// (This rolls back an intermediate deduction for an order that never fulfilled —
 		// it is not a refund of a completed order.)
-		s.rollbackBalanceDeduct(ctx, user.ID, orderAmount, "pureBalanceFulfillment")
+		s.rollbackBalanceDeduct(ctx, user.ID, payableAmount, "pureBalanceFulfillment")
 		_, _ = s.entClient.PaymentOrder.UpdateOneID(order.ID).SetStatus(OrderStatusFailed).Save(ctx)
 		return nil, fmt.Errorf("activate bundle: %w", err)
 	}
@@ -273,7 +281,7 @@ func (s *PaymentService) createPureBalanceBundleOrder(ctx context.Context, req C
 		PaymentType:         "balance",
 		OutTradeNo:          order.OutTradeNo,
 		DirectSuccess:       true,
-		BalanceDeductAmount: orderAmount,
+		BalanceDeductAmount: payableAmount,
 		ExpiresAt:           order.ExpiresAt,
 	}, nil
 }

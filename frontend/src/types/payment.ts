@@ -103,6 +103,8 @@ export interface PaymentOrder {
   plan_id?: number
   provider_instance_id?: string
   balance_deduct_amount?: number
+  /** 仅 bundle_upgrade 订单：旧套餐剩余价值折算的抵扣额（prorate_credit） */
+  prorate_credit?: number
 }
 
 // ==================== Plans & Channels ====================
