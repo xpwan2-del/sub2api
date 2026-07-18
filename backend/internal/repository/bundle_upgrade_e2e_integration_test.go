@@ -197,14 +197,16 @@ func (e *bundleUpgradeE2E) mustCreateCompletedBundleOrder(u *service.User, bundl
 }
 
 // mustCreatePaidUpgradeOrder 建一笔 PAID 的 bundle_upgrade 订单，关联 sourceSubID + targetPlanID。
-// amount=应补差价，credit=预览时算出的按比例折算值（建单时锁定，Task 6）。
+// amount=应补差价(due)，credit=预览时算出的按比例折算值（建单时锁定，Task 6）。
+// Amount 字段 = amount+credit（目标套餐总价，对齐真实建单 orderAmount=req.Amount+ProrateCredit，
+// payment_order.go:74）；refundUpgradeToBalance 退 Amount-ProrateCredit=due 才正确。
 func (e *bundleUpgradeE2E) mustCreatePaidUpgradeOrder(u *service.User, targetPlanID, sourceSubID int64, amount, credit float64, tag string) *dbent.PaymentOrder {
 	e.t.Helper()
 	o, err := e.client.PaymentOrder.Create().
 		SetUserID(u.ID).
 		SetUserEmail(u.Email).
 		SetUserName(u.Username).
-		SetAmount(amount).
+		SetAmount(amount + credit).
 		SetPayAmount(amount).
 		SetFeeRate(0).
 		SetRechargeCode("E2E-UPGRADE-" + tag).
@@ -384,7 +386,7 @@ func TestBundleUpgradeE2E_NormalUpgrade_StarterToPro(t *testing.T) {
 //	先做一次 starter→pro 升级（产生 pro 订阅 + 对应 bundle_upgrade 订单），再对 pro 订阅 preview
 //	升级到 enterprise。pro 订阅的"购买订单"是 bundle_upgrade 类型（不是 bundle）—— 修复前
 //	OrderTypeEQ(bundle) 查不到 → credit 算成 0；修复后 OrderTypeIn(bundle, bundle_upgrade) 能查到，
-//	credit 按差价反查（不为 0）。
+//	credit 按套餐标价反查（不为 0）。
 func TestBundleUpgradeE2E_SecondUpgrade_ProToEnterprise(t *testing.T) {
 	e := newBundleUpgradeE2E(t)
 	ctx := e.ctx
@@ -418,8 +420,8 @@ func TestBundleUpgradeE2E_SecondUpgrade_ProToEnterprise(t *testing.T) {
 	require.Equal(t, service.OrderStatusCompleted, order1Completed.Status)
 
 	// —— 第二次升级 pro→enterprise 的 preview ——
-	// 灵魂断言：pro 订阅的"实付来源"是 bundle_upgrade 订单（order1），修复前反查返回 0 → credit=0；
-	// 修复后 OrderTypeIn(bundle, bundle_upgrade) 能查到 order1 的实付 → credit>0。
+	// 灵魂断言：pro 订阅的"标价来源"是 bundle_upgrade 订单（order1），修复前反查返回 0 → credit=0；
+	// 修复后 OrderTypeIn(bundle, bundle_upgrade) 能查到 order1 的标价(order1.Amount=pro总价) → credit>0。
 	pv2, err := e.subSvc.PreviewUpgrade(ctx, user.ID, proSub.ID, enterprise.ID)
 	require.NoError(t, err)
 	require.True(t, pv2.Upgradeable, "pro→enterprise 差价>0 应 upgradeable")
@@ -428,9 +430,13 @@ func TestBundleUpgradeE2E_SecondUpgrade_ProToEnterprise(t *testing.T) {
 	require.Equal(t, "E2E P2", pv2.OldPlanName)
 	require.Equal(t, "E2E E2", pv2.NewPlanName)
 
-	// 实付 = order1.DueAmount（第一次升级补的差价）。credit 应基于该实付按剩余比例折算。
+	// 标价基准：pro 订阅的标价来源是 order1（bundle_upgrade），GetFaceValue 返回 order1.Amount=pro总价(200)。
+	// credit = pro标价 × 剩余比例 ≈ 200（两次 preview 间几乎无时间）。灵魂断言：credit > 第一次升级差价 due，
+	// 证明按【套餐标价】折算而非【实付差价】（标价基准前 credit 被压缩到≈差价 100）。
 	firstUpgradeDue := order1Completed.PayAmount
-	require.LessOrEqual(t, pv2.Credit, firstUpgradeDue+1.0, "credit 不应超过 pro 实付（第一次升级差价）")
+	proFaceValue := order1Completed.Amount
+	require.Greater(t, pv2.Credit, firstUpgradeDue, "标价基准下 credit 应 > 第一次升级差价（按 pro 标价折算，非差价）")
+	require.LessOrEqual(t, pv2.Credit, proFaceValue+1.0, "credit 不应超过 pro 标价")
 
 	// 进一步履约第二次升级，确认链路闭环（新订阅 source 仍为 upgrade）。
 	order2 := e.mustCreatePaidUpgradeOrder(user, enterprise.ID, proSub.ID, pv2.DueAmount, pv2.Credit, "second-second")
