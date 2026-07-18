@@ -125,6 +125,9 @@ type AdminPaymentOrderResult struct {
 	Amount              float64    `json:"amount"`
 	PayAmount           float64    `json:"pay_amount"`
 	BalanceDeductAmount float64    `json:"balance_deduct_amount,omitempty"`
+	// ProrateCredit 仅 bundle_upgrade 订单有值：旧套餐剩余价值折算的抵扣额。
+	// 透传字段，供 admin 订单详情展示"旧套餐抵扣"明细，不影响计费（计费基准仍是实付差价）。
+	ProrateCredit       float64    `json:"prorate_credit,omitempty"`
 	FeeRate             float64    `json:"fee_rate"`
 	Currency            string     `json:"currency"`
 	RechargeCode        string     `json:"recharge_code,omitempty"`
@@ -183,6 +186,7 @@ func sanitizeAdminPaymentOrderForResponse(order *dbent.PaymentOrder) *AdminPayme
 		Amount:              order.Amount,
 		PayAmount:           order.PayAmount,
 		BalanceDeductAmount: order.BalanceDeductAmount,
+		ProrateCredit:       order.ProrateCredit,
 		FeeRate:             order.FeeRate,
 		Currency:            service.PaymentOrderCurrency(order),
 		RechargeCode:        order.RechargeCode,

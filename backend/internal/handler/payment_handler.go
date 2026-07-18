@@ -630,8 +630,8 @@ type PaymentOrderResult struct {
 	PayAmount           float64    `json:"pay_amount"`
 	BalanceDeductAmount float64    `json:"balance_deduct_amount,omitempty"`
 	// ProrateCredit 仅 bundle_upgrade 订单有值：旧套餐剩余价值折算的抵扣额。
-	// 前端据此反推套餐总价（amount + prorate_credit）并展示"旧套餐抵扣"明细，
-	// 仅展示透传，不影响 Amount 的计费语义（Amount 仍是差价 due）。
+	// bundle_upgrade 的 Amount 为目标套餐总价，ProrateCredit 是其中旧套餐抵扣部分；
+	// 仅展示透传，不影响计费（实付差价基准见 repository.GetPaidAmountByBundleSub）。
 	ProrateCredit       float64    `json:"prorate_credit,omitempty"`
 	FeeRate             float64    `json:"fee_rate"`
 	Currency            string     `json:"currency"`

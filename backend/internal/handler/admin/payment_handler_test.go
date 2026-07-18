@@ -81,3 +81,39 @@ func TestSanitizeAdminPaymentOrderForResponseIncludesBalanceDeduct(t *testing.T)
 		t.Fatalf("expected JSON to contain balance_deduct_amount, got %s", string(body))
 	}
 }
+
+// TestSanitizeAdminPaymentOrderForResponseIncludesProrateCredit locks in the
+// prorate_credit field on the admin order DTO. bundle_upgrade orders must
+// surface the old-bundle prorated credit so admin order detail matches the
+// user-facing detail; previously AdminPaymentOrderResult omitted this field,
+// so admin detail always showed 0 while the user side showed the real value.
+func TestSanitizeAdminPaymentOrderForResponseIncludesProrateCredit(t *testing.T) {
+	order := &dbent.PaymentOrder{
+		ID:            1,
+		Amount:        99,
+		PayAmount:     89.1,
+		ProrateCredit: 9.9,
+		OrderType:     "bundle_upgrade",
+		PaymentType:   "alipay",
+		ProviderSnapshot: map[string]any{
+			"schema_version": 2,
+			"currency":       "USD",
+		},
+	}
+
+	got := sanitizeAdminPaymentOrderForResponse(order)
+	if got == nil {
+		t.Fatal("expected sanitized order")
+	}
+	if got.ProrateCredit != 9.9 {
+		t.Fatalf("expected prorate_credit=9.9, got %v", got.ProrateCredit)
+	}
+
+	body, err := json.Marshal(got)
+	if err != nil {
+		t.Fatalf("marshal sanitized order: %v", err)
+	}
+	if !strings.Contains(string(body), `"prorate_credit":9.9`) {
+		t.Fatalf("expected JSON to contain prorate_credit, got %s", string(body))
+	}
+}
