@@ -169,7 +169,7 @@ func (e *bundleUpgradeE2E) mustActivateBundle(userID, planID int64) *service.Bun
 }
 
 // mustCreateCompletedBundleOrder 建一笔 COMPLETED 的 bundle 订单关联到 bundleSubID。
-// 这是 PreviewUpgrade 反查实付（GetPaidAmountByBundleSub）的数据源。
+// 这是 PreviewUpgrade 反查实付（GetFaceValueByBundleSub）的数据源。
 func (e *bundleUpgradeE2E) mustCreateCompletedBundleOrder(u *service.User, bundleSubID int64, amount float64, tag string) *dbent.PaymentOrder {
 	e.t.Helper()
 	o, err := e.client.PaymentOrder.Create().

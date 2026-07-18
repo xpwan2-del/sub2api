@@ -624,14 +624,14 @@ func isMobile(c *gin.Context) bool {
 }
 
 type PaymentOrderResult struct {
-	ID                  int64      `json:"id"`
-	UserID              int64      `json:"user_id"`
-	Amount              float64    `json:"amount"`
-	PayAmount           float64    `json:"pay_amount"`
-	BalanceDeductAmount float64    `json:"balance_deduct_amount,omitempty"`
+	ID                  int64   `json:"id"`
+	UserID              int64   `json:"user_id"`
+	Amount              float64 `json:"amount"`
+	PayAmount           float64 `json:"pay_amount"`
+	BalanceDeductAmount float64 `json:"balance_deduct_amount,omitempty"`
 	// ProrateCredit 仅 bundle_upgrade 订单有值：旧套餐剩余价值折算的抵扣额。
 	// bundle_upgrade 的 Amount 为目标套餐总价，ProrateCredit 是其中旧套餐抵扣部分；
-	// 仅展示透传，不影响计费（实付差价基准见 repository.GetPaidAmountByBundleSub）。
+	// 仅展示透传，不影响计费（credit 折算的套餐标价基准见 repository.GetFaceValueByBundleSub）。
 	ProrateCredit       float64    `json:"prorate_credit,omitempty"`
 	FeeRate             float64    `json:"fee_rate"`
 	Currency            string     `json:"currency"`

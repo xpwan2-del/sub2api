@@ -177,12 +177,12 @@ type BundleUsageProgress struct {
 	MonthlyVideoLimitCount int     `json:"monthly_video_limit_count"`
 }
 
-// PaymentOrderReader 读支付订单（升级 credit 反查实付金额用），解耦 service 对 payment_orders 的访问。
+// PaymentOrderReader 读支付订单（升级 credit 反查套餐标价用），解耦 service 对 payment_orders 的访问。
 // 实现位于 repository 层，避免 service 直接依赖 ent。
 type PaymentOrderReader interface {
-	// GetPaidAmountByBundleSub 返回该 bundle 订阅对应的已完成购买订单实付金额（取最早一笔）。
+	// GetFaceValueByBundleSub 返回该 bundle 订阅对应的已完成购买订单【套餐标价】（订单 Amount，取最早一笔）。
 	// 找不到订单（兑换/赠送来源）返回 0,nil，不视作错误。
-	GetPaidAmountByBundleSub(ctx context.Context, bundleSubID int64) (float64, error)
+	GetFaceValueByBundleSub(ctx context.Context, bundleSubID int64) (float64, error)
 }
 
 // UpgradePreview 升级预览（给前端展示差价）

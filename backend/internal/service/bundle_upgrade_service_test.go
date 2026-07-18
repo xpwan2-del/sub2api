@@ -64,13 +64,13 @@ func TestComputeProrateCredit_ZeroTotal(t *testing.T) {
 // ──────────────────────────────────────────────────────
 
 // previewPaidReader stubs PaymentOrderReader。
-// PreviewUpgrade 会调 GetPaidAmountByBundleSub，传 nil 会 panic，故单测必须传真实 stub。
+// PreviewUpgrade 会调 GetFaceValueByBundleSub，传 nil 会 panic，故单测必须传真实 stub。
 type previewPaidReader struct {
 	amt float64
 	err error
 }
 
-func (r previewPaidReader) GetPaidAmountByBundleSub(context.Context, int64) (float64, error) {
+func (r previewPaidReader) GetFaceValueByBundleSub(context.Context, int64) (float64, error) {
 	return r.amt, r.err
 }
 
@@ -111,7 +111,7 @@ func (s *previewPlanRepo) GetByID(_ context.Context, id int64) (*BundlePlan, err
 	return s.plan, nil
 }
 
-// newPreviewSvc 构造仅用于 PreviewUpgrade 的 service（paidAmountReader 必须非 nil）。
+// newPreviewSvc 构造仅用于 PreviewUpgrade 的 service（faceValueReader 必须非 nil）。
 func newPreviewSvc(subRepo *previewSubRepo, planRepo *previewPlanRepo, paid *previewPaidReader) *BundleSubscriptionService {
 	return NewBundleSubscriptionService(subRepo, planRepo, bundleUsageRepoNoop{}, userSubRepoNoop{}, nil, nil, paid, nil)
 }
@@ -234,7 +234,7 @@ func TestPreviewUpgrade_PaidLookupErrorBubblesUp(t *testing.T) {
 	_, err := svc.PreviewUpgrade(context.Background(), 10, 1, 6)
 	require.Error(t, err)
 	require.ErrorIs(t, err, dbErr, "反查错误应透传")
-	require.ErrorContains(t, err, "lookup paid amount")
+	require.ErrorContains(t, err, "lookup face value")
 	require.NotErrorIs(t, err, ErrBundleNotFound, "反查失败不应伪装成 not-found")
 }
 
@@ -254,10 +254,10 @@ type upgradeStatusCall struct {
 type upgradeSubRepoStub struct {
 	bundleSubRepoNoop
 
-	old             *BundleSubscription // 预存的活跃旧订阅（SourceSubID 命中）
-	newCreated      *BundleSubscription // Create 调用写入的新订阅
-	createErr       error
-	updateStatusErr error
+	old               *BundleSubscription // 预存的活跃旧订阅（SourceSubID 命中）
+	newCreated        *BundleSubscription // Create 调用写入的新订阅
+	createErr         error
+	updateStatusErr   error
 	updateStatusCalls []upgradeStatusCall
 }
 
@@ -295,7 +295,7 @@ func (s *upgradeSubRepoStub) Create(_ context.Context, sub *BundleSubscription) 
 }
 
 // newUpgradeSvc 构造专用于 UpgradeBundle 的 service（entClient=nil → withTx 退化为直执行；
-// paidAmountReader 对 UpgradeBundle 无用，传 nil）。
+// faceValueReader 对 UpgradeBundle 无用，传 nil）。
 func newUpgradeSvc(
 	subRepo *upgradeSubRepoStub,
 	planRepo *activateBundlePlanRepoStub,
@@ -398,7 +398,6 @@ func TestUpgradeBundle_Success(t *testing.T) {
 	require.Equal(t, 25, first.WeeklyVideoLimitCount)
 	require.Equal(t, 100, first.MonthlyVideoLimitCount)
 }
-
 
 // TestUpgradeBundle_RebindsAPIKeys 验证升级套餐后把用户的 bundle APIKey 迁移到新套餐 +
 // 失效认证缓存，避免旧 key 指向 upgraded 旧 bundle 报 BUNDLE_EXPIRED。

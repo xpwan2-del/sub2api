@@ -32,14 +32,14 @@ type BundleKeyRebinder interface {
 // BundleSubscriptionService 套餐订阅服务，管理订阅的完整生命周期
 // BundleSubscriptionService handles bundle subscription lifecycle.
 type BundleSubscriptionService struct {
-	bundleSubRepo    BundleSubscriptionRepository
-	planRepo         BundlePlanRepository
-	usageRepo        BundleUsageRepository
-	userSubRepo      UserSubscriptionRepository
-	cache            BillingCache
-	entClient        *dbent.Client
-	paidAmountReader PaymentOrderReader
-	keyRebinder      BundleKeyRebinder // nillable: nil 时跳过 APIKey 迁移（unit test）
+	bundleSubRepo   BundleSubscriptionRepository
+	planRepo        BundlePlanRepository
+	usageRepo       BundleUsageRepository
+	userSubRepo     UserSubscriptionRepository
+	cache           BillingCache
+	entClient       *dbent.Client
+	faceValueReader PaymentOrderReader
+	keyRebinder     BundleKeyRebinder // nillable: nil 时跳过 APIKey 迁移（unit test）
 }
 
 // NewBundleSubscriptionService 创建套餐订阅服务实例
@@ -51,18 +51,18 @@ func NewBundleSubscriptionService(
 	userSubRepo UserSubscriptionRepository,
 	cache BillingCache,
 	entClient *dbent.Client,
-	paidAmountReader PaymentOrderReader,
+	faceValueReader PaymentOrderReader,
 	keyRebinder BundleKeyRebinder,
 ) *BundleSubscriptionService {
 	return &BundleSubscriptionService{
-		bundleSubRepo:    bundleSubRepo,
-		planRepo:         planRepo,
-		usageRepo:        usageRepo,
-		userSubRepo:      userSubRepo,
-		cache:            cache,
-		entClient:        entClient,
-		paidAmountReader: paidAmountReader,
-		keyRebinder:      keyRebinder,
+		bundleSubRepo:   bundleSubRepo,
+		planRepo:        planRepo,
+		usageRepo:       usageRepo,
+		userSubRepo:     userSubRepo,
+		cache:           cache,
+		entClient:       entClient,
+		faceValueReader: faceValueReader,
+		keyRebinder:     keyRebinder,
 	}
 }
 

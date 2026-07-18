@@ -10,10 +10,10 @@ import (
 )
 
 // computeProrateCredit 按剩余有效期线性折算旧套餐剩余价值。
-// credit = paidAmount × max(0, 剩余秒) / 总秒。过期或总额为0返回0。
-// 不追溯已消费的请求额度——套餐卖的是"有效期内使用权"而非预付token。
-func computeProrateCredit(paidAmount float64, startsAt, expiresAt, now time.Time) float64 {
-	if paidAmount <= 0 {
+// faceValue 为套餐标价（订单 Amount，见 GetFaceValueByBundleSub）；credit = faceValue × max(0, 剩余秒) / 总秒。
+// 过期或标价为0返回0。不追溯已消费的请求额度——套餐卖的是"有效期内使用权"而非预付token。
+func computeProrateCredit(faceValue float64, startsAt, expiresAt, now time.Time) float64 {
+	if faceValue <= 0 {
 		return 0
 	}
 	totalSec := expiresAt.Sub(startsAt).Seconds()
@@ -24,7 +24,7 @@ func computeProrateCredit(paidAmount float64, startsAt, expiresAt, now time.Time
 	if remainSec <= 0 {
 		return 0
 	}
-	credit := paidAmount * remainSec / totalSec
+	credit := faceValue * remainSec / totalSec
 	if credit < 0 || math.IsNaN(credit) {
 		return 0
 	}
@@ -33,7 +33,7 @@ func computeProrateCredit(paidAmount float64, startsAt, expiresAt, now time.Time
 }
 
 // PreviewUpgrade 预览套餐升级差价：校验旧订阅归属 + active，目标套餐在售，
-// 再反查旧订阅实付算出按剩余有效期折算的 credit，返回应补差价与是否可升级。
+// 再反查旧订阅【套餐标价】算出按剩余有效期折算的 credit，返回应补差价与是否可升级。
 // 只读、不落库；IDOR 防护：归属不符按"不存在"处理（ErrBundleNotFound），不泄露存在性。
 // PreviewUpgrade returns the prorated upgrade cost without persisting anything.
 func (s *BundleSubscriptionService) PreviewUpgrade(ctx context.Context, userID, sourceSubID, targetPlanID int64) (*UpgradePreview, error) {
@@ -59,12 +59,12 @@ func (s *BundleSubscriptionService) PreviewUpgrade(ctx context.Context, userID, 
 		return nil, ErrBundlePlanDisabled
 	}
 
-	// 3. 反查旧订阅实付（兑换/赠送来源找不到订单返回 0,nil），算 credit
-	paid, err := s.paidAmountReader.GetPaidAmountByBundleSub(ctx, sourceSubID)
+	// 3. 反查旧订阅套餐标价（兑换/赠送来源找不到订单返回 0,nil），算 credit
+	faceValue, err := s.faceValueReader.GetFaceValueByBundleSub(ctx, sourceSubID)
 	if err != nil {
-		return nil, fmt.Errorf("lookup paid amount: %w", err)
+		return nil, fmt.Errorf("lookup face value: %w", err)
 	}
-	credit := computeProrateCredit(paid, old.StartsAt, old.ExpiresAt, time.Now())
+	credit := computeProrateCredit(faceValue, old.StartsAt, old.ExpiresAt, time.Now())
 	due := plan.Price - credit
 
 	// 旧订阅当前套餐名：仓储 GetByID 不预加载 Plan 关联（old.Plan 恒为 nil），

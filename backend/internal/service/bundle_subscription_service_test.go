@@ -249,7 +249,7 @@ func newBundleSubSvc(
 	usageRepo BundleUsageRepository,
 	userSubRepo UserSubscriptionRepository,
 ) *BundleSubscriptionService {
-	return NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil, nil) // nil cache + nil entClient + nil paidAmountReader for unit tests
+	return NewBundleSubscriptionService(subRepo, planRepo, usageRepo, userSubRepo, nil, nil, nil, nil) // nil cache + nil entClient + nil faceValueReader for unit tests
 }
 
 func sampleActivePlan() *BundlePlan {
@@ -431,7 +431,6 @@ func TestBundleSubscriptionService_ActivateBundle_Success(t *testing.T) {
 	require.Equal(t, 25, userSubRepo.createdSubs[0].WeeklyVideoLimitCount)
 	require.Equal(t, 100, userSubRepo.createdSubs[0].MonthlyVideoLimitCount)
 }
-
 
 // bundleKeyRebinderStub 记录 BundleKeyRebinder 调用，用于断言套餐切换时 APIKey 迁移 + 缓存失效。
 type bundleKeyRebinderStub struct {
