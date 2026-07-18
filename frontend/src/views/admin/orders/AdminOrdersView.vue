@@ -66,6 +66,7 @@
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderId') }}</p><p class="font-mono text-sm font-medium text-gray-900 dark:text-white">#{{ selectedOrder.id }}</p></div>
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderNo') }}</p><p class="text-sm font-medium text-gray-900 dark:text-white">{{ selectedOrder.out_trade_no }}</p></div>
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.status') }}</p><OrderStatusBadge :status="selectedOrder.status" /></div>
+          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderType') }}</p><span :class="orderTypeBadgeClass(selectedOrder.order_type)">{{ t(orderTypeLabelKey(selectedOrder.order_type), selectedOrder.order_type) }}</span></div>
           <!-- 非升级订单：金额 + 实付（原样） -->
           <template v-if="selectedOrder.order_type !== 'bundle_upgrade'">
             <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.amount') }}</p><p class="text-sm font-medium text-gray-900 dark:text-white">{{ creditedAmountSymbol }}{{ selectedOrder.amount.toFixed(2) }}</p></div>
@@ -133,7 +134,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminPaymentAPI } from '@/api/admin/payment'
 import { extractI18nErrorMessage } from '@/utils/apiError'
-import { formatOrderDateTime } from '@/components/payment/orderUtils'
+import { formatOrderDateTime, orderTypeBadgeClass, orderTypeLabelKey } from '@/components/payment/orderUtils'
 import type { PaymentOrder } from '@/types/payment'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Pagination from '@/components/common/Pagination.vue'

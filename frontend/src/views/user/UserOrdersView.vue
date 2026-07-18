@@ -97,6 +97,10 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.status') }}</p>
             <OrderStatusBadge :status="detailOrder.status" />
           </div>
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderType') }}</p>
+            <span :class="orderTypeBadgeClass(detailOrder.order_type)">{{ t(orderTypeLabelKey(detailOrder.order_type), detailOrder.order_type) }}</span>
+          </div>
           <!-- 非升级订单：金额 + 实付（原样） -->
           <template v-if="detailOrder.order_type !== 'bundle_upgrade'">
             <div>
@@ -191,7 +195,7 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores'
 import { paymentAPI } from '@/api/payment'
 import { extractI18nErrorMessage } from '@/utils/apiError'
-import { formatOrderDateTime } from '@/components/payment/orderUtils'
+import { formatOrderDateTime, orderTypeBadgeClass, orderTypeLabelKey } from '@/components/payment/orderUtils'
 import type { PaymentOrder } from '@/types/payment'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Pagination from '@/components/common/Pagination.vue'
