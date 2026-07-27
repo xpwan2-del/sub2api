@@ -60,15 +60,22 @@ func RegisterGatewayRoutes(
 		}
 	}
 	// bundleRouteResolved 报告套餐路由解析中间件是否已为当前 bundle key 注入目标 group。
-	// 命中（套餐 key 且 model/task 反查成功）时走分支视频逻辑——OpenAIGateway.Videos 已统一
-	// 支持 OpenAI 与 Grok 视频模型并接入套餐计费/配额；未命中（普通 key 或反查失败）时回退主干
-	// Grok 视频逻辑（GrokVideoGeneration/Status）。详见 docs/IMAGE_VIDEO_SPLIT_QUOTA_DESIGN.md。
 	bundleRouteResolved := func(c *gin.Context) bool {
 		_, ok := c.Get("bundle_resolved_group_id")
 		return ok
 	}
+	// isOpenAIVideosPlatform 报告当前请求是否应走统一 OpenAIGateway.Videos 分支：套餐 key
+	// （bundleRouteResolved 命中，model/task 反查成功）或 OpenAI 平台分组的标准 key。后者覆盖
+	// 复用 OpenAI gateway 的上游（如 Volcengine/doubao-seedance 等视频模型）——这些分组的标准
+	// key 此前因「非套餐 + 非 Grok」被平台门控拦截返回 404，但 OpenAIGateway.Videos 本就支持标准
+	// key（计费走 CheckBillingEligibility，视频任务绑定以 apiKey.GroupID + OwnerUserID 存取/防
+	// IDOR）。Grok 平台标准 key 仍走主干 Grok 视频逻辑（GrokVideoGeneration/Status）。
+	// 详见 docs/IMAGE_VIDEO_SPLIT_QUOTA_DESIGN.md。
+	isOpenAIVideosPlatform := func(c *gin.Context) bool {
+		return bundleRouteResolved(c) || getGroupPlatform(c) == service.PlatformOpenAI
+	}
 	videoGenerationHandler := func(c *gin.Context) {
-		if bundleRouteResolved(c) {
+		if isOpenAIVideosPlatform(c) {
 			h.OpenAIGateway.Videos(c)
 			return
 		}
@@ -85,7 +92,7 @@ func RegisterGatewayRoutes(
 		})
 	}
 	videoStatusHandler := func(c *gin.Context) {
-		if bundleRouteResolved(c) {
+		if isOpenAIVideosPlatform(c) {
 			h.OpenAIGateway.Videos(c)
 			return
 		}
@@ -101,10 +108,10 @@ func RegisterGatewayRoutes(
 			},
 		})
 	}
-	// videoContentHandler 视频内容下载（分支功能，主干无此端点）：bundle 命中走分支视频逻辑，
-	// 非 bundle key 返回平台限制。
+	// videoContentHandler 视频内容下载（OpenAI 分支功能，Grok 主干无此端点）：OpenAI 平台
+	// （含套餐与标准 key）走 OpenAIGateway.Videos；其他平台返回平台限制。
 	videoContentHandler := func(c *gin.Context) {
-		if bundleRouteResolved(c) {
+		if isOpenAIVideosPlatform(c) {
 			h.OpenAIGateway.Videos(c)
 			return
 		}

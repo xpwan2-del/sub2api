@@ -85,6 +85,8 @@ func TestGatewayRoutesOpenAIImagesPathsAreRegistered(t *testing.T) {
 }
 
 func TestGatewayRoutesOpenAIVideosPathsAreRegistered(t *testing.T) {
+	// OpenAI 平台标准 key（如复用 OpenAI gateway 的 Volcengine/doubao-seedance 视频模型分组）
+	// 必须能到达 OpenAIGateway.Videos，而非被平台门控拦截返回 404。
 	router := newGatewayRoutesTestRouter()
 
 	for _, item := range []struct {
@@ -92,22 +94,22 @@ func TestGatewayRoutesOpenAIVideosPathsAreRegistered(t *testing.T) {
 		path   string
 		body   string
 	}{
-		{http.MethodPost, "/v1/videos", `{"model":"grok-imagine-video","prompt":"test"}`},
-		{http.MethodGet, "/v1/videos/task_123?model=grok-imagine-video", ``},
-		{http.MethodGet, "/v1/videos/task_123/content?model=grok-imagine-video", ``},
-		{http.MethodPost, "/videos", `{"model":"grok-imagine-video","prompt":"test"}`},
-		{http.MethodGet, "/videos/task_123?model=grok-imagine-video", ``},
-		{http.MethodGet, "/videos/task_123/content?model=grok-imagine-video", ``},
+		{http.MethodPost, "/v1/videos", `{"model":"doubao-seedance-2.0-mini-480p","prompt":"test"}`},
+		{http.MethodGet, "/v1/videos/task_123?model=doubao-seedance-2.0-mini-480p", ``},
+		{http.MethodGet, "/v1/videos/task_123/content?model=doubao-seedance-2.0-mini-480p", ``},
+		{http.MethodPost, "/videos", `{"model":"doubao-seedance-2.0-mini-480p","prompt":"test"}`},
+		{http.MethodGet, "/videos/task_123?model=doubao-seedance-2.0-mini-480p", ``},
+		{http.MethodGet, "/videos/task_123/content?model=doubao-seedance-2.0-mini-480p", ``},
 	} {
 		req := httptest.NewRequest(item.method, item.path, strings.NewReader(item.body))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
-		// OpenAI 非 bundle key 的视频请求会被平台门控拒绝（handler 返回 "not supported" JSON 404），
-		// 但响应必须来自 video handler 而非 Gin 默认的 "404 page not found"——后者才意味着路由未注册。
-		// 视频创建实际生效路径是 bundle key（见 videoGenerationHandler：bundleRouteResolved -> OpenAIGateway.Videos）。
+		// 响应必须来自 video handler 而非 Gin 默认的 "404 page not found"（后者意味着路由未注册），
+		// 且不得命中平台门控的 "not supported" 拦截——OpenAI 平台标准 key 现走 OpenAIGateway.Videos。
 		require.NotContains(t, w.Body.String(), "404 page not found", "path=%s should be routed to the video handler, not Gin default 404", item.path)
+		require.NotContains(t, w.Body.String(), "Videos API is not supported for this platform", "path=%s OpenAI platform key must not be platform-gated", item.path)
 	}
 }
 
@@ -140,8 +142,10 @@ func TestGatewayRoutesGrokImagesAndVideosPathsAreRegistered(t *testing.T) {
 	}
 }
 
-func TestGatewayRoutesNonGrokVideosAreRejectedAtPlatformGate(t *testing.T) {
-	router := newGatewayRoutesTestRouter(service.PlatformOpenAI)
+func TestGatewayRoutesUnsupportedPlatformVideosAreRejected(t *testing.T) {
+	// 不支持视频的平台（anthropic/gemini/antigravity）仍被平台门控拒绝。OpenAI 与 Grok 分别
+	// 走 OpenAIGateway.Videos / GrokVideo*，不再被该门控拦截。
+	router := newGatewayRoutesTestRouter(service.PlatformAnthropic)
 	for _, tc := range []struct {
 		method string
 		path   string
