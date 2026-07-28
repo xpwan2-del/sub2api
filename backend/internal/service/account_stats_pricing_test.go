@@ -769,3 +769,11 @@ func newTestChannelServiceForStats(t *testing.T, channel *Channel, groupID int64
 	cs.cache.Store(cache)
 	return cs
 }
+
+func TestCalculateStatsCost_PerSecondMode_DoesNotPanic(t *testing.T) {
+	price := 0.10
+	pricing := &ChannelModelPricing{BillingMode: BillingModePerSecond, PerRequestPrice: &price}
+	cost := calculateStatsCost(pricing, UsageTokens{}, 2)
+	// 本期按次统计(已知限制:真正按秒见 stretch);只保证不 panic 且返回非 nil
+	require.NotNil(t, cost)
+}

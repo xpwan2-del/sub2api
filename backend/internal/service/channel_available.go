@@ -182,7 +182,7 @@ func synthesizePricingFromLiteLLM(lp *LiteLLMModelPricing, existing *ChannelMode
 		mode = BillingModeImage
 	}
 
-	if mode == BillingModeImage || mode == BillingModePerRequest {
+	if mode == BillingModeImage || mode == BillingModePerRequest || mode == BillingModePerSecond {
 		return &ChannelModelPricing{
 			BillingMode:      mode,
 			PerRequestPrice:  nonZeroPtr(lp.OutputCostPerImage),
