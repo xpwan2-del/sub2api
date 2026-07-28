@@ -142,6 +142,11 @@ func (Group) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}),
+		// 4K 视频生成每秒单价（added by migration 175）
+		field.Float("video_price_4k").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}),
 
 		// Claude Code 客户端限制 (added by migration 029)
 		field.Bool("claude_code_only").
