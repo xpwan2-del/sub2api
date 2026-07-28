@@ -219,6 +219,8 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 	}
 	if groupIn.VideoPrice4K != nil {
 		builder = builder.SetVideoPrice4k(*groupIn.VideoPrice4K)
+	} else {
+		builder = builder.ClearVideoPrice4k()
 	}
 
 	// 处理 FallbackGroupID：nil 时清除，否则设置
