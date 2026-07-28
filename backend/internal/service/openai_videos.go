@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/textproto"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -40,6 +41,11 @@ func (s *OpenAIGatewayService) ForwardVideos(
 	upstreamModel := normalizeOpenAIModelForUpstream(account, billingModel)
 	upstreamBody := body
 	upstreamContentType := contentType
+	// 解析视频计费参数（分辨率/时长/数量），供 per_second 等按秒计费使用；未解析到时由计费层兜底默认值。
+	videoResolution, videoDurationSeconds, videoCount := parseOpenAIVideosBillingParams(contentType, body)
+	if videoCount <= 0 {
+		videoCount = 1
+	}
 	if len(body) > 0 && upstreamModel != originalModel {
 		var err error
 		upstreamBody, upstreamContentType, err = rewriteOpenAIVideosModel(body, contentType, upstreamModel)
@@ -122,14 +128,16 @@ func (s *OpenAIGatewayService) ForwardVideos(
 				defer func() { _ = mediaResp.Body.Close() }()
 				writeOpenAIVideosUpstreamStream(c, mediaResp, s.responseHeaderFilter)
 				return &OpenAIForwardResult{
-					RequestID:       firstNonEmptyString(mediaResp.Header.Get("x-request-id"), mediaResp.Header.Get("request-id")),
-					Model:           originalModel,
-					BillingModel:    billingModel,
-					UpstreamModel:   upstreamModel,
-					ResponseHeaders: mediaResp.Header.Clone(),
-					Stream:          false,
-					Duration:        time.Since(startTime),
-					VideoCount:      1,
+					RequestID:            firstNonEmptyString(mediaResp.Header.Get("x-request-id"), mediaResp.Header.Get("request-id")),
+					Model:                originalModel,
+					BillingModel:         billingModel,
+					UpstreamModel:        upstreamModel,
+					ResponseHeaders:      mediaResp.Header.Clone(),
+					Stream:               false,
+					Duration:             time.Since(startTime),
+					VideoCount:           videoCount,
+					VideoResolution:      videoResolution,
+					VideoDurationSeconds: videoDurationSeconds,
 				}, nil
 			}
 			if !c.Writer.Written() {
@@ -144,14 +152,16 @@ func (s *OpenAIGatewayService) ForwardVideos(
 	if isContentEndpoint {
 		writeOpenAIVideosUpstreamStream(c, resp, s.responseHeaderFilter)
 		return &OpenAIForwardResult{
-			RequestID:       firstNonEmptyString(resp.Header.Get("x-request-id"), resp.Header.Get("request-id")),
-			Model:           originalModel,
-			BillingModel:    billingModel,
-			UpstreamModel:   upstreamModel,
-			ResponseHeaders: resp.Header.Clone(),
-			Stream:          false,
-			Duration:        time.Since(startTime),
-			VideoCount:      1,
+			RequestID:            firstNonEmptyString(resp.Header.Get("x-request-id"), resp.Header.Get("request-id")),
+			Model:                originalModel,
+			BillingModel:         billingModel,
+			UpstreamModel:        upstreamModel,
+			ResponseHeaders:      resp.Header.Clone(),
+			Stream:               false,
+			Duration:             time.Since(startTime),
+			VideoCount:           videoCount,
+			VideoResolution:      videoResolution,
+			VideoDurationSeconds: videoDurationSeconds,
 		}, nil
 	}
 
@@ -165,17 +175,116 @@ func (s *OpenAIGatewayService) ForwardVideos(
 	writeOpenAIVideosUpstreamResponse(c, resp, respBody, s.responseHeaderFilter)
 
 	return &OpenAIForwardResult{
-		RequestID:       firstNonEmptyString(resp.Header.Get("x-request-id"), resp.Header.Get("request-id")),
-		Model:           originalModel,
-		BillingModel:    billingModel,
-		UpstreamModel:   upstreamModel,
-		TaskID:          openAIVideosTaskID(respBody),
-		TaskStatus:      openAIVideosTaskStatus(respBody),
-		ResponseHeaders: resp.Header.Clone(),
-		Stream:          false,
-		Duration:        time.Since(startTime),
-		VideoCount:      1,
+		RequestID:            firstNonEmptyString(resp.Header.Get("x-request-id"), resp.Header.Get("request-id")),
+		Model:                originalModel,
+		BillingModel:         billingModel,
+		UpstreamModel:        upstreamModel,
+		TaskID:               openAIVideosTaskID(respBody),
+		TaskStatus:           openAIVideosTaskStatus(respBody),
+		ResponseHeaders:      resp.Header.Clone(),
+		Stream:               false,
+		Duration:             time.Since(startTime),
+		VideoCount:           videoCount,
+		VideoResolution:      videoResolution,
+		VideoDurationSeconds: videoDurationSeconds,
 	}, nil
+}
+
+// parseOpenAIVideosBillingParams 从 /v1/videos 请求体解析视频计费参数（resolution/duration/n）。
+// 兼容 JSON 与 multipart；字段覆盖 resolution、size（含 1920x1080 宽高格式）、duration/seconds、n。
+// 不做归一化——返回原始值，由 calculateOpenAIVideoCost 内的归一化函数统一处理。
+func parseOpenAIVideosBillingParams(contentType string, body []byte) (resolution string, durationSeconds, n int) {
+	if len(body) == 0 {
+		return "", 0, 0
+	}
+	if strings.HasPrefix(strings.ToLower(strings.TrimSpace(contentType)), "multipart/") {
+		return parseOpenAIVideosBillingParamsMultipart(contentType, body)
+	}
+	if gjson.ValidBytes(body) {
+		return parseOpenAIVideosBillingParamsJSON(body)
+	}
+	return "", 0, 0
+}
+
+func parseOpenAIVideosBillingParamsJSON(body []byte) (resolution string, durationSeconds, n int) {
+	resolution = firstNonEmptyGjsonBytes(body, "resolution", "size")
+	if d := gjson.GetBytes(body, "duration"); d.Exists() {
+		durationSeconds = int(d.Int())
+	} else if sc := gjson.GetBytes(body, "seconds"); sc.Exists() {
+		durationSeconds = int(sc.Int())
+	}
+	if nv := gjson.GetBytes(body, "n"); nv.Exists() {
+		n = int(nv.Int())
+	}
+	return resolution, durationSeconds, n
+}
+
+// parseOpenAIVideosBillingParamsMultipart 仅读取 resolution/size/duration/seconds/n 等
+// 计费所需的文本字段，文件类 part（如图片输入）直接关闭跳过，避免读入大对象。
+func parseOpenAIVideosBillingParamsMultipart(contentType string, body []byte) (resolution string, durationSeconds, n int) {
+	_, params, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return "", 0, 0
+	}
+	boundary := strings.TrimSpace(params["boundary"])
+	if boundary == "" {
+		return "", 0, 0
+	}
+	reader := multipart.NewReader(bytes.NewReader(body), boundary)
+	for {
+		part, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return resolution, durationSeconds, n
+		}
+		field := strings.TrimSpace(part.FormName())
+		if field == "" || part.FileName() != "" {
+			_ = part.Close()
+			continue
+		}
+		switch field {
+		case "resolution", "size":
+			if resolution == "" {
+				if chunk, rerr := io.ReadAll(part); rerr == nil {
+					if v := strings.TrimSpace(string(chunk)); v != "" {
+						resolution = v
+					}
+				}
+			}
+		case "duration", "seconds":
+			if durationSeconds == 0 {
+				if chunk, rerr := io.ReadAll(part); rerr == nil {
+					if d, perr := strconv.Atoi(strings.TrimSpace(string(chunk))); perr == nil {
+						durationSeconds = d
+					}
+				}
+			}
+		case "n":
+			if n == 0 {
+				if chunk, rerr := io.ReadAll(part); rerr == nil {
+					if nv, perr := strconv.Atoi(strings.TrimSpace(string(chunk))); perr == nil {
+						n = nv
+					}
+				}
+			}
+		}
+		_ = part.Close()
+	}
+	return resolution, durationSeconds, n
+}
+
+// firstNonEmptyGjsonBytes 返回首个存在且非空的 gjson 字符串值。
+func firstNonEmptyGjsonBytes(body []byte, keys ...string) string {
+	for _, k := range keys {
+		if v := gjson.GetBytes(body, k); v.Exists() {
+			if s := strings.TrimSpace(v.String()); s != "" {
+				return s
+			}
+		}
+	}
+	return ""
 }
 
 func (s *OpenAIGatewayService) forwardOpenAIVideosContentFromTaskURL(

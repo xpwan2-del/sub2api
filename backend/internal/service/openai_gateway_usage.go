@@ -242,11 +242,11 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		ImageSizeSource:     optionalTrimmedStringPtr(result.ImageSizeSource),
 		ImageSizeBreakdown:  result.ImageSizeBreakdown,
 	}
-	isVideoUsage := isGrokVideoUsageResult(result, billingModels)
+	isVideoUsage := s.isOpenAIVideoUsage(ctx, result, billingModels, apiKey)
 	if isVideoUsage {
 		usageLog.VideoCount = result.VideoCount
 		usageLog.VideoResolution = optionalTrimmedStringPtr(NormalizeVideoBillingResolutionOrDefault(result.VideoResolution))
-		videoDurationSeconds := NormalizeVideoBillingDurationSecondsOrDefault(result.VideoDurationSeconds)
+		videoDurationSeconds := normalizeVideoBillingDurationSeconds(result.VideoDurationSeconds, videoBillingDurationCapForModel(billingModel))
 		usageLog.VideoDurationSeconds = &videoDurationSeconds
 	}
 	if cost != nil {
@@ -369,7 +369,7 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
 	serviceTier string,
 ) (*CostBreakdown, error) {
 	billingModel := firstUsageBillingModel(billingModels)
-	if isGrokVideoUsageResult(result, billingModels) {
+	if s.isOpenAIVideoUsage(ctx, result, billingModels, apiKey) {
 		if resolved := s.resolveOpenAIChannelPricing(ctx, billingModel, apiKey); resolved == nil || resolved.Mode != BillingModeToken {
 			return s.calculateOpenAIVideoCost(ctx, billingModel, apiKey, result, videoMultiplier), nil
 		}
@@ -415,6 +415,30 @@ func isGrokVideoUsageResult(result *OpenAIForwardResult, billingModels []string)
 		if isGrokVideoBillingModel(candidate) {
 			return true
 		}
+	}
+	return false
+}
+
+// isOpenAIVideoUsage 判断 OpenAI 用量是否应按视频计费：
+//  1. grok-imagine-video 系列模型（原有口径）；或
+//  2. result.VideoCount>0 且渠道定价解析为 per_second/video/per_request/image（覆盖 /v1/videos 通用视频模型）。
+//
+// 这是 calculateOpenAIVideoCost（含 per_second 按秒计费分支）的入口判定，放开后通用视频模型
+// 也能进入视频计费，而不再 fall through 到 token 计费导致费用 0。
+func (s *OpenAIGatewayService) isOpenAIVideoUsage(ctx context.Context, result *OpenAIForwardResult, billingModels []string, apiKey *APIKey) bool {
+	if isGrokVideoUsageResult(result, billingModels) {
+		return true
+	}
+	if result == nil || result.VideoCount <= 0 {
+		return false
+	}
+	resolved := s.resolveOpenAIChannelPricing(ctx, firstUsageBillingModel(billingModels), apiKey)
+	if resolved == nil {
+		return false
+	}
+	switch resolved.Mode {
+	case BillingModePerSecond, BillingModeVideo, BillingModePerRequest, BillingModeImage:
+		return true
 	}
 	return false
 }
@@ -507,7 +531,7 @@ func (s *OpenAIGatewayService) calculateOpenAIVideoCost(
 		videoCount = 1
 	}
 	resolution := NormalizeVideoBillingResolutionOrDefault(result.VideoResolution)
-	durationSeconds := NormalizeVideoBillingDurationSecondsOrDefault(result.VideoDurationSeconds)
+	durationSeconds := normalizeVideoBillingDurationSeconds(result.VideoDurationSeconds, videoBillingDurationCapForModel(billingModel))
 	groupConfig := videoPriceConfigFromAPIKey(apiKey)
 	if apiKeyHasConfiguredVideoPrice(apiKey, resolution) {
 		return s.billingService.CalculateVideoCost(billingModel, resolution, videoCount, durationSeconds, groupConfig, multiplier)
@@ -523,10 +547,14 @@ func (s *OpenAIGatewayService) calculateOpenAIVideoCost(
 		if resolved.Mode == BillingModePerSecond {
 			// 渠道 per_second 模式按秒计费:每秒单价 × 时长 × 段数 × 倍率。
 			perSecond := s.resolver.GetRequestTierPrice(resolved, resolution)
+			if perSecond <= 0 {
+				// 该分辨率档未配价 → 回退渠道默认每秒价（父行 per_request_price）。
+				perSecond = resolved.DefaultPerRequestPrice
+			}
 			if perSecond > 0 {
 				return computePerSecondVideoCost(perSecond, durationSeconds, videoCount, multiplier)
 			}
-			// 兜底:该分辨率档未配价 → 回退 L3 默认每秒价(groupConfig=nil 走 getDefaultVideoPrice)
+			// 渠道未配任何 per_second 价 → 回退系统默认视频价，避免完全漏扣。
 			return s.billingService.CalculateVideoCost(billingModel, resolution, videoCount, durationSeconds, nil, multiplier)
 		}
 		if resolved.Mode == BillingModePerRequest || resolved.Mode == BillingModeImage || resolved.Mode == BillingModeVideo {
