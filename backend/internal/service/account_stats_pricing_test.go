@@ -774,6 +774,8 @@ func TestCalculateStatsCost_PerSecondMode_DoesNotPanic(t *testing.T) {
 	price := 0.10
 	pricing := &ChannelModelPricing{BillingMode: BillingModePerSecond, PerRequestPrice: &price}
 	cost := calculateStatsCost(pricing, UsageTokens{}, 2)
-	// 本期按次统计(已知限制:真正按秒见 stretch);只保证不 panic 且返回非 nil
+	// 锁定 per-count 统计语义(真正按秒为后续 stretch,需透传 durationSeconds):
+	// 本期按次统计(已知限制:真正按秒见 stretch)
 	require.NotNil(t, cost)
+	require.InDelta(t, 0.20, *cost, 1e-10)
 }

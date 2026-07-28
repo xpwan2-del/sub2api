@@ -138,6 +138,7 @@ export default {
       image: 'Image output',
       request: 'Per request',
       perSecond: 'Per-second price',
+      perSecondUnit: '/sec',
       unavailable: 'Price pending',
     },
     health: {

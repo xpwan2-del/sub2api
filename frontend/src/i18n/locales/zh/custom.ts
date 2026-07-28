@@ -138,6 +138,7 @@ export default {
       image: '图片输出',
       request: '单次请求',
       perSecond: '每秒价格',
+      perSecondUnit: '/秒',
       unavailable: '价格待配置',
     },
     health: {

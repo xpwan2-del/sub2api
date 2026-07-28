@@ -16,7 +16,7 @@
       </div>
       <div v-if="pricing.per_request_price != null" class="model-price-cell">
         <span>{{ perRequestPriceLabel }}</span>
-        <strong>{{ formatScaled(pricing.per_request_price, 1) }}<span v-if="isPerSecond" class="model-price-unit"> /秒</span></strong>
+        <strong>{{ formatScaled(pricing.per_request_price, 1) }}<span v-if="isPerSecond" class="model-price-unit"> {{ t('modelCatalog.price.perSecondUnit') }}</span></strong>
       </div>
       <div v-if="!hasVisiblePrice" class="model-price-empty">
         {{ t('modelCatalog.price.unavailable') }}
