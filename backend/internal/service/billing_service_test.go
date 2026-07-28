@@ -1508,3 +1508,21 @@ func TestComputePerSecondVideoCost(t *testing.T) {
 		require.Equal(t, string(BillingModePerSecond), c.BillingMode)
 	})
 }
+
+func TestGetVideoUnitPrice_4K(t *testing.T) {
+	p4k := 0.05
+	cfg := &VideoPriceConfig{Price4K: &p4k}
+	bs := &BillingService{cfg: &config.Config{}, fallbackPrices: map[string]*ModelPricing{}}
+	// groupConfig 配了 4K → 用 groupConfig 价
+	require.InDelta(t, 0.05, bs.getVideoUnitPrice("any-model", VideoBillingResolution4K, cfg), 1e-12)
+	// groupConfig 无 4K → 回落默认（不 panic），与未传 groupConfig 走同一条默认路径
+	require.Equal(t, bs.getVideoUnitPrice("any-model", VideoBillingResolution4K, nil), bs.getVideoUnitPrice("any-model", VideoBillingResolution4K, &VideoPriceConfig{}))
+}
+
+func TestGroupGetVideoPrice_4K(t *testing.T) {
+	p4k := 0.05
+	g := &Group{VideoPrice4K: &p4k}
+	require.Equal(t, &p4k, g.GetVideoPrice("4k"))
+	// 未配 4K → nil（回落渠道）
+	require.Nil(t, (&Group{}).GetVideoPrice("4k"))
+}

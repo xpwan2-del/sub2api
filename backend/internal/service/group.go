@@ -50,6 +50,7 @@ type Group struct {
 	VideoPrice480P               *float64
 	VideoPrice720P               *float64
 	VideoPrice1080P              *float64
+	VideoPrice4K                 *float64
 
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool
@@ -141,9 +142,7 @@ func (g *Group) GetVideoPrice(resolution string) *float64 {
 	case VideoBillingResolution1080P:
 		return g.VideoPrice1080P
 	case VideoBillingResolution4K:
-		// group 视频价未覆盖 4K（无 VideoPrice4K 字段）；返回 nil 使计费回落到渠道定价的 4K 档，
-		// 而非借用 480P 价格导致 4K 请求绕过渠道 4K 单价。
-		return nil
+		return g.VideoPrice4K
 	default:
 		return g.VideoPrice480P
 	}

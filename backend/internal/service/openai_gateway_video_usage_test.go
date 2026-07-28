@@ -61,3 +61,14 @@ func TestIsOpenAIVideoUsage(t *testing.T) {
 		})
 	}
 }
+
+// TestGroupMediaPricingLooksIncomplete_Only4K 验证聚合判断含 4K：只配 4K 时不应被判为
+// "完全未配价"（否则会触发每请求回源查库的性能问题）。
+func TestGroupMediaPricingLooksIncomplete_Only4K(t *testing.T) {
+	p := 0.05
+	// 只配 4K → 不应被判为"完全未配价"
+	g := &Group{VideoPrice4K: &p}
+	require.False(t, groupMediaPricingLooksIncomplete(g))
+	// 全未配 → true
+	require.True(t, groupMediaPricingLooksIncomplete(&Group{}))
+}

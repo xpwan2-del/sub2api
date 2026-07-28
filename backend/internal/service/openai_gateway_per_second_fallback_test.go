@@ -115,3 +115,28 @@ func TestCalculateOpenAIVideoCost_4KUsesChannelTierNotGroupFallback(t *testing.T
 	require.InDelta(t, 0.40, c.TotalCost, 1e-10) // 渠道 4K 0.05 × 8，而非 group 480p 或默认 0
 	require.Equal(t, string(BillingModePerSecond), c.BillingMode)
 }
+
+// TestCalculateOpenAIVideoCost_Group4KOverridesChannel 验证 group 配了 4K 每秒价时，
+// 4K 请求使用 group 价而非渠道 per_second 4K 档价（group 配置优先于渠道定价）。
+func TestCalculateOpenAIVideoCost_Group4KOverridesChannel(t *testing.T) {
+	groupID := int64(21)
+	group4k := 0.20   // group 4K 每秒价
+	channel4k := 0.05 // 渠道 4K 每秒价（应被 group 覆盖）
+	cache := newEmptyChannelCache()
+	cache.pricingByGroupModel[channelModelKey{groupID: groupID, model: "kling-video"}] = &ChannelModelPricing{
+		BillingMode: BillingModePerSecond,
+		Intervals:   []PricingInterval{{TierLabel: "4k", PerRequestPrice: &channel4k}},
+	}
+	cache.channelByGroupID[groupID] = &Channel{ID: groupID, Status: StatusActive}
+	cache.groupPlatform[groupID] = ""
+	cache.loadedAt = time.Now()
+	cs := &ChannelService{}
+	cs.cache.Store(cache)
+	bs := &BillingService{cfg: &config.Config{}, fallbackPrices: map[string]*ModelPricing{}}
+	svc := &OpenAIGatewayService{resolver: NewModelPricingResolver(cs, bs), billingService: bs}
+	apiKey := &APIKey{GroupID: &groupID, Group: &Group{ID: groupID, VideoRateIndependent: true, VideoPrice4K: &group4k}}
+
+	r := &OpenAIForwardResult{VideoCount: 1, VideoResolution: "4k"} // duration 默认 8
+	c := svc.calculateOpenAIVideoCost(context.Background(), "kling-video", apiKey, r, 1.0)
+	require.InDelta(t, 1.60, c.TotalCost, 1e-10) // group 0.20 × 8（非渠道 0.05）
+}
