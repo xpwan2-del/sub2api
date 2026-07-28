@@ -12,6 +12,7 @@ import {
   BILLING_MODE_PER_REQUEST,
   BILLING_MODE_TOKEN,
 } from '@/constants/channel'
+import { getBillingModeLabel, BILLING_MODE_PER_SECOND } from '@/utils/billingMode'
 
 function makeInterval(over: Partial<IntervalFormEntry>): IntervalFormEntry {
   return {
@@ -177,5 +178,15 @@ describe('formIntervalsToAPI', () => {
     const result = formIntervalsToAPI(intervals)
     expect(result).toHaveLength(1)
     expect(result[0].per_request_price).toBeNull()
+  })
+})
+
+describe('per_second billing mode', () => {
+  it('exposes constant', () => {
+    expect(BILLING_MODE_PER_SECOND).toBe('per_second')
+  })
+  it('renders label via i18n key', () => {
+    const t = (k: string) => k
+    expect(getBillingModeLabel(BILLING_MODE_PER_SECOND, t)).toBe('admin.usage.billingModePerSecond')
   })
 })
