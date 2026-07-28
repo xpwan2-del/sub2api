@@ -776,3 +776,16 @@ func TestValidateIntervalsVideoSkipsOverlap(t *testing.T) {
 		t.Fatalf("video mode should skip token-overlap check, got err: %v", err)
 	}
 }
+
+// --- BillingModePerSecond 新增测试 ---
+
+func TestBillingModePerSecond_IsValid(t *testing.T) {
+	require.True(t, BillingModePerSecond.IsValid(), "per_second should be a valid billing mode")
+	require.True(t, BillingModePerSecond.IsValidUsageFilter(), "per_second should be valid usage filter")
+}
+
+func TestValidateIntervals_PerSecondMode_TierLabels(t *testing.T) {
+	// per_second 与 image/video 同样按 tier_label 分层(分辨率档)
+	intervals := []PricingInterval{{TierLabel: "720p", PerRequestPrice: testPtrFloat64(0.10)}}
+	require.NoError(t, ValidateIntervals(intervals, BillingModePerSecond))
+}
