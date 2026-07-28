@@ -1392,6 +1392,25 @@ func (s *BillingService) CalculateVideoCost(model string, resolution string, vid
 	}
 }
 
+// computePerSecondVideoCost 渠道 per_second 模式按秒计费:每秒单价 × 时长(秒) × 段数 × 倍率。
+// 调用方负责保证 perSecondPrice > 0(未配价时走兜底),durationSeconds 已归一化(1-15,默认 8)。
+//
+//nolint:unused // 纯函数,供 Task 4 calculateOpenAIVideoCost 调用;当前仅 //go:build unit 测试引用,golangci-lint 默认不应用该 tag 故误报
+func computePerSecondVideoCost(perSecondPrice float64, durationSeconds, videoCount int, rateMultiplier float64) *CostBreakdown {
+	if videoCount <= 0 {
+		return &CostBreakdown{}
+	}
+	if rateMultiplier < 0 {
+		rateMultiplier = 0
+	}
+	total := perSecondPrice * float64(durationSeconds) * float64(videoCount)
+	return &CostBreakdown{
+		TotalCost:   total,
+		ActualCost:  total * rateMultiplier,
+		BillingMode: string(BillingModePerSecond),
+	}
+}
+
 // getImageUnitPrice 获取图片单价
 func (s *BillingService) getImageUnitPrice(model string, imageSize string, groupConfig *ImagePriceConfig) float64 {
 	// 优先使用分组配置的价格

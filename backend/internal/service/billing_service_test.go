@@ -1482,3 +1482,29 @@ func TestComputeTokenBreakdown_NonExplicitZeroImagePrice_FallsBackToOutput(t *te
 	// textOutputTokens = 200 - 50 = 150
 	require.InDelta(t, 150*15e-6, bd.OutputCost, 1e-12)
 }
+
+func TestComputePerSecondVideoCost(t *testing.T) {
+	t.Run("5s vs 15s different price", func(t *testing.T) {
+		c5 := computePerSecondVideoCost(0.10, 5, 1, 1.0)
+		c15 := computePerSecondVideoCost(0.10, 15, 1, 1.0)
+		require.InDelta(t, 0.50, c5.TotalCost, 1e-10)
+		require.InDelta(t, 1.50, c15.TotalCost, 1e-10) // 15s ≠ 5s,核心诉求
+	})
+	t.Run("applies rate multiplier", func(t *testing.T) {
+		c := computePerSecondVideoCost(0.10, 10, 1, 2.0)
+		require.InDelta(t, 1.0, c.TotalCost, 1e-10)
+		require.InDelta(t, 2.0, c.ActualCost, 1e-10)
+	})
+	t.Run("negative multiplier clamps to zero", func(t *testing.T) {
+		c := computePerSecondVideoCost(0.10, 10, 1, -1.0)
+		require.InDelta(t, 1.0, c.TotalCost, 1e-10)
+		require.InDelta(t, 0.0, c.ActualCost, 1e-10)
+	})
+	t.Run("zero video count returns empty", func(t *testing.T) {
+		require.Equal(t, &CostBreakdown{}, computePerSecondVideoCost(0.10, 10, 0, 1.0))
+	})
+	t.Run("billing mode is per_second", func(t *testing.T) {
+		c := computePerSecondVideoCost(0.10, 10, 1, 1.0)
+		require.Equal(t, string(BillingModePerSecond), c.BillingMode)
+	})
+}
