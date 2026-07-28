@@ -519,25 +519,35 @@ func (s *OpenAIGatewayService) calculateOpenAIVideoCost(
 			return s.billingService.CalculateVideoCost(billingModel, resolution, videoCount, durationSeconds, groupConfig, multiplier)
 		}
 	}
-	if resolved := s.resolveOpenAIChannelPricing(ctx, billingModel, apiKey); resolved != nil &&
-		(resolved.Mode == BillingModePerRequest || resolved.Mode == BillingModeImage || resolved.Mode == BillingModeVideo) {
-		// 渠道 per_request/image 定价保持"按请求次数"口径（价格由管理员按次配置），不乘视频时长。
-		gid := apiKey.Group.ID
-		cost, err := s.billingService.CalculateCostUnified(CostInput{
-			Ctx:            ctx,
-			Model:          billingModel,
-			GroupID:        &gid,
-			RequestCount:   videoCount,
-			SizeTier:       resolution,
-			RateMultiplier: multiplier,
-			Resolver:       s.resolver,
-			Resolved:       resolved,
-		})
-		if err == nil {
-			cost.BillingMode = string(BillingModeVideo)
-			return cost
+	if resolved := s.resolveOpenAIChannelPricing(ctx, billingModel, apiKey); resolved != nil {
+		if resolved.Mode == BillingModePerSecond {
+			// 渠道 per_second 模式按秒计费:每秒单价 × 时长 × 段数 × 倍率。
+			perSecond := s.resolver.GetRequestTierPrice(resolved, resolution)
+			if perSecond > 0 {
+				return computePerSecondVideoCost(perSecond, durationSeconds, videoCount, multiplier)
+			}
+			// 兜底:该分辨率档未配价 → 回退 L3 默认每秒价(groupConfig=nil 走 getDefaultVideoPrice)
+			return s.billingService.CalculateVideoCost(billingModel, resolution, videoCount, durationSeconds, nil, multiplier)
 		}
-		logger.LegacyPrintf("service.openai_gateway", "Calculate video channel cost failed: %v", err)
+		if resolved.Mode == BillingModePerRequest || resolved.Mode == BillingModeImage || resolved.Mode == BillingModeVideo {
+			// 渠道 per_request/image 定价保持"按请求次数"口径（价格由管理员按次配置），不乘视频时长。
+			gid := apiKey.Group.ID
+			cost, err := s.billingService.CalculateCostUnified(CostInput{
+				Ctx:            ctx,
+				Model:          billingModel,
+				GroupID:        &gid,
+				RequestCount:   videoCount,
+				SizeTier:       resolution,
+				RateMultiplier: multiplier,
+				Resolver:       s.resolver,
+				Resolved:       resolved,
+			})
+			if err == nil {
+				cost.BillingMode = string(BillingModeVideo)
+				return cost
+			}
+			logger.LegacyPrintf("service.openai_gateway", "Calculate video channel cost failed: %v", err)
+		}
 	}
 
 	return s.billingService.CalculateVideoCost(billingModel, resolution, videoCount, durationSeconds, groupConfig, multiplier)

@@ -2492,3 +2492,49 @@ func TestGatewayServiceCalculateRecordUsageCost_ChannelImageBillingNormalizesMis
 	require.InDelta(t, 0.44, cost.TotalCost, 1e-12)
 	require.InDelta(t, 0.44, cost.ActualCost, 1e-12)
 }
+
+func TestCalculateOpenAIVideoCost_PerSecondMode_DifferentDuration(t *testing.T) {
+	groupID := int64(5)
+	perSecondPrice := 0.10
+	cache := newEmptyChannelCache()
+	cache.pricingByGroupModel[channelModelKey{groupID: groupID, model: "grok-imagine-video"}] = &ChannelModelPricing{
+		BillingMode: BillingModePerSecond,
+		Intervals: []PricingInterval{{
+			TierLabel:       "720p",
+			PerRequestPrice: &perSecondPrice,
+		}},
+	}
+	cache.channelByGroupID[groupID] = &Channel{ID: groupID, Status: StatusActive}
+	cache.groupPlatform[groupID] = ""
+	cache.loadedAt = time.Now()
+	cs := &ChannelService{}
+	cs.cache.Store(cache)
+	bs := &BillingService{cfg: &config.Config{}, fallbackPrices: map[string]*ModelPricing{}}
+	resolver := NewModelPricingResolver(cs, bs)
+	svc := &OpenAIGatewayService{resolver: resolver, billingService: bs}
+	// VideoRateIndependent=true 避免 apiKeyWithFreshGroupMediaPricing 回源(nil channelService 不 panic)
+	apiKey := &APIKey{GroupID: &groupID, Group: &Group{ID: groupID, VideoRateIndependent: true}}
+
+	t.Run("5s vs 15s", func(t *testing.T) {
+		r5 := &OpenAIForwardResult{VideoCount: 1, VideoResolution: "720p", VideoDurationSeconds: 5, BillingModel: "grok-imagine-video"}
+		r15 := &OpenAIForwardResult{VideoCount: 1, VideoResolution: "720p", VideoDurationSeconds: 15, BillingModel: "grok-imagine-video"}
+		c5 := svc.calculateOpenAIVideoCost(context.Background(), "grok-imagine-video", apiKey, r5, 1.0)
+		c15 := svc.calculateOpenAIVideoCost(context.Background(), "grok-imagine-video", apiKey, r15, 1.0)
+		require.InDelta(t, 0.50, c5.TotalCost, 1e-10)  // 0.10 × 5
+		require.InDelta(t, 1.50, c15.TotalCost, 1e-10) // 0.10 × 15
+		require.Equal(t, string(BillingModePerSecond), c15.BillingMode)
+	})
+
+	t.Run("default duration 8 when unset", func(t *testing.T) {
+		r := &OpenAIForwardResult{VideoCount: 1, VideoResolution: "720p", BillingModel: "grok-imagine-video"}
+		c := svc.calculateOpenAIVideoCost(context.Background(), "grok-imagine-video", apiKey, r, 1.0)
+		require.InDelta(t, 0.80, c.TotalCost, 1e-10) // 0.10 × 8
+	})
+
+	t.Run("fallback to default price when tier unconfigured", func(t *testing.T) {
+		// 1080p 未配价 → 回退 L3 默认每秒价(grok-imagine-video 1080p=$0.07)
+		r := &OpenAIForwardResult{VideoCount: 1, VideoResolution: "1080p", VideoDurationSeconds: 10, BillingModel: "grok-imagine-video"}
+		c := svc.calculateOpenAIVideoCost(context.Background(), "grok-imagine-video", apiKey, r, 1.0)
+		require.InDelta(t, 0.70, c.TotalCost, 1e-10) // 0.07 × 10
+	})
+}
