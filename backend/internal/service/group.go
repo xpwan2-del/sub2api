@@ -140,6 +140,10 @@ func (g *Group) GetVideoPrice(resolution string) *float64 {
 		return g.VideoPrice720P
 	case VideoBillingResolution1080P:
 		return g.VideoPrice1080P
+	case VideoBillingResolution4K:
+		// group 视频价未覆盖 4K（无 VideoPrice4K 字段）；返回 nil 使计费回落到渠道定价的 4K 档，
+		// 而非借用 480P 价格导致 4K 请求绕过渠道 4K 单价。
+		return nil
 	default:
 		return g.VideoPrice480P
 	}

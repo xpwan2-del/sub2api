@@ -421,7 +421,7 @@ func isGrokVideoUsageResult(result *OpenAIForwardResult, billingModels []string)
 
 // isOpenAIVideoUsage 判断 OpenAI 用量是否应按视频计费：
 //  1. grok-imagine-video 系列模型（原有口径）；或
-//  2. result.VideoCount>0 且渠道定价解析为 per_second/video/per_request/image（覆盖 /v1/videos 通用视频模型）。
+//  2. result.VideoCount>0 且渠道定价解析为 per_second/video/image（覆盖 /v1/videos 通用视频模型）。
 //
 // 这是 calculateOpenAIVideoCost（含 per_second 按秒计费分支）的入口判定，放开后通用视频模型
 // 也能进入视频计费，而不再 fall through 到 token 计费导致费用 0。
@@ -437,7 +437,7 @@ func (s *OpenAIGatewayService) isOpenAIVideoUsage(ctx context.Context, result *O
 		return false
 	}
 	switch resolved.Mode {
-	case BillingModePerSecond, BillingModeVideo, BillingModePerRequest, BillingModeImage:
+	case BillingModePerSecond, BillingModeVideo, BillingModeImage:
 		return true
 	}
 	return false

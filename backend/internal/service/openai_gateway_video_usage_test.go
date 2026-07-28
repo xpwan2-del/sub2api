@@ -44,8 +44,10 @@ func TestIsOpenAIVideoUsage(t *testing.T) {
 	}{
 		{"generic + per_second", build(BillingModePerSecond, tiers), genericModel, &OpenAIForwardResult{VideoCount: 1}, true},
 		{"generic + video mode", build(BillingModeVideo, tiers), genericModel, &OpenAIForwardResult{VideoCount: 1}, true},
-		{"generic + per_request", build(BillingModePerRequest, tiers), genericModel, &OpenAIForwardResult{VideoCount: 1}, true},
 		{"generic + image mode", build(BillingModeImage, tiers), genericModel, &OpenAIForwardResult{VideoCount: 1}, true},
+		// per_request 是通用按次模式，不作为视频计费入口（视频应走 per_second/video/image）；
+		// 通用视频配 per_request 不进视频计费，避免按次口径误用于视频。
+		{"generic + per_request (not a video-billing entry)", build(BillingModePerRequest, tiers), genericModel, &OpenAIForwardResult{VideoCount: 1}, false},
 		{"generic + token mode (not video)", build(BillingModeToken, nil), genericModel, &OpenAIForwardResult{VideoCount: 1}, false},
 		{"generic + no channel pricing", build("", nil), genericModel, &OpenAIForwardResult{VideoCount: 1}, false},
 		{"generic + per_second but VideoCount=0", build(BillingModePerSecond, tiers), genericModel, &OpenAIForwardResult{VideoCount: 0}, false},
