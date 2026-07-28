@@ -1,6 +1,7 @@
 import type { BillingMode, PricingInterval } from '@/api/admin/channels'
 import {
   BILLING_MODE_IMAGE,
+  BILLING_MODE_PER_SECOND,
   BILLING_MODE_VIDEO,
   IMAGE_RESOLUTION_OPTIONS,
   VIDEO_RESOLUTION_OPTIONS,
@@ -133,12 +134,14 @@ export function findModelConflict(models: string[]): [string, string] | null {
 
 // ── 区间校验 ──────────────────────────────────────────────
 
-/** 返回指定模式可用的分辨率档位选项（image/video）；其他模式返回空数组。 */
+/** 返回指定模式可用的分辨率档位选项（image/video/per_second）；其他模式返回空数组。
+ *  per_second 复用 video 的分辨率档位（480P/720P/1080P/4K）。 */
 export function resolutionOptionsForMode(mode: BillingMode): { value: string; label: string }[] {
   switch (mode) {
     case BILLING_MODE_IMAGE:
       return [...IMAGE_RESOLUTION_OPTIONS]
     case BILLING_MODE_VIDEO:
+    case BILLING_MODE_PER_SECOND:
       return [...VIDEO_RESOLUTION_OPTIONS]
     default:
       return []
@@ -175,8 +178,8 @@ export function validateIntervals(
     if (err) return err
   }
 
-  // image / video 模式：tier_label 必须是合法枚举值，且不可重复
-  if (mode === 'image' || mode === 'video') {
+  // image / video / per_second 模式：tier_label 必须是合法枚举值，且不可重复
+  if (mode === 'image' || mode === 'video' || mode === 'per_second') {
     const allowed = resolutionOptionsForMode(mode).map((o) => o.value)
     const seen = new Set<string>()
     for (let i = 0; i < sorted.length; i++) {

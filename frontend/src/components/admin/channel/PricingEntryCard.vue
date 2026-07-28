@@ -229,6 +229,37 @@
             />
           </div>
         </div>
+
+        <!-- Per-second mode (video billed by second; reuses video tier set: 480P/720P/1080P/4K) -->
+        <div v-else-if="entry.billing_mode === 'per_second'">
+          <label class="mt-3 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            {{ t('admin.channels.form.defaultPerSecondPrice', '默认每秒价格（未命中层级时使用）') }}
+            <span class="ml-1 font-normal text-gray-400">USD/s</span>
+          </label>
+          <div class="mt-1 w-48">
+            <input :value="entry.per_request_price" @input="emitField('per_request_price', ($event.target as HTMLInputElement).value)"
+              type="number" step="any" min="0" class="input text-sm" :placeholder="t('admin.channels.form.perSecondPricePlaceholder', '默认')" />
+          </div>
+
+          <div class="mt-3 flex items-center justify-between">
+            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">
+              {{ t('admin.channels.form.perSecondTiers', '视频计费层级（按秒）') }}
+            </label>
+            <button type="button" @click="addPerSecondTier" class="text-xs text-primary-600 hover:text-primary-700">
+              + {{ t('admin.channels.form.addTier', '添加层级') }}
+            </button>
+          </div>
+          <div v-if="entry.intervals && entry.intervals.length > 0" class="mt-2 space-y-2">
+            <IntervalRow
+              v-for="(iv, idx) in entry.intervals"
+              :key="idx"
+              :interval="iv"
+              :mode="entry.billing_mode"
+              @update="updateInterval(idx, $event)"
+              @remove="removeInterval(idx)"
+            />
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -266,6 +297,7 @@ const billingModeOptions = computed(() => [
   { value: 'per_request', label: t('admin.channels.billingMode.perRequest', '按次') },
   { value: 'image', label: t('admin.channels.billingMode.image', '图片（按次）') },
   { value: 'video', label: t('admin.channels.billingMode.video', '视频（按次）') },
+  { value: 'per_second', label: t('admin.channels.form.billingModePerSecond', '视频（按秒）') },
 ])
 
 const billingModeLabel = computed(() => {
@@ -296,7 +328,12 @@ function addVideoTier() {
   addTierForMode('video')
 }
 
-// 按模式预填下一个合法档位（image: 1K/2K/4K；video: 480P/720P/1080P/4K）
+function addPerSecondTier() {
+  // per_second 复用 video 的分辨率档位（480P/720P/1080P/4K）
+  addTierForMode('video')
+}
+
+// 按模式预填下一个合法档位（image: 1K/2K/4K；video/per_second: 480P/720P/1080P/4K）
 function addTierForMode(mode: 'image' | 'video') {
   const intervals = [...(props.entry.intervals || [])]
   const tierLabel = nextDefaultTierLabel(mode as BillingMode, intervals.length)

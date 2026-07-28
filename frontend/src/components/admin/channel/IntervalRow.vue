@@ -61,7 +61,7 @@
       </div>
     </template>
 
-    <!-- Image / Video mode: 分辨率下拉框（固定枚举）+ 单次价格 -->
+    <!-- Image / Video / Per-second mode: 分辨率下拉框（固定枚举）+ 价格（$ 或 USD/s） -->
     <template v-else>
       <div class="w-28">
         <label class="text-xs text-gray-400">
@@ -78,7 +78,13 @@
         />
       </div>
       <div class="flex-1">
-        <label class="text-xs text-gray-400">{{ t('admin.channels.form.perRequestPrice', '单次价格') }} <span v-if="isEmpty" class="text-red-500">*</span> <span class="text-gray-300">$</span></label>
+        <label class="text-xs text-gray-400">
+          {{ mode === 'per_second'
+            ? t('admin.channels.form.perSecondPrice', '每秒价格')
+            : t('admin.channels.form.perRequestPrice', '单次价格') }}
+          <span v-if="isEmpty" class="text-red-500">*</span>
+          <span class="text-gray-300">{{ mode === 'per_second' ? 'USD/s' : '$' }}</span>
+        </label>
         <input :value="interval.per_request_price" @input="emitField('per_request_price', ($event.target as HTMLInputElement).value)"
           type="number" step="any" min="0" class="input mt-0.5 text-xs" />
       </div>
