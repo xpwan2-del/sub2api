@@ -129,6 +129,7 @@ export default {
       token: 'Token 计费',
       image: '图片计费',
       per_request: '按次计费',
+      per_second: '按秒计费',
       unknown: '价格待配置',
     },
     price: {
@@ -136,6 +137,7 @@ export default {
       output: '输出 / 1M',
       image: '图片输出',
       request: '单次请求',
+      perSecond: '每秒价格',
       unavailable: '价格待配置',
     },
     health: {

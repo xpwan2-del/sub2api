@@ -15,8 +15,8 @@
         <strong>{{ formatScaled(pricing.image_output_price, 1) }}</strong>
       </div>
       <div v-if="pricing.per_request_price != null" class="model-price-cell">
-        <span>{{ t('modelCatalog.price.request') }}</span>
-        <strong>{{ formatScaled(pricing.per_request_price, 1) }}</strong>
+        <span>{{ perRequestPriceLabel }}</span>
+        <strong>{{ formatScaled(pricing.per_request_price, 1) }}<span v-if="isPerSecond" class="model-price-unit"> /秒</span></strong>
       </div>
       <div v-if="!hasVisiblePrice" class="model-price-empty">
         {{ t('modelCatalog.price.unavailable') }}
@@ -51,12 +51,18 @@ const hasVisiblePrice = computed(() => {
   ].some((value) => value != null)
 })
 
-const knownBillingModes = new Set(['token', 'image', 'per_request', 'unknown'])
+const knownBillingModes = new Set(['token', 'image', 'per_request', 'per_second', 'unknown'])
 
 const billingLabel = computed(() => {
   const mode = props.pricing?.billing_mode || 'unknown'
   return knownBillingModes.has(mode) ? t(`modelCatalog.billingModes.${mode}`) : mode
 })
+
+// per_second 复用 per_request_price 字段（每秒单价），展示时切到 /秒 单位
+const isPerSecond = computed(() => props.pricing?.billing_mode === 'per_second')
+const perRequestPriceLabel = computed(() =>
+  isPerSecond.value ? t('modelCatalog.price.perSecond') : t('modelCatalog.price.request')
+)
 
 function hasPositivePrice(value: number | null): value is number {
   return typeof value === 'number' && value > 0
@@ -101,6 +107,13 @@ function hasPositivePrice(value: number | null): value is number {
   color: #f8fafc;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 15px;
+}
+
+.model-price-unit {
+  color: rgba(226, 232, 240, 0.62);
+  font-size: 12px;
+  font-weight: 400;
+  margin-left: 2px;
 }
 
 .model-price-empty {

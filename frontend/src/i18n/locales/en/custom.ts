@@ -129,6 +129,7 @@ export default {
       token: 'Token',
       image: 'Image',
       per_request: 'Per request',
+      per_second: 'Per second',
       unknown: 'Price pending',
     },
     price: {
@@ -136,6 +137,7 @@ export default {
       output: 'Output / 1M',
       image: 'Image output',
       request: 'Per request',
+      perSecond: 'Per-second price',
       unavailable: 'Price pending',
     },
     health: {

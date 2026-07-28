@@ -148,6 +148,12 @@ export default {
         restrictModelsHint: 'When enabled, only models in the pricing list are allowed. Others will be rejected.',
         defaultPerRequestPrice: 'Default per-request price',
         defaultImagePrice: 'Default image price (fallback when no tier matches)',
+        // per_second (video billed by the second) reuses per_request_price and the video tier structure
+        billingModePerSecond: 'Per-second billing (video)',
+        defaultPerSecondPrice: 'Default per-second price (fallback when no tier matches)',
+        perSecondPricePlaceholder: 'Per-second price',
+        perSecondPrice: 'Per-second price',
+        perSecondTiers: 'Per-second tiers (video)',
         platformConfig: 'Platform Configuration',
         webSearchEmulation: 'Web Search Emulation',
         webSearchEmulationHint: '⚠️ When enabled, all accounts in this channel\'s Anthropic groups will intercept web_search requests. Use with caution.',

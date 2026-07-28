@@ -148,6 +148,12 @@ export default {
         restrictModelsHint: '开启后，仅允许模型定价列表中的模型。不在列表中的模型请求将被拒绝。',
         defaultPerRequestPrice: '默认单次价格',
         defaultImagePrice: '默认图片价格（未命中层级时使用）',
+        // per_second（视频按秒计费）复用 per_request_price 字段，沿用 video 分支层级结构
+        billingModePerSecond: '按秒计费（视频）',
+        defaultPerSecondPrice: '默认每秒价格（未命中层级时使用）',
+        perSecondPricePlaceholder: '每秒单价',
+        perSecondPrice: '每秒价格',
+        perSecondTiers: '视频计费层级（按秒）',
         platformConfig: '平台配置',
         webSearchEmulation: 'Web Search 模拟',
         webSearchEmulationHint: '⚠️ 开启后该渠道下所有 Anthropic 分组的账号将自动拦截 web_search 请求，请谨慎操作',
