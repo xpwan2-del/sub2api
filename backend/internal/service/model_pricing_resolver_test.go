@@ -7,6 +7,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -861,4 +862,28 @@ func TestApplyTokenOverrides_IntervalDoesNotPolluteFallbackPrices(t *testing.T) 
 	require.InDelta(t, 3e-6, fp.InputPricePerToken, 1e-12, "fallback InputPricePerToken polluted")
 	require.InDelta(t, 15e-6, fp.OutputPricePerToken, 1e-12, "fallback OutputPricePerToken polluted")
 	require.False(t, fp.ImageOutputPriceExplicit, "fallback ImageOutputPriceExplicit polluted")
+}
+
+func TestResolve_PerSecondMode_PopulatesRequestTiers(t *testing.T) {
+	cs := newTestChannelServiceWithCache(t, &channelCache{
+		pricingByGroupModel: map[channelModelKey]*ChannelModelPricing{
+			{groupID: 7, model: "grok-imagine-video"}: {
+				BillingMode: BillingModePerSecond,
+				Intervals:   []PricingInterval{{TierLabel: "720p", PerRequestPrice: testPtrFloat64(0.10)}},
+			},
+		},
+		channelByGroupID:         map[int64]*Channel{7: {ID: 7, Status: StatusActive}},
+		groupPlatform:            map[int64]string{7: ""},
+		wildcardByGroupPlatform:  map[channelGroupPlatformKey][]*wildcardPricingEntry{},
+		mappingByGroupModel:      map[channelModelKey]string{},
+		wildcardMappingByGP:      map[channelGroupPlatformKey][]*wildcardMappingEntry{},
+		byID:                     map[int64]*Channel{},
+	})
+	bs := &BillingService{cfg: &config.Config{}, fallbackPrices: map[string]*ModelPricing{}}
+	resolver := NewModelPricingResolver(cs, bs)
+	gid := int64(7)
+
+	resolved := resolver.Resolve(context.Background(), PricingInput{Model: "grok-imagine-video", GroupID: &gid})
+	require.Equal(t, BillingModePerSecond, resolved.Mode)
+	require.Equal(t, 0.10, resolver.GetRequestTierPrice(resolved, "720p"))
 }
