@@ -1,5 +1,6 @@
 <template>
-  <div class="space-y-6 px-4 py-6 md:px-6">
+  <AppLayout>
+    <div class="space-y-6">
     <!-- 页头 -->
     <div>
       <h1 class="text-xl font-bold text-gray-900 dark:text-white">
@@ -217,12 +218,14 @@
         </ul>
       </section>
     </template>
-  </div>
+    </div>
+  </AppLayout>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AppLayout from '@/components/layout/AppLayout.vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import { getCatalogConfig, saveCatalogConfig, type CatalogConfigItem } from '@/api/adminCatalog'
 import { getSettings, updateSettings, type SystemSettings } from '@/api/admin/settings'
