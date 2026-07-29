@@ -276,10 +276,14 @@ func buildPublicModelCatalog(channels []service.AvailableChannel) []publicModelC
 			pricing := toPublicPricing(model.Pricing)
 			scalePublicPricing(pricing, publicCatalogDisplayMultiplier(ch.Groups, model.Platform, pricing))
 
+			// 归一化键的单点：Name/Platform 在此 TrimSpace，下游 dedup/health/merge
+			// 全部读 item 字段，与 admin modelKeysFromChannels 注册时的 trimmed 键一致；
+			// service/repo 的 mapKey 不做归一化，故必须在构造处补齐，否则 hidden=true
+			// 的模型仍会被 raw（带空白）键 lookup 命不中 DB 行而泄漏到广场。
 			item := publicModelCatalogItem{
-				Name:         model.Name,
+				Name:         strings.TrimSpace(model.Name),
 				Provider:     providerLabel(model.Platform),
-				Platform:     model.Platform,
+				Platform:     strings.TrimSpace(model.Platform),
 				Status:       "available",
 				Description:  publicModelDescription(model.Name, model.Platform, model.Pricing),
 				Capabilities: publicModelCapabilities(model.Name, model.Platform, model.Pricing),
@@ -287,7 +291,7 @@ func buildPublicModelCatalog(channels []service.AvailableChannel) []publicModelC
 				Tags:         []string{},
 			}
 
-			key := strings.ToLower(model.Platform) + "\x00" + strings.ToLower(model.Name)
+			key := strings.ToLower(item.Platform) + "\x00" + strings.ToLower(item.Name)
 			existing, ok := byModel[key]
 			if !ok || preferPublicPricing(item.Pricing, existing.Pricing) {
 				byModel[key] = item

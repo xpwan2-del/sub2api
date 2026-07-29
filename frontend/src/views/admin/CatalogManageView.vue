@@ -355,8 +355,7 @@ async function saveNewModelDays(): Promise<void> {
   try {
     // 基于完整设置快照构造 full payload：后端按字段全量持久化（多数字段无 partial
     // 保护），传 partial 会把 registration/smtp/oauth 等未提供字段零值覆盖。
-    // ⚠️ model_catalog_new_model_days 受后端 gap 影响（SystemSettings 未暴露），
-    // 字段补齐前该值为静默 no-op；但 full payload 保证不会误伤其他设置。
+    // 完整快照既保证 model_catalog_new_model_days 端到端落库，也避免误伤其他设置。
     const base = cachedSettings.value ?? (await getSettings())
     const days = Math.floor(v)
     await updateSettings({ ...base, model_catalog_new_model_days: days })
