@@ -26,6 +26,30 @@
     </section>
 
     <template v-else>
+      <!-- 运营概览统计 -->
+      <section class="card">
+        <div class="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4 lg:grid-cols-7">
+          <div
+            v-for="tile in statTiles"
+            :key="tile.key"
+            class="rounded-md border border-gray-200 p-3 dark:border-dark-600"
+          >
+            <span class="block text-xs text-gray-500 dark:text-gray-400">{{ t(tile.label) }}</span>
+            <strong class="text-lg font-semibold text-gray-900 dark:text-white">{{ tile.value }}</strong>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 border-t border-gray-100 px-4 py-3 dark:border-dark-700">
+          <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.catalogManage.stats.byPlatform') }}</span>
+          <span
+            v-for="[platform, count] in platformEntries"
+            :key="platform"
+            class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700 dark:bg-dark-700 dark:text-gray-300"
+          >
+            {{ platform }} · {{ count }}
+          </span>
+        </div>
+      </section>
+
       <!-- 统一可拖拽列表（含置顶） -->
       <section class="card">
         <div class="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 dark:border-dark-700 sm:flex-row sm:items-center sm:justify-between">
@@ -109,6 +133,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import CatalogModelRow from '@/components/admin/CatalogModelRow.vue'
 import { getCatalogConfig, saveCatalogConfig, type CatalogConfigItem } from '@/api/adminCatalog'
+import { computeCatalogStats } from '@/utils/modelCatalog'
 import { useAppStore } from '@/stores'
 
 const { t } = useI18n()
@@ -148,6 +173,21 @@ watch(
 )
 
 const visibleList = computed(() => (hasSearch.value ? filteredList.value : localItems.value))
+
+// 运营概览统计：基于全量 items（不受搜索框影响），随开关就地变更实时刷新。
+const stats = computed(() => computeCatalogStats(items.value))
+const platformEntries = computed(() =>
+  Object.entries(stats.value.byPlatform).sort((a, b) => b[1] - a[1]),
+)
+const statTiles = computed(() => [
+  { key: 'total', label: 'admin.catalogManage.stats.total', value: stats.value.total },
+  { key: 'visible', label: 'admin.catalogManage.stats.visible', value: stats.value.visible },
+  { key: 'hidden', label: 'admin.catalogManage.stats.hidden', value: stats.value.hidden },
+  { key: 'pinned', label: 'admin.catalogManage.stats.pinned', value: stats.value.pinned },
+  { key: 'isNew', label: 'admin.catalogManage.stats.isNew', value: stats.value.isNew },
+  { key: 'featured', label: 'admin.catalogManage.stats.featured', value: stats.value.featured },
+  { key: 'recommended', label: 'admin.catalogManage.stats.recommended', value: stats.value.recommended },
+])
 
 function keyOf(item: CatalogConfigItem): string {
   return `${item.platform}__${item.model_name}`

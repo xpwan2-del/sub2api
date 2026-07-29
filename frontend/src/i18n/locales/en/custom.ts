@@ -194,6 +194,16 @@ export default {
     catalogManage: {
       title: 'Model Catalog',
       description: 'Curate model ordering, pinned, NEW/featured/recommended tags and visibility for the public model catalog',
+      stats: {
+        total: 'Total',
+        visible: 'Visible',
+        hidden: 'Hidden',
+        pinned: 'Pinned',
+        isNew: 'New',
+        featured: 'Featured',
+        recommended: 'Recommended',
+        byPlatform: 'By platform',
+      },
       newModelDays: 'New model window (days)',
       newModelDaysHint: 'Models first seen within this many days get a NEW badge on the catalog',
       saveSettings: 'Save',

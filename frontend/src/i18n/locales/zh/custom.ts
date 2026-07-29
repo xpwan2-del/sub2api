@@ -194,6 +194,16 @@ export default {
     catalogManage: {
       title: '模型广场',
       description: '管理公开模型广场的模型排序、置顶、NEW/精选/推荐标签与可见性',
+      stats: {
+        total: '模型总数',
+        visible: '可见',
+        hidden: '已隐藏',
+        pinned: '置顶',
+        isNew: 'NEW',
+        featured: '精选',
+        recommended: '推荐',
+        byPlatform: '按平台分布',
+      },
       newModelDays: '新模型判定窗口（天）',
       newModelDaysHint: '首见时间在此天数内的模型会在广场显示 NEW 徽章',
       saveSettings: '保存',
