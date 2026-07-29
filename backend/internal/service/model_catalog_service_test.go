@@ -8,28 +8,28 @@ import (
 	"time"
 )
 
-// stubCatalogRepo 实现 modelCatalogRepo（service 包内 interface），供单测。
+// stubCatalogRepo 实现 ModelCatalogRepo（service 包内 interface），供单测。
 // 不依赖 repository 包，避免 depguard service→repository 限制。
 type stubCatalogRepo struct {
 	// getByModelKeys 预填配置，key 须用 modelCatalogMapKey(platform, modelName)。
-	getByModelKeys map[string]*modelCatalogDisplay
+	getByModelKeys map[string]*ModelCatalogDisplay
 	getCalled      bool
 	getErr         error
-	listResult     []*modelCatalogDisplay
+	listResult     []*ModelCatalogDisplay
 	listErr        error
 	upsertErr      error
 	batchErr       error
 	// 捕获调用入参，供断言。
 	upsertSeen []ModelKey
-	batchSeen  []*modelCatalogDisplay
+	batchSeen  []*ModelCatalogDisplay
 }
 
-func (s *stubCatalogRepo) GetByModelKeys(_ context.Context, keys []ModelKey) (map[string]*modelCatalogDisplay, error) {
+func (s *stubCatalogRepo) GetByModelKeys(_ context.Context, keys []ModelKey) (map[string]*ModelCatalogDisplay, error) {
 	s.getCalled = true
 	if s.getErr != nil {
 		return nil, s.getErr
 	}
-	out := make(map[string]*modelCatalogDisplay, len(keys))
+	out := make(map[string]*ModelCatalogDisplay, len(keys))
 	for _, k := range keys {
 		mk := modelCatalogMapKey(k.Platform, k.ModelName)
 		if c, ok := s.getByModelKeys[mk]; ok {
@@ -44,11 +44,11 @@ func (s *stubCatalogRepo) UpsertMissing(_ context.Context, keys []ModelKey) erro
 	return s.upsertErr
 }
 
-func (s *stubCatalogRepo) ListAll(_ context.Context) ([]*modelCatalogDisplay, error) {
+func (s *stubCatalogRepo) ListAll(_ context.Context) ([]*ModelCatalogDisplay, error) {
 	return s.listResult, s.listErr
 }
 
-func (s *stubCatalogRepo) BatchUpsert(_ context.Context, cfgs []*modelCatalogDisplay) error {
+func (s *stubCatalogRepo) BatchUpsert(_ context.Context, cfgs []*ModelCatalogDisplay) error {
 	s.batchSeen = cfgs
 	return s.batchErr
 }
@@ -85,7 +85,7 @@ func TestModelCatalogService_IsEnabled(t *testing.T) {
 }
 
 func TestModelCatalogService_MergeDisplayConfig_DisabledNoOp(t *testing.T) {
-	repo := &stubCatalogRepo{getByModelKeys: map[string]*modelCatalogDisplay{
+	repo := &stubCatalogRepo{getByModelKeys: map[string]*ModelCatalogDisplay{
 		modelCatalogMapKey("openai", "gpt-4"): {Platform: "openai", ModelName: "gpt-4", Hidden: true, Pinned: true},
 	}}
 	// ops_enabled=false：运营总开关关闭，merge 必须整体 no-op。
@@ -108,7 +108,7 @@ func TestModelCatalogService_MergeDisplayConfig_DisabledNoOp(t *testing.T) {
 }
 
 func TestModelCatalogService_MergeDisplayConfig_HiddenFiltered(t *testing.T) {
-	repo := &stubCatalogRepo{getByModelKeys: map[string]*modelCatalogDisplay{
+	repo := &stubCatalogRepo{getByModelKeys: map[string]*ModelCatalogDisplay{
 		modelCatalogMapKey("openai", "gpt-4"):     {Platform: "openai", ModelName: "gpt-4", Hidden: true},
 		modelCatalogMapKey("anthropic", "claude"): {Platform: "anthropic", ModelName: "claude"},
 	}}
@@ -135,7 +135,7 @@ func TestModelCatalogService_MergeDisplayConfig_FeaturedExpiry(t *testing.T) {
 	future := now.Add(1 * time.Hour)
 	past := now.Add(-1 * time.Hour)
 
-	repo := &stubCatalogRepo{getByModelKeys: map[string]*modelCatalogDisplay{
+	repo := &stubCatalogRepo{getByModelKeys: map[string]*ModelCatalogDisplay{
 		modelCatalogMapKey("p", "active"):  {Platform: "p", ModelName: "active", FeaturedUntil: &future},
 		modelCatalogMapKey("p", "expired"): {Platform: "p", ModelName: "expired", FeaturedUntil: &past},
 	}}
@@ -165,7 +165,7 @@ func TestModelCatalogService_MergeDisplayConfig_FeaturedExpiry(t *testing.T) {
 
 func TestModelCatalogService_MergeDisplayConfig_NewWindow(t *testing.T) {
 	now := time.Now()
-	repo := &stubCatalogRepo{getByModelKeys: map[string]*modelCatalogDisplay{
+	repo := &stubCatalogRepo{getByModelKeys: map[string]*ModelCatalogDisplay{
 		// 刚登记（5 天前），在 30 天窗口内 → new。
 		modelCatalogMapKey("p", "fresh"): {Platform: "p", ModelName: "fresh", FirstSeenAt: now.Add(-5 * 24 * time.Hour)},
 		// 31 天前，超出 30 天窗口 → 非 new。
@@ -196,7 +196,7 @@ func TestModelCatalogService_MergeDisplayConfig_NewWindow(t *testing.T) {
 }
 
 func TestModelCatalogService_MergeDisplayConfig_TagsMergeDedup(t *testing.T) {
-	repo := &stubCatalogRepo{getByModelKeys: map[string]*modelCatalogDisplay{
+	repo := &stubCatalogRepo{getByModelKeys: map[string]*ModelCatalogDisplay{
 		modelCatalogMapKey("p", "m"): {Platform: "p", ModelName: "m", CustomTags: []string{"recommended", "multimodal"}},
 	}}
 	svc := newSvc(repo, true, 30)
@@ -291,7 +291,7 @@ func TestModelCatalogService_BatchSave_DropsFirstSeenAt(t *testing.T) {
 func TestModelCatalogService_ListAllForAdmin_DerivedFields(t *testing.T) {
 	now := time.Now()
 	future := now.Add(1 * time.Hour)
-	repo := &stubCatalogRepo{listResult: []*modelCatalogDisplay{
+	repo := &stubCatalogRepo{listResult: []*ModelCatalogDisplay{
 		{Platform: "p", ModelName: "fresh", CustomTags: []string{"recommended"}, FirstSeenAt: now.Add(-5 * 24 * time.Hour), FeaturedUntil: &future, Pinned: true, SortWeight: 9},
 		{Platform: "p", ModelName: "hidden", Hidden: true},
 	}}

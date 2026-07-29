@@ -101,7 +101,9 @@ var ProviderSet = wire.NewSet(
 	NewBundleUsageRepository,
 	NewBundleRPMCache,
 	NewBundleConcurrencyCache,
-	NewPaymentOrderReader, // 套餐升级差价计算：反查旧订阅套餐标价
+	NewPaymentOrderReader,         // 套餐升级差价计算：反查旧订阅套餐标价
+	NewModelCatalogRepo,           // 模型广场可运营展示配置（repository 层接口）
+	NewModelCatalogServiceAdapter, // repository.ModelCatalogRepo → service.ModelCatalogRepo 适配器
 
 	// Cache implementations
 	NewGatewayCache,

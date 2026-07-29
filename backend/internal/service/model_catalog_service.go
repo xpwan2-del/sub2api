@@ -48,9 +48,9 @@ type AdminCatalogConfig struct {
 	Featured      bool      // 派生
 }
 
-// modelCatalogDisplay 是运营配置的 service 层内部 DTO，与 repository.ModelCatalogDisplay
+// ModelCatalogDisplay 是运营配置的 service 层内部 DTO，与 repository.ModelCatalogDisplay
 // 字段对齐，供 wire adapter（service/wire.go）转换。service 不直接 import repository（depguard）。
-type modelCatalogDisplay struct {
+type ModelCatalogDisplay struct {
 	Platform      string
 	ModelName     string
 	Pinned        bool
@@ -61,19 +61,19 @@ type modelCatalogDisplay struct {
 	FirstSeenAt   time.Time
 }
 
-// modelCatalogRepo 是模型广场运营配置的数据访问接口（service 包内定义）。
+// ModelCatalogRepo 是模型广场运营配置的数据访问接口（service 包内定义）。
 // repository.ModelCatalogRepo 的实现由 wire adapter 适配进此接口——两者方法签名等价但
 // 使用 service 包内的 DTO/ModelKey 名义类型，故需在 service/wire.go（depguard 白名单）做转换。
-type modelCatalogRepo interface {
+type ModelCatalogRepo interface {
 	// GetByModelKeys 按 (platform, model_name) 复合键批量查询，返回 map。
 	// map key 为 platform + "\x00" + model_name；未命中的 key 不出现在结果中。
-	GetByModelKeys(ctx context.Context, keys []ModelKey) (map[string]*modelCatalogDisplay, error)
+	GetByModelKeys(ctx context.Context, keys []ModelKey) (map[string]*ModelCatalogDisplay, error)
 	// UpsertMissing 为尚未存在的 (platform, model_name) 插入默认行（不覆盖已存在行）。
 	UpsertMissing(ctx context.Context, keys []ModelKey) error
 	// ListAll 返回全部展示配置（按 platform、model_name 升序），无数据时返回非 nil 空切片。
-	ListAll(ctx context.Context) ([]*modelCatalogDisplay, error)
+	ListAll(ctx context.Context) ([]*ModelCatalogDisplay, error)
 	// BatchUpsert 按 (platform, model_name) 复合键 upsert 可运营字段，不改动 first_seen_at。
-	BatchUpsert(ctx context.Context, cfgs []*modelCatalogDisplay) error
+	BatchUpsert(ctx context.Context, cfgs []*ModelCatalogDisplay) error
 }
 
 // modelCatalogSettings 抽象 ModelCatalogService 所需的两个设置读取，使其可被 stub 测试。
@@ -99,12 +99,12 @@ type ModelCatalogService interface {
 }
 
 type modelCatalogServiceImpl struct {
-	repo     modelCatalogRepo
+	repo     ModelCatalogRepo
 	settings modelCatalogSettings
 }
 
 // NewModelCatalogService 创建模型广场运营配置服务。
-func NewModelCatalogService(repo modelCatalogRepo, settings modelCatalogSettings) ModelCatalogService {
+func NewModelCatalogService(repo ModelCatalogRepo, settings modelCatalogSettings) ModelCatalogService {
 	return &modelCatalogServiceImpl{repo: repo, settings: settings}
 }
 
@@ -173,10 +173,10 @@ func (s *modelCatalogServiceImpl) ListAllForAdmin(ctx context.Context) ([]AdminC
 }
 
 func (s *modelCatalogServiceImpl) BatchSave(ctx context.Context, cfgs []AdminCatalogConfig) error {
-	rows := make([]*modelCatalogDisplay, 0, len(cfgs))
+	rows := make([]*ModelCatalogDisplay, 0, len(cfgs))
 	for _, c := range cfgs {
 		// FirstSeenAt 不可由管理员修改：不写入 BatchUpsert（repo 侧也不会更新该列）。
-		rows = append(rows, &modelCatalogDisplay{
+		rows = append(rows, &ModelCatalogDisplay{
 			Platform:      c.Platform,
 			ModelName:     c.ModelName,
 			Pinned:        c.Pinned,
@@ -191,7 +191,7 @@ func (s *modelCatalogServiceImpl) BatchSave(ctx context.Context, cfgs []AdminCat
 
 // mergeDisplay 将单条运营配置 merge 进 CatalogItem，生成展示信息。
 // cfg 为 nil 表示无配置（模型未登记），此时仅保留自动能力标签 + 可能的 new/featured=false。
-func mergeDisplay(now time.Time, newModelDays int, it CatalogItem, cfg *modelCatalogDisplay) *CatalogDisplayInfo {
+func mergeDisplay(now time.Time, newModelDays int, it CatalogItem, cfg *ModelCatalogDisplay) *CatalogDisplayInfo {
 	isNew, featured := classifyDisplay(now, newModelDays, cfg)
 
 	info := &CatalogDisplayInfo{
@@ -224,7 +224,7 @@ func mergeDisplay(now time.Time, newModelDays int, it CatalogItem, cfg *modelCat
 }
 
 // displayToAdminConfig 将运营配置行转为管理页 DTO，附带派生展示字段。
-func displayToAdminConfig(now time.Time, newModelDays int, r *modelCatalogDisplay) AdminCatalogConfig {
+func displayToAdminConfig(now time.Time, newModelDays int, r *ModelCatalogDisplay) AdminCatalogConfig {
 	isNew, featured := classifyDisplay(now, newModelDays, r)
 	// 管理页无调用方传入的能力标签：Tags = custom_tags + 条件 new/featured。
 	tags := make([]string, 0, len(r.CustomTags)+2)
@@ -253,7 +253,7 @@ func displayToAdminConfig(now time.Time, newModelDays int, r *modelCatalogDispla
 // classifyDisplay 判定 new/featured：
 //   - new：first_seen_at 非零且 now-first_seen_at < newModelDays*24h（严格小于窗口边界）
 //   - featured：featured_until 非空且未过期（now <= featured_until；过期即 now.After 则 false）
-func classifyDisplay(now time.Time, newModelDays int, cfg *modelCatalogDisplay) (isNew bool, featured bool) {
+func classifyDisplay(now time.Time, newModelDays int, cfg *ModelCatalogDisplay) (isNew bool, featured bool) {
 	if cfg == nil {
 		return false, false
 	}

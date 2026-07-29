@@ -228,6 +228,10 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyOpenAIAdvancedSchedulerWeightSessionSticky:         "",
 
 		SettingKeyAllowUserViewErrorRequests: "false",
+
+		// 模型广场可运营排序（默认开启；新模型判定窗口 30 天）
+		SettingKeyModelCatalogOpsEnabled:   "true",
+		SettingKeyModelCatalogNewModelDays: strconv.Itoa(ModelCatalogNewModelDaysDefault),
 	}
 
 	return s.settingRepo.SetMultiple(ctx, defaults)

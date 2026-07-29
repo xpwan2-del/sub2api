@@ -672,6 +672,11 @@ var ProviderSet = wire.NewSet(
 	NewBundleRouteResolver,
 	NewBundleUsageService,
 	ProvideBundleExpiryService,
+
+	// 模型广场可运营排序：adapter 在 repository 包，提供 service.ModelCatalogRepo。
+	NewModelCatalogService,
+	// modelCatalogSettings 未导出，由 *SettingService 结构化满足。
+	wire.Bind(new(modelCatalogSettings), new(*SettingService)),
 )
 
 // ProvideUserPlatformQuotaUsageFlusher 创建并启动 UserPlatformQuotaUsageFlusher。
