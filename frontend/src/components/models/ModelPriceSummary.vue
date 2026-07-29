@@ -32,6 +32,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatScaled } from '@/utils/pricing'
+import { getModelCatalogBillingModeLabel } from '@/utils/billingMode'
 import type { PublicModelPricing } from '@/api/publicModels'
 
 const props = defineProps<{
@@ -51,12 +52,9 @@ const hasVisiblePrice = computed(() => {
   ].some((value) => value != null)
 })
 
-const knownBillingModes = new Set(['token', 'image', 'per_request', 'per_second', 'unknown'])
-
-const billingLabel = computed(() => {
-  const mode = props.pricing?.billing_mode || 'unknown'
-  return knownBillingModes.has(mode) ? t(`modelCatalog.billingModes.${mode}`) : mode
-})
+const billingLabel = computed(() =>
+  getModelCatalogBillingModeLabel(props.pricing?.billing_mode, t),
+)
 
 // per_second 复用 per_request_price 字段（每秒单价），展示时切到 /秒 单位
 const isPerSecond = computed(() => props.pricing?.billing_mode === 'per_second')

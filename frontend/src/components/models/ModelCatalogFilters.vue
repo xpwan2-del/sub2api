@@ -27,7 +27,7 @@
     <select :value="filters.billingMode" @change="update('billingMode', ($event.target as HTMLSelectElement).value)">
       <option value="">{{ t('modelCatalog.filters.allBilling') }}</option>
       <option v-for="mode in facets.billingModes" :key="mode" :value="mode">
-        {{ billingModeLabel(mode) }}
+        {{ getModelCatalogBillingModeLabel(mode, t) }}
       </option>
     </select>
 
@@ -42,6 +42,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
+import { getModelCatalogBillingModeLabel } from '@/utils/billingMode'
 import type { ModelCatalogFacets, ModelCatalogFilters, ModelCatalogSort } from '@/utils/modelCatalog'
 
 const props = defineProps<{
@@ -55,17 +56,12 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const knownBillingModes = new Set(['token', 'image', 'per_request', 'unknown'])
 
 function update(key: keyof ModelCatalogFilters, value: string) {
   emit('update:filters', {
     ...props.filters,
     [key]: key === 'sortBy' ? value as ModelCatalogSort : value
   })
-}
-
-function billingModeLabel(mode: string) {
-  return knownBillingModes.has(mode) ? t(`modelCatalog.billingModes.${mode}`) : mode
 }
 </script>
 
