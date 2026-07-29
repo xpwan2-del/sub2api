@@ -5,7 +5,7 @@ import type {
   PublicModelPricing
 } from '@/api/publicModels'
 
-export type ModelCatalogSort = 'price' | 'name' | 'provider'
+export type ModelCatalogSort = 'recommended' | 'price' | 'name' | 'provider'
 
 export interface ModelCatalogCard {
   id: string
@@ -17,6 +17,11 @@ export interface ModelCatalogCard {
   pricing: PublicModelPricing | null
   health: PublicModelHealth | null
   capabilities: string[]
+  pinned: boolean
+  sort_weight: number
+  tags: string[]
+  is_new: boolean
+  featured: boolean
 }
 
 export interface ModelCatalogFilters {
@@ -41,6 +46,18 @@ export interface ModelCatalogBuildResult {
 
 const capabilityOrder = ['reasoning', 'coding', 'longContext', 'lowCost', 'multimodal', 'fast']
 
+export const TAG_WEIGHTS: Record<string, number> = {
+  new: 100,
+  featured: 80,
+  recommended: 60,
+  multimodal: 40,
+  reasoning: 20,
+  coding: 15,
+  longContext: 10,
+  fast: 5,
+  lowCost: 5
+}
+
 export function buildModelCatalog(rows: PublicModelCatalogItem[]): ModelCatalogBuildResult {
   const grouped = new Map<string, ModelCatalogCard>()
 
@@ -62,7 +79,12 @@ export function buildModelCatalog(rows: PublicModelCatalogItem[]): ModelCatalogB
         status: row.status,
         pricing: row.pricing,
         health: cloneModelHealth(row.health),
-        capabilities
+        capabilities,
+        pinned: row.pinned ?? false,
+        sort_weight: row.sort_weight ?? 0,
+        tags: normalizeTags(row.tags),
+        is_new: row.is_new ?? false,
+        featured: row.featured ?? false
       })
       continue
     }
@@ -79,6 +101,11 @@ export function buildModelCatalog(rows: PublicModelCatalogItem[]): ModelCatalogB
     }
     current.health = mergeModelHealth(current.health, row.health)
     current.capabilities = mergeSortedCapabilities(current.capabilities, capabilities)
+    current.pinned = current.pinned || (row.pinned ?? false)
+    current.is_new = current.is_new || (row.is_new ?? false)
+    current.featured = current.featured || (row.featured ?? false)
+    current.sort_weight = Math.max(current.sort_weight, row.sort_weight ?? 0)
+    current.tags = normalizeTags([...current.tags, ...(row.tags ?? [])])
   }
 
   const items = Array.from(grouped.values()).map((item) => ({
@@ -104,7 +131,7 @@ export function buildModelCatalog(rows: PublicModelCatalogItem[]): ModelCatalogB
       platforms: Array.from(platformSet).sort((a, b) => a.localeCompare(b)),
       capabilities: Array.from(capabilitySet).sort(compareCapabilities),
       billingModes: Array.from(billingSet).sort((a, b) => a.localeCompare(b)),
-      sortOptions: billingSet.size > 0 ? ['price', 'name', 'provider'] : ['name', 'provider']
+      sortOptions: billingSet.size > 0 ? ['recommended', 'price', 'name', 'provider'] : ['recommended', 'name', 'provider']
     }
   }
 }
@@ -148,6 +175,10 @@ export function modelPriceScore(pricing: PublicModelPricing | null): number {
 
   if (values.length === 0) return Number.POSITIVE_INFINITY
   return values.reduce((sum, value) => sum + value, 0)
+}
+
+export function tagScore(tags: string[] = []): number {
+  return tags.reduce((score, tag) => score + (TAG_WEIGHTS[tag] ?? 0), 0)
 }
 
 function preferPricing(next: PublicModelPricing | null, current: PublicModelPricing | null): boolean {
@@ -254,6 +285,10 @@ function normalizeCapabilities(values?: string[]): string[] {
   return Array.from(new Set((values || []).map((value) => value.trim()).filter(Boolean))).sort(compareCapabilities)
 }
 
+function normalizeTags(tags?: string[]): string[] {
+  return Array.from(new Set((tags || []).map((tag) => tag.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b))
+}
+
 function inferModelCapabilities(row: PublicModelCatalogItem): string[] {
   const text = `${row.name || ''} ${row.provider || ''} ${row.platform || ''}`.toLowerCase()
   const capabilities: string[] = []
@@ -310,9 +345,19 @@ function compareCapabilities(a: string, b: string): number {
 }
 
 function compareCatalogCards(a: ModelCatalogCard, b: ModelCatalogCard, sortBy: ModelCatalogSort): number {
-  if (sortBy === 'price') {
+  if (sortBy === 'recommended') {
+    // Pinned cards always lead; within the pinned block, higher sort_weight wins.
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
+    if (a.pinned && b.pinned) return b.sort_weight - a.sort_weight
+    // Non-pinned cards rank by accumulated tag weight (higher first).
+    const tagDelta = tagScore(b.tags) - tagScore(a.tags)
+    if (tagDelta !== 0) return tagDelta
+    // Tie falls through to the ascending-price tiebreak below.
+  }
+  if (sortBy === 'recommended' || sortBy === 'price') {
     const delta = modelPriceScore(a.pricing) - modelPriceScore(b.pricing)
-    if (delta !== 0) return delta
+    // Infinity - Infinity === NaN (both missing pricing) is a tie, not an ordering.
+    if (!Number.isNaN(delta) && delta !== 0) return delta
   }
   if (sortBy === 'provider') {
     const providerDelta = a.provider.localeCompare(b.provider)

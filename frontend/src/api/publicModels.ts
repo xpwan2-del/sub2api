@@ -44,6 +44,11 @@ export interface PublicModelCatalogItem {
   capabilities?: string[]
   pricing: PublicModelPricing | null
   health?: PublicModelHealth | null
+  pinned?: boolean
+  sort_weight?: number
+  tags?: string[]
+  is_new?: boolean
+  featured?: boolean
 }
 
 export const publicModelsAPI = {
