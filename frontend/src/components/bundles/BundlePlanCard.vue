@@ -10,6 +10,12 @@
  * `plan` 同时兼容完整 `BundlePlan`（BundlesView）与裁剪后的 `PublicBundlePlan`（B3）；
  * BundlePlan 独有字段（group_quotas / concurrency_limit / rpm_limit）在此声明为可选，
  * 两种数据形态都能满足。所有可选展示区均以 `v-if` + 可选链守卫，缺失字段不会报错。
+ *
+ * 覆盖范围渲染采用同一视觉槽位的两种互斥形态：
+ *  - group_quotas（BundlesView）：富 chips，含分组名 + 平台徽章 + 额度 tooltip。
+ *  - platforms（B3 公开套餐）：扁平平台 chips（公开 DTO 不含精确额度）。
+ * 优先渲染 group_quotas；缺省时回落到 platforms。BundlesView 不传 platforms（undefined），
+ * 故其渲染路径完全不变。
  */
 import type { BundlePlanGroupQuota } from '@/types/bundle'
 
@@ -26,6 +32,8 @@ export interface BundlePlanCardData {
   rpm_limit?: number
   features?: string[]
   group_quotas?: readonly BundlePlanGroupQuota[]
+  /** 覆盖平台扁平列表（公开套餐 DTO 独有；BundlesView 的 BundlePlan 不含此字段） */
+  platforms?: string[]
 }
 </script>
 
@@ -171,6 +179,25 @@ function platformDotClass(p: string): string {
                 </template>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Platforms (flat chips; 公开套餐仅含平台聚合，无 group_quotas 时回落渲染) -->
+      <div v-else-if="plan.platforms?.length" class="mb-3">
+        <p class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+          {{ t('bundles.coveredPlatforms', { count: plan.platforms.length }) }}
+        </p>
+        <div class="flex flex-wrap gap-1.5">
+          <div
+            v-for="p in plan.platforms"
+            :key="p"
+            class="flex items-center gap-1.5 rounded-lg border border-gray-100 bg-white px-2.5 py-1.5 dark:border-dark-600 dark:bg-dark-800"
+          >
+            <span :class="['h-1.5 w-1.5 rounded-full', platformDotClass(p)]" />
+            <span :class="['rounded px-1 py-0.5 text-[10px] font-medium', platformBadgeLightClass(p)]">
+              {{ platformLabel(p) }}
+            </span>
           </div>
         </div>
       </div>

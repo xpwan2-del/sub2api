@@ -169,6 +169,9 @@ export default {
     badgeFeatured: '特色',
     badgeRecommended: '推荐',
     pinned: '置顶',
+    bundleSectionTitle: '套餐订阅',
+    bundleSectionSubtitle: '选择套餐，解锁更多模型配额与特权',
+    viewAllBundles: '查看全部套餐',
   },
   nav: {
     canvas: 'AI 画布',
@@ -467,6 +470,7 @@ export default {
     monthly: '月用量',
     concurrencyShort: '并发',
     includesGroupCount: '包含 {count} 个模型分组',
+    coveredPlatforms: '覆盖 {count} 个平台',
     purchaseNow: '立即购买',
     purchaseSuccess: '套餐购买成功',
     purchaseNotAvailable: '购买功能暂未开放',

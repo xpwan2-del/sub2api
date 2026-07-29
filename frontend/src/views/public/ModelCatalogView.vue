@@ -5,6 +5,11 @@
     <PublicTopBar :is-dark="isDark" @toggle-theme="toggleTheme" />
 
     <main class="model-catalog-main">
+      <BundleShowcaseSection
+        v-if="bundlePlans.length > 0"
+        :plans="bundlePlans"
+      />
+
       <ModelCatalogHeader
         :model-count="catalog.items.length"
         :platform-count="catalog.facets.platforms.length"
@@ -56,8 +61,10 @@ import Icon from '@/components/icons/Icon.vue'
 import ModelCard from '@/components/models/ModelCard.vue'
 import ModelCatalogFilters from '@/components/models/ModelCatalogFilters.vue'
 import ModelCatalogHeader from '@/components/models/ModelCatalogHeader.vue'
+import BundleShowcaseSection from '@/components/models/BundleShowcaseSection.vue'
 import PublicTopBar from '@/components/public/PublicTopBar.vue'
 import { publicModelsAPI, type PublicModelCatalogItem } from '@/api/publicModels'
+import { getPublicBundlePlans, type PublicBundlePlan } from '@/api/publicBundles'
 import { buildModelCatalog, filterModelCatalog, type ModelCatalogFilters as CatalogFilters } from '@/utils/modelCatalog'
 import { useClipboard } from '@/composables/useClipboard'
 import { usePublicBranding } from '@/composables/usePublicBranding'
@@ -74,6 +81,11 @@ const rows = ref<PublicModelCatalogItem[]>([])
 const loading = ref(true)
 const errorMessage = ref('')
 let abortController: AbortController | null = null
+
+// 顶部套餐区：非关键增强，加载失败静默不渲染（不影响模型列表主流程）。
+// ops_enabled=false 时后端返回 []，区自然不渲染。
+const bundlePlans = ref<PublicBundlePlan[]>([])
+let bundleAbortController: AbortController | null = null
 
 const filters = reactive<CatalogFilters>({
   search: '',
@@ -118,15 +130,29 @@ function copyModelName(name: string) {
   copyToClipboard(name, t('modelCatalog.copied'))
 }
 
+async function loadBundlePlans() {
+  bundleAbortController?.abort()
+  bundleAbortController = new AbortController()
+  try {
+    bundlePlans.value = await getPublicBundlePlans(bundleAbortController.signal)
+  } catch (error: any) {
+    // 取消（切页/卸载）忽略；其余失败静默置空，套餐区不渲染即可，不打断主流程。
+    if (error?.code === 'ERR_CANCELED') return
+    bundlePlans.value = []
+  }
+}
+
 onMounted(() => {
   if (!appStore.publicSettingsLoaded) {
     appStore.fetchPublicSettings()
   }
-  loadCatalog()
+  // 并行加载模型列表与公开套餐，二者加载/错误状态相互独立、互不阻塞。
+  void Promise.all([loadCatalog(), loadBundlePlans()])
 })
 
 onUnmounted(() => {
   abortController?.abort()
+  bundleAbortController?.abort()
 })
 </script>
 

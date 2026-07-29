@@ -169,6 +169,9 @@ export default {
     badgeFeatured: 'Featured',
     badgeRecommended: 'Recommended',
     pinned: 'Pinned',
+    bundleSectionTitle: 'Subscription Bundles',
+    bundleSectionSubtitle: 'Subscribe to a bundle for more model quotas and privileges',
+    viewAllBundles: 'View all bundles',
   },
   nav: {
     canvas: 'AI Canvas',
@@ -467,6 +470,7 @@ export default {
     monthly: 'Monthly',
     concurrencyShort: 'Conc.',
     includesGroupCount: 'Includes {count} model groups',
+    coveredPlatforms: 'Covers {count} platforms',
     purchaseNow: 'Purchase Now',
     purchaseSuccess: 'Bundle purchased successfully',
     purchaseNotAvailable: 'Purchase feature is not available yet',
