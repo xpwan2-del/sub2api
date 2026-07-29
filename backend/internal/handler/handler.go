@@ -61,8 +61,9 @@ type Handlers struct {
 	AvailableChannel   *AvailableChannelHandler
 	PublicModelCatalog *PublicModelCatalogHandler
 	AdminModelCatalog  *AdminModelCatalogHandler
+	PublicBundlePlan   *PublicBundlePlanHandler
 	Bundle             *BundleHandler
-	BatchImage       *BatchImageHandler
+	BatchImage         *BatchImageHandler
 }
 
 // BuildInfo contains build-time information

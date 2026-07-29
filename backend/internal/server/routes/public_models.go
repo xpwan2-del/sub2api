@@ -11,5 +11,9 @@ func RegisterPublicModelRoutes(v1 *gin.RouterGroup, h *handler.Handlers) {
 	{
 		models := public.Group("/models")
 		models.GET("/catalog", h.PublicModelCatalog.List)
+
+		// 公开在售套餐（无鉴权，供模型广场顶部套餐区展示）。
+		bundles := public.Group("/bundles")
+		bundles.GET("/plans", h.PublicBundlePlan.List)
 	}
 }
