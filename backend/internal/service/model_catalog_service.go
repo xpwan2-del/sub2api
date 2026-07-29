@@ -47,8 +47,8 @@ type AdminCatalogConfig struct {
 	Hidden        bool       `json:"hidden"`
 	FirstSeenAt   time.Time  `json:"first_seen_at"` // 只读：一经设定不可变，BatchSave 不写回
 	Tags          []string   `json:"tags"`          // 派生：自动+手动合并（只读展示）
-	IsNew         bool       `json:"is_new"`        // 派生
-	Featured      bool       `json:"featured"`      // 派生
+	IsNew         bool       `json:"is_new"`        // 手动 NEW 开关（持久化）
+	Featured      bool       `json:"featured"`      // 手动精选开关（持久化；可选 featured_until 到期）
 }
 
 // ModelCatalogDisplay 是运营配置的 service 层内部 DTO，与 repository.ModelCatalogDisplay
@@ -61,6 +61,8 @@ type ModelCatalogDisplay struct {
 	CustomTags    []string
 	FeaturedUntil *time.Time
 	Hidden        bool
+	IsNew         bool
+	Featured      bool
 	FirstSeenAt   time.Time
 }
 
@@ -83,7 +85,6 @@ type ModelCatalogRepo interface {
 // *SettingService 结构化实现该接口（IsModelCatalogOpsEnabled / GetModelCatalogNewModelDays）。
 type modelCatalogSettings interface {
 	IsModelCatalogOpsEnabled(ctx context.Context) bool
-	GetModelCatalogNewModelDays(ctx context.Context) int
 }
 
 // ModelCatalogService 提供模型广场可运营展示配置的合并、首见记录与管理。
@@ -130,8 +131,6 @@ func (s *modelCatalogServiceImpl) MergeDisplayConfig(ctx context.Context, items 
 		return items, nil
 	}
 
-	newModelDays := s.settings.GetModelCatalogNewModelDays(ctx)
-
 	keys := make([]ModelKey, 0, len(items))
 	for _, it := range items {
 		keys = append(keys, ModelKey{Platform: it.Platform, ModelName: it.ModelName})
@@ -151,7 +150,7 @@ func (s *modelCatalogServiceImpl) MergeDisplayConfig(ctx context.Context, items 
 			continue
 		}
 		merged := it
-		merged.Display = mergeDisplay(now, newModelDays, it, cfg)
+		merged.Display = mergeDisplay(now, it, cfg)
 		out = append(out, merged)
 	}
 	return out, nil
@@ -167,10 +166,9 @@ func (s *modelCatalogServiceImpl) ListAllForAdmin(ctx context.Context) ([]AdminC
 		return nil, err
 	}
 	now := time.Now()
-	newModelDays := s.settings.GetModelCatalogNewModelDays(ctx)
 	out := make([]AdminCatalogConfig, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, displayToAdminConfig(now, newModelDays, r))
+		out = append(out, displayToAdminConfig(now, r))
 	}
 	return out, nil
 }
@@ -187,6 +185,8 @@ func (s *modelCatalogServiceImpl) BatchSave(ctx context.Context, cfgs []AdminCat
 			CustomTags:    c.CustomTags,
 			FeaturedUntil: c.FeaturedUntil,
 			Hidden:        c.Hidden,
+			IsNew:         c.IsNew,
+			Featured:      c.Featured,
 		})
 	}
 	return s.repo.BatchUpsert(ctx, rows)
@@ -194,8 +194,8 @@ func (s *modelCatalogServiceImpl) BatchSave(ctx context.Context, cfgs []AdminCat
 
 // mergeDisplay 将单条运营配置 merge 进 CatalogItem，生成展示信息。
 // cfg 为 nil 表示无配置（模型未登记），此时仅保留自动能力标签 + 可能的 new/featured=false。
-func mergeDisplay(now time.Time, newModelDays int, it CatalogItem, cfg *ModelCatalogDisplay) *CatalogDisplayInfo {
-	isNew, featured := classifyDisplay(now, newModelDays, cfg)
+func mergeDisplay(now time.Time, it CatalogItem, cfg *ModelCatalogDisplay) *CatalogDisplayInfo {
+	isNew, featured := classifyDisplay(now, cfg)
 
 	info := &CatalogDisplayInfo{
 		IsNew:    isNew,
@@ -227,8 +227,8 @@ func mergeDisplay(now time.Time, newModelDays int, it CatalogItem, cfg *ModelCat
 }
 
 // displayToAdminConfig 将运营配置行转为管理页 DTO，附带派生展示字段。
-func displayToAdminConfig(now time.Time, newModelDays int, r *ModelCatalogDisplay) AdminCatalogConfig {
-	isNew, featured := classifyDisplay(now, newModelDays, r)
+func displayToAdminConfig(now time.Time, r *ModelCatalogDisplay) AdminCatalogConfig {
+	isNew, featured := classifyDisplay(now, r)
 	// 管理页无调用方传入的能力标签：Tags = custom_tags + 条件 new/featured。
 	tags := make([]string, 0, len(r.CustomTags)+2)
 	tags = append(tags, r.CustomTags...)
@@ -254,17 +254,16 @@ func displayToAdminConfig(now time.Time, newModelDays int, r *ModelCatalogDispla
 }
 
 // classifyDisplay 判定 new/featured：
-//   - new：first_seen_at 非零且 now-first_seen_at < newModelDays*24h（严格小于窗口边界）
-//   - featured：featured_until 非空且未过期（now <= featured_until；过期即 now.After 则 false）
-func classifyDisplay(now time.Time, newModelDays int, cfg *ModelCatalogDisplay) (isNew bool, featured bool) {
+//   - new：手动开关 cfg.IsNew（first_seen_at 不再驱动）
+//   - featured：手动开关 cfg.Featured，且（无 featured_until 或 featured_until 未过期）
+func classifyDisplay(now time.Time, cfg *ModelCatalogDisplay) (isNew bool, featured bool) {
 	if cfg == nil {
 		return false, false
 	}
-	if !cfg.FirstSeenAt.IsZero() && now.Sub(cfg.FirstSeenAt) < time.Duration(newModelDays)*24*time.Hour {
-		isNew = true
-	}
-	if cfg.FeaturedUntil != nil && !now.After(*cfg.FeaturedUntil) {
-		featured = true
+	isNew = cfg.IsNew
+	featured = cfg.Featured
+	if featured && cfg.FeaturedUntil != nil && now.After(*cfg.FeaturedUntil) {
+		featured = false
 	}
 	return isNew, featured
 }

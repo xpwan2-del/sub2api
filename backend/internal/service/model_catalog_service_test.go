@@ -54,16 +54,15 @@ func (s *stubCatalogRepo) BatchUpsert(_ context.Context, cfgs []*ModelCatalogDis
 }
 
 // stubCatalogSettings 实现 modelCatalogSettings，供单测。
+// new_model_days 时间窗已下线：接口只需运营总开关。
 type stubCatalogSettings struct {
 	enabled bool
-	newDays int
 }
 
-func (s stubCatalogSettings) IsModelCatalogOpsEnabled(_ context.Context) bool   { return s.enabled }
-func (s stubCatalogSettings) GetModelCatalogNewModelDays(_ context.Context) int { return s.newDays }
+func (s stubCatalogSettings) IsModelCatalogOpsEnabled(_ context.Context) bool { return s.enabled }
 
-func newSvc(repo *stubCatalogRepo, enabled bool, newDays int) ModelCatalogService {
-	return NewModelCatalogService(repo, stubCatalogSettings{enabled: enabled, newDays: newDays})
+func newSvc(repo *stubCatalogRepo, enabled bool) ModelCatalogService {
+	return NewModelCatalogService(repo, stubCatalogSettings{enabled: enabled})
 }
 
 func contains(list []string, want string) bool {
@@ -76,10 +75,10 @@ func contains(list []string, want string) bool {
 }
 
 func TestModelCatalogService_IsEnabled(t *testing.T) {
-	if !newSvc(&stubCatalogRepo{}, true, 30).IsEnabled(context.Background()) {
+	if !newSvc(&stubCatalogRepo{}, true).IsEnabled(context.Background()) {
 		t.Fatal("IsEnabled=true expected when setting enabled")
 	}
-	if newSvc(&stubCatalogRepo{}, false, 30).IsEnabled(context.Background()) {
+	if newSvc(&stubCatalogRepo{}, false).IsEnabled(context.Background()) {
 		t.Fatal("IsEnabled=false expected when setting disabled")
 	}
 }
@@ -89,7 +88,7 @@ func TestModelCatalogService_MergeDisplayConfig_DisabledNoOp(t *testing.T) {
 		modelCatalogMapKey("openai", "gpt-4"): {Platform: "openai", ModelName: "gpt-4", Hidden: true, Pinned: true},
 	}}
 	// ops_enabled=false：运营总开关关闭，merge 必须整体 no-op。
-	svc := newSvc(repo, false, 30)
+	svc := newSvc(repo, false)
 
 	items := []CatalogItem{{Platform: "openai", ModelName: "gpt-4", Capabilities: []string{"vision"}}}
 	out, err := svc.MergeDisplayConfig(context.Background(), items)
@@ -112,7 +111,7 @@ func TestModelCatalogService_MergeDisplayConfig_HiddenFiltered(t *testing.T) {
 		modelCatalogMapKey("openai", "gpt-4"):     {Platform: "openai", ModelName: "gpt-4", Hidden: true},
 		modelCatalogMapKey("anthropic", "claude"): {Platform: "anthropic", ModelName: "claude"},
 	}}
-	svc := newSvc(repo, true, 30)
+	svc := newSvc(repo, true)
 
 	items := []CatalogItem{
 		{Platform: "openai", ModelName: "gpt-4", Name: "GPT-4"},
@@ -130,68 +129,72 @@ func TestModelCatalogService_MergeDisplayConfig_HiddenFiltered(t *testing.T) {
 	}
 }
 
-func TestModelCatalogService_MergeDisplayConfig_FeaturedExpiry(t *testing.T) {
+func TestModelCatalogService_MergeDisplayConfig_FeaturedManualAndExpiry(t *testing.T) {
 	now := time.Now()
 	future := now.Add(1 * time.Hour)
 	past := now.Add(-1 * time.Hour)
 
 	repo := &stubCatalogRepo{getByModelKeys: map[string]*ModelCatalogDisplay{
-		modelCatalogMapKey("p", "active"):  {Platform: "p", ModelName: "active", FeaturedUntil: &future},
-		modelCatalogMapKey("p", "expired"): {Platform: "p", ModelName: "expired", FeaturedUntil: &past},
+		// 手动 featured + 未到期 → Featured
+		modelCatalogMapKey("p", "on"): {Platform: "p", ModelName: "on", Featured: true, FeaturedUntil: &future},
+		// 手动 featured + 已过期 → 不 Featured
+		modelCatalogMapKey("p", "expired"): {Platform: "p", ModelName: "expired", Featured: true, FeaturedUntil: &past},
+		// 手动 featured 无限期 → Featured
+		modelCatalogMapKey("p", "forever"): {Platform: "p", ModelName: "forever", Featured: true},
 	}}
-	svc := newSvc(repo, true, 30)
+	svc := newSvc(repo, true)
 
 	out, _ := svc.MergeDisplayConfig(context.Background(), []CatalogItem{
-		{Platform: "p", ModelName: "active"},
+		{Platform: "p", ModelName: "on"},
 		{Platform: "p", ModelName: "expired"},
+		{Platform: "p", ModelName: "forever"},
 	})
 	byName := map[string]*CatalogDisplayInfo{}
 	for _, it := range out {
 		byName[it.ModelName] = it.Display
 	}
-	if !byName["active"].Featured {
-		t.Fatal("active (future featured_until) should be Featured=true")
+	if !byName["on"].Featured {
+		t.Fatal("featured=true with future until should be Featured")
 	}
 	if byName["expired"].Featured {
-		t.Fatal("expired (past featured_until) should be Featured=false")
+		t.Fatal("featured=true with past until should not be Featured")
 	}
 	if contains(byName["expired"].Tags, "featured") {
-		t.Fatal("expired item tags must not contain featured")
+		t.Fatal("expired tags must not contain featured")
 	}
-	if !contains(byName["active"].Tags, "featured") {
-		t.Fatal("active item tags should contain featured")
+	if !byName["forever"].Featured {
+		t.Fatal("featured=true with nil until should be Featured")
 	}
 }
 
-func TestModelCatalogService_MergeDisplayConfig_NewWindow(t *testing.T) {
-	now := time.Now()
+func TestModelCatalogService_MergeDisplayConfig_NewManual(t *testing.T) {
 	repo := &stubCatalogRepo{getByModelKeys: map[string]*ModelCatalogDisplay{
-		// 刚登记（5 天前），在 30 天窗口内 → new。
-		modelCatalogMapKey("p", "fresh"): {Platform: "p", ModelName: "fresh", FirstSeenAt: now.Add(-5 * 24 * time.Hour)},
-		// 31 天前，超出 30 天窗口 → 非 new。
-		modelCatalogMapKey("p", "old"): {Platform: "p", ModelName: "old", FirstSeenAt: now.Add(-31 * 24 * time.Hour)},
+		// 手动 NEW 开关：IsNew=true → 显示
+		modelCatalogMapKey("p", "flagged"): {Platform: "p", ModelName: "flagged", IsNew: true},
+		// first_seen_at 不再驱动 NEW：即便刚登记，IsNew 仍为 false
+		modelCatalogMapKey("p", "off"): {Platform: "p", ModelName: "off", FirstSeenAt: time.Now()},
 	}}
-	svc := newSvc(repo, true, 30)
+	svc := newSvc(repo, true)
 
 	out, _ := svc.MergeDisplayConfig(context.Background(), []CatalogItem{
-		{Platform: "p", ModelName: "fresh"},
-		{Platform: "p", ModelName: "old"},
+		{Platform: "p", ModelName: "flagged"},
+		{Platform: "p", ModelName: "off"},
 	})
 	byName := map[string]*CatalogDisplayInfo{}
 	for _, it := range out {
 		byName[it.ModelName] = it.Display
 	}
-	if !byName["fresh"].IsNew {
-		t.Fatal("fresh (within window) should be IsNew=true")
+	if !byName["flagged"].IsNew {
+		t.Fatal("IsNew=true should surface")
 	}
-	if !contains(byName["fresh"].Tags, "new") {
-		t.Fatal("fresh tags should contain new")
+	if !contains(byName["flagged"].Tags, "new") {
+		t.Fatal("flagged tags should contain new")
 	}
-	if byName["old"].IsNew {
-		t.Fatal("old (outside window) should be IsNew=false")
+	if byName["off"].IsNew {
+		t.Fatal("first_seen_at must not drive IsNew anymore")
 	}
-	if contains(byName["old"].Tags, "new") {
-		t.Fatal("old tags must not contain new")
+	if contains(byName["off"].Tags, "new") {
+		t.Fatal("off tags must not contain new")
 	}
 }
 
@@ -199,7 +202,7 @@ func TestModelCatalogService_MergeDisplayConfig_TagsMergeDedup(t *testing.T) {
 	repo := &stubCatalogRepo{getByModelKeys: map[string]*ModelCatalogDisplay{
 		modelCatalogMapKey("p", "m"): {Platform: "p", ModelName: "m", CustomTags: []string{"recommended", "multimodal"}},
 	}}
-	svc := newSvc(repo, true, 30)
+	svc := newSvc(repo, true)
 
 	// 自动能力标签含 "multimodal"（与 custom_tags 重复）+ "vision"。
 	out, _ := svc.MergeDisplayConfig(context.Background(), []CatalogItem{
@@ -218,7 +221,7 @@ func TestModelCatalogService_MergeDisplayConfig_TagsMergeDedup(t *testing.T) {
 
 func TestModelCatalogService_MergeDisplayConfig_DegradeOnRepoError(t *testing.T) {
 	repo := &stubCatalogRepo{getErr: errors.New("db down")}
-	svc := newSvc(repo, true, 30)
+	svc := newSvc(repo, true)
 
 	items := []CatalogItem{
 		{Platform: "p", ModelName: "a"},
@@ -239,7 +242,7 @@ func TestModelCatalogService_MergeDisplayConfig_DegradeOnRepoError(t *testing.T)
 }
 
 func TestModelCatalogService_MergeDisplayConfig_EmptyInput(t *testing.T) {
-	svc := newSvc(&stubCatalogRepo{}, true, 30)
+	svc := newSvc(&stubCatalogRepo{}, true)
 	out, err := svc.MergeDisplayConfig(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
@@ -251,7 +254,7 @@ func TestModelCatalogService_MergeDisplayConfig_EmptyInput(t *testing.T) {
 
 func TestModelCatalogService_EnsureFirstSeen(t *testing.T) {
 	repo := &stubCatalogRepo{upsertErr: errors.New("nope")}
-	svc := newSvc(repo, true, 30)
+	svc := newSvc(repo, true)
 
 	keys := []ModelKey{{Platform: "p", ModelName: "a"}, {Platform: "p", ModelName: "b"}}
 	if err := svc.EnsureFirstSeen(context.Background(), keys); err == nil {
@@ -264,12 +267,13 @@ func TestModelCatalogService_EnsureFirstSeen(t *testing.T) {
 
 func TestModelCatalogService_BatchSave_DropsFirstSeenAt(t *testing.T) {
 	repo := &stubCatalogRepo{}
-	svc := newSvc(repo, true, 30)
+	svc := newSvc(repo, true)
 
 	ft := time.Now().Add(2 * 24 * time.Hour)
 	cfgs := []AdminCatalogConfig{{
 		Platform: "p", ModelName: "m", Pinned: true, SortWeight: 5,
 		CustomTags: []string{"recommended"}, FeaturedUntil: &ft, Hidden: false,
+		IsNew: true, Featured: true,
 		FirstSeenAt: time.Now().Add(-100 * 24 * time.Hour), // 管理员提交应被忽略
 	}}
 	if err := svc.BatchSave(context.Background(), cfgs); err != nil {
@@ -282,6 +286,9 @@ func TestModelCatalogService_BatchSave_DropsFirstSeenAt(t *testing.T) {
 	if !row.Pinned || row.SortWeight != 5 || row.FeaturedUntil != &ft {
 		t.Fatalf("operational fields not forwarded correctly: %+v", row)
 	}
+	if !row.IsNew || !row.Featured {
+		t.Fatalf("IsNew/Featured must be forwarded: %+v", row)
+	}
 	// FirstSeenAt 不可由管理员修改：转发的行不应携带提交值。
 	if !row.FirstSeenAt.IsZero() {
 		t.Fatalf("FirstSeenAt must not be written by BatchSave, got %v", row.FirstSeenAt)
@@ -292,10 +299,10 @@ func TestModelCatalogService_ListAllForAdmin_DerivedFields(t *testing.T) {
 	now := time.Now()
 	future := now.Add(1 * time.Hour)
 	repo := &stubCatalogRepo{listResult: []*ModelCatalogDisplay{
-		{Platform: "p", ModelName: "fresh", CustomTags: []string{"recommended"}, FirstSeenAt: now.Add(-5 * 24 * time.Hour), FeaturedUntil: &future, Pinned: true, SortWeight: 9},
+		{Platform: "p", ModelName: "star", CustomTags: []string{"recommended"}, IsNew: true, Featured: true, FeaturedUntil: &future, Pinned: true, SortWeight: 9},
 		{Platform: "p", ModelName: "hidden", Hidden: true},
 	}}
-	svc := newSvc(repo, true, 30)
+	svc := newSvc(repo, true)
 
 	out, err := svc.ListAllForAdmin(context.Background())
 	if err != nil {
@@ -304,14 +311,14 @@ func TestModelCatalogService_ListAllForAdmin_DerivedFields(t *testing.T) {
 	if len(out) != 2 {
 		t.Fatalf("expected 2 rows (admin lists hidden too), got %d", len(out))
 	}
-	// 第一行：fresh，派生 IsNew/Featured，tags = recommended + new + featured。
-	fresh := out[0]
-	if !fresh.IsNew || !fresh.Featured {
-		t.Fatalf("fresh derived flags wrong: IsNew=%v Featured=%v", fresh.IsNew, fresh.Featured)
+	// 第一行：star，手动 IsNew/Featured，tags = recommended + new + featured。
+	star := out[0]
+	if !star.IsNew || !star.Featured {
+		t.Fatalf("star manual flags wrong: IsNew=%v Featured=%v", star.IsNew, star.Featured)
 	}
 	want := []string{"recommended", "new", "featured"}
-	if !reflect.DeepEqual(fresh.Tags, want) {
-		t.Fatalf("fresh tags = %v, want %v", fresh.Tags, want)
+	if !reflect.DeepEqual(star.Tags, want) {
+		t.Fatalf("star tags = %v, want %v", star.Tags, want)
 	}
 	// hidden 行仍返回给管理页（管理员需可见隐藏项以解除隐藏）。
 	if !out[1].Hidden {
