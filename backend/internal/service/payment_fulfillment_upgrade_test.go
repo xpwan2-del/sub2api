@@ -11,6 +11,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -24,6 +25,7 @@ import (
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
+	_ "github.com/lib/pq"
 	_ "modernc.org/sqlite"
 )
 
@@ -127,9 +129,13 @@ func (r *upgradeFulfillRedeemRepo) SumPositiveBalanceByUser(context.Context, int
 	panic("unexpected SumPositiveBalanceByUser call")
 }
 
-// newUpgradeFulfillTestClient 起一个内存 sqlite ent client（与 lifecycle 测试同款）。
+// newUpgradeFulfillTestClient 起一个 ent client：默认内存 sqlite；TEST_DB=postgres 时起真实
+// Postgres client（lease CAS 的 UpdatedAtEq 仅 Postgres 正常，见 skipIfSQLiteLeaseUnsupported）。
 func newUpgradeFulfillTestClient(t *testing.T) *dbent.Client {
 	t.Helper()
+	if os.Getenv("TEST_DB") == "postgres" {
+		return newUpgradeFulfillPostgresClient(t)
+	}
 	db, err := sql.Open("sqlite", "file:payment_upgrade_fulfill?mode=memory&cache=shared&_fk=1")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = db.Close() })
@@ -141,14 +147,34 @@ func newUpgradeFulfillTestClient(t *testing.T) *dbent.Client {
 	return client
 }
 
-// skipIfSQLiteLeaseUnsupported 跳过依赖 lease CAS（ent UpdatedAtEq）的套餐升级履约测试：
-// sqlite 下 ent UpdatedAtEq 永远匹配 0 行（memory: sqlite-updatedat-eq-trap），
-// markCompleted/acquireLease 等 lease CAS 必然失败，这些用例只能在 Postgres 下通过。
-// 当前这些测试统一走内存 sqlite client（newUpgradeFulfillTestClient），故 skip 必然触发；
-// 待 Postgres 测试 job 落地后，在此翻转为按 dialect 条件跳过。
+// newUpgradeFulfillPostgresClient 起一个真实 Postgres ent client，作为依赖 lease CAS（ent
+// UpdatedAtEq）测试的真实覆盖路径——sqlite 下 UpdatedAtEq 永远匹配 0 行（memory:
+// sqlite-updatedat-eq-trap）。DSN 取自 TEST_PG_DSN；enttest 按 ent schema 自动建表。
+func newUpgradeFulfillPostgresClient(t *testing.T) *dbent.Client {
+	t.Helper()
+	dsn := os.Getenv("TEST_PG_DSN")
+	if dsn == "" {
+		t.Fatal("TEST_DB=postgres 需 TEST_PG_DSN 环境变量（如 host=... port=5432 user=... password=... dbname=... sslmode=disable）")
+	}
+	db, err := sql.Open("postgres", dsn)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = db.Close() })
+	drv := entsql.OpenDB(dialect.Postgres, db)
+	client := enttest.NewClient(t, enttest.WithOptions(dbent.Driver(drv)))
+	t.Cleanup(func() { _ = client.Close() })
+	return client
+}
+
+// skipIfSQLiteLeaseUnsupported 在 sqlite 下跳过依赖 lease CAS（ent UpdatedAtEq）的测试：
+// sqlite 下 ent UpdatedAtEq 永远匹配 0 行（memory: sqlite-updatedat-eq-trap），markCompleted/
+// acquireLease 等 lease CAS 必然失败。Postgres 下正常——设 TEST_DB=postgres + TEST_PG_DSN 即运行，
+// 这是这批 lease CAS 测试的真实覆盖路径（条件跳过，非无条件禁用）。
 func skipIfSQLiteLeaseUnsupported(t *testing.T) {
 	t.Helper()
-	t.Skip("lease CAS 需 Postgres: sqlite 下 ent UpdatedAtEq 匹配 0 行 (memory: sqlite-updatedat-eq-trap)")
+	if os.Getenv("TEST_DB") == "postgres" {
+		return
+	}
+	t.Skip("lease CAS 需 Postgres: sqlite 下 ent UpdatedAtEq 匹配 0 行 (memory: sqlite-updatedat-eq-trap)。设 TEST_DB=postgres + TEST_PG_DSN 运行")
 }
 
 // createUpgradeFulfillUser 建一个真实 ent User（PaymentOrder.UserID 有外键约束，
