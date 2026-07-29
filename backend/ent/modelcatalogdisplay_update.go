@@ -138,6 +138,34 @@ func (_u *ModelCatalogDisplayUpdate) SetNillableHidden(v *bool) *ModelCatalogDis
 	return _u
 }
 
+// SetIsNew sets the "is_new" field.
+func (_u *ModelCatalogDisplayUpdate) SetIsNew(v bool) *ModelCatalogDisplayUpdate {
+	_u.mutation.SetIsNew(v)
+	return _u
+}
+
+// SetNillableIsNew sets the "is_new" field if the given value is not nil.
+func (_u *ModelCatalogDisplayUpdate) SetNillableIsNew(v *bool) *ModelCatalogDisplayUpdate {
+	if v != nil {
+		_u.SetIsNew(*v)
+	}
+	return _u
+}
+
+// SetFeatured sets the "featured" field.
+func (_u *ModelCatalogDisplayUpdate) SetFeatured(v bool) *ModelCatalogDisplayUpdate {
+	_u.mutation.SetFeatured(v)
+	return _u
+}
+
+// SetNillableFeatured sets the "featured" field if the given value is not nil.
+func (_u *ModelCatalogDisplayUpdate) SetNillableFeatured(v *bool) *ModelCatalogDisplayUpdate {
+	if v != nil {
+		_u.SetFeatured(*v)
+	}
+	return _u
+}
+
 // SetFirstSeenAt sets the "first_seen_at" field.
 func (_u *ModelCatalogDisplayUpdate) SetFirstSeenAt(v time.Time) *ModelCatalogDisplayUpdate {
 	_u.mutation.SetFirstSeenAt(v)
@@ -257,6 +285,12 @@ func (_u *ModelCatalogDisplayUpdate) sqlSave(ctx context.Context) (_node int, er
 	}
 	if value, ok := _u.mutation.Hidden(); ok {
 		_spec.SetField(modelcatalogdisplay.FieldHidden, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IsNew(); ok {
+		_spec.SetField(modelcatalogdisplay.FieldIsNew, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Featured(); ok {
+		_spec.SetField(modelcatalogdisplay.FieldFeatured, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.FirstSeenAt(); ok {
 		_spec.SetField(modelcatalogdisplay.FieldFirstSeenAt, field.TypeTime, value)
@@ -389,6 +423,34 @@ func (_u *ModelCatalogDisplayUpdateOne) SetHidden(v bool) *ModelCatalogDisplayUp
 func (_u *ModelCatalogDisplayUpdateOne) SetNillableHidden(v *bool) *ModelCatalogDisplayUpdateOne {
 	if v != nil {
 		_u.SetHidden(*v)
+	}
+	return _u
+}
+
+// SetIsNew sets the "is_new" field.
+func (_u *ModelCatalogDisplayUpdateOne) SetIsNew(v bool) *ModelCatalogDisplayUpdateOne {
+	_u.mutation.SetIsNew(v)
+	return _u
+}
+
+// SetNillableIsNew sets the "is_new" field if the given value is not nil.
+func (_u *ModelCatalogDisplayUpdateOne) SetNillableIsNew(v *bool) *ModelCatalogDisplayUpdateOne {
+	if v != nil {
+		_u.SetIsNew(*v)
+	}
+	return _u
+}
+
+// SetFeatured sets the "featured" field.
+func (_u *ModelCatalogDisplayUpdateOne) SetFeatured(v bool) *ModelCatalogDisplayUpdateOne {
+	_u.mutation.SetFeatured(v)
+	return _u
+}
+
+// SetNillableFeatured sets the "featured" field if the given value is not nil.
+func (_u *ModelCatalogDisplayUpdateOne) SetNillableFeatured(v *bool) *ModelCatalogDisplayUpdateOne {
+	if v != nil {
+		_u.SetFeatured(*v)
 	}
 	return _u
 }
@@ -542,6 +604,12 @@ func (_u *ModelCatalogDisplayUpdateOne) sqlSave(ctx context.Context) (_node *Mod
 	}
 	if value, ok := _u.mutation.Hidden(); ok {
 		_spec.SetField(modelcatalogdisplay.FieldHidden, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IsNew(); ok {
+		_spec.SetField(modelcatalogdisplay.FieldIsNew, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Featured(); ok {
+		_spec.SetField(modelcatalogdisplay.FieldFeatured, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.FirstSeenAt(); ok {
 		_spec.SetField(modelcatalogdisplay.FieldFirstSeenAt, field.TypeTime, value)

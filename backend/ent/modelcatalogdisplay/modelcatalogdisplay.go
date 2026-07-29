@@ -27,6 +27,10 @@ const (
 	FieldFeaturedUntil = "featured_until"
 	// FieldHidden holds the string denoting the hidden field in the database.
 	FieldHidden = "hidden"
+	// FieldIsNew holds the string denoting the is_new field in the database.
+	FieldIsNew = "is_new"
+	// FieldFeatured holds the string denoting the featured field in the database.
+	FieldFeatured = "featured"
 	// FieldFirstSeenAt holds the string denoting the first_seen_at field in the database.
 	FieldFirstSeenAt = "first_seen_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -47,6 +51,8 @@ var Columns = []string{
 	FieldCustomTags,
 	FieldFeaturedUntil,
 	FieldHidden,
+	FieldIsNew,
+	FieldFeatured,
 	FieldFirstSeenAt,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -75,6 +81,10 @@ var (
 	DefaultCustomTags []string
 	// DefaultHidden holds the default value on creation for the "hidden" field.
 	DefaultHidden bool
+	// DefaultIsNew holds the default value on creation for the "is_new" field.
+	DefaultIsNew bool
+	// DefaultFeatured holds the default value on creation for the "featured" field.
+	DefaultFeatured bool
 	// DefaultFirstSeenAt holds the default value on creation for the "first_seen_at" field.
 	DefaultFirstSeenAt func() time.Time
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -121,6 +131,16 @@ func ByFeaturedUntil(opts ...sql.OrderTermOption) OrderOption {
 // ByHidden orders the results by the hidden field.
 func ByHidden(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldHidden, opts...).ToFunc()
+}
+
+// ByIsNew orders the results by the is_new field.
+func ByIsNew(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsNew, opts...).ToFunc()
+}
+
+// ByFeatured orders the results by the featured field.
+func ByFeatured(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFeatured, opts...).ToFunc()
 }
 
 // ByFirstSeenAt orders the results by the first_seen_at field.

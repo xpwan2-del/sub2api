@@ -84,6 +84,16 @@ func Hidden(v bool) predicate.ModelCatalogDisplay {
 	return predicate.ModelCatalogDisplay(sql.FieldEQ(FieldHidden, v))
 }
 
+// IsNew applies equality check predicate on the "is_new" field. It's identical to IsNewEQ.
+func IsNew(v bool) predicate.ModelCatalogDisplay {
+	return predicate.ModelCatalogDisplay(sql.FieldEQ(FieldIsNew, v))
+}
+
+// Featured applies equality check predicate on the "featured" field. It's identical to FeaturedEQ.
+func Featured(v bool) predicate.ModelCatalogDisplay {
+	return predicate.ModelCatalogDisplay(sql.FieldEQ(FieldFeatured, v))
+}
+
 // FirstSeenAt applies equality check predicate on the "first_seen_at" field. It's identical to FirstSeenAtEQ.
 func FirstSeenAt(v time.Time) predicate.ModelCatalogDisplay {
 	return predicate.ModelCatalogDisplay(sql.FieldEQ(FieldFirstSeenAt, v))
@@ -337,6 +347,26 @@ func HiddenEQ(v bool) predicate.ModelCatalogDisplay {
 // HiddenNEQ applies the NEQ predicate on the "hidden" field.
 func HiddenNEQ(v bool) predicate.ModelCatalogDisplay {
 	return predicate.ModelCatalogDisplay(sql.FieldNEQ(FieldHidden, v))
+}
+
+// IsNewEQ applies the EQ predicate on the "is_new" field.
+func IsNewEQ(v bool) predicate.ModelCatalogDisplay {
+	return predicate.ModelCatalogDisplay(sql.FieldEQ(FieldIsNew, v))
+}
+
+// IsNewNEQ applies the NEQ predicate on the "is_new" field.
+func IsNewNEQ(v bool) predicate.ModelCatalogDisplay {
+	return predicate.ModelCatalogDisplay(sql.FieldNEQ(FieldIsNew, v))
+}
+
+// FeaturedEQ applies the EQ predicate on the "featured" field.
+func FeaturedEQ(v bool) predicate.ModelCatalogDisplay {
+	return predicate.ModelCatalogDisplay(sql.FieldEQ(FieldFeatured, v))
+}
+
+// FeaturedNEQ applies the NEQ predicate on the "featured" field.
+func FeaturedNEQ(v bool) predicate.ModelCatalogDisplay {
+	return predicate.ModelCatalogDisplay(sql.FieldNEQ(FieldFeatured, v))
 }
 
 // FirstSeenAtEQ applies the EQ predicate on the "first_seen_at" field.

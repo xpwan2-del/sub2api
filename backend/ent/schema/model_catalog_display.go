@@ -19,6 +19,8 @@ func (ModelCatalogDisplay) Fields() []ent.Field {
 		field.JSON("custom_tags", []string{}).Default([]string{}),
 		field.Time("featured_until").Optional().Nillable(),
 		field.Bool("hidden").Default(false),
+		field.Bool("is_new").Default(false),
+		field.Bool("featured").Default(false),
 		field.Time("first_seen_at").Default(time.Now),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),

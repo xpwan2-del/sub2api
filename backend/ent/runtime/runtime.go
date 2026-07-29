@@ -1421,16 +1421,24 @@ func init() {
 	modelcatalogdisplayDescHidden := modelcatalogdisplayFields[6].Descriptor()
 	// modelcatalogdisplay.DefaultHidden holds the default value on creation for the hidden field.
 	modelcatalogdisplay.DefaultHidden = modelcatalogdisplayDescHidden.Default.(bool)
+	// modelcatalogdisplayDescIsNew is the schema descriptor for is_new field.
+	modelcatalogdisplayDescIsNew := modelcatalogdisplayFields[7].Descriptor()
+	// modelcatalogdisplay.DefaultIsNew holds the default value on creation for the is_new field.
+	modelcatalogdisplay.DefaultIsNew = modelcatalogdisplayDescIsNew.Default.(bool)
+	// modelcatalogdisplayDescFeatured is the schema descriptor for featured field.
+	modelcatalogdisplayDescFeatured := modelcatalogdisplayFields[8].Descriptor()
+	// modelcatalogdisplay.DefaultFeatured holds the default value on creation for the featured field.
+	modelcatalogdisplay.DefaultFeatured = modelcatalogdisplayDescFeatured.Default.(bool)
 	// modelcatalogdisplayDescFirstSeenAt is the schema descriptor for first_seen_at field.
-	modelcatalogdisplayDescFirstSeenAt := modelcatalogdisplayFields[7].Descriptor()
+	modelcatalogdisplayDescFirstSeenAt := modelcatalogdisplayFields[9].Descriptor()
 	// modelcatalogdisplay.DefaultFirstSeenAt holds the default value on creation for the first_seen_at field.
 	modelcatalogdisplay.DefaultFirstSeenAt = modelcatalogdisplayDescFirstSeenAt.Default.(func() time.Time)
 	// modelcatalogdisplayDescCreatedAt is the schema descriptor for created_at field.
-	modelcatalogdisplayDescCreatedAt := modelcatalogdisplayFields[8].Descriptor()
+	modelcatalogdisplayDescCreatedAt := modelcatalogdisplayFields[10].Descriptor()
 	// modelcatalogdisplay.DefaultCreatedAt holds the default value on creation for the created_at field.
 	modelcatalogdisplay.DefaultCreatedAt = modelcatalogdisplayDescCreatedAt.Default.(func() time.Time)
 	// modelcatalogdisplayDescUpdatedAt is the schema descriptor for updated_at field.
-	modelcatalogdisplayDescUpdatedAt := modelcatalogdisplayFields[9].Descriptor()
+	modelcatalogdisplayDescUpdatedAt := modelcatalogdisplayFields[11].Descriptor()
 	// modelcatalogdisplay.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	modelcatalogdisplay.DefaultUpdatedAt = modelcatalogdisplayDescUpdatedAt.Default.(func() time.Time)
 	// modelcatalogdisplay.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

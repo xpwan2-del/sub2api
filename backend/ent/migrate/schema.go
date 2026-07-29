@@ -1145,6 +1145,8 @@ var (
 		{Name: "custom_tags", Type: field.TypeJSON},
 		{Name: "featured_until", Type: field.TypeTime, Nullable: true},
 		{Name: "hidden", Type: field.TypeBool, Default: false},
+		{Name: "is_new", Type: field.TypeBool, Default: false},
+		{Name: "featured", Type: field.TypeBool, Default: false},
 		{Name: "first_seen_at", Type: field.TypeTime},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},

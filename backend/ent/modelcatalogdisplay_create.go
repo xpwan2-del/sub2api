@@ -96,6 +96,34 @@ func (_c *ModelCatalogDisplayCreate) SetNillableHidden(v *bool) *ModelCatalogDis
 	return _c
 }
 
+// SetIsNew sets the "is_new" field.
+func (_c *ModelCatalogDisplayCreate) SetIsNew(v bool) *ModelCatalogDisplayCreate {
+	_c.mutation.SetIsNew(v)
+	return _c
+}
+
+// SetNillableIsNew sets the "is_new" field if the given value is not nil.
+func (_c *ModelCatalogDisplayCreate) SetNillableIsNew(v *bool) *ModelCatalogDisplayCreate {
+	if v != nil {
+		_c.SetIsNew(*v)
+	}
+	return _c
+}
+
+// SetFeatured sets the "featured" field.
+func (_c *ModelCatalogDisplayCreate) SetFeatured(v bool) *ModelCatalogDisplayCreate {
+	_c.mutation.SetFeatured(v)
+	return _c
+}
+
+// SetNillableFeatured sets the "featured" field if the given value is not nil.
+func (_c *ModelCatalogDisplayCreate) SetNillableFeatured(v *bool) *ModelCatalogDisplayCreate {
+	if v != nil {
+		_c.SetFeatured(*v)
+	}
+	return _c
+}
+
 // SetFirstSeenAt sets the "first_seen_at" field.
 func (_c *ModelCatalogDisplayCreate) SetFirstSeenAt(v time.Time) *ModelCatalogDisplayCreate {
 	_c.mutation.SetFirstSeenAt(v)
@@ -189,6 +217,14 @@ func (_c *ModelCatalogDisplayCreate) defaults() {
 		v := modelcatalogdisplay.DefaultHidden
 		_c.mutation.SetHidden(v)
 	}
+	if _, ok := _c.mutation.IsNew(); !ok {
+		v := modelcatalogdisplay.DefaultIsNew
+		_c.mutation.SetIsNew(v)
+	}
+	if _, ok := _c.mutation.Featured(); !ok {
+		v := modelcatalogdisplay.DefaultFeatured
+		_c.mutation.SetFeatured(v)
+	}
 	if _, ok := _c.mutation.FirstSeenAt(); !ok {
 		v := modelcatalogdisplay.DefaultFirstSeenAt()
 		_c.mutation.SetFirstSeenAt(v)
@@ -232,6 +268,12 @@ func (_c *ModelCatalogDisplayCreate) check() error {
 	}
 	if _, ok := _c.mutation.Hidden(); !ok {
 		return &ValidationError{Name: "hidden", err: errors.New(`ent: missing required field "ModelCatalogDisplay.hidden"`)}
+	}
+	if _, ok := _c.mutation.IsNew(); !ok {
+		return &ValidationError{Name: "is_new", err: errors.New(`ent: missing required field "ModelCatalogDisplay.is_new"`)}
+	}
+	if _, ok := _c.mutation.Featured(); !ok {
+		return &ValidationError{Name: "featured", err: errors.New(`ent: missing required field "ModelCatalogDisplay.featured"`)}
 	}
 	if _, ok := _c.mutation.FirstSeenAt(); !ok {
 		return &ValidationError{Name: "first_seen_at", err: errors.New(`ent: missing required field "ModelCatalogDisplay.first_seen_at"`)}
@@ -296,6 +338,14 @@ func (_c *ModelCatalogDisplayCreate) createSpec() (*ModelCatalogDisplay, *sqlgra
 	if value, ok := _c.mutation.Hidden(); ok {
 		_spec.SetField(modelcatalogdisplay.FieldHidden, field.TypeBool, value)
 		_node.Hidden = value
+	}
+	if value, ok := _c.mutation.IsNew(); ok {
+		_spec.SetField(modelcatalogdisplay.FieldIsNew, field.TypeBool, value)
+		_node.IsNew = value
+	}
+	if value, ok := _c.mutation.Featured(); ok {
+		_spec.SetField(modelcatalogdisplay.FieldFeatured, field.TypeBool, value)
+		_node.Featured = value
 	}
 	if value, ok := _c.mutation.FirstSeenAt(); ok {
 		_spec.SetField(modelcatalogdisplay.FieldFirstSeenAt, field.TypeTime, value)
@@ -454,6 +504,30 @@ func (u *ModelCatalogDisplayUpsert) SetHidden(v bool) *ModelCatalogDisplayUpsert
 // UpdateHidden sets the "hidden" field to the value that was provided on create.
 func (u *ModelCatalogDisplayUpsert) UpdateHidden() *ModelCatalogDisplayUpsert {
 	u.SetExcluded(modelcatalogdisplay.FieldHidden)
+	return u
+}
+
+// SetIsNew sets the "is_new" field.
+func (u *ModelCatalogDisplayUpsert) SetIsNew(v bool) *ModelCatalogDisplayUpsert {
+	u.Set(modelcatalogdisplay.FieldIsNew, v)
+	return u
+}
+
+// UpdateIsNew sets the "is_new" field to the value that was provided on create.
+func (u *ModelCatalogDisplayUpsert) UpdateIsNew() *ModelCatalogDisplayUpsert {
+	u.SetExcluded(modelcatalogdisplay.FieldIsNew)
+	return u
+}
+
+// SetFeatured sets the "featured" field.
+func (u *ModelCatalogDisplayUpsert) SetFeatured(v bool) *ModelCatalogDisplayUpsert {
+	u.Set(modelcatalogdisplay.FieldFeatured, v)
+	return u
+}
+
+// UpdateFeatured sets the "featured" field to the value that was provided on create.
+func (u *ModelCatalogDisplayUpsert) UpdateFeatured() *ModelCatalogDisplayUpsert {
+	u.SetExcluded(modelcatalogdisplay.FieldFeatured)
 	return u
 }
 
@@ -635,6 +709,34 @@ func (u *ModelCatalogDisplayUpsertOne) SetHidden(v bool) *ModelCatalogDisplayUps
 func (u *ModelCatalogDisplayUpsertOne) UpdateHidden() *ModelCatalogDisplayUpsertOne {
 	return u.Update(func(s *ModelCatalogDisplayUpsert) {
 		s.UpdateHidden()
+	})
+}
+
+// SetIsNew sets the "is_new" field.
+func (u *ModelCatalogDisplayUpsertOne) SetIsNew(v bool) *ModelCatalogDisplayUpsertOne {
+	return u.Update(func(s *ModelCatalogDisplayUpsert) {
+		s.SetIsNew(v)
+	})
+}
+
+// UpdateIsNew sets the "is_new" field to the value that was provided on create.
+func (u *ModelCatalogDisplayUpsertOne) UpdateIsNew() *ModelCatalogDisplayUpsertOne {
+	return u.Update(func(s *ModelCatalogDisplayUpsert) {
+		s.UpdateIsNew()
+	})
+}
+
+// SetFeatured sets the "featured" field.
+func (u *ModelCatalogDisplayUpsertOne) SetFeatured(v bool) *ModelCatalogDisplayUpsertOne {
+	return u.Update(func(s *ModelCatalogDisplayUpsert) {
+		s.SetFeatured(v)
+	})
+}
+
+// UpdateFeatured sets the "featured" field to the value that was provided on create.
+func (u *ModelCatalogDisplayUpsertOne) UpdateFeatured() *ModelCatalogDisplayUpsertOne {
+	return u.Update(func(s *ModelCatalogDisplayUpsert) {
+		s.UpdateFeatured()
 	})
 }
 
@@ -986,6 +1088,34 @@ func (u *ModelCatalogDisplayUpsertBulk) SetHidden(v bool) *ModelCatalogDisplayUp
 func (u *ModelCatalogDisplayUpsertBulk) UpdateHidden() *ModelCatalogDisplayUpsertBulk {
 	return u.Update(func(s *ModelCatalogDisplayUpsert) {
 		s.UpdateHidden()
+	})
+}
+
+// SetIsNew sets the "is_new" field.
+func (u *ModelCatalogDisplayUpsertBulk) SetIsNew(v bool) *ModelCatalogDisplayUpsertBulk {
+	return u.Update(func(s *ModelCatalogDisplayUpsert) {
+		s.SetIsNew(v)
+	})
+}
+
+// UpdateIsNew sets the "is_new" field to the value that was provided on create.
+func (u *ModelCatalogDisplayUpsertBulk) UpdateIsNew() *ModelCatalogDisplayUpsertBulk {
+	return u.Update(func(s *ModelCatalogDisplayUpsert) {
+		s.UpdateIsNew()
+	})
+}
+
+// SetFeatured sets the "featured" field.
+func (u *ModelCatalogDisplayUpsertBulk) SetFeatured(v bool) *ModelCatalogDisplayUpsertBulk {
+	return u.Update(func(s *ModelCatalogDisplayUpsert) {
+		s.SetFeatured(v)
+	})
+}
+
+// UpdateFeatured sets the "featured" field to the value that was provided on create.
+func (u *ModelCatalogDisplayUpsertBulk) UpdateFeatured() *ModelCatalogDisplayUpsertBulk {
+	return u.Update(func(s *ModelCatalogDisplayUpsert) {
+		s.UpdateFeatured()
 	})
 }
 

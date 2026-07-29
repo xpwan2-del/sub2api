@@ -32,6 +32,10 @@ type ModelCatalogDisplay struct {
 	FeaturedUntil *time.Time `json:"featured_until,omitempty"`
 	// Hidden holds the value of the "hidden" field.
 	Hidden bool `json:"hidden,omitempty"`
+	// IsNew holds the value of the "is_new" field.
+	IsNew bool `json:"is_new,omitempty"`
+	// Featured holds the value of the "featured" field.
+	Featured bool `json:"featured,omitempty"`
 	// FirstSeenAt holds the value of the "first_seen_at" field.
 	FirstSeenAt time.Time `json:"first_seen_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -48,7 +52,7 @@ func (*ModelCatalogDisplay) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case modelcatalogdisplay.FieldCustomTags:
 			values[i] = new([]byte)
-		case modelcatalogdisplay.FieldPinned, modelcatalogdisplay.FieldHidden:
+		case modelcatalogdisplay.FieldPinned, modelcatalogdisplay.FieldHidden, modelcatalogdisplay.FieldIsNew, modelcatalogdisplay.FieldFeatured:
 			values[i] = new(sql.NullBool)
 		case modelcatalogdisplay.FieldID, modelcatalogdisplay.FieldSortWeight:
 			values[i] = new(sql.NullInt64)
@@ -121,6 +125,18 @@ func (_m *ModelCatalogDisplay) assignValues(columns []string, values []any) erro
 				return fmt.Errorf("unexpected type %T for field hidden", values[i])
 			} else if value.Valid {
 				_m.Hidden = value.Bool
+			}
+		case modelcatalogdisplay.FieldIsNew:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_new", values[i])
+			} else if value.Valid {
+				_m.IsNew = value.Bool
+			}
+		case modelcatalogdisplay.FieldFeatured:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field featured", values[i])
+			} else if value.Valid {
+				_m.Featured = value.Bool
 			}
 		case modelcatalogdisplay.FieldFirstSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -198,6 +214,12 @@ func (_m *ModelCatalogDisplay) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("hidden=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Hidden))
+	builder.WriteString(", ")
+	builder.WriteString("is_new=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsNew))
+	builder.WriteString(", ")
+	builder.WriteString("featured=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Featured))
 	builder.WriteString(", ")
 	builder.WriteString("first_seen_at=")
 	builder.WriteString(_m.FirstSeenAt.Format(time.ANSIC))

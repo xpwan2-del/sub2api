@@ -32301,6 +32301,8 @@ type ModelCatalogDisplayMutation struct {
 	appendcustom_tags []string
 	featured_until    *time.Time
 	hidden            *bool
+	is_new            *bool
+	featured          *bool
 	first_seen_at     *time.Time
 	created_at        *time.Time
 	updated_at        *time.Time
@@ -32708,6 +32710,78 @@ func (m *ModelCatalogDisplayMutation) ResetHidden() {
 	m.hidden = nil
 }
 
+// SetIsNew sets the "is_new" field.
+func (m *ModelCatalogDisplayMutation) SetIsNew(b bool) {
+	m.is_new = &b
+}
+
+// IsNew returns the value of the "is_new" field in the mutation.
+func (m *ModelCatalogDisplayMutation) IsNew() (r bool, exists bool) {
+	v := m.is_new
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsNew returns the old "is_new" field's value of the ModelCatalogDisplay entity.
+// If the ModelCatalogDisplay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelCatalogDisplayMutation) OldIsNew(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsNew is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsNew requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsNew: %w", err)
+	}
+	return oldValue.IsNew, nil
+}
+
+// ResetIsNew resets all changes to the "is_new" field.
+func (m *ModelCatalogDisplayMutation) ResetIsNew() {
+	m.is_new = nil
+}
+
+// SetFeatured sets the "featured" field.
+func (m *ModelCatalogDisplayMutation) SetFeatured(b bool) {
+	m.featured = &b
+}
+
+// Featured returns the value of the "featured" field in the mutation.
+func (m *ModelCatalogDisplayMutation) Featured() (r bool, exists bool) {
+	v := m.featured
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFeatured returns the old "featured" field's value of the ModelCatalogDisplay entity.
+// If the ModelCatalogDisplay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelCatalogDisplayMutation) OldFeatured(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFeatured is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFeatured requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFeatured: %w", err)
+	}
+	return oldValue.Featured, nil
+}
+
+// ResetFeatured resets all changes to the "featured" field.
+func (m *ModelCatalogDisplayMutation) ResetFeatured() {
+	m.featured = nil
+}
+
 // SetFirstSeenAt sets the "first_seen_at" field.
 func (m *ModelCatalogDisplayMutation) SetFirstSeenAt(t time.Time) {
 	m.first_seen_at = &t
@@ -32850,7 +32924,7 @@ func (m *ModelCatalogDisplayMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ModelCatalogDisplayMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 12)
 	if m.platform != nil {
 		fields = append(fields, modelcatalogdisplay.FieldPlatform)
 	}
@@ -32871,6 +32945,12 @@ func (m *ModelCatalogDisplayMutation) Fields() []string {
 	}
 	if m.hidden != nil {
 		fields = append(fields, modelcatalogdisplay.FieldHidden)
+	}
+	if m.is_new != nil {
+		fields = append(fields, modelcatalogdisplay.FieldIsNew)
+	}
+	if m.featured != nil {
+		fields = append(fields, modelcatalogdisplay.FieldFeatured)
 	}
 	if m.first_seen_at != nil {
 		fields = append(fields, modelcatalogdisplay.FieldFirstSeenAt)
@@ -32903,6 +32983,10 @@ func (m *ModelCatalogDisplayMutation) Field(name string) (ent.Value, bool) {
 		return m.FeaturedUntil()
 	case modelcatalogdisplay.FieldHidden:
 		return m.Hidden()
+	case modelcatalogdisplay.FieldIsNew:
+		return m.IsNew()
+	case modelcatalogdisplay.FieldFeatured:
+		return m.Featured()
 	case modelcatalogdisplay.FieldFirstSeenAt:
 		return m.FirstSeenAt()
 	case modelcatalogdisplay.FieldCreatedAt:
@@ -32932,6 +33016,10 @@ func (m *ModelCatalogDisplayMutation) OldField(ctx context.Context, name string)
 		return m.OldFeaturedUntil(ctx)
 	case modelcatalogdisplay.FieldHidden:
 		return m.OldHidden(ctx)
+	case modelcatalogdisplay.FieldIsNew:
+		return m.OldIsNew(ctx)
+	case modelcatalogdisplay.FieldFeatured:
+		return m.OldFeatured(ctx)
 	case modelcatalogdisplay.FieldFirstSeenAt:
 		return m.OldFirstSeenAt(ctx)
 	case modelcatalogdisplay.FieldCreatedAt:
@@ -32995,6 +33083,20 @@ func (m *ModelCatalogDisplayMutation) SetField(name string, value ent.Value) err
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetHidden(v)
+		return nil
+	case modelcatalogdisplay.FieldIsNew:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsNew(v)
+		return nil
+	case modelcatalogdisplay.FieldFeatured:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFeatured(v)
 		return nil
 	case modelcatalogdisplay.FieldFirstSeenAt:
 		v, ok := value.(time.Time)
@@ -33110,6 +33212,12 @@ func (m *ModelCatalogDisplayMutation) ResetField(name string) error {
 		return nil
 	case modelcatalogdisplay.FieldHidden:
 		m.ResetHidden()
+		return nil
+	case modelcatalogdisplay.FieldIsNew:
+		m.ResetIsNew()
+		return nil
+	case modelcatalogdisplay.FieldFeatured:
+		m.ResetFeatured()
 		return nil
 	case modelcatalogdisplay.FieldFirstSeenAt:
 		m.ResetFirstSeenAt()
