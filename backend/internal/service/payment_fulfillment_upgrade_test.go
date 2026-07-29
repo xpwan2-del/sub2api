@@ -160,9 +160,15 @@ func newUpgradeFulfillPostgresClient(t *testing.T) *dbent.Client {
 		t.Fatal("TEST_DB=postgres 需 TEST_PG_DSN 环境变量（如 host=... port=5432 user=... password=... dbname=... sslmode=disable）")
 	}
 	// admin 连接用于建/删 schema（与测试连接分离，DROP 时不连着自己）。
+	// 每个资源分配后立即注册 cleanup（t.Cleanup LIFO：后注册先执行），保证 setup 中途任意
+	// require 失败也已清理已分配资源，failure-safe 不泄漏 schema/连接。
 	adminDB, err := sql.Open("postgres", dsn)
 	require.NoError(t, err)
+	t.Cleanup(func() { _ = adminDB.Close() })
 	schemaName := "leasecas_" + strconv.FormatInt(time.Now().UnixNano(), 36)
+	t.Cleanup(func() { // LIFO：在 adminDB.Close 之前执行 DROP
+		_, _ = adminDB.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", schemaName))
+	})
 	_, err = adminDB.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", schemaName))
 	require.NoError(t, err)
 	_, err = adminDB.Exec(fmt.Sprintf("CREATE SCHEMA %s", schemaName))
@@ -171,14 +177,10 @@ func newUpgradeFulfillPostgresClient(t *testing.T) *dbent.Client {
 	testDSN := strings.TrimSpace(dsn) + " options='-c search_path=" + schemaName + "'"
 	db, err := sql.Open("postgres", testDSN)
 	require.NoError(t, err)
+	t.Cleanup(func() { _ = db.Close() })
 	drv := entsql.OpenDB(dialect.Postgres, db)
 	client := enttest.NewClient(t, enttest.WithOptions(dbent.Driver(drv)))
-	t.Cleanup(func() {
-		_ = client.Close()
-		_ = db.Close()
-		_, _ = adminDB.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", schemaName))
-		_ = adminDB.Close()
-	})
+	t.Cleanup(func() { _ = client.Close() })
 	return client
 }
 
