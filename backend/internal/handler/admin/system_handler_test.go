@@ -58,10 +58,14 @@ func (s *systemHandlerUpdateServiceStub) CurrentBuild() string {
 func (s *systemHandlerUpdateServiceStub) ListRollbackVersions(context.Context) ([]service.RollbackVersion, error) {
 	s.rollbackVersionsCall++
 	return s.rollbackVersions, s.rollbackVersionsErr
+}
+
 func (s *systemHandlerUpdateServiceStub) RollbackToVersion(_ context.Context, version string) error {
 	s.rollbackToCall++
 	s.rollbackToVersions = append(s.rollbackToVersions, version)
 	return s.rollbackToErr
+}
+
 type systemUpdateResponseEnvelope struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
