@@ -920,3 +920,27 @@ func mergePlatformQuotaDefaults(dst, src *DefaultPlatformQuotaSetting) {
 		dst.MonthlyLimitUSD = src.MonthlyLimitUSD
 	}
 }
+
+// IsModelCatalogOpsEnabled 检查是否启用模型广场运营功能（置顶/排序/隐藏/精选）。
+// 安全默认：设置缺失或读取失败时返回 true——运营功能默认开启，不阻断展示链路。
+func (s *SettingService) IsModelCatalogOpsEnabled(ctx context.Context) bool {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyModelCatalogOpsEnabled)
+	if err != nil {
+		return true
+	}
+	return value != "false"
+}
+
+// GetModelCatalogNewModelDays 返回"新模型"判定窗口（天）。
+// 解析失败或缺失回退到默认值；该值从不抛错，调用方只关心一个可用的非负整数。
+func (s *SettingService) GetModelCatalogNewModelDays(ctx context.Context) int {
+	raw, err := s.settingRepo.GetValue(ctx, SettingKeyModelCatalogNewModelDays)
+	if err != nil {
+		return ModelCatalogNewModelDaysDefault
+	}
+	days, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil || days < 0 {
+		return ModelCatalogNewModelDaysDefault
+	}
+	return days
+}

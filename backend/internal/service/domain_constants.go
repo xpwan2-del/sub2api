@@ -35,6 +35,11 @@ const (
 	AffiliateRebatePerInviteeCapDefault = 0.0   // 0 = 无上限
 )
 
+// Model catalog ops settings（模型广场可运营展示：置顶/排序/隐藏/精选/新模型）
+const (
+	ModelCatalogNewModelDaysDefault = 30 // "新模型"判定窗口默认天数
+)
+
 // Platform constants
 const (
 	PlatformAnthropic   = domain.PlatformAnthropic
@@ -138,6 +143,8 @@ const (
 	SettingKeyAffiliateRebateFreezeHours       = "affiliate_rebate_freeze_hours"       // 返利冻结期（小时，0=不冻结）
 	SettingKeyAffiliateRebateDurationDays      = "affiliate_rebate_duration_days"      // 返利有效期（天，0=永久）
 	SettingKeyAffiliateRebatePerInviteeCap     = "affiliate_rebate_per_invitee_cap"    // 单人返利上限（0=无上限）
+	SettingKeyModelCatalogOpsEnabled           = "model_catalog.ops_enabled"           // 模型广场运营（置顶/排序/隐藏/精选）总开关（默认开）
+	SettingKeyModelCatalogNewModelDays         = "model_catalog.new_model_days"        // "新模型"判定窗口（天，默认 30）
 	SettingKeyRiskControlEnabled               = "risk_control_enabled"                // 是否启用风控中心入口与审计链路
 	SettingKeyContentModerationConfig          = "content_moderation_config"           // 内容审计配置（JSON）
 	SettingKeyCyberSessionBlockEnabled         = "cyber_session_block_enabled"         // cyber 命中后会话级自动屏蔽总开关(默认关)
