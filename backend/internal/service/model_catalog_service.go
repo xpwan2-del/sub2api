@@ -121,6 +121,11 @@ func (s *modelCatalogServiceImpl) MergeDisplayConfig(ctx context.Context, items 
 	if len(items) == 0 {
 		return items, nil
 	}
+	// 运营功能总开关关闭时回归原始展示：不 merge 任何运营配置
+	// （不过滤 hidden、不置顶、不判 new/featured），与配置层故障降级语义一致。
+	if !s.settings.IsModelCatalogOpsEnabled(ctx) {
+		return items, nil
+	}
 
 	newModelDays := s.settings.GetModelCatalogNewModelDays(ctx)
 

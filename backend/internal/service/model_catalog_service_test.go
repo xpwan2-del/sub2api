@@ -13,6 +13,7 @@ import (
 type stubCatalogRepo struct {
 	// getByModelKeys 预填配置，key 须用 modelCatalogMapKey(platform, modelName)。
 	getByModelKeys map[string]*modelCatalogDisplay
+	getCalled      bool
 	getErr         error
 	listResult     []*modelCatalogDisplay
 	listErr        error
@@ -24,6 +25,7 @@ type stubCatalogRepo struct {
 }
 
 func (s *stubCatalogRepo) GetByModelKeys(_ context.Context, keys []ModelKey) (map[string]*modelCatalogDisplay, error) {
+	s.getCalled = true
 	if s.getErr != nil {
 		return nil, s.getErr
 	}
@@ -79,6 +81,29 @@ func TestModelCatalogService_IsEnabled(t *testing.T) {
 	}
 	if newSvc(&stubCatalogRepo{}, false, 30).IsEnabled(context.Background()) {
 		t.Fatal("IsEnabled=false expected when setting disabled")
+	}
+}
+
+func TestModelCatalogService_MergeDisplayConfig_DisabledNoOp(t *testing.T) {
+	repo := &stubCatalogRepo{getByModelKeys: map[string]*modelCatalogDisplay{
+		modelCatalogMapKey("openai", "gpt-4"): {Platform: "openai", ModelName: "gpt-4", Hidden: true, Pinned: true},
+	}}
+	// ops_enabled=false：运营总开关关闭，merge 必须整体 no-op。
+	svc := newSvc(repo, false, 30)
+
+	items := []CatalogItem{{Platform: "openai", ModelName: "gpt-4", Capabilities: []string{"vision"}}}
+	out, err := svc.MergeDisplayConfig(context.Background(), items)
+	if err != nil {
+		t.Fatalf("unexpected err: %v", err)
+	}
+	if len(out) != 1 {
+		t.Fatalf("disabled must not filter hidden items, got %d", len(out))
+	}
+	if out[0].Display != nil {
+		t.Fatalf("disabled must not merge display config, got %+v", out[0].Display)
+	}
+	if repo.getCalled {
+		t.Fatal("disabled must not query repo at all")
 	}
 }
 
