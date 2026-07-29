@@ -4,6 +4,7 @@ import type {
   PublicModelHealthHistoryPoint,
   PublicModelPricing
 } from '@/api/publicModels'
+import type { CatalogConfigItem } from '@/api/adminCatalog'
 
 export type ModelCatalogSort = 'recommended' | 'price' | 'name' | 'provider'
 
@@ -365,4 +366,42 @@ function compareCatalogCards(a: ModelCatalogCard, b: ModelCatalogCard, sortBy: M
     if (providerDelta !== 0) return providerDelta
   }
   return a.name.localeCompare(b.name)
+}
+
+export interface CatalogStats {
+  total: number
+  visible: number
+  hidden: number
+  pinned: number
+  isNew: number
+  featured: number
+  recommended: number
+  byPlatform: Record<string, number>
+}
+
+/** 从管理端运营配置列表聚合概览统计（纯函数，供 CatalogManageView 渲染）。 */
+export function computeCatalogStats(items: CatalogConfigItem[]): CatalogStats {
+  const stats: CatalogStats = {
+    total: items.length,
+    visible: 0,
+    hidden: 0,
+    pinned: 0,
+    isNew: 0,
+    featured: 0,
+    recommended: 0,
+    byPlatform: {},
+  }
+
+  for (const it of items) {
+    if (it.hidden) stats.hidden += 1
+    else stats.visible += 1
+    if (it.pinned) stats.pinned += 1
+    if (it.is_new) stats.isNew += 1
+    if (it.featured) stats.featured += 1
+    if (it.custom_tags?.includes('recommended')) stats.recommended += 1
+    const platform = it.platform || 'unknown'
+    stats.byPlatform[platform] = (stats.byPlatform[platform] || 0) + 1
+  }
+
+  return stats
 }

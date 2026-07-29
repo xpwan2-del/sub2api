@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   TAG_WEIGHTS,
   buildModelCatalog,
+  computeCatalogStats,
   filterModelCatalog,
   tagScore
 } from '../modelCatalog'
 import type { ModelCatalogCard } from '../modelCatalog'
 import type { PublicModelCatalogItem, PublicModelPricing } from '@/api/publicModels'
+import type { CatalogConfigItem } from '@/api/adminCatalog'
 
 describe('modelCatalog utils', () => {
   const rows: PublicModelCatalogItem[] = [
@@ -204,5 +206,49 @@ describe('recommended sort', () => {
     const items = [makeCard({ name: 'bravo' }), makeCard({ name: 'alpha' })]
 
     expect(sortByRecommended(items).map((item) => item.name)).toEqual(['alpha', 'bravo'])
+  })
+})
+
+describe('computeCatalogStats', () => {
+  const items: CatalogConfigItem[] = [
+    {
+      platform: 'openai', model_name: 'gpt-4o', pinned: true, sort_weight: 100,
+      custom_tags: ['recommended'], featured_until: null, hidden: false,
+      first_seen_at: '2026-07-01T00:00:00Z', tags: [], is_new: true, featured: true,
+    },
+    {
+      platform: 'openai', model_name: 'gpt-3.5', pinned: false, sort_weight: 0,
+      custom_tags: [], featured_until: null, hidden: true,
+      first_seen_at: '2026-07-10T00:00:00Z', is_new: false, featured: false,
+    },
+    {
+      platform: 'anthropic', model_name: 'claude-sonnet', pinned: false, sort_weight: 50,
+      custom_tags: ['recommended'], featured_until: null, hidden: false,
+      first_seen_at: '2026-07-20T00:00:00Z', is_new: false, featured: true,
+    },
+  ]
+
+  it('聚合各项运营计数', () => {
+    const stats = computeCatalogStats(items)
+    expect(stats.total).toBe(3)
+    expect(stats.visible).toBe(2)
+    expect(stats.hidden).toBe(1)
+    expect(stats.pinned).toBe(1)
+    expect(stats.isNew).toBe(1)
+    expect(stats.featured).toBe(2)
+    expect(stats.recommended).toBe(2)
+  })
+
+  it('按平台分桶', () => {
+    const { byPlatform } = computeCatalogStats(items)
+    expect(byPlatform).toEqual({ openai: 2, anthropic: 1 })
+  })
+
+  it('空数组返回零值且无平台桶', () => {
+    const stats = computeCatalogStats([])
+    expect(stats).toEqual({
+      total: 0, visible: 0, hidden: 0, pinned: 0,
+      isNew: 0, featured: 0, recommended: 0, byPlatform: {},
+    })
   })
 })
