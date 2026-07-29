@@ -42,6 +42,7 @@ describe("groups image pricing platform support", () => {
     expect(getVideoPricePlaceholder("grok", "video_price_480p")).toBe("0.05");
     expect(getVideoPricePlaceholder("grok", "video_price_720p")).toBe("0.07");
     expect(getVideoPricePlaceholder("grok", "video_price_1080p")).toBe("0.25");
+    expect(getVideoPricePlaceholder("grok", "video_price_4k")).toBe("");
   });
 
   it("keeps non-Grok image placeholders on the generic image card", () => {

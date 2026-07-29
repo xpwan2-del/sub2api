@@ -1015,7 +1015,7 @@
             <div class="mb-1 font-medium">
               {{ t(videoPricingI18nKey("finalPricePreview")) }}
             </div>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-4 gap-2">
               <div
                 v-for="item in createVideoFinalPricePreview"
                 :key="item.label"
@@ -2459,7 +2459,7 @@
             <div class="mb-1 font-medium">
               {{ t(videoPricingI18nKey("finalPricePreview")) }}
             </div>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-4 gap-2">
               <div
                 v-for="item in editVideoFinalPricePreview"
                 :key="item.label"
