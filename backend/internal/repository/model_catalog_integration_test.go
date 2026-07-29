@@ -34,26 +34,24 @@ import (
 
 // catalogTestSettings 满足 service.modelCatalogSettings（unexported interface，但其方法均为
 // 导出名 → 跨包结构化满足，无需命名该类型即可传入 NewModelCatalogService）。提供可控的
-// ops_enabled / new_model_days，避免依赖真实 SettingService + DB 系统设置。
+// ops_enabled，避免依赖真实 SettingService + DB 系统设置。new_model_days 时间窗已下线（NEW 改手动）。
 type catalogTestSettings struct {
 	enabled bool
-	newDays int
 }
 
-func (s catalogTestSettings) IsModelCatalogOpsEnabled(context.Context) bool   { return s.enabled }
-func (s catalogTestSettings) GetModelCatalogNewModelDays(context.Context) int { return s.newDays }
+func (s catalogTestSettings) IsModelCatalogOpsEnabled(context.Context) bool { return s.enabled }
 
 // newCatalogIntegrationFixture 在隔离事务内构造真实 repo → adapter → service 链。
 // client 绑定到 testEntTx 的事务；repo.withTx 检测到 r.client 已在事务中（ErrTxStarted）即复用，
 // 故所有写操作落在该事务内，测试结束自动回滚。
-func newCatalogIntegrationFixture(t *testing.T, enabled bool, newDays int) (svc service.ModelCatalogService, client *dbent.Client, ctx context.Context) {
+func newCatalogIntegrationFixture(t *testing.T, enabled bool) (svc service.ModelCatalogService, client *dbent.Client, ctx context.Context) {
 	t.Helper()
 	tx := testEntTx(t)
 	client = tx.Client()
 	ctx = context.Background()
 	repo := NewModelCatalogRepo(client)
 	adapter := NewModelCatalogServiceAdapter(repo)
-	svc = service.NewModelCatalogService(adapter, catalogTestSettings{enabled: enabled, newDays: newDays})
+	svc = service.NewModelCatalogService(adapter, catalogTestSettings{enabled: enabled})
 	return svc, client, ctx
 }
 
@@ -67,6 +65,8 @@ func seedCatalogRow(t *testing.T, ctx context.Context, client *dbent.Client, d *
 		SetPinned(d.Pinned).
 		SetSortWeight(d.SortWeight).
 		SetCustomTags(d.CustomTags).
+		SetIsNew(d.IsNew).
+		SetFeatured(d.Featured).
 		SetHidden(d.Hidden)
 	if d.FeaturedUntil != nil {
 		b.SetFeaturedUntil(*d.FeaturedUntil)
@@ -82,7 +82,7 @@ func seedCatalogRow(t *testing.T, ctx context.Context, client *dbent.Client, d *
 // EnsureFirstSeen（→ repo.UpsertMissing，ON CONFLICT DO NOTHING）只插缺失键、不覆盖已存在行，
 // 关键是不重置已存在行的 first_seen_at（一经设定不可变）。覆盖真实 PG 冲突路径。
 func TestModelCatalogIntegration_UpsertMissing_PreservesFirstSeenAndInsertsMissing(t *testing.T) {
-	svc, client, ctx := newCatalogIntegrationFixture(t, true, 30)
+	svc, client, ctx := newCatalogIntegrationFixture(t, true)
 
 	old := time.Date(2020, 1, 1, 12, 0, 0, 0, time.UTC)
 	seedCatalogRow(t, ctx, client, &ModelCatalogDisplay{
@@ -113,9 +113,9 @@ func TestModelCatalogIntegration_UpsertMissing_PreservesFirstSeenAndInsertsMissi
 
 // TestModelCatalogIntegration_BatchSave_UpsertOnUniqueConflict 守护：BatchSave（→ repo.BatchUpsert，
 // ON CONFLICT (platform, model_name) DO UPDATE）在命中 unique 键时执行更新而非插入重复行，
-// 且不改动 first_seen_at。覆盖真实 PG upsert 冲突解决路径。
+// 且不改动 first_seen_at；手动 is_new/featured 布尔端到端回环。覆盖真实 PG upsert 冲突解决路径。
 func TestModelCatalogIntegration_BatchSave_UpsertOnUniqueConflict(t *testing.T) {
-	svc, client, ctx := newCatalogIntegrationFixture(t, true, 30)
+	svc, client, ctx := newCatalogIntegrationFixture(t, true)
 
 	old := time.Date(2020, 1, 1, 12, 0, 0, 0, time.UTC)
 	seedCatalogRow(t, ctx, client, &ModelCatalogDisplay{
@@ -130,6 +130,8 @@ func TestModelCatalogIntegration_BatchSave_UpsertOnUniqueConflict(t *testing.T) 
 			CustomTags:    []string{"recommended", "fast"},
 			FeaturedUntil: &future,
 			Hidden:        false,
+			IsNew:         true,
+			Featured:      true,
 		},
 	}))
 
@@ -145,6 +147,9 @@ func TestModelCatalogIntegration_BatchSave_UpsertOnUniqueConflict(t *testing.T) 
 	require.True(t, row.Pinned)
 	require.Equal(t, 100, row.SortWeight)
 	require.Equal(t, []string{"recommended", "fast"}, row.CustomTags)
+	// 手动 is_new/featured 经 BatchSave → PG → ListAllForAdmin 端到端回环。
+	require.True(t, row.IsNew, "manual is_new must roundtrip through BatchSave")
+	require.True(t, row.Featured, "manual featured must roundtrip through BatchSave")
 	// 关键：BatchUpsert 不得覆盖 first_seen_at（旧值保留）。
 	require.WithinDuration(t, old, row.FirstSeenAt, time.Second,
 		"BatchUpsert must not overwrite first_seen_at")
@@ -152,11 +157,11 @@ func TestModelCatalogIntegration_BatchSave_UpsertOnUniqueConflict(t *testing.T) 
 
 // TestModelCatalogIntegration_MergeDisplayConfig_EndToEnd 端到端：真实 PG 配置经 adapter 合并进
 // CatalogItem——验证 hidden 过滤、pinned/sort_weight 持久化透出、tags 合并（自动能力 + custom_tags +
-// featured 条件标签）、featured 判定、未配置模型仍获非 nil 默认 Display。
+// featured 条件标签）、featured 手动开关判定、未配置模型仍获非 nil 默认 Display。
 func TestModelCatalogIntegration_MergeDisplayConfig_EndToEnd(t *testing.T) {
-	svc, client, ctx := newCatalogIntegrationFixture(t, true, 30)
+	svc, client, ctx := newCatalogIntegrationFixture(t, true)
 
-	// 用旧 first_seen_at 避免被判为 new（隔离 new 窗口逻辑到边界专项测试）。
+	// first_seen_at 仅作信息字段，不再驱动 NEW（NEW 改手动开关）。
 	old := time.Date(2020, 1, 1, 12, 0, 0, 0, time.UTC)
 	future := time.Now().Add(1 * time.Hour).UTC()
 	seedCatalogRow(t, ctx, client, &ModelCatalogDisplay{
@@ -164,7 +169,8 @@ func TestModelCatalogIntegration_MergeDisplayConfig_EndToEnd(t *testing.T) {
 		Pinned: true, SortWeight: 50, CustomTags: []string{"recommended"},
 	})
 	seedCatalogRow(t, ctx, client, &ModelCatalogDisplay{
-		Platform: "anthropic", ModelName: "opus", FirstSeenAt: old, FeaturedUntil: &future,
+		Platform: "anthropic", ModelName: "opus", FirstSeenAt: old,
+		Featured: true, FeaturedUntil: &future, // 手动 featured + 未到期 → Featured=true
 	})
 	seedCatalogRow(t, ctx, client, &ModelCatalogDisplay{
 		Platform: "google", ModelName: "gemini", FirstSeenAt: old, Hidden: true,
@@ -196,7 +202,7 @@ func TestModelCatalogIntegration_MergeDisplayConfig_EndToEnd(t *testing.T) {
 	require.Equal(t, 50, gpt5.SortWeight)
 	require.Equal(t, []string{"vision", "recommended"}, gpt5.Tags)
 
-	// opus：featured（未来 featured_until）→ Featured=true 且 tags 含 featured。
+	// opus：手动 Featured=true（且 featured_until 未到期）→ Featured=true 且 tags 含 featured。
 	opus := byName["opus"]
 	require.NotNil(t, opus)
 	require.True(t, opus.Featured)
@@ -209,23 +215,19 @@ func TestModelCatalogIntegration_MergeDisplayConfig_EndToEnd(t *testing.T) {
 	require.False(t, llama.Featured)
 }
 
-// TestModelCatalogIntegration_MergeDisplayConfig_NewModelWindowBoundary 守护 new 窗口边界：
-// classifyDisplay 用严格小于（now-first_seen_at < newModelDays*24h）。刚进窗口 → new；刚出窗口 → 非 new。
-// 用 ±10s 余量规避 seed 与 merge 间的真实时间漂移。
-func TestModelCatalogIntegration_MergeDisplayConfig_NewModelWindowBoundary(t *testing.T) {
-	const newDays = 30
-	svc, client, ctx := newCatalogIntegrationFixture(t, true, newDays)
+// TestModelCatalogIntegration_MergeDisplayConfig_NewManualFlag 守护 NEW 手动开关：
+// IsNew=true → 显示 NEW；first_seen_at 不再驱动（即便刚登记，IsNew=false 仍不显示）。
+func TestModelCatalogIntegration_MergeDisplayConfig_NewManualFlag(t *testing.T) {
+	svc, client, ctx := newCatalogIntegrationFixture(t, true)
 
 	now := time.Now()
-	window := time.Duration(newDays) * 24 * time.Hour
-	inside := now.Add(-window + 10*time.Second)  // now-first_seen ≈ window-10s < window → new
-	outside := now.Add(-window - 10*time.Second) // now-first_seen ≈ window+10s ≮ window → 非 new
-	seedCatalogRow(t, ctx, client, &ModelCatalogDisplay{Platform: "p", ModelName: "fresh", FirstSeenAt: inside})
-	seedCatalogRow(t, ctx, client, &ModelCatalogDisplay{Platform: "p", ModelName: "stale", FirstSeenAt: outside})
+	seedCatalogRow(t, ctx, client, &ModelCatalogDisplay{Platform: "p", ModelName: "flagged", IsNew: true, FirstSeenAt: now})
+	// off 即便刚登记（now），IsNew 仍为 false：first_seen_at 不再驱动 NEW。
+	seedCatalogRow(t, ctx, client, &ModelCatalogDisplay{Platform: "p", ModelName: "off", FirstSeenAt: now})
 
 	out, err := svc.MergeDisplayConfig(ctx, []service.CatalogItem{
-		{Platform: "p", ModelName: "fresh"},
-		{Platform: "p", ModelName: "stale"},
+		{Platform: "p", ModelName: "flagged"},
+		{Platform: "p", ModelName: "off"},
 	})
 	require.NoError(t, err)
 
@@ -233,16 +235,16 @@ func TestModelCatalogIntegration_MergeDisplayConfig_NewModelWindowBoundary(t *te
 	for _, it := range out {
 		byName[it.ModelName] = it.Display
 	}
-	require.True(t, byName["fresh"].IsNew, "first_seen within window should be IsNew=true")
-	require.Contains(t, byName["fresh"].Tags, "new")
-	require.False(t, byName["stale"].IsNew, "first_seen outside window should be IsNew=false")
-	require.NotContains(t, byName["stale"].Tags, "new")
+	require.True(t, byName["flagged"].IsNew, "manual IsNew=true should surface")
+	require.Contains(t, byName["flagged"].Tags, "new")
+	require.False(t, byName["off"].IsNew, "first_seen_at must not drive IsNew anymore")
+	require.NotContains(t, byName["off"].Tags, "new")
 }
 
 // TestModelCatalogIntegration_MergeDisplayConfig_DisabledNoOp 守护 ops_enabled=false：运营总开关
 // 关闭时 merge 整体 no-op——不过滤 hidden、不置顶、Display=nil（回归原始价格排序展示）。
 func TestModelCatalogIntegration_MergeDisplayConfig_DisabledNoOp(t *testing.T) {
-	svc, client, ctx := newCatalogIntegrationFixture(t, false, 30) // ops_enabled=false
+	svc, client, ctx := newCatalogIntegrationFixture(t, false) // ops_enabled=false
 
 	old := time.Date(2020, 1, 1, 12, 0, 0, 0, time.UTC)
 	seedCatalogRow(t, ctx, client, &ModelCatalogDisplay{
