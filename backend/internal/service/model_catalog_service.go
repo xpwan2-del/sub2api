@@ -81,8 +81,8 @@ type ModelCatalogRepo interface {
 	BatchUpsert(ctx context.Context, cfgs []*ModelCatalogDisplay) error
 }
 
-// modelCatalogSettings 抽象 ModelCatalogService 所需的两个设置读取，使其可被 stub 测试。
-// *SettingService 结构化实现该接口（IsModelCatalogOpsEnabled / GetModelCatalogNewModelDays）。
+// modelCatalogSettings 抽象 ModelCatalogService 所需的运营总开关读取，使其可被 stub 测试。
+// *SettingService 结构化实现该接口（IsModelCatalogOpsEnabled）。
 type modelCatalogSettings interface {
 	IsModelCatalogOpsEnabled(ctx context.Context) bool
 }
