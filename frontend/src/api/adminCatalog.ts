@@ -32,10 +32,10 @@ export interface CatalogConfigItem {
   first_seen_at: string
   /** 自动标签（new/multimodal/reasoning 等，后端聚合，只读展示） */
   tags?: string[]
-  /** 是否属于“新模型”窗口（first_seen_at 在 new_model_days 内） */
-  is_new?: boolean
-  /** 是否当前生效的精选（custom_tags 含 featured 且 featured_until 未过期） */
-  featured?: boolean
+  /** 手动 NEW 开关（持久化，默认 false） */
+  is_new: boolean
+  /** 手动精选开关（持久化；可选 featured_until 到期自动隐藏） */
+  featured: boolean
 }
 
 /** 读取全部运营配置（后端已 EnsureFirstSeen） */

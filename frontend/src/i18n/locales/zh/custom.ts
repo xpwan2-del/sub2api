@@ -192,7 +192,7 @@ export default {
   admin: {
     catalogManage: {
       title: '模型广场',
-      description: '管理公开模型广场的置顶、运营标签、精选有效期与可见性',
+      description: '管理公开模型广场的模型排序、置顶、NEW/精选/推荐标签与可见性',
       newModelDays: '新模型判定窗口（天）',
       newModelDaysHint: '首见时间在此天数内的模型会在广场显示 NEW 徽章',
       saveSettings: '保存',
@@ -202,6 +202,8 @@ export default {
       pinnedSectionHint: '拖动调整顺序，位置会保存为排序权重（100、99、98…）。',
       pinnedEmpty: '暂无置顶模型，在下方列表置顶一个模型即可让它出现在顶部。',
       allModelsSection: '全部模型',
+      sortHint: '拖拽任意模型调整顺序；置顶项在公开页始终置顶。点「保存修改」后生效。',
+      tagNew: 'NEW',
       saveAll: '保存修改',
       saving: '保存中…',
       saved: '修改已保存',

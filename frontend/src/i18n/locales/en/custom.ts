@@ -192,7 +192,7 @@ export default {
   admin: {
     catalogManage: {
       title: 'Model Catalog',
-      description: 'Curate pinned models, operator tags, featured window and visibility for the public model catalog',
+      description: 'Curate model ordering, pinned, NEW/featured/recommended tags and visibility for the public model catalog',
       newModelDays: 'New model window (days)',
       newModelDaysHint: 'Models first seen within this many days get a NEW badge on the catalog',
       saveSettings: 'Save',
@@ -202,6 +202,8 @@ export default {
       pinnedSectionHint: 'Drag to reorder. Position is saved as sort weight (100, 99, 98…).',
       pinnedEmpty: 'No pinned models. Pin a model in the list below to feature it at the top.',
       allModelsSection: 'All models',
+      sortHint: 'Drag any model to reorder; pinned models always lead on the public catalog. Takes effect after Save changes.',
+      tagNew: 'NEW',
       saveAll: 'Save changes',
       saving: 'Saving…',
       saved: 'Changes saved',
