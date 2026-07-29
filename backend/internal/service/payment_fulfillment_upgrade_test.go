@@ -11,8 +11,10 @@ package service
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -149,19 +151,34 @@ func newUpgradeFulfillTestClient(t *testing.T) *dbent.Client {
 
 // newUpgradeFulfillPostgresClient 起一个真实 Postgres ent client，作为依赖 lease CAS（ent
 // UpdatedAtEq）测试的真实覆盖路径——sqlite 下 UpdatedAtEq 永远匹配 0 行（memory:
-// sqlite-updatedat-eq-trap）。DSN 取自 TEST_PG_DSN；enttest 按 ent schema 自动建表。
+// sqlite-updatedat-eq-trap）。每个测试用独立 PG schema（CREATE SCHEMA + search_path 隔离 +
+// 用后 DROP CASCADE），避免测试间共享持久状态或 unique key 冲突。DSN 取自 TEST_PG_DSN。
 func newUpgradeFulfillPostgresClient(t *testing.T) *dbent.Client {
 	t.Helper()
 	dsn := os.Getenv("TEST_PG_DSN")
 	if dsn == "" {
 		t.Fatal("TEST_DB=postgres 需 TEST_PG_DSN 环境变量（如 host=... port=5432 user=... password=... dbname=... sslmode=disable）")
 	}
-	db, err := sql.Open("postgres", dsn)
+	// admin 连接用于建/删 schema（与测试连接分离，DROP 时不连着自己）。
+	adminDB, err := sql.Open("postgres", dsn)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = db.Close() })
+	schemaName := "leasecas_" + strconv.FormatInt(time.Now().UnixNano(), 36)
+	_, err = adminDB.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", schemaName))
+	require.NoError(t, err)
+	_, err = adminDB.Exec(fmt.Sprintf("CREATE SCHEMA %s", schemaName))
+	require.NoError(t, err)
+	// 测试连接：search_path 指向独立 schema，enttest 自动建表/查询都落在该 schema。
+	testDSN := strings.TrimSpace(dsn) + " options='-c search_path=" + schemaName + "'"
+	db, err := sql.Open("postgres", testDSN)
+	require.NoError(t, err)
 	drv := entsql.OpenDB(dialect.Postgres, db)
 	client := enttest.NewClient(t, enttest.WithOptions(dbent.Driver(drv)))
-	t.Cleanup(func() { _ = client.Close() })
+	t.Cleanup(func() {
+		_ = client.Close()
+		_ = db.Close()
+		_, _ = adminDB.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", schemaName))
+		_ = adminDB.Close()
+	})
 	return client
 }
 
