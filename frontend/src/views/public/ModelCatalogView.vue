@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
 import ModelCard from '@/components/models/ModelCard.vue'
@@ -87,7 +87,7 @@ let abortController: AbortController | null = null
 const bundlePlans = ref<PublicBundlePlan[]>([])
 let bundleAbortController: AbortController | null = null
 
-const filters = reactive<CatalogFilters>({
+const filters = ref<CatalogFilters>({
   search: '',
   platform: '',
   capability: '',
@@ -97,13 +97,13 @@ const filters = reactive<CatalogFilters>({
 
 const currentYear = new Date().getFullYear()
 const catalog = computed(() => buildModelCatalog(rows.value))
-const filteredModels = computed(() => filterModelCatalog(catalog.value.items, filters))
+const filteredModels = computed(() => filterModelCatalog(catalog.value.items, filters.value))
 
 watch(
   () => catalog.value.facets.sortOptions,
   (options) => {
-    if (!options.includes(filters.sortBy)) {
-      filters.sortBy = options[0] || 'name'
+    if (!options.includes(filters.value.sortBy)) {
+      filters.value.sortBy = options[0] || 'name'
     }
   },
   { immediate: true }
