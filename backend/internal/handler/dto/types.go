@@ -124,6 +124,7 @@ type Group struct {
 	VideoPrice480P     *float64 `json:"video_price_480p"`
 	VideoPrice720P     *float64 `json:"video_price_720p"`
 	VideoPrice1080P    *float64 `json:"video_price_1080p"`
+	VideoPrice4K       *float64 `json:"video_price_4k"`
 
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool   `json:"claude_code_only"`
