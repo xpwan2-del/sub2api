@@ -21,7 +21,8 @@ type ImagePricingTierKey = "image_price_1k" | "image_price_2k" | "image_price_4k
 type VideoPricingTierKey =
   | "video_price_480p"
   | "video_price_720p"
-  | "video_price_1080p";
+  | "video_price_1080p"
+  | "video_price_4k";
 
 const defaultImagePricePlaceholders: Record<
   string,
@@ -49,6 +50,7 @@ const defaultVideoPricePlaceholders: Record<
     video_price_480p: "0.05",
     video_price_720p: "0.07",
     video_price_1080p: "0.25",
+    video_price_4k: "",
   },
 };
 
