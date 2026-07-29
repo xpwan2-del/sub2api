@@ -80,7 +80,7 @@ const filters = reactive<CatalogFilters>({
   platform: '',
   capability: '',
   billingMode: '',
-  sortBy: 'price'
+  sortBy: 'recommended'
 })
 
 const currentYear = new Date().getFullYear()

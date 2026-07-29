@@ -160,10 +160,15 @@ export default {
       },
     },
     sort: {
+      recommended: 'Recommended',
       price: 'Lowest price',
       name: 'Name',
       provider: 'Platform',
     },
+    badgeNew: 'NEW',
+    badgeFeatured: 'Featured',
+    badgeRecommended: 'Recommended',
+    pinned: 'Pinned',
   },
   nav: {
     canvas: 'AI Canvas',

@@ -160,10 +160,15 @@ export default {
       },
     },
     sort: {
+      recommended: '推荐',
       price: '价格优先',
       name: '按名称',
       provider: '按平台',
     },
+    badgeNew: 'NEW',
+    badgeFeatured: '特色',
+    badgeRecommended: '推荐',
+    pinned: '置顶',
   },
   nav: {
     canvas: 'AI 画布',

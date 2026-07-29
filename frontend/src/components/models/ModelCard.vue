@@ -1,5 +1,6 @@
 <template>
   <article class="model-catalog-card">
+    <span v-if="model.pinned" class="model-card-pin">{{ t('modelCatalog.pinned') }}</span>
     <div class="model-card-header">
       <div class="model-card-mark">
         <PlatformIcon :platform="primaryPlatform" size="lg" />
@@ -9,6 +10,15 @@
         <p>{{ model.provider }}</p>
       </div>
       <span class="model-card-status">{{ t('modelCatalog.available') }}</span>
+    </div>
+
+    <div v-if="opsBadges.length" class="model-card-ops-badges">
+      <span
+        v-for="badge in opsBadges"
+        :key="badge.key"
+        class="model-ops-badge"
+        :class="`model-ops-badge--${badge.key}`"
+      >{{ t(badge.label) }}</span>
     </div>
 
     <ModelCapabilityTags
@@ -65,6 +75,23 @@ defineEmits<{
 
 const { t } = useI18n()
 const primaryPlatform = computed(() => props.model.platforms[0] as any)
+
+interface OpsBadge {
+  key: 'new' | 'featured' | 'recommended'
+  label: string
+}
+
+// 运营 badge（强调色实心）与自动能力标签（ModelCapabilityTags 半透明描边 chip）刻意分层，
+// 让用户一眼区分「运营强推」与「自动推断能力」。
+const opsBadges = computed<OpsBadge[]>(() => {
+  const badges: OpsBadge[] = []
+  if (props.model.is_new) badges.push({ key: 'new', label: 'modelCatalog.badgeNew' })
+  if (props.model.featured) badges.push({ key: 'featured', label: 'modelCatalog.badgeFeatured' })
+  if (props.model.tags.includes('recommended')) {
+    badges.push({ key: 'recommended', label: 'modelCatalog.badgeRecommended' })
+  }
+  return badges
+})
 </script>
 
 <style scoped>
@@ -136,6 +163,59 @@ const primaryPlatform = computed(() => props.model.platforms[0] as any)
   font-weight: 800;
   padding: 6px 8px;
   text-transform: uppercase;
+}
+
+/* 置顶角标：贴在卡片左上实体角（卡片右上 / 左下为切角透明区） */
+.model-card-pin {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  padding: 6px 11px 6px 12px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.96), rgba(34, 211, 238, 0.88));
+  color: #022622;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 9px 100%);
+}
+
+/* 运营 badge：实心饱和渐变，与半透明描边的能力 chip 形成层级区分 */
+.model-card-ops-badges {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.model-ops-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 7px 9px;
+  text-transform: uppercase;
+}
+
+.model-ops-badge--new {
+  background: linear-gradient(135deg, rgba(252, 211, 77, 0.96), rgba(245, 158, 11, 0.88));
+  color: #2a1605;
+}
+
+.model-ops-badge--featured {
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.96), rgba(16, 185, 129, 0.88));
+  color: #022c1e;
+}
+
+.model-ops-badge--recommended {
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.96), rgba(99, 102, 241, 0.88));
+  color: #0b1024;
 }
 
 .model-card-description {
