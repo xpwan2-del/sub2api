@@ -67,3 +67,39 @@ jobs:
           version: v2.9
           args: --timeout=30m
           working-directory: backend
+
+  # bundle 升级履约的 lease CAS（ent UpdatedAtEq）测试在 sqlite 下注定失败
+  # (memory: sqlite-updatedat-eq-trap),必须在 Postgres 上运行才有真实覆盖。
+  test-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: sub2api
+          POSTGRES_PASSWORD: sub2api
+          POSTGRES_DB: sub2api_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: backend/go.mod
+          check-latest: false
+          cache: true
+          cache-dependency-path: backend/go.sum
+      - name: Verify Go version
+        run: |
+          go version | grep -q 'go1.26.5'
+      - name: Lease-CAS fulfillment tests on Postgres
+        working-directory: backend
+        env:
+          TEST_DB: postgres
+          TEST_PG_DSN: "host=localhost port=5432 user=sub2api password=sub2api dbname=sub2api_test sslmode=disable"
+        run: go test -tags=unit -run 'TestDoBundleUpgrade|TestRefundUpgradeToBalance|TestCreatePureBalanceBundleOrder|TestCreateOrder_PureBalanceUpgrade' ./internal/service/ -v
