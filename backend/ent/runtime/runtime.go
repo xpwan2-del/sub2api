@@ -27,6 +27,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
+	"github.com/Wei-Shaw/sub2api/ent/modelcatalogdisplay"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -1366,6 +1367,74 @@ func init() {
 	identityadoptiondecisionDescDecidedAt := identityadoptiondecisionFields[4].Descriptor()
 	// identityadoptiondecision.DefaultDecidedAt holds the default value on creation for the decided_at field.
 	identityadoptiondecision.DefaultDecidedAt = identityadoptiondecisionDescDecidedAt.Default.(func() time.Time)
+	modelcatalogdisplayFields := schema.ModelCatalogDisplay{}.Fields()
+	_ = modelcatalogdisplayFields
+	// modelcatalogdisplayDescPlatform is the schema descriptor for platform field.
+	modelcatalogdisplayDescPlatform := modelcatalogdisplayFields[0].Descriptor()
+	// modelcatalogdisplay.PlatformValidator is a validator for the "platform" field. It is called by the builders before save.
+	modelcatalogdisplay.PlatformValidator = func() func(string) error {
+		validators := modelcatalogdisplayDescPlatform.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(platform string) error {
+			for _, fn := range fns {
+				if err := fn(platform); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// modelcatalogdisplayDescModelName is the schema descriptor for model_name field.
+	modelcatalogdisplayDescModelName := modelcatalogdisplayFields[1].Descriptor()
+	// modelcatalogdisplay.ModelNameValidator is a validator for the "model_name" field. It is called by the builders before save.
+	modelcatalogdisplay.ModelNameValidator = func() func(string) error {
+		validators := modelcatalogdisplayDescModelName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(model_name string) error {
+			for _, fn := range fns {
+				if err := fn(model_name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// modelcatalogdisplayDescPinned is the schema descriptor for pinned field.
+	modelcatalogdisplayDescPinned := modelcatalogdisplayFields[2].Descriptor()
+	// modelcatalogdisplay.DefaultPinned holds the default value on creation for the pinned field.
+	modelcatalogdisplay.DefaultPinned = modelcatalogdisplayDescPinned.Default.(bool)
+	// modelcatalogdisplayDescSortWeight is the schema descriptor for sort_weight field.
+	modelcatalogdisplayDescSortWeight := modelcatalogdisplayFields[3].Descriptor()
+	// modelcatalogdisplay.DefaultSortWeight holds the default value on creation for the sort_weight field.
+	modelcatalogdisplay.DefaultSortWeight = modelcatalogdisplayDescSortWeight.Default.(int)
+	// modelcatalogdisplayDescCustomTags is the schema descriptor for custom_tags field.
+	modelcatalogdisplayDescCustomTags := modelcatalogdisplayFields[4].Descriptor()
+	// modelcatalogdisplay.DefaultCustomTags holds the default value on creation for the custom_tags field.
+	modelcatalogdisplay.DefaultCustomTags = modelcatalogdisplayDescCustomTags.Default.([]string)
+	// modelcatalogdisplayDescHidden is the schema descriptor for hidden field.
+	modelcatalogdisplayDescHidden := modelcatalogdisplayFields[6].Descriptor()
+	// modelcatalogdisplay.DefaultHidden holds the default value on creation for the hidden field.
+	modelcatalogdisplay.DefaultHidden = modelcatalogdisplayDescHidden.Default.(bool)
+	// modelcatalogdisplayDescFirstSeenAt is the schema descriptor for first_seen_at field.
+	modelcatalogdisplayDescFirstSeenAt := modelcatalogdisplayFields[7].Descriptor()
+	// modelcatalogdisplay.DefaultFirstSeenAt holds the default value on creation for the first_seen_at field.
+	modelcatalogdisplay.DefaultFirstSeenAt = modelcatalogdisplayDescFirstSeenAt.Default.(func() time.Time)
+	// modelcatalogdisplayDescCreatedAt is the schema descriptor for created_at field.
+	modelcatalogdisplayDescCreatedAt := modelcatalogdisplayFields[8].Descriptor()
+	// modelcatalogdisplay.DefaultCreatedAt holds the default value on creation for the created_at field.
+	modelcatalogdisplay.DefaultCreatedAt = modelcatalogdisplayDescCreatedAt.Default.(func() time.Time)
+	// modelcatalogdisplayDescUpdatedAt is the schema descriptor for updated_at field.
+	modelcatalogdisplayDescUpdatedAt := modelcatalogdisplayFields[9].Descriptor()
+	// modelcatalogdisplay.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	modelcatalogdisplay.DefaultUpdatedAt = modelcatalogdisplayDescUpdatedAt.Default.(func() time.Time)
+	// modelcatalogdisplay.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	modelcatalogdisplay.UpdateDefaultUpdatedAt = modelcatalogdisplayDescUpdatedAt.UpdateDefault.(func() time.Time)
 	paymentauditlogFields := schema.PaymentAuditLog{}.Fields()
 	_ = paymentauditlogFields
 	// paymentauditlogDescOrderID is the schema descriptor for order_id field.

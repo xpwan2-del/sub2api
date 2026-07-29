@@ -37,6 +37,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
+	"github.com/Wei-Shaw/sub2api/ent/modelcatalogdisplay"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -110,6 +111,8 @@ type Client struct {
 	IdempotencyRecord *IdempotencyRecordClient
 	// IdentityAdoptionDecision is the client for interacting with the IdentityAdoptionDecision builders.
 	IdentityAdoptionDecision *IdentityAdoptionDecisionClient
+	// ModelCatalogDisplay is the client for interacting with the ModelCatalogDisplay builders.
+	ModelCatalogDisplay *ModelCatalogDisplayClient
 	// PaymentAuditLog is the client for interacting with the PaymentAuditLog builders.
 	PaymentAuditLog *PaymentAuditLogClient
 	// PaymentOrder is the client for interacting with the PaymentOrder builders.
@@ -183,6 +186,7 @@ func (c *Client) init() {
 	c.Group = NewGroupClient(c.config)
 	c.IdempotencyRecord = NewIdempotencyRecordClient(c.config)
 	c.IdentityAdoptionDecision = NewIdentityAdoptionDecisionClient(c.config)
+	c.ModelCatalogDisplay = NewModelCatalogDisplayClient(c.config)
 	c.PaymentAuditLog = NewPaymentAuditLogClient(c.config)
 	c.PaymentOrder = NewPaymentOrderClient(c.config)
 	c.PaymentProviderInstance = NewPaymentProviderInstanceClient(c.config)
@@ -317,6 +321,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Group:                         NewGroupClient(cfg),
 		IdempotencyRecord:             NewIdempotencyRecordClient(cfg),
 		IdentityAdoptionDecision:      NewIdentityAdoptionDecisionClient(cfg),
+		ModelCatalogDisplay:           NewModelCatalogDisplayClient(cfg),
 		PaymentAuditLog:               NewPaymentAuditLogClient(cfg),
 		PaymentOrder:                  NewPaymentOrderClient(cfg),
 		PaymentProviderInstance:       NewPaymentProviderInstanceClient(cfg),
@@ -378,6 +383,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Group:                         NewGroupClient(cfg),
 		IdempotencyRecord:             NewIdempotencyRecordClient(cfg),
 		IdentityAdoptionDecision:      NewIdentityAdoptionDecisionClient(cfg),
+		ModelCatalogDisplay:           NewModelCatalogDisplayClient(cfg),
 		PaymentAuditLog:               NewPaymentAuditLogClient(cfg),
 		PaymentOrder:                  NewPaymentOrderClient(cfg),
 		PaymentProviderInstance:       NewPaymentProviderInstanceClient(cfg),
@@ -433,11 +439,11 @@ func (c *Client) Use(hooks ...Hook) {
 		c.BundleSubscriptionUsage, c.ChannelMonitor, c.ChannelMonitorDailyRollup,
 		c.ChannelMonitorHistory, c.ChannelMonitorRequestTemplate,
 		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
-		c.IdentityAdoptionDecision, c.PaymentAuditLog, c.PaymentOrder,
-		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
-		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
-		c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
+		c.IdentityAdoptionDecision, c.ModelCatalogDisplay, c.PaymentAuditLog,
+		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
+		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
+		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserPlatformQuota, c.UserSubscription,
 	} {
 		n.Use(hooks...)
@@ -454,11 +460,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.BundleSubscriptionUsage, c.ChannelMonitor, c.ChannelMonitorDailyRollup,
 		c.ChannelMonitorHistory, c.ChannelMonitorRequestTemplate,
 		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
-		c.IdentityAdoptionDecision, c.PaymentAuditLog, c.PaymentOrder,
-		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
-		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
-		c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
+		c.IdentityAdoptionDecision, c.ModelCatalogDisplay, c.PaymentAuditLog,
+		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
+		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
+		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserPlatformQuota, c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
@@ -512,6 +518,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.IdempotencyRecord.mutate(ctx, m)
 	case *IdentityAdoptionDecisionMutation:
 		return c.IdentityAdoptionDecision.mutate(ctx, m)
+	case *ModelCatalogDisplayMutation:
+		return c.ModelCatalogDisplay.mutate(ctx, m)
 	case *PaymentAuditLogMutation:
 		return c.PaymentAuditLog.mutate(ctx, m)
 	case *PaymentOrderMutation:
@@ -3986,6 +3994,139 @@ func (c *IdentityAdoptionDecisionClient) mutate(ctx context.Context, m *Identity
 	}
 }
 
+// ModelCatalogDisplayClient is a client for the ModelCatalogDisplay schema.
+type ModelCatalogDisplayClient struct {
+	config
+}
+
+// NewModelCatalogDisplayClient returns a client for the ModelCatalogDisplay from the given config.
+func NewModelCatalogDisplayClient(c config) *ModelCatalogDisplayClient {
+	return &ModelCatalogDisplayClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `modelcatalogdisplay.Hooks(f(g(h())))`.
+func (c *ModelCatalogDisplayClient) Use(hooks ...Hook) {
+	c.hooks.ModelCatalogDisplay = append(c.hooks.ModelCatalogDisplay, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `modelcatalogdisplay.Intercept(f(g(h())))`.
+func (c *ModelCatalogDisplayClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ModelCatalogDisplay = append(c.inters.ModelCatalogDisplay, interceptors...)
+}
+
+// Create returns a builder for creating a ModelCatalogDisplay entity.
+func (c *ModelCatalogDisplayClient) Create() *ModelCatalogDisplayCreate {
+	mutation := newModelCatalogDisplayMutation(c.config, OpCreate)
+	return &ModelCatalogDisplayCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ModelCatalogDisplay entities.
+func (c *ModelCatalogDisplayClient) CreateBulk(builders ...*ModelCatalogDisplayCreate) *ModelCatalogDisplayCreateBulk {
+	return &ModelCatalogDisplayCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ModelCatalogDisplayClient) MapCreateBulk(slice any, setFunc func(*ModelCatalogDisplayCreate, int)) *ModelCatalogDisplayCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ModelCatalogDisplayCreateBulk{err: fmt.Errorf("calling to ModelCatalogDisplayClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ModelCatalogDisplayCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ModelCatalogDisplayCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ModelCatalogDisplay.
+func (c *ModelCatalogDisplayClient) Update() *ModelCatalogDisplayUpdate {
+	mutation := newModelCatalogDisplayMutation(c.config, OpUpdate)
+	return &ModelCatalogDisplayUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ModelCatalogDisplayClient) UpdateOne(_m *ModelCatalogDisplay) *ModelCatalogDisplayUpdateOne {
+	mutation := newModelCatalogDisplayMutation(c.config, OpUpdateOne, withModelCatalogDisplay(_m))
+	return &ModelCatalogDisplayUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ModelCatalogDisplayClient) UpdateOneID(id int64) *ModelCatalogDisplayUpdateOne {
+	mutation := newModelCatalogDisplayMutation(c.config, OpUpdateOne, withModelCatalogDisplayID(id))
+	return &ModelCatalogDisplayUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ModelCatalogDisplay.
+func (c *ModelCatalogDisplayClient) Delete() *ModelCatalogDisplayDelete {
+	mutation := newModelCatalogDisplayMutation(c.config, OpDelete)
+	return &ModelCatalogDisplayDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ModelCatalogDisplayClient) DeleteOne(_m *ModelCatalogDisplay) *ModelCatalogDisplayDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ModelCatalogDisplayClient) DeleteOneID(id int64) *ModelCatalogDisplayDeleteOne {
+	builder := c.Delete().Where(modelcatalogdisplay.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ModelCatalogDisplayDeleteOne{builder}
+}
+
+// Query returns a query builder for ModelCatalogDisplay.
+func (c *ModelCatalogDisplayClient) Query() *ModelCatalogDisplayQuery {
+	return &ModelCatalogDisplayQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeModelCatalogDisplay},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ModelCatalogDisplay entity by its id.
+func (c *ModelCatalogDisplayClient) Get(ctx context.Context, id int64) (*ModelCatalogDisplay, error) {
+	return c.Query().Where(modelcatalogdisplay.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ModelCatalogDisplayClient) GetX(ctx context.Context, id int64) *ModelCatalogDisplay {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ModelCatalogDisplayClient) Hooks() []Hook {
+	return c.hooks.ModelCatalogDisplay
+}
+
+// Interceptors returns the client interceptors.
+func (c *ModelCatalogDisplayClient) Interceptors() []Interceptor {
+	return c.inters.ModelCatalogDisplay
+}
+
+func (c *ModelCatalogDisplayClient) mutate(ctx context.Context, m *ModelCatalogDisplayMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ModelCatalogDisplayCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ModelCatalogDisplayUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ModelCatalogDisplayUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ModelCatalogDisplayDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ModelCatalogDisplay mutation op: %q", m.Op())
+	}
+}
+
 // PaymentAuditLogClient is a client for the PaymentAuditLog schema.
 type PaymentAuditLogClient struct {
 	config
@@ -7239,7 +7380,7 @@ type (
 		BundlePlan, BundlePlanGroupQuota, BundleSubscription, BundleSubscriptionUsage,
 		ChannelMonitor, ChannelMonitorDailyRollup, ChannelMonitorHistory,
 		ChannelMonitorRequestTemplate, ErrorPassthroughRule, Group, IdempotencyRecord,
-		IdentityAdoptionDecision, PaymentAuditLog, PaymentOrder,
+		IdentityAdoptionDecision, ModelCatalogDisplay, PaymentAuditLog, PaymentOrder,
 		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage, Proxy,
 		RedeemCode, SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
 		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
@@ -7251,7 +7392,7 @@ type (
 		BundlePlan, BundlePlanGroupQuota, BundleSubscription, BundleSubscriptionUsage,
 		ChannelMonitor, ChannelMonitorDailyRollup, ChannelMonitorHistory,
 		ChannelMonitorRequestTemplate, ErrorPassthroughRule, Group, IdempotencyRecord,
-		IdentityAdoptionDecision, PaymentAuditLog, PaymentOrder,
+		IdentityAdoptionDecision, ModelCatalogDisplay, PaymentAuditLog, PaymentOrder,
 		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage, Proxy,
 		RedeemCode, SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
 		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,

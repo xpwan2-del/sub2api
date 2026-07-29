@@ -1135,6 +1135,33 @@ var (
 			},
 		},
 	}
+	// ModelCatalogDisplaysColumns holds the columns for the "model_catalog_displays" table.
+	ModelCatalogDisplaysColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "platform", Type: field.TypeString, Size: 64},
+		{Name: "model_name", Type: field.TypeString, Size: 128},
+		{Name: "pinned", Type: field.TypeBool, Default: false},
+		{Name: "sort_weight", Type: field.TypeInt, Default: 0},
+		{Name: "custom_tags", Type: field.TypeJSON},
+		{Name: "featured_until", Type: field.TypeTime, Nullable: true},
+		{Name: "hidden", Type: field.TypeBool, Default: false},
+		{Name: "first_seen_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ModelCatalogDisplaysTable holds the schema information for the "model_catalog_displays" table.
+	ModelCatalogDisplaysTable = &schema.Table{
+		Name:       "model_catalog_displays",
+		Columns:    ModelCatalogDisplaysColumns,
+		PrimaryKey: []*schema.Column{ModelCatalogDisplaysColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "modelcatalogdisplay_platform_model_name",
+				Unique:  true,
+				Columns: []*schema.Column{ModelCatalogDisplaysColumns[1], ModelCatalogDisplaysColumns[2]},
+			},
+		},
+	}
 	// PaymentAuditLogsColumns holds the columns for the "payment_audit_logs" table.
 	PaymentAuditLogsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2162,6 +2189,7 @@ var (
 		GroupsTable,
 		IdempotencyRecordsTable,
 		IdentityAdoptionDecisionsTable,
+		ModelCatalogDisplaysTable,
 		PaymentAuditLogsTable,
 		PaymentOrdersTable,
 		PaymentProviderInstancesTable,

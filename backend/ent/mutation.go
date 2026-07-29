@@ -34,6 +34,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
+	"github.com/Wei-Shaw/sub2api/ent/modelcatalogdisplay"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -89,6 +90,7 @@ const (
 	TypeGroup                         = "Group"
 	TypeIdempotencyRecord             = "IdempotencyRecord"
 	TypeIdentityAdoptionDecision      = "IdentityAdoptionDecision"
+	TypeModelCatalogDisplay           = "ModelCatalogDisplay"
 	TypePaymentAuditLog               = "PaymentAuditLog"
 	TypePaymentOrder                  = "PaymentOrder"
 	TypePaymentProviderInstance       = "PaymentProviderInstance"
@@ -32282,6 +32284,892 @@ func (m *IdentityAdoptionDecisionMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown IdentityAdoptionDecision edge %s", name)
+}
+
+// ModelCatalogDisplayMutation represents an operation that mutates the ModelCatalogDisplay nodes in the graph.
+type ModelCatalogDisplayMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *int64
+	platform          *string
+	model_name        *string
+	pinned            *bool
+	sort_weight       *int
+	addsort_weight    *int
+	custom_tags       *[]string
+	appendcustom_tags []string
+	featured_until    *time.Time
+	hidden            *bool
+	first_seen_at     *time.Time
+	created_at        *time.Time
+	updated_at        *time.Time
+	clearedFields     map[string]struct{}
+	done              bool
+	oldValue          func(context.Context) (*ModelCatalogDisplay, error)
+	predicates        []predicate.ModelCatalogDisplay
+}
+
+var _ ent.Mutation = (*ModelCatalogDisplayMutation)(nil)
+
+// modelcatalogdisplayOption allows management of the mutation configuration using functional options.
+type modelcatalogdisplayOption func(*ModelCatalogDisplayMutation)
+
+// newModelCatalogDisplayMutation creates new mutation for the ModelCatalogDisplay entity.
+func newModelCatalogDisplayMutation(c config, op Op, opts ...modelcatalogdisplayOption) *ModelCatalogDisplayMutation {
+	m := &ModelCatalogDisplayMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeModelCatalogDisplay,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withModelCatalogDisplayID sets the ID field of the mutation.
+func withModelCatalogDisplayID(id int64) modelcatalogdisplayOption {
+	return func(m *ModelCatalogDisplayMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ModelCatalogDisplay
+		)
+		m.oldValue = func(ctx context.Context) (*ModelCatalogDisplay, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ModelCatalogDisplay.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withModelCatalogDisplay sets the old ModelCatalogDisplay of the mutation.
+func withModelCatalogDisplay(node *ModelCatalogDisplay) modelcatalogdisplayOption {
+	return func(m *ModelCatalogDisplayMutation) {
+		m.oldValue = func(context.Context) (*ModelCatalogDisplay, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ModelCatalogDisplayMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ModelCatalogDisplayMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ModelCatalogDisplayMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ModelCatalogDisplayMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ModelCatalogDisplay.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetPlatform sets the "platform" field.
+func (m *ModelCatalogDisplayMutation) SetPlatform(s string) {
+	m.platform = &s
+}
+
+// Platform returns the value of the "platform" field in the mutation.
+func (m *ModelCatalogDisplayMutation) Platform() (r string, exists bool) {
+	v := m.platform
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlatform returns the old "platform" field's value of the ModelCatalogDisplay entity.
+// If the ModelCatalogDisplay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelCatalogDisplayMutation) OldPlatform(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlatform is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlatform requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlatform: %w", err)
+	}
+	return oldValue.Platform, nil
+}
+
+// ResetPlatform resets all changes to the "platform" field.
+func (m *ModelCatalogDisplayMutation) ResetPlatform() {
+	m.platform = nil
+}
+
+// SetModelName sets the "model_name" field.
+func (m *ModelCatalogDisplayMutation) SetModelName(s string) {
+	m.model_name = &s
+}
+
+// ModelName returns the value of the "model_name" field in the mutation.
+func (m *ModelCatalogDisplayMutation) ModelName() (r string, exists bool) {
+	v := m.model_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModelName returns the old "model_name" field's value of the ModelCatalogDisplay entity.
+// If the ModelCatalogDisplay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelCatalogDisplayMutation) OldModelName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldModelName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldModelName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModelName: %w", err)
+	}
+	return oldValue.ModelName, nil
+}
+
+// ResetModelName resets all changes to the "model_name" field.
+func (m *ModelCatalogDisplayMutation) ResetModelName() {
+	m.model_name = nil
+}
+
+// SetPinned sets the "pinned" field.
+func (m *ModelCatalogDisplayMutation) SetPinned(b bool) {
+	m.pinned = &b
+}
+
+// Pinned returns the value of the "pinned" field in the mutation.
+func (m *ModelCatalogDisplayMutation) Pinned() (r bool, exists bool) {
+	v := m.pinned
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPinned returns the old "pinned" field's value of the ModelCatalogDisplay entity.
+// If the ModelCatalogDisplay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelCatalogDisplayMutation) OldPinned(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPinned is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPinned requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPinned: %w", err)
+	}
+	return oldValue.Pinned, nil
+}
+
+// ResetPinned resets all changes to the "pinned" field.
+func (m *ModelCatalogDisplayMutation) ResetPinned() {
+	m.pinned = nil
+}
+
+// SetSortWeight sets the "sort_weight" field.
+func (m *ModelCatalogDisplayMutation) SetSortWeight(i int) {
+	m.sort_weight = &i
+	m.addsort_weight = nil
+}
+
+// SortWeight returns the value of the "sort_weight" field in the mutation.
+func (m *ModelCatalogDisplayMutation) SortWeight() (r int, exists bool) {
+	v := m.sort_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSortWeight returns the old "sort_weight" field's value of the ModelCatalogDisplay entity.
+// If the ModelCatalogDisplay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelCatalogDisplayMutation) OldSortWeight(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSortWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSortWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSortWeight: %w", err)
+	}
+	return oldValue.SortWeight, nil
+}
+
+// AddSortWeight adds i to the "sort_weight" field.
+func (m *ModelCatalogDisplayMutation) AddSortWeight(i int) {
+	if m.addsort_weight != nil {
+		*m.addsort_weight += i
+	} else {
+		m.addsort_weight = &i
+	}
+}
+
+// AddedSortWeight returns the value that was added to the "sort_weight" field in this mutation.
+func (m *ModelCatalogDisplayMutation) AddedSortWeight() (r int, exists bool) {
+	v := m.addsort_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSortWeight resets all changes to the "sort_weight" field.
+func (m *ModelCatalogDisplayMutation) ResetSortWeight() {
+	m.sort_weight = nil
+	m.addsort_weight = nil
+}
+
+// SetCustomTags sets the "custom_tags" field.
+func (m *ModelCatalogDisplayMutation) SetCustomTags(s []string) {
+	m.custom_tags = &s
+	m.appendcustom_tags = nil
+}
+
+// CustomTags returns the value of the "custom_tags" field in the mutation.
+func (m *ModelCatalogDisplayMutation) CustomTags() (r []string, exists bool) {
+	v := m.custom_tags
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomTags returns the old "custom_tags" field's value of the ModelCatalogDisplay entity.
+// If the ModelCatalogDisplay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelCatalogDisplayMutation) OldCustomTags(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomTags is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomTags requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomTags: %w", err)
+	}
+	return oldValue.CustomTags, nil
+}
+
+// AppendCustomTags adds s to the "custom_tags" field.
+func (m *ModelCatalogDisplayMutation) AppendCustomTags(s []string) {
+	m.appendcustom_tags = append(m.appendcustom_tags, s...)
+}
+
+// AppendedCustomTags returns the list of values that were appended to the "custom_tags" field in this mutation.
+func (m *ModelCatalogDisplayMutation) AppendedCustomTags() ([]string, bool) {
+	if len(m.appendcustom_tags) == 0 {
+		return nil, false
+	}
+	return m.appendcustom_tags, true
+}
+
+// ResetCustomTags resets all changes to the "custom_tags" field.
+func (m *ModelCatalogDisplayMutation) ResetCustomTags() {
+	m.custom_tags = nil
+	m.appendcustom_tags = nil
+}
+
+// SetFeaturedUntil sets the "featured_until" field.
+func (m *ModelCatalogDisplayMutation) SetFeaturedUntil(t time.Time) {
+	m.featured_until = &t
+}
+
+// FeaturedUntil returns the value of the "featured_until" field in the mutation.
+func (m *ModelCatalogDisplayMutation) FeaturedUntil() (r time.Time, exists bool) {
+	v := m.featured_until
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFeaturedUntil returns the old "featured_until" field's value of the ModelCatalogDisplay entity.
+// If the ModelCatalogDisplay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelCatalogDisplayMutation) OldFeaturedUntil(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFeaturedUntil is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFeaturedUntil requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFeaturedUntil: %w", err)
+	}
+	return oldValue.FeaturedUntil, nil
+}
+
+// ClearFeaturedUntil clears the value of the "featured_until" field.
+func (m *ModelCatalogDisplayMutation) ClearFeaturedUntil() {
+	m.featured_until = nil
+	m.clearedFields[modelcatalogdisplay.FieldFeaturedUntil] = struct{}{}
+}
+
+// FeaturedUntilCleared returns if the "featured_until" field was cleared in this mutation.
+func (m *ModelCatalogDisplayMutation) FeaturedUntilCleared() bool {
+	_, ok := m.clearedFields[modelcatalogdisplay.FieldFeaturedUntil]
+	return ok
+}
+
+// ResetFeaturedUntil resets all changes to the "featured_until" field.
+func (m *ModelCatalogDisplayMutation) ResetFeaturedUntil() {
+	m.featured_until = nil
+	delete(m.clearedFields, modelcatalogdisplay.FieldFeaturedUntil)
+}
+
+// SetHidden sets the "hidden" field.
+func (m *ModelCatalogDisplayMutation) SetHidden(b bool) {
+	m.hidden = &b
+}
+
+// Hidden returns the value of the "hidden" field in the mutation.
+func (m *ModelCatalogDisplayMutation) Hidden() (r bool, exists bool) {
+	v := m.hidden
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHidden returns the old "hidden" field's value of the ModelCatalogDisplay entity.
+// If the ModelCatalogDisplay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelCatalogDisplayMutation) OldHidden(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHidden is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHidden requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHidden: %w", err)
+	}
+	return oldValue.Hidden, nil
+}
+
+// ResetHidden resets all changes to the "hidden" field.
+func (m *ModelCatalogDisplayMutation) ResetHidden() {
+	m.hidden = nil
+}
+
+// SetFirstSeenAt sets the "first_seen_at" field.
+func (m *ModelCatalogDisplayMutation) SetFirstSeenAt(t time.Time) {
+	m.first_seen_at = &t
+}
+
+// FirstSeenAt returns the value of the "first_seen_at" field in the mutation.
+func (m *ModelCatalogDisplayMutation) FirstSeenAt() (r time.Time, exists bool) {
+	v := m.first_seen_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFirstSeenAt returns the old "first_seen_at" field's value of the ModelCatalogDisplay entity.
+// If the ModelCatalogDisplay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelCatalogDisplayMutation) OldFirstSeenAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFirstSeenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFirstSeenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFirstSeenAt: %w", err)
+	}
+	return oldValue.FirstSeenAt, nil
+}
+
+// ResetFirstSeenAt resets all changes to the "first_seen_at" field.
+func (m *ModelCatalogDisplayMutation) ResetFirstSeenAt() {
+	m.first_seen_at = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ModelCatalogDisplayMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ModelCatalogDisplayMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ModelCatalogDisplay entity.
+// If the ModelCatalogDisplay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelCatalogDisplayMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ModelCatalogDisplayMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ModelCatalogDisplayMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ModelCatalogDisplayMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ModelCatalogDisplay entity.
+// If the ModelCatalogDisplay object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelCatalogDisplayMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ModelCatalogDisplayMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the ModelCatalogDisplayMutation builder.
+func (m *ModelCatalogDisplayMutation) Where(ps ...predicate.ModelCatalogDisplay) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ModelCatalogDisplayMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ModelCatalogDisplayMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ModelCatalogDisplay, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ModelCatalogDisplayMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ModelCatalogDisplayMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ModelCatalogDisplay).
+func (m *ModelCatalogDisplayMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ModelCatalogDisplayMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.platform != nil {
+		fields = append(fields, modelcatalogdisplay.FieldPlatform)
+	}
+	if m.model_name != nil {
+		fields = append(fields, modelcatalogdisplay.FieldModelName)
+	}
+	if m.pinned != nil {
+		fields = append(fields, modelcatalogdisplay.FieldPinned)
+	}
+	if m.sort_weight != nil {
+		fields = append(fields, modelcatalogdisplay.FieldSortWeight)
+	}
+	if m.custom_tags != nil {
+		fields = append(fields, modelcatalogdisplay.FieldCustomTags)
+	}
+	if m.featured_until != nil {
+		fields = append(fields, modelcatalogdisplay.FieldFeaturedUntil)
+	}
+	if m.hidden != nil {
+		fields = append(fields, modelcatalogdisplay.FieldHidden)
+	}
+	if m.first_seen_at != nil {
+		fields = append(fields, modelcatalogdisplay.FieldFirstSeenAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, modelcatalogdisplay.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, modelcatalogdisplay.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ModelCatalogDisplayMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case modelcatalogdisplay.FieldPlatform:
+		return m.Platform()
+	case modelcatalogdisplay.FieldModelName:
+		return m.ModelName()
+	case modelcatalogdisplay.FieldPinned:
+		return m.Pinned()
+	case modelcatalogdisplay.FieldSortWeight:
+		return m.SortWeight()
+	case modelcatalogdisplay.FieldCustomTags:
+		return m.CustomTags()
+	case modelcatalogdisplay.FieldFeaturedUntil:
+		return m.FeaturedUntil()
+	case modelcatalogdisplay.FieldHidden:
+		return m.Hidden()
+	case modelcatalogdisplay.FieldFirstSeenAt:
+		return m.FirstSeenAt()
+	case modelcatalogdisplay.FieldCreatedAt:
+		return m.CreatedAt()
+	case modelcatalogdisplay.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ModelCatalogDisplayMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case modelcatalogdisplay.FieldPlatform:
+		return m.OldPlatform(ctx)
+	case modelcatalogdisplay.FieldModelName:
+		return m.OldModelName(ctx)
+	case modelcatalogdisplay.FieldPinned:
+		return m.OldPinned(ctx)
+	case modelcatalogdisplay.FieldSortWeight:
+		return m.OldSortWeight(ctx)
+	case modelcatalogdisplay.FieldCustomTags:
+		return m.OldCustomTags(ctx)
+	case modelcatalogdisplay.FieldFeaturedUntil:
+		return m.OldFeaturedUntil(ctx)
+	case modelcatalogdisplay.FieldHidden:
+		return m.OldHidden(ctx)
+	case modelcatalogdisplay.FieldFirstSeenAt:
+		return m.OldFirstSeenAt(ctx)
+	case modelcatalogdisplay.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case modelcatalogdisplay.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ModelCatalogDisplay field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ModelCatalogDisplayMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case modelcatalogdisplay.FieldPlatform:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlatform(v)
+		return nil
+	case modelcatalogdisplay.FieldModelName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModelName(v)
+		return nil
+	case modelcatalogdisplay.FieldPinned:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPinned(v)
+		return nil
+	case modelcatalogdisplay.FieldSortWeight:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSortWeight(v)
+		return nil
+	case modelcatalogdisplay.FieldCustomTags:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomTags(v)
+		return nil
+	case modelcatalogdisplay.FieldFeaturedUntil:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFeaturedUntil(v)
+		return nil
+	case modelcatalogdisplay.FieldHidden:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHidden(v)
+		return nil
+	case modelcatalogdisplay.FieldFirstSeenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFirstSeenAt(v)
+		return nil
+	case modelcatalogdisplay.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case modelcatalogdisplay.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ModelCatalogDisplay field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ModelCatalogDisplayMutation) AddedFields() []string {
+	var fields []string
+	if m.addsort_weight != nil {
+		fields = append(fields, modelcatalogdisplay.FieldSortWeight)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ModelCatalogDisplayMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case modelcatalogdisplay.FieldSortWeight:
+		return m.AddedSortWeight()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ModelCatalogDisplayMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case modelcatalogdisplay.FieldSortWeight:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSortWeight(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ModelCatalogDisplay numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ModelCatalogDisplayMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(modelcatalogdisplay.FieldFeaturedUntil) {
+		fields = append(fields, modelcatalogdisplay.FieldFeaturedUntil)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ModelCatalogDisplayMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ModelCatalogDisplayMutation) ClearField(name string) error {
+	switch name {
+	case modelcatalogdisplay.FieldFeaturedUntil:
+		m.ClearFeaturedUntil()
+		return nil
+	}
+	return fmt.Errorf("unknown ModelCatalogDisplay nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ModelCatalogDisplayMutation) ResetField(name string) error {
+	switch name {
+	case modelcatalogdisplay.FieldPlatform:
+		m.ResetPlatform()
+		return nil
+	case modelcatalogdisplay.FieldModelName:
+		m.ResetModelName()
+		return nil
+	case modelcatalogdisplay.FieldPinned:
+		m.ResetPinned()
+		return nil
+	case modelcatalogdisplay.FieldSortWeight:
+		m.ResetSortWeight()
+		return nil
+	case modelcatalogdisplay.FieldCustomTags:
+		m.ResetCustomTags()
+		return nil
+	case modelcatalogdisplay.FieldFeaturedUntil:
+		m.ResetFeaturedUntil()
+		return nil
+	case modelcatalogdisplay.FieldHidden:
+		m.ResetHidden()
+		return nil
+	case modelcatalogdisplay.FieldFirstSeenAt:
+		m.ResetFirstSeenAt()
+		return nil
+	case modelcatalogdisplay.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case modelcatalogdisplay.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ModelCatalogDisplay field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ModelCatalogDisplayMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ModelCatalogDisplayMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ModelCatalogDisplayMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ModelCatalogDisplayMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ModelCatalogDisplayMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ModelCatalogDisplayMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ModelCatalogDisplayMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown ModelCatalogDisplay unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ModelCatalogDisplayMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown ModelCatalogDisplay edge %s", name)
 }
 
 // PaymentAuditLogMutation represents an operation that mutates the PaymentAuditLog nodes in the graph.
