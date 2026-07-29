@@ -167,6 +167,18 @@ describe('recommended sort', () => {
     ])
   })
 
+  it('ranks non-pinned cards by sort_weight when set (sort_weight beats tagScore)', () => {
+    const items = [
+      makeCard({ name: 'high-tag-zero-weight', tags: ['new', 'multimodal'], sort_weight: 0 }),
+      makeCard({ name: 'low-tag-high-weight', tags: ['fast'], sort_weight: 50 })
+    ]
+
+    expect(sortByRecommended(items).map((item) => item.name)).toEqual([
+      'low-tag-high-weight',
+      'high-tag-zero-weight'
+    ])
+  })
+
   it('ranks non-pinned cards by accumulated tag weight (new+multimodal > featured)', () => {
     const items = [
       makeCard({ name: 'featured-only', tags: ['featured'] }),

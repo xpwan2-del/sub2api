@@ -346,10 +346,11 @@ function compareCapabilities(a: string, b: string): number {
 
 function compareCatalogCards(a: ModelCatalogCard, b: ModelCatalogCard, sortBy: ModelCatalogSort): number {
   if (sortBy === 'recommended') {
-    // Pinned cards always lead; within the pinned block, higher sort_weight wins.
+    // 置顶整体浮顶；置顶与非置顶块内均按 sort_weight 降序（admin 统一拖拽赋值），
+    // 未被手动排过(sort_weight=0)回退 tagScore→价格。
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-    if (a.pinned && b.pinned) return b.sort_weight - a.sort_weight
-    // Non-pinned cards rank by accumulated tag weight (higher first).
+    const swDelta = b.sort_weight - a.sort_weight
+    if (swDelta !== 0) return swDelta
     const tagDelta = tagScore(b.tags) - tagScore(a.tags)
     if (tagDelta !== 0) return tagDelta
     // Tie falls through to the ascending-price tiebreak below.
