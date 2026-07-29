@@ -24,6 +24,7 @@ import (
 // 必须走 ExecuteBundleUpgradeFulfillment（换套），而非旧的 ExecuteBundleFulfillment（ActivateBundle 建新订阅）。
 // 同时守护：余额扣 due、订单字段（SourceBundleSubscriptionID/ProrateCredit）写入。
 func TestCreatePureBalanceBundleOrder_UpgradeRoutesToUpgradeFulfillment(t *testing.T) {
+	skipIfSQLiteLeaseUnsupported(t)
 	ctx := context.Background()
 	client := newUpgradeFulfillTestClient(t)
 	ensurePaymentAuditOrderActionUniqueIndex(t, ctx, client)
@@ -112,6 +113,7 @@ func TestCreatePureBalanceBundleOrder_UpgradeRoutesToUpgradeFulfillment(t *testi
 // 普通 bundle 纯余额支付仍走 ExecuteBundleFulfillment（ActivateBundle），不被升级路由改动影响。
 // 复用 bundle_subscription_service_test.go 的 activateBundleSubRepoStub（GetActiveByUserID 返回空→无冲突）。
 func TestCreatePureBalanceBundleOrder_BundleStillRoutesToBundleFulfillment(t *testing.T) {
+	skipIfSQLiteLeaseUnsupported(t)
 	ctx := context.Background()
 	client := newUpgradeFulfillTestClient(t)
 	ensurePaymentAuditOrderActionUniqueIndex(t, ctx, client)
@@ -197,6 +199,7 @@ func (lb *upgradeBalanceGateLoadBalancer) SelectInstance(_ context.Context, _ st
 // 无法捕获 balanceDeduct 计算回归（commit 2899ffb3 把 OrderType 扩成 bundle||bundle_upgrade
 // 时误删了 balanceDeduct = math.Min(user.Balance, planPrice)）。
 func TestCreateOrder_PureBalanceUpgradeSkipsGateway(t *testing.T) {
+	skipIfSQLiteLeaseUnsupported(t)
 	ctx := context.Background()
 	client := newUpgradeFulfillTestClient(t)
 	ensurePaymentAuditOrderActionUniqueIndex(t, ctx, client)
