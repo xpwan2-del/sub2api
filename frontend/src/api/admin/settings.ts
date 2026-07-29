@@ -545,6 +545,10 @@ export interface SystemSettings {
   ops_query_mode_default: "auto" | "raw" | "preagg" | string;
   ops_metrics_interval_seconds: number;
 
+  // Model catalog ops ("new model" window in days) — optional: backend may
+  // not expose it yet; readers fall back to the default (30).
+  model_catalog_new_model_days?: number;
+
   // Claude Code version check
   min_claude_code_version: string;
   max_claude_code_version: string;
@@ -824,6 +828,7 @@ export interface UpdateSettingsRequest {
   ops_realtime_monitoring_enabled?: boolean;
   ops_query_mode_default?: "auto" | "raw" | "preagg" | string;
   ops_metrics_interval_seconds?: number;
+  model_catalog_new_model_days?: number;
   min_claude_code_version?: string;
   max_claude_code_version?: string;
   allow_ungrouped_key_scheduling?: boolean;

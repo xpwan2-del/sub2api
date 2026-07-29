@@ -172,6 +172,9 @@ type SystemSettings struct {
 	OpsQueryModeDefault          string
 	OpsMetricsIntervalSeconds    int
 
+	// 模型广场可运营排序：新模型判定窗口（天，默认 30）
+	ModelCatalogNewModelDays int
+
 	// Channel Monitor feature
 	ChannelMonitorEnabled                bool `json:"channel_monitor_enabled"`
 	ChannelMonitorDefaultIntervalSeconds int  `json:"channel_monitor_default_interval_seconds"`

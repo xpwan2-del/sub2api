@@ -205,6 +205,9 @@ type UpdateSettingsRequest struct {
 	OpsQueryModeDefault          *string `json:"ops_query_mode_default"`
 	OpsMetricsIntervalSeconds    *int    `json:"ops_metrics_interval_seconds"`
 
+	// 模型广场可运营排序：新模型判定窗口（天，默认 30）
+	ModelCatalogNewModelDays *int `json:"model_catalog_new_model_days"`
+
 	MinClaudeCodeVersion string `json:"min_claude_code_version"`
 	MaxClaudeCodeVersion string `json:"max_claude_code_version"`
 
@@ -1322,6 +1325,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.OpsMetricsIntervalSeconds
 		}(),
+		ModelCatalogNewModelDays: func() int {
+			if req.ModelCatalogNewModelDays != nil {
+				return *req.ModelCatalogNewModelDays
+			}
+			return previousSettings.ModelCatalogNewModelDays
+		}(),
 		EnableFingerprintUnification: func() bool {
 			if req.EnableFingerprintUnification != nil {
 				return *req.EnableFingerprintUnification
@@ -1799,6 +1808,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		OpsRealtimeMonitoringEnabled:                           updatedSettings.OpsRealtimeMonitoringEnabled,
 		OpsQueryModeDefault:                                    updatedSettings.OpsQueryModeDefault,
 		OpsMetricsIntervalSeconds:                              updatedSettings.OpsMetricsIntervalSeconds,
+		ModelCatalogNewModelDays:                               updatedSettings.ModelCatalogNewModelDays,
 		MinClaudeCodeVersion:                                   updatedSettings.MinClaudeCodeVersion,
 		MaxClaudeCodeVersion:                                   updatedSettings.MaxClaudeCodeVersion,
 		AllowUngroupedKeyScheduling:                            updatedSettings.AllowUngroupedKeyScheduling,

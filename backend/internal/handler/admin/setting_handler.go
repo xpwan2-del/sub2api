@@ -242,6 +242,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		OpsRealtimeMonitoringEnabled:                           settings.OpsRealtimeMonitoringEnabled,
 		OpsQueryModeDefault:                                    settings.OpsQueryModeDefault,
 		OpsMetricsIntervalSeconds:                              settings.OpsMetricsIntervalSeconds,
+		ModelCatalogNewModelDays:                               settings.ModelCatalogNewModelDays,
 		MinClaudeCodeVersion:                                   settings.MinClaudeCodeVersion,
 		MaxClaudeCodeVersion:                                   settings.MaxClaudeCodeVersion,
 		AllowUngroupedKeyScheduling:                            settings.AllowUngroupedKeyScheduling,

@@ -323,6 +323,13 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 		updates[SettingKeyOpsMetricsIntervalSeconds] = strconv.Itoa(settings.OpsMetricsIntervalSeconds)
 	}
 
+	// 模型广场可运营排序：新模型判定窗口（天，负数回退默认 30）
+	newModelDays := settings.ModelCatalogNewModelDays
+	if newModelDays < 0 {
+		newModelDays = ModelCatalogNewModelDaysDefault
+	}
+	updates[SettingKeyModelCatalogNewModelDays] = strconv.Itoa(newModelDays)
+
 	// Channel monitor feature switch
 	updates[SettingKeyChannelMonitorEnabled] = strconv.FormatBool(settings.ChannelMonitorEnabled)
 	if v := clampChannelMonitorInterval(settings.ChannelMonitorDefaultIntervalSeconds); v > 0 {

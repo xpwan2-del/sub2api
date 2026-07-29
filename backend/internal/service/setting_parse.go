@@ -709,6 +709,14 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		}
 	}
 
+	// 模型广场可运营排序：新模型判定窗口（天，默认 30；负数/非法回退默认）
+	result.ModelCatalogNewModelDays = ModelCatalogNewModelDaysDefault
+	if raw := strings.TrimSpace(settings[SettingKeyModelCatalogNewModelDays]); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil && v >= 0 {
+			result.ModelCatalogNewModelDays = v
+		}
+	}
+
 	// Channel monitor feature (default: enabled, 60s)
 	result.ChannelMonitorEnabled = !isFalseSettingValue(settings[SettingKeyChannelMonitorEnabled])
 	result.ChannelMonitorDefaultIntervalSeconds = parseChannelMonitorInterval(

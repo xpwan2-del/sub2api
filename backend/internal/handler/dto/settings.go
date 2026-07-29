@@ -168,6 +168,9 @@ type SystemSettings struct {
 	OpsQueryModeDefault          string `json:"ops_query_mode_default"`
 	OpsMetricsIntervalSeconds    int    `json:"ops_metrics_interval_seconds"`
 
+	// 模型广场可运营排序：新模型判定窗口（天，默认 30）
+	ModelCatalogNewModelDays int `json:"model_catalog_new_model_days"`
+
 	MinClaudeCodeVersion string `json:"min_claude_code_version"`
 	MaxClaudeCodeVersion string `json:"max_claude_code_version"`
 
