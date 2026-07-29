@@ -116,101 +116,13 @@
           </div>
 
           <div v-else :class="planGridClass">
-            <div
+            <BundlePlanCard
               v-for="plan in plans"
               :key="plan.id"
-              class="group relative flex flex-col overflow-hidden rounded-2xl border transition-all hover:shadow-xl hover:-translate-y-0.5 bg-white dark:bg-dark-800"
-              :class="tierBorderClass(plan.tier)"
+              :plan="plan"
+              :show-actions="true"
             >
-              <!-- Tier accent bar -->
-              <div :class="['h-1.5', tierAccentClass(plan.tier)]" />
-
-              <div class="flex flex-1 flex-col p-4">
-                <!-- Header -->
-                <div class="mb-3 flex items-start justify-between gap-2">
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-2">
-                      <h3 class="truncate text-base font-bold text-gray-900 dark:text-white">{{ plan.name }}</h3>
-                      <span :class="tierBadgeClass(plan.tier)">{{ tierLabel(plan.tier) }}</span>
-                    </div>
-                    <p v-if="plan.description"
-                      class="mt-0.5 line-clamp-2 text-xs leading-relaxed text-gray-500 dark:text-dark-400"
-                      :title="plan.description">
-                      {{ plan.description }}
-                    </p>
-                  </div>
-                  <div class="shrink-0 text-right">
-                    <div class="flex items-baseline gap-1">
-                      <span class="text-xs text-gray-400 dark:text-dark-500">$</span>
-                      <span :class="['text-2xl font-extrabold tracking-tight', tierTextClass(plan.tier)]">{{ plan.price }}</span>
-                    </div>
-                    <span class="text-[11px] text-gray-400 dark:text-dark-500">/ {{ plan.validity_days }}{{ t('bundles.days') }}</span>
-                    <div v-if="plan.original_price && plan.original_price > plan.price" class="mt-0.5 flex items-center justify-end gap-1.5">
-                      <span class="text-xs text-gray-400 line-through dark:text-dark-500">${{ plan.original_price }}</span>
-                      <span :class="['rounded px-1 py-0.5 text-[10px] font-semibold', tierDiscountClass(plan.tier)]">
-                        -{{ Math.round((1 - plan.price / plan.original_price) * 100) }}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Features (hero section) -->
-                <div v-if="plan.features?.length" class="mb-3 rounded-lg bg-gray-50 px-3 py-2.5 dark:bg-dark-700/50">
-                  <div class="space-y-1.5">
-                    <div v-for="feature in plan.features" :key="feature" class="flex items-start gap-2">
-                      <svg :class="['mt-0.5 h-4 w-4 flex-shrink-0', tierIconClass(plan.tier)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                      <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ feature }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Group Quotas (summary + compact chips) -->
-                <div v-if="plan.group_quotas?.length" class="mb-3">
-                  <p class="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
-                    {{ t('bundles.includesGroupCount', { count: plan.group_quotas.length }) }}
-                  </p>
-                  <div class="flex flex-wrap gap-1.5">
-                    <div
-                      v-for="gq in plan.group_quotas"
-                      :key="gq.id"
-                      class="group/Chip relative flex items-center gap-1.5 rounded-lg border border-gray-100 bg-white px-2.5 py-1.5 dark:border-dark-600 dark:bg-dark-800"
-                    >
-                      <span :class="['h-1.5 w-1.5 rounded-full', platformDotClass(gq.group_platform || '')]" />
-                      <span class="text-[11px] font-medium text-gray-700 dark:text-gray-300">{{ gq.group_name || `Group #${gq.group_id}` }}</span>
-                      <span :class="['rounded px-1 py-0.5 text-[10px] font-medium', platformBadgeLightClass(gq.group_platform || '')]">
-                        {{ platformLabel(gq.group_platform || '') }}
-                      </span>
-                      <!-- Hover tooltip with quota details -->
-                      <div v-if="hasAnyQuotaLimit(gq)"
-                        class="pointer-events-none absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-gray-200 bg-white px-3 py-2 opacity-0 shadow-lg transition-opacity group-hover/Chip:opacity-100 dark:border-dark-600 dark:bg-dark-800">
-                        <div class="flex gap-3 whitespace-nowrap text-[11px]">
-                          <template v-for="seg in quotaSegments(gq)" :key="seg.kind">
-                            <span v-if="seg.daily"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.daily') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">{{ formatSegmentValue(seg.kind, seg.daily) }}</span></span>
-                            <span v-if="seg.weekly"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.weekly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">{{ formatSegmentValue(seg.kind, seg.weekly) }}</span></span>
-                            <span v-if="seg.monthly"><span class="text-gray-400 dark:text-dark-500">{{ t('bundles.monthly') }} </span><span class="font-medium text-gray-700 dark:text-gray-300">{{ formatSegmentValue(seg.kind, seg.monthly) }}</span></span>
-                          </template>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Concurrency / RPM -->
-                <div class="mb-3 flex gap-3 text-xs">
-                  <div v-if="plan.concurrency_limit" class="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                    <Icon name="bolt" size="xs" />
-                    <span>{{ plan.concurrency_limit }} {{ t('bundles.concurrencyShort') }}</span>
-                  </div>
-                  <div v-if="plan.rpm_limit" class="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                    <Icon name="clock" size="xs" />
-                    <span>{{ plan.rpm_limit }} RPM</span>
-                  </div>
-                </div>
-
-                <div class="flex-1" />
-
+              <template #actions>
                 <!-- Purchase / Upgrade Button -->
                 <!-- 1) 当前已订阅套餐 → 使用中（置灰） -->
                 <button
@@ -249,8 +161,8 @@
                 >
                   {{ t('bundles.purchaseNow') }}
                 </button>
-              </div>
-            </div>
+              </template>
+            </BundlePlanCard>
           </div>
         </div>
       </template>
@@ -343,6 +255,7 @@ import type { UpgradePreview } from '@/api/bundles'
 import type { BundlePlan, BundleSubscription } from '@/types/bundle'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
+import BundlePlanCard from '@/components/bundles/BundlePlanCard.vue'
 import { platformBadgeLightClass, platformLabel } from '@/utils/platformColors'
 import { getTierTheme, getTierI18nKey } from '@/constants/bundleTiers'
 import { formatDateOnly, formatTimeOnly } from '@/utils/format'
@@ -386,7 +299,7 @@ const planGridClass = computed(() => {
   return 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3'
 })
 
-// 层级主题工具函数（徽章、边框、强调色等）
+// 层级主题工具函数（活跃套餐卡 + 操作按钮用；套餐卡展示已迁移至 BundlePlanCard）
 function tierLabel(tier?: string): string {
   return t(getTierI18nKey(tier, 'user'))
 }
@@ -395,32 +308,12 @@ function tierBadgeClass(tier?: string): string {
   return getTierTheme(tier).badgeClass
 }
 
-function tierBorderClass(tier?: string): string {
-  return getTierTheme(tier).borderClass
-}
-
-function tierAccentClass(tier?: string): string {
-  return getTierTheme(tier).accentClass
-}
-
-function tierTextClass(tier?: string): string {
-  return getTierTheme(tier).textClass
-}
-
-function tierIconClass(tier?: string): string {
-  return getTierTheme(tier).iconClass
-}
-
 function tierBtnClass(tier?: string): string {
   return getTierTheme(tier).btnClass
 }
 
 function tierDisabledBtnClass(tier?: string): string {
   return getTierTheme(tier).disabledBtnClass
-}
-
-function tierDiscountClass(tier?: string): string {
-  return getTierTheme(tier).discountClass
 }
 
 // 平台标识点颜色（openai=绿/anthropic=橙/gemini=蓝）
