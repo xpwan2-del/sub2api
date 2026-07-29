@@ -24,6 +24,31 @@ export function getBillingModeBadgeClass(mode: string | null | undefined): strin
   }
 }
 
+/** 模型广场已知的计费模式集合（与后端 service.BillingMode* 一致）。 */
+const CATALOG_BILLING_MODES = new Set<string>([
+  BILLING_MODE_TOKEN,
+  BILLING_MODE_PER_REQUEST,
+  BILLING_MODE_IMAGE,
+  BILLING_MODE_VIDEO,
+  BILLING_MODE_PER_SECOND,
+])
+
+/**
+ * 模型广场计费模式标签（单一真相源）。
+ * - 已知模式：走 modelCatalog.billingModes.<mode> 文案
+ * - 空/null/undefined：回退 modelCatalog.billingModes.unknown（"价格待配置"）
+ * - 未知非空：原样返回，便于发现新脏数据/未补文案的新模式
+ */
+export function getModelCatalogBillingModeLabel(
+  mode: string | null | undefined,
+  t: (key: string) => string,
+): string {
+  if (mode && CATALOG_BILLING_MODES.has(mode)) {
+    return t(`modelCatalog.billingModes.${mode}`)
+  }
+  return mode || t('modelCatalog.billingModes.unknown')
+}
+
 interface ImageBillingRow {
   image_count: number
   billing_mode?: string | null

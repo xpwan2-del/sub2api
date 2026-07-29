@@ -130,6 +130,7 @@ export default {
       image: '图片计费',
       per_request: '按次计费',
       per_second: '按秒计费',
+      video: '视频计费',
       unknown: '价格待配置',
     },
     price: {

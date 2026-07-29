@@ -130,6 +130,7 @@ export default {
       image: 'Image',
       per_request: 'Per request',
       per_second: 'Per second',
+      video: 'Video',
       unknown: 'Price pending',
     },
     price: {
