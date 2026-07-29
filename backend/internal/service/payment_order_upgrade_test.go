@@ -23,10 +23,10 @@ func TestCreateOrderInTxWritesUpgradeFields(t *testing.T) {
 	svc := &PaymentService{entClient: client}
 
 	const (
-		targetPlanID    int64 = 777
-		sourceSubID     int64 = 42
-		prorateCredit         = 30.0
-		upgradePayAmount      = 50.0
+		targetPlanID     int64 = 777
+		sourceSubID      int64 = 42
+		prorateCredit          = 30.0
+		upgradePayAmount       = 50.0
 	)
 
 	req := CreateOrderRequest{

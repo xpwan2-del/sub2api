@@ -225,10 +225,10 @@ func TestGetRequestTierPriceCaseInsensitive(t *testing.T) {
 		label string
 		want  float64
 	}{
-		{"1K", 0.04},  // 完全匹配
-		{"1k", 0.04},  // 小写请求应命中（修复前返回 0）
+		{"1K", 0.04}, // 完全匹配
+		{"1k", 0.04}, // 小写请求应命中（修复前返回 0）
 		{"2k", 0.08},
-		{"4K", 0},     // 无此档
+		{"4K", 0}, // 无此档
 	}
 	for _, c := range cases {
 		if got := r.GetRequestTierPrice(resolved, c.label); got != c.want {
@@ -872,12 +872,12 @@ func TestResolve_PerSecondMode_PopulatesRequestTiers(t *testing.T) {
 				Intervals:   []PricingInterval{{TierLabel: "720p", PerRequestPrice: testPtrFloat64(0.10)}},
 			},
 		},
-		channelByGroupID:         map[int64]*Channel{7: {ID: 7, Status: StatusActive}},
-		groupPlatform:            map[int64]string{7: ""},
-		wildcardByGroupPlatform:  map[channelGroupPlatformKey][]*wildcardPricingEntry{},
-		mappingByGroupModel:      map[channelModelKey]string{},
-		wildcardMappingByGP:      map[channelGroupPlatformKey][]*wildcardMappingEntry{},
-		byID:                     map[int64]*Channel{},
+		channelByGroupID:        map[int64]*Channel{7: {ID: 7, Status: StatusActive}},
+		groupPlatform:           map[int64]string{7: ""},
+		wildcardByGroupPlatform: map[channelGroupPlatformKey][]*wildcardPricingEntry{},
+		mappingByGroupModel:     map[channelModelKey]string{},
+		wildcardMappingByGP:     map[channelGroupPlatformKey][]*wildcardMappingEntry{},
+		byID:                    map[int64]*Channel{},
 	})
 	bs := &BillingService{cfg: &config.Config{}, fallbackPrices: map[string]*ModelPricing{}}
 	resolver := NewModelPricingResolver(cs, bs)
