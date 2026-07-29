@@ -96,11 +96,11 @@ func TestModelCatalogServiceAdapter_BatchSave_RoundTrip(t *testing.T) {
 		t.Fatalf("UpsertMissing key conversion wrong: got %v want %v", fake.upsertSeen, wantRepoKeys)
 	}
 
-	cfgs := []*service.ModelCatalogDisplay{{Platform: "p", ModelName: "m", Pinned: true, SortWeight: 7}}
+	cfgs := []*service.ModelCatalogDisplay{{Platform: "p", ModelName: "m", Pinned: true, SortWeight: 7, IsNew: true, Featured: true}}
 	if err := adapter.BatchUpsert(context.Background(), cfgs); err != nil {
 		t.Fatalf("BatchUpsert err: %v", err)
 	}
-	if len(fake.batchSeen) != 1 || fake.batchSeen[0].Platform != "p" || !fake.batchSeen[0].Pinned || fake.batchSeen[0].SortWeight != 7 {
+	if len(fake.batchSeen) != 1 || fake.batchSeen[0].Platform != "p" || !fake.batchSeen[0].Pinned || fake.batchSeen[0].SortWeight != 7 || !fake.batchSeen[0].IsNew || !fake.batchSeen[0].Featured {
 		t.Fatalf("BatchUpsert DTO conversion wrong: %+v", fake.batchSeen)
 	}
 }

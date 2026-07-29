@@ -42,6 +42,8 @@ func repoDisplayToService(d *ModelCatalogDisplay) *service.ModelCatalogDisplay {
 		CustomTags:    d.CustomTags,
 		FeaturedUntil: d.FeaturedUntil,
 		Hidden:        d.Hidden,
+		IsNew:         d.IsNew,
+		Featured:      d.Featured,
 		FirstSeenAt:   d.FirstSeenAt,
 	}
 }
@@ -56,6 +58,8 @@ func serviceDisplayToRepo(d *service.ModelCatalogDisplay) *ModelCatalogDisplay {
 		CustomTags:    d.CustomTags,
 		FeaturedUntil: d.FeaturedUntil,
 		Hidden:        d.Hidden,
+		IsNew:         d.IsNew,
+		Featured:      d.Featured,
 		FirstSeenAt:   d.FirstSeenAt,
 	}
 }

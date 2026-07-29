@@ -23,6 +23,8 @@ type ModelCatalogDisplay struct {
 	CustomTags    []string
 	FeaturedUntil *time.Time
 	Hidden        bool
+	IsNew         bool
+	Featured      bool
 	FirstSeenAt   time.Time
 }
 
@@ -41,7 +43,7 @@ type ModelCatalogRepo interface {
 	UpsertMissing(ctx context.Context, keys []ModelKey) error
 	// ListAll 返回全部展示配置（按 platform、model_name 升序），无数据时返回非 nil 空切片。
 	ListAll(ctx context.Context) ([]*ModelCatalogDisplay, error)
-	// BatchUpsert 按 (platform, model_name) 复合键 upsert 可运营字段（pinned/sort_weight/custom_tags/featured_until/hidden），
+	// BatchUpsert 按 (platform, model_name) 复合键 upsert 可运营字段（pinned/sort_weight/custom_tags/is_new/featured/featured_until/hidden），
 	// 不改动 first_seen_at 与 created_at。
 	BatchUpsert(ctx context.Context, cfgs []*ModelCatalogDisplay) error
 }
@@ -150,6 +152,8 @@ func (r *modelCatalogRepo) BatchUpsert(ctx context.Context, cfgs []*ModelCatalog
 				SetPinned(c.Pinned).
 				SetSortWeight(c.SortWeight).
 				SetCustomTags(c.CustomTags).
+				SetIsNew(c.IsNew).
+				SetFeatured(c.Featured).
 				SetHidden(c.Hidden)
 			if c.FeaturedUntil != nil {
 				builder.SetFeaturedUntil(*c.FeaturedUntil)
@@ -161,6 +165,8 @@ func (r *modelCatalogRepo) BatchUpsert(ctx context.Context, cfgs []*ModelCatalog
 					u.UpdatePinned().
 						UpdateSortWeight().
 						UpdateCustomTags().
+						UpdateIsNew().
+						UpdateFeatured().
 						UpdateHidden()
 					if c.FeaturedUntil != nil {
 						u.UpdateFeaturedUntil()
@@ -214,6 +220,8 @@ func entToModelCatalogDisplay(e *dbent.ModelCatalogDisplay) *ModelCatalogDisplay
 		CustomTags:    e.CustomTags,
 		FeaturedUntil: e.FeaturedUntil,
 		Hidden:        e.Hidden,
+		IsNew:         e.IsNew,
+		Featured:      e.Featured,
 		FirstSeenAt:   e.FirstSeenAt,
 	}
 }

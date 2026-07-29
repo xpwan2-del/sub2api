@@ -205,6 +205,8 @@ func TestModelCatalogRepo_BatchUpsert_UpdatesOperationalFields(t *testing.T) {
 			CustomTags:    []string{"recommended", "fast"},
 			FeaturedUntil: &featured,
 			Hidden:        false,
+			IsNew:         true,
+			Featured:      true,
 		},
 	}))
 
@@ -216,6 +218,8 @@ func TestModelCatalogRepo_BatchUpsert_UpdatesOperationalFields(t *testing.T) {
 	require.Equal(t, 100, d.SortWeight)
 	require.Equal(t, []string{"recommended", "fast"}, d.CustomTags)
 	require.False(t, d.Hidden)
+	require.True(t, d.IsNew)
+	require.True(t, d.Featured)
 	require.NotNil(t, d.FeaturedUntil)
 	require.WithinDuration(t, featured, *d.FeaturedUntil, time.Second)
 	// 关键：BatchUpsert 不得覆盖 first_seen_at（旧时间被保留）。
