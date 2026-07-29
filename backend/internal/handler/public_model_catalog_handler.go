@@ -25,20 +25,22 @@ const publicModelCatalogRateLimit = 120
 // channel IDs, account data, upstream URLs, routing weights, balances, or
 // private operational details. Public health is a compact aggregate only.
 type PublicModelCatalogHandler struct {
-	channelService *service.ChannelService
-	opsRepo        service.OpsRepository
-	cacheMu        sync.RWMutex
-	cachedAt       time.Time
-	cachedCatalog  []publicModelCatalogItem
-	rateMu         sync.Mutex
-	rateBuckets    map[string]publicModelCatalogRateBucket
+	channelService  *service.ChannelService
+	opsRepo         service.OpsRepository
+	modelCatalogSvc service.ModelCatalogService
+	cacheMu         sync.RWMutex
+	cachedAt        time.Time
+	cachedCatalog   []publicModelCatalogItem
+	rateMu          sync.Mutex
+	rateBuckets     map[string]publicModelCatalogRateBucket
 }
 
-func NewPublicModelCatalogHandler(channelService *service.ChannelService, gatewayService *service.GatewayService, opsRepo service.OpsRepository) *PublicModelCatalogHandler {
+func NewPublicModelCatalogHandler(channelService *service.ChannelService, gatewayService *service.GatewayService, opsRepo service.OpsRepository, modelCatalogSvc service.ModelCatalogService) *PublicModelCatalogHandler {
 	return &PublicModelCatalogHandler{
-		channelService: channelService,
-		opsRepo:        opsRepo,
-		rateBuckets:    make(map[string]publicModelCatalogRateBucket),
+		channelService:  channelService,
+		opsRepo:         opsRepo,
+		modelCatalogSvc: modelCatalogSvc,
+		rateBuckets:     make(map[string]publicModelCatalogRateBucket),
 	}
 }
 
@@ -51,6 +53,13 @@ type publicModelCatalogItem struct {
 	Capabilities []string            `json:"capabilities"`
 	Pricing      *publicModelPricing `json:"pricing"`
 	Health       *publicModelHealth  `json:"health,omitempty"`
+	// 运营展示字段：由 ModelCatalogService.MergeDisplayConfig 合并填充。
+	// ops_enabled 关闭或配置层降级时保持零值（Tags 为非 nil 空切片，避免 JSON null）。
+	Pinned     bool     `json:"pinned"`
+	SortWeight int      `json:"sort_weight"`
+	Tags       []string `json:"tags"`
+	IsNew      bool     `json:"is_new"`
+	Featured   bool     `json:"featured"`
 }
 
 type publicModelPricing struct {
@@ -114,10 +123,70 @@ func (h *PublicModelCatalogHandler) List(c *gin.Context) {
 	}
 
 	catalog := buildPublicModelCatalog(channels)
+	catalog = h.mergeCatalog(c.Request.Context(), catalog)
 	h.attachModelHealth(c.Request.Context(), catalog)
 	h.storeCache(catalog)
 
 	response.Success(c, catalog)
+}
+
+// mergeCatalog 把渠道构建出的目录交由 ModelCatalogService 合并运营配置：
+// 过滤 hidden、判定 new/featured、合并 tags（自动能力标签 + 手动 custom_tags）。
+// modelCatalogSvc 为 nil（未注入）或合并出错时降级返回原 catalog，保持向后兼容。
+func (h *PublicModelCatalogHandler) mergeCatalog(ctx context.Context, catalog []publicModelCatalogItem) []publicModelCatalogItem {
+	if h == nil || h.modelCatalogSvc == nil || len(catalog) == 0 {
+		return catalog
+	}
+
+	// ⚠️ Capabilities 必须映射进 CatalogItem：否则 merge 合并 tags 时会丢掉自动推断的
+	// multimodal/reasoning 等能力标签（这些标签是 publicModelCapabilities 按模型名算出的）。
+	items := make([]service.CatalogItem, len(catalog))
+	for i := range catalog {
+		items[i] = service.CatalogItem{
+			Platform:     catalog[i].Platform,
+			ModelName:    catalog[i].Name,
+			Name:         catalog[i].Name,
+			Capabilities: catalog[i].Capabilities,
+		}
+	}
+
+	merged, err := h.modelCatalogSvc.MergeDisplayConfig(ctx, items)
+	if err != nil {
+		// 配置层故障已在 service 内部降级（返回原 items），此处仅兜底非预期错误。
+		return catalog
+	}
+	if len(merged) == 0 {
+		return make([]publicModelCatalogItem, 0)
+	}
+
+	// 合并结果可能因 hidden 过滤而变少/变序，按 (platform, model_name) 匹配回原始项，
+	// 以保留 pricing/health/description 等由 handler 自身承载的展示字段。
+	originals := make(map[string]publicModelCatalogItem, len(catalog))
+	for _, it := range catalog {
+		originals[publicModelHealthKey(it.Platform, it.Name)] = it
+	}
+
+	out := make([]publicModelCatalogItem, 0, len(merged))
+	for _, m := range merged {
+		orig, ok := originals[publicModelHealthKey(m.Platform, m.ModelName)]
+		if !ok {
+			continue
+		}
+		orig.Pinned = false
+		orig.SortWeight = 0
+		orig.IsNew = false
+		orig.Featured = false
+		orig.Tags = []string{}
+		if m.Display != nil {
+			orig.Pinned = m.Display.Pinned
+			orig.SortWeight = m.Display.SortWeight
+			orig.IsNew = m.Display.IsNew
+			orig.Featured = m.Display.Featured
+			orig.Tags = m.Display.Tags
+		}
+		out = append(out, orig)
+	}
+	return out
 }
 
 func (h *PublicModelCatalogHandler) attachModelHealth(ctx context.Context, catalog []publicModelCatalogItem) {
@@ -215,6 +284,7 @@ func buildPublicModelCatalog(channels []service.AvailableChannel) []publicModelC
 				Description:  publicModelDescription(model.Name, model.Platform, model.Pricing),
 				Capabilities: publicModelCapabilities(model.Name, model.Platform, model.Pricing),
 				Pricing:      pricing,
+				Tags:         []string{},
 			}
 
 			key := strings.ToLower(model.Platform) + "\x00" + strings.ToLower(model.Name)
@@ -372,6 +442,7 @@ func copyPublicCatalog(src []publicModelCatalogItem) []publicModelCatalogItem {
 	copy(out, src)
 	for i := range out {
 		out[i].Capabilities = append([]string(nil), src[i].Capabilities...)
+		out[i].Tags = append([]string(nil), src[i].Tags...)
 		if src[i].Health != nil {
 			health := *src[i].Health
 			health.History = append([]publicModelHealthHistory(nil), src[i].Health.History...)

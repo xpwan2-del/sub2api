@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -165,4 +166,141 @@ func TestBuildPublicModelHealthNoTraffic(t *testing.T) {
 	for _, point := range health.History {
 		require.Equal(t, "idle", point.Status)
 	}
+}
+
+// fakeModelCatalogSvc 记录收到的 CatalogItem 并返回预设结果，用于验证 handler 的 merge 接入。
+type fakeModelCatalogSvc struct {
+	received []service.CatalogItem
+	merged   []service.CatalogItem
+	err      error
+}
+
+func (f *fakeModelCatalogSvc) MergeDisplayConfig(_ context.Context, items []service.CatalogItem) ([]service.CatalogItem, error) {
+	f.received = items
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.merged, nil
+}
+func (f *fakeModelCatalogSvc) EnsureFirstSeen(_ context.Context, _ []service.ModelKey) error {
+	return nil
+}
+func (f *fakeModelCatalogSvc) ListAllForAdmin(_ context.Context) ([]service.AdminCatalogConfig, error) {
+	return nil, nil
+}
+func (f *fakeModelCatalogSvc) BatchSave(_ context.Context, _ []service.AdminCatalogConfig) error {
+	return nil
+}
+func (f *fakeModelCatalogSvc) IsEnabled(_ context.Context) bool { return true }
+
+// TestMergeCatalogNilSvcDegradesAndKeepsEmptyTags 验证未注入服务时降级返回原 catalog，
+// 且 Tags 为非 nil 空切片（避免 JSON null）。
+func TestMergeCatalogNilSvcDegradesAndKeepsEmptyTags(t *testing.T) {
+	h := &PublicModelCatalogHandler{}
+	catalog := buildPublicModelCatalog([]service.AvailableChannel{{
+		Status: service.StatusActive,
+		SupportedModels: []service.SupportedModel{{
+			Name:     "gpt-4o",
+			Platform: service.PlatformOpenAI,
+		}},
+	}})
+
+	out := h.mergeCatalog(context.Background(), catalog)
+
+	require.Len(t, out, 1)
+	require.Equal(t, []string{}, out[0].Tags, "Tags must be non-nil empty slice to avoid JSON null")
+}
+
+// TestMergeCatalogMapsCapabilitiesIntoCatalogItem 是关键回归守卫：
+// handler 必须把 publicModelCatalogItem.Capabilities 映射进 CatalogItem.Capabilities，
+// 否则 service 合并 tags 时会丢掉自动推断的能力标签（multimodal/reasoning 等）。
+func TestMergeCatalogMapsCapabilitiesIntoCatalogItem(t *testing.T) {
+	catalog := buildPublicModelCatalog([]service.AvailableChannel{{
+		Status: service.StatusActive,
+		SupportedModels: []service.SupportedModel{{
+			Name:     "claude-opus-4",
+			Platform: service.PlatformAnthropic,
+		}},
+	}})
+	require.NotEmpty(t, catalog[0].Capabilities, "precondition: auto capabilities inferred")
+
+	// fake 模拟真实 mergeDisplay：把收到的 Capabilities 折进 Display.Tags 回传。
+	svc := &fakeModelCatalogSvc{}
+	svc.merged = withDisplayTags(catalogToCatalogItems(t, catalog))
+	h := &PublicModelCatalogHandler{modelCatalogSvc: svc}
+
+	out := h.mergeCatalog(context.Background(), catalog)
+
+	require.Len(t, svc.received, 1)
+	require.Equal(t, catalog[0].Capabilities, svc.received[0].Capabilities,
+		"Capabilities must be forwarded into CatalogItem so merge can fold them into tags")
+	require.Len(t, out, 1)
+	require.Equal(t, catalog[0].Capabilities, out[0].Tags,
+		"Display.Tags (含能力标签) 必须回填到响应项的 Tags")
+}
+
+// withDisplayTags 给每个 CatalogItem 填充 Display.Tags = 自身 Capabilities，模拟真实 service 合并。
+func withDisplayTags(items []service.CatalogItem) []service.CatalogItem {
+	for i := range items {
+		caps := append([]string(nil), items[i].Capabilities...)
+		items[i].Display = &service.CatalogDisplayInfo{Tags: caps}
+	}
+	return items
+}
+
+// TestMergeCatalogAppliesDisplayFieldsAndFiltersHidden 验证合并回填 pinned/sort_weight/tags/
+// is_new/featured，并按 hidden 过滤掉模型，同时保留 handler 自身承载的 pricing。
+func TestMergeCatalogAppliesDisplayFieldsAndFiltersHidden(t *testing.T) {
+	cheap := 0.000001
+	catalog := buildPublicModelCatalog([]service.AvailableChannel{{
+		Status: service.StatusActive,
+		SupportedModels: []service.SupportedModel{
+			{Name: "gpt-4o", Platform: service.PlatformOpenAI, Pricing: &service.ChannelModelPricing{InputPrice: &cheap}},
+			{Name: "hidden-model", Platform: service.PlatformOpenAI},
+		},
+	}})
+
+	// 模拟 service 返回：过滤掉 hidden-model，给 gpt-4o 回填运营展示字段。
+	merged := []service.CatalogItem{}
+	for _, it := range catalogToCatalogItems(t, catalog) {
+		if it.ModelName == "hidden-model" {
+			continue
+		}
+		it.Display = &service.CatalogDisplayInfo{
+			Pinned:     true,
+			SortWeight: 7,
+			Tags:       []string{"reasoning", "official"},
+			IsNew:      true,
+			Featured:   true,
+		}
+		merged = append(merged, it)
+	}
+	svc := &fakeModelCatalogSvc{merged: merged}
+	h := &PublicModelCatalogHandler{modelCatalogSvc: svc}
+
+	out := h.mergeCatalog(context.Background(), catalog)
+
+	require.Len(t, out, 1, "hidden model must be filtered out")
+	require.Equal(t, "gpt-4o", out[0].Name)
+	require.True(t, out[0].Pinned)
+	require.Equal(t, 7, out[0].SortWeight)
+	require.True(t, out[0].IsNew)
+	require.True(t, out[0].Featured)
+	require.Equal(t, []string{"reasoning", "official"}, out[0].Tags)
+	require.NotNil(t, out[0].Pricing, "handler-owned pricing must be preserved after merge")
+	require.Equal(t, cheap, *out[0].Pricing.InputPrice)
+}
+
+func catalogToCatalogItems(t *testing.T, catalog []publicModelCatalogItem) []service.CatalogItem {
+	t.Helper()
+	out := make([]service.CatalogItem, len(catalog))
+	for i := range catalog {
+		out[i] = service.CatalogItem{
+			Platform:     catalog[i].Platform,
+			ModelName:    catalog[i].Name,
+			Name:         catalog[i].Name,
+			Capabilities: catalog[i].Capabilities,
+		}
+	}
+	return out
 }
