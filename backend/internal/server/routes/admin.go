@@ -106,6 +106,9 @@ func RegisterAdminRoutes(
 
 		// 邀请返利（专属用户管理）
 		registerAffiliateRoutes(admin, h)
+
+		// 模型广场运营配置（置顶/排序/标签/精选/隐藏）
+		registerModelCatalogRoutes(admin, h)
 	}
 
 	// 套餐管理
@@ -647,6 +650,15 @@ func registerChannelRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		channels.POST("", h.Admin.Channel.Create)
 		channels.PUT("/:id", h.Admin.Channel.Update)
 		channels.DELETE("/:id", h.Admin.Channel.Delete)
+	}
+}
+
+// registerModelCatalogRoutes 注册模型广场运营配置的管理端路由（GET/PUT /admin/catalog/config）。
+func registerModelCatalogRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	catalog := admin.Group("/catalog")
+	{
+		catalog.GET("/config", h.AdminModelCatalog.List)
+		catalog.PUT("/config", h.AdminModelCatalog.Update)
 	}
 }
 

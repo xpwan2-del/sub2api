@@ -60,6 +60,7 @@ type Handlers struct {
 	PaymentWebhook     *PaymentWebhookHandler
 	AvailableChannel   *AvailableChannelHandler
 	PublicModelCatalog *PublicModelCatalogHandler
+	AdminModelCatalog  *AdminModelCatalogHandler
 	Bundle             *BundleHandler
 	BatchImage       *BatchImageHandler
 }

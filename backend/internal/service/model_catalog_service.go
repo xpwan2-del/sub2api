@@ -34,18 +34,21 @@ type ModelKey struct {
 }
 
 // AdminCatalogConfig 是管理页 GET/PUT 的运营配置：持久化字段 + 只读派生展示字段。
+// json tag 固定 snake_case 线上契约，与 public catalog 字段名（platform/pinned/sort_weight/
+// tags/is_new/featured）对齐；admin 专有的复合键与只读字段为 model_name/custom_tags/
+// featured_until/hidden/first_seen_at。前端 (A9) 与本结构体字段名严格一致。
 type AdminCatalogConfig struct {
-	Platform      string
-	ModelName     string
-	Pinned        bool
-	SortWeight    int
-	CustomTags    []string
-	FeaturedUntil *time.Time
-	Hidden        bool
-	FirstSeenAt   time.Time // 只读：一经设定不可变，BatchSave 不写回
-	Tags          []string  // 派生：自动+手动合并（只读展示）
-	IsNew         bool      // 派生
-	Featured      bool      // 派生
+	Platform      string     `json:"platform"`
+	ModelName     string     `json:"model_name"`
+	Pinned        bool       `json:"pinned"`
+	SortWeight    int        `json:"sort_weight"`
+	CustomTags    []string   `json:"custom_tags"`
+	FeaturedUntil *time.Time `json:"featured_until"`
+	Hidden        bool       `json:"hidden"`
+	FirstSeenAt   time.Time  `json:"first_seen_at"` // 只读：一经设定不可变，BatchSave 不写回
+	Tags          []string   `json:"tags"`          // 派生：自动+手动合并（只读展示）
+	IsNew         bool       `json:"is_new"`        // 派生
+	Featured      bool       `json:"featured"`      // 派生
 }
 
 // ModelCatalogDisplay 是运营配置的 service 层内部 DTO，与 repository.ModelCatalogDisplay
