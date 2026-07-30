@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>套餐区 · 最终布局预览</title>
+<style>
+  :root {
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --teal: #14b8a6; --teal-bright: #2dd4bf;
+    --cyan: #22d3ee; --cyan-bright: #67e8f9;
+    --mint: #5eead4; --mint-soft: #b9fff4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: var(--sans); color: #0f172a;
+    background: #f7f7f5;
+    background-image:
+      radial-gradient(ellipse 70% 45% at 50% -5%, rgba(20,184,166,0.16), transparent 70%),
+      radial-gradient(ellipse 45% 32% at 88% 18%, rgba(59,130,246,0.10), transparent 70%),
+      linear-gradient(rgba(20,184,166,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20,184,166,0.05) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 56px 56px, 56px 56px;
+    padding: 40px 24px 64px;
+  }
+  .catalog-main { max-width: 1180px; margin: 0 auto; }
+
+  /* === 区块 header:对齐 ModelCatalogHeader === */
+  .section-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 24px; }
+  .kicker { font-family: var(--mono); font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; }
+  .section-title { font-size: clamp(28px, 4vw, 40px); font-weight: 900; letter-spacing: -0.025em; line-height: 1.02; margin: 0; color: #0f172a; }
+  .section-sub { color: #475569; font-size: 14px; margin: 10px 0 0; line-height: 1.6; max-width: 560px; }
+  .section-stats { font-family: var(--mono); font-size: 12px; color: #0d9488; font-weight: 700; margin-top: 8px; }
+  .head-cta {
+    flex: none; font-family: var(--mono); font-size: 13px; font-weight: 800; letter-spacing: 0.03em;
+    color: #0f172a; padding: 11px 18px; text-decoration: none; cursor: pointer;
+    border: 1.5px solid rgba(20,184,166,0.55); background: rgba(255,255,255,0.6);
+    backdrop-filter: blur(8px); transition: all .15s;
+  }
+  .head-cta:hover { background: linear-gradient(135deg, rgba(20,184,166,0.96), rgba(34,211,238,0.88)); color: #022622; border-color: transparent; }
+
+  /* === 套餐卡网格 === */
+  .bundle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 860px) { .bundle-grid { grid-template-columns: 1fr; } }
+
+  .bcard {
+    position: relative; padding: 22px 20px 20px; min-height: 380px;
+    display: flex; flex-direction: column; gap: 14px;
+    background: linear-gradient(145deg, rgba(15,23,42,0.94), rgba(3,7,18,0.86));
+    color: #f8fafc;
+    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+    box-shadow: 0 26px 60px rgba(0,0,0,0.32), inset 0 0 32px rgba(45,212,191,0.04);
+    border: 1px solid rgba(94,234,212,0.20);
+  }
+  .bcard::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(circle at 20% 0%, rgba(34,211,238,0.16), transparent 38%);
+  }
+  .bcard.featured { border-color: rgba(45,212,191,0.45); box-shadow: 0 30px 70px rgba(0,0,0,0.36), inset 0 0 40px rgba(45,212,191,0.09); }
+  .bcard.featured::before { background: radial-gradient(circle at 20% 0%, rgba(34,211,238,0.26), transparent 42%); }
+
+  .featured-badge {
+    position: absolute; top: 0; right: 0;
+    font-family: var(--mono); font-size: 10px; font-weight: 800; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #022622; padding: 5px 11px;
+    background: linear-gradient(135deg, rgba(52,211,153,1), rgba(16,185,129,1));
+    box-shadow: 0 6px 16px rgba(16,185,129,0.45);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 14px 100%);
+  }
+
+  .b-tier {
+    font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 4px; display: inline-block;
+    background: rgba(45,212,191,0.12); color: var(--mint-soft); border: 1px solid rgba(94,234,212,0.25);
+    align-self: flex-start;
+  }
+  .b-name { font-size: 19px; font-weight: 850; line-height: 1.15; margin-top: 2px; }
+  .b-desc { font-size: 12px; color: rgba(203,213,225,0.68); line-height: 1.5; margin: -6px 0 0; min-height: 32px; }
+
+  .b-price { display: flex; align-items: baseline; gap: 8px; padding: 10px 0 4px; border-top: 1px solid rgba(94,234,212,0.14); }
+  .b-price .num { font-family: var(--mono); font-size: 26px; font-weight: 800; color: var(--cyan-bright); line-height: 1; }
+  .b-price .strike { font-family: var(--mono); font-size: 13px; color: rgba(203,213,225,0.45); text-decoration: line-through; }
+  .b-price .unit { font-family: var(--mono); font-size: 11px; color: rgba(203,213,225,0.6); margin-left: auto; }
+
+  .b-feats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .b-feats li { font-size: 12.5px; color: rgba(226,232,240,0.84); display: flex; gap: 8px; align-items: flex-start; line-height: 1.4; }
+  .b-feats li::before { content: ""; flex: none; width: 7px; height: 7px; margin-top: 5px; background: var(--teal-bright); transform: rotate(45deg); }
+
+  .b-platforms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(94,234,212,0.14); }
+  .pchip { font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; font-weight: 600; padding: 3px 8px; border-radius: 4px; color: var(--mint-soft); border: 1px solid rgba(125,211,252,0.22); background: rgba(2,6,23,0.5); }
+
+  .b-cta {
+    margin-top: 12px; display: block; text-align: center; text-decoration: none; cursor: pointer;
+    font-family: var(--mono); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 11px 14px; color: var(--mint-soft);
+    border: 1.5px solid rgba(45,212,191,0.5); background: transparent; transition: all .15s;
+  }
+  .b-cta:hover { color: #022622; background: linear-gradient(135deg, rgba(20,184,166,0.96), rgba(34,211,238,0.88)); border-color: transparent; }
+  .bcard.featured .b-cta { color: #022622; background: linear-gradient(135deg, rgba(20,184,166,0.96), rgba(34,211,238,0.88)); border-color: transparent; }
+  .bcard.featured .b-cta:hover { filter: brightness(1.08); }
+
+  .legend { font-family: var(--mono); font-size: 11px; color: #94a3b8; margin-top: 22px; text-align: center; }
+  .annot { font-family: var(--mono); font-size: 10px; color: #0d9488; background: rgba(20,184,166,0.08); border:1px dashed rgba(20,184,166,0.4); padding: 8px 12px; margin-top: 18px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="catalog-main">
+
+  <!-- 区块 header:对齐模型广场 ModelCatalogHeader 风格 -->
+  <div class="section-head">
+    <div>
+      <div class="kicker">// 订阅套餐</div>
+      <h1 class="section-title">选择你的算力套餐</h1>
+      <p class="section-sub">一次订阅,畅享主流 AI 模型 · 按日额度灵活计费,支持随时升级</p>
+      <div class="section-stats">3 个套餐 · 覆盖 4 个平台</div>
+    </div>
+    <a class="head-cta">查看全部 →</a>
+  </div>
+
+  <!-- 套餐卡网格(方案 C:teal 主调 + 推荐 badge) -->
+  <div class="bundle-grid">
+
+    <div class="bcard">
+      <span class="b-tier">STARTER · 入门版</span>
+      <div class="b-name">轻量体验</div>
+      <p class="b-desc">个人用户尝鲜首选,覆盖日常对话与轻量任务</p>
+      <div class="b-price"><span class="num">$9.9</span><span class="strike">$19.8</span><span class="unit">/ 30天</span></div>
+      <ul class="b-feats">
+        <li>GPT-4o / 4o-mini 系列</li>
+        <li>每日 $5 使用额度</li>
+        <li>标准响应速度</li>
+      </ul>
+      <div class="b-platforms"><span class="pchip">● OpenAI</span></div>
+      <a class="b-cta">立即购买</a>
+    </div>
+
+    <div class="bcard featured">
+      <div class="featured-badge">★ 推荐</div>
+      <span class="b-tier">PRO · 专业版</span>
+      <div class="b-name">高效创作</div>
+      <p class="b-desc">创作者与高频用户的最优解,双平台顶级模型</p>
+      <div class="b-price"><span class="num">$49</span><span class="strike">$98</span><span class="unit">/ 30天</span></div>
+      <ul class="b-feats">
+        <li>GPT-4o + Claude 3.5 Sonnet</li>
+        <li>每日 $30 使用额度</li>
+        <li>优先队列 · 低延迟</li>
+      </ul>
+      <div class="b-platforms"><span class="pchip">● OpenAI</span><span class="pchip">● Anthropic</span></div>
+      <a class="b-cta">立即购买</a>
+    </div>
+
+    <div class="bcard">
+      <span class="b-tier">ENTERPRISE · 企业版</span>
+      <div class="b-name">无上限生产力</div>
+      <p class="b-desc">团队与重度用户的全平台顶级算力方案</p>
+      <div class="b-price"><span class="num">$199</span><span class="unit">/ 30天</span></div>
+      <ul class="b-feats">
+        <li>全平台顶级模型</li>
+        <li>不限量(公平使用)</li>
+        <li>专属并发 · 技术支持</li>
+      </ul>
+      <div class="b-platforms"><span class="pchip">● OpenAI</span><span class="pchip">● Anthropic</span><span class="pchip">● Gemini</span></div>
+      <a class="b-cta">立即购买</a>
+    </div>
+
+  </div>
+
+  <div class="annot">// 这是「重新设计后」的模型广场顶部套餐区成品预览 · header 语言(kicker/巨标/mono 统计)对齐 ModelCatalogHeader,卡片语言(切角/mint 描边/内发光/mono 数据/饱和渐变 badge)对齐 ModelCard,CTA 用直角渐变描边按钮</div>
+  <p class="legend">方案 C · teal 主调 + 推荐 badge · 融入度最高</p>
+</div>
+</body>
+</html>
