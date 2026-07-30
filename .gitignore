@@ -150,6 +150,7 @@ docs/*
 !docs/legal/*.md
 !docs/designs/
 !docs/designs/*.md
+!docs/BUNDLE_PLAN_CARD_REDESIGN_DESIGN.md
 .serena/
 .codex/
 frontend/coverage/
