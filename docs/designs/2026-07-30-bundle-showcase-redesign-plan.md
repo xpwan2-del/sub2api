@@ -143,7 +143,7 @@ export function platformDotColor(platform: string): string {
 - [ ] **Step 4: 跑测试确认通过**
 
 Run: `pnpm exec vitest run src/utils/__tests__/showcaseBundle.spec.ts`
-Expected: PASS(6 passed)
+Expected: PASS(5 passed)
 
 - [ ] **Step 5: Commit**
 
@@ -211,7 +211,7 @@ describe('ShowcaseBundleCard', () => {
     const w = mount(ShowcaseBundleCard, { props: { plan } })
     await w.trigger('click')
     expect(w.emitted('click')).toBeTruthy()
-    expect((w.emitted('click')![0] as unknown[])[0]).toBe(plan)
+    expect((w.emitted('click')![0] as unknown[])[0]).toStrictEqual(plan)
   })
 
   it('original_price 不大于 price 时不渲染划线价', () => {
