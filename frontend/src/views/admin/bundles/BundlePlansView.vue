@@ -14,6 +14,17 @@
       <!-- Plans Table -->
       <template #table>
         <DataTable :columns="planColumns" :data="plans" :loading="plansLoading">
+          <template #cell-name="{ row }">
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{{ row.name }}</span>
+              <span
+                v-if="row.featured"
+                class="inline-flex items-center rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+              >
+                {{ t('bundles.admin.featured') }}
+              </span>
+            </div>
+          </template>
           <template #cell-tier="{ value }">
             <span :class="tierBadgeClass(value)">{{ tierLabel(value) }}</span>
           </template>

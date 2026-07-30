@@ -76,9 +76,17 @@
           </template>
 
           <template #cell-plan_id="{ row }">
-            <span class="text-sm font-medium text-gray-900 dark:text-white">
-              {{ row.plan?.name || `#${row.plan_id}` }}
-            </span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ row.plan?.name || `#${row.plan_id}` }}
+              </span>
+              <span
+                v-if="row.plan?.featured"
+                class="inline-flex items-center rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+              >
+                {{ t('bundles.admin.featured') }}
+              </span>
+            </div>
           </template>
 
           <template #cell-status="{ value }">
