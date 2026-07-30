@@ -8,6 +8,7 @@
       <BundleShowcaseSection
         v-if="bundlePlans.length > 0"
         :plans="bundlePlans"
+        :is-dark="isDark"
       />
 
       <ModelCatalogHeader
