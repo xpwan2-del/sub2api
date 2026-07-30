@@ -12,7 +12,7 @@
       </div>
       <div v-if="hasPositivePrice(pricing.image_output_price)" class="model-price-cell">
         <span>{{ t('modelCatalog.price.image') }}</span>
-        <strong>{{ formatScaled(pricing.image_output_price, 1) }}</strong>
+        <strong>{{ formatScaled(pricing.image_output_price, tokenScale) }}</strong>
       </div>
       <div v-if="pricing.per_request_price != null" class="model-price-cell">
         <span>{{ perRequestPriceLabel }}</span>
