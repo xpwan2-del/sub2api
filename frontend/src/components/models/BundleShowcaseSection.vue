@@ -43,8 +43,8 @@ function goToBundles() {
   <section class="bundle-showcase" :class="{ 'is-dark': isDark }">
     <header class="bs-head">
       <div class="bs-head-text">
-        <div class="bs-kicker">// {{ t('modelCatalog.bundleSectionKicker') }}</div>
-        <h2 class="bs-title">{{ t('modelCatalog.bundleSectionTitle') }}</h2>
+        <div class="bs-kicker">{{ t('modelCatalog.bundleSectionKicker') }}</div>
+        <h1 class="bs-title">{{ t('modelCatalog.bundleSectionTitle') }}</h1>
         <p class="bs-sub">{{ t('modelCatalog.bundleSectionSubtitle') }}</p>
         <div class="bs-stats">
           {{ t('modelCatalog.bundleSectionStats', { n: plans.length, m: platformCount }) }}
@@ -93,19 +93,17 @@ function goToBundles() {
 .bs-head-text { min-width: 0; }
 .bs-kicker {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--bs-teal);
-  margin-bottom: 8px;
+  color: #0f766e;
+  margin: 0 0 14px;
 }
 .bs-title {
   margin: 0;
-  font-size: clamp(26px, 3.6vw, 36px);
-  font-weight: 900;
-  letter-spacing: -0.025em;
-  line-height: 1.05;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 950;
+  line-height: 0.95;
 }
 .bs-sub {
   max-width: 560px;
@@ -122,6 +120,7 @@ function goToBundles() {
   color: #0d9488;
 }
 .bundle-showcase.is-dark .bs-stats { color: #2dd4bf; }
+.bundle-showcase.is-dark .bs-kicker { color: #22d3ee; }
 
 .bs-viewall {
   flex: none;

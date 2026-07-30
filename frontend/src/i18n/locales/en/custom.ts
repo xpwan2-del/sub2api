@@ -173,7 +173,7 @@ export default {
     bundleSectionTitle: 'Discount Bundles',
     bundleSectionSubtitle: 'Subscribe to a bundle for more model quotas and privileges',
     viewAllBundles: 'View all bundles',
-    bundleSectionKicker: 'Discount Plans',
+    bundleSectionKicker: 'Subscription Plans',
     bundleSectionStats: '{n} plans · {m} platforms',
     bundleViewDetails: 'View Details',
     bundleFeaturedTag: 'Featured',

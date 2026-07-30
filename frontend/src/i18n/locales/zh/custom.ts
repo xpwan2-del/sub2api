@@ -173,7 +173,7 @@ export default {
     bundleSectionTitle: '优惠套餐',
     bundleSectionSubtitle: '选择套餐，解锁更多模型配额与特权',
     viewAllBundles: '查看全部套餐',
-    bundleSectionKicker: '优惠套餐',
+    bundleSectionKicker: 'Subscription Plans',
     bundleSectionStats: '{n} 个套餐 · 覆盖 {m} 个平台',
     bundleViewDetails: '查看详情',
     bundleFeaturedTag: '推荐',
