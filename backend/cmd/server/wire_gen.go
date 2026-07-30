@@ -271,7 +271,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	serviceModelCatalogRepo := repository.NewModelCatalogServiceAdapter(modelCatalogRepo)
 	modelCatalogService := service.NewModelCatalogService(serviceModelCatalogRepo, settingService)
 	publicModelCatalogHandler := handler.NewPublicModelCatalogHandler(channelService, gatewayService, opsRepository, modelCatalogService)
-	adminModelCatalogHandler := handler.NewAdminModelCatalogHandler(channelService, modelCatalogService)
+	adminModelCatalogHandler := handler.ProvideAdminModelCatalogHandler(channelService, modelCatalogService, publicModelCatalogHandler)
 	publicBundlePlanHandler := handler.NewPublicBundlePlanHandler(bundlePlanService, modelCatalogService)
 	bundleHandler := handler.NewBundleHandler(bundlePlanService, bundleSubscriptionService, paymentService)
 	batchImageRepository := repository.NewBatchImageRepository(db)

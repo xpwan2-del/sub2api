@@ -20,6 +20,10 @@ import (
 type AdminModelCatalogHandler struct {
 	modelCatalogSvc service.ModelCatalogService
 	channelService  *service.ChannelService
+	// invalidatePublicCache 在保存运营配置成功后失效公开广场的内存缓存（可选；nil 时 no-op）。
+	// 由 wire provider（ProvideAdminModelCatalogHandler）绑定 PublicModelCatalogHandler.InvalidateCache，
+	// 使首页下次请求读到最新配置，而非继续吃最长 120s 的过期缓存。
+	invalidatePublicCache func()
 }
 
 // NewAdminModelCatalogHandler 创建模型广场运营配置管理 handler。
@@ -28,6 +32,11 @@ func NewAdminModelCatalogHandler(channelService *service.ChannelService, modelCa
 		channelService:  channelService,
 		modelCatalogSvc: modelCatalogSvc,
 	}
+}
+
+// SetPublicCacheInvalidator 注入公开广场缓存失效回调。nil 表示不失效（向后兼容，如测试直接构造）。
+func (h *AdminModelCatalogHandler) SetPublicCacheInvalidator(fn func()) {
+	h.invalidatePublicCache = fn
 }
 
 // List 返回全部运营配置供管理页展示。
@@ -65,6 +74,11 @@ func (h *AdminModelCatalogHandler) Update(c *gin.Context) {
 	if err := h.modelCatalogSvc.BatchSave(c.Request.Context(), req); err != nil {
 		response.InternalError(c, "save catalog config failed")
 		return
+	}
+	// 保存成功后立即失效公开广场缓存，使首页下次请求读到最新运营配置，
+	// 而非最长等待 publicModelCatalogCacheTTL（120s）自然过期。
+	if h.invalidatePublicCache != nil {
+		h.invalidatePublicCache()
 	}
 	response.Success(c, gin.H{"updated": len(req)})
 }

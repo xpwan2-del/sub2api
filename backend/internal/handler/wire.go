@@ -100,6 +100,15 @@ func ProvideAdminSettingHandler(settingService *service.SettingService, emailSer
 	return h
 }
 
+// ProvideAdminModelCatalogHandler 构造 admin 模型广场 handler，并绑定公开广场缓存失效回调：
+// 管理员保存运营配置（推荐/精选/置顶/隐藏等）后立即失效 public catalog 的内存缓存，
+// 首页下次请求即可读到最新配置，不再等待 120s 自然过期。
+func ProvideAdminModelCatalogHandler(channelService *service.ChannelService, modelCatalogSvc service.ModelCatalogService, publicCatalog *PublicModelCatalogHandler) *AdminModelCatalogHandler {
+	h := NewAdminModelCatalogHandler(channelService, modelCatalogSvc)
+	h.SetPublicCacheInvalidator(publicCatalog.InvalidateCache)
+	return h
+}
+
 // ProvideHandlers creates the Handlers struct
 func ProvideHandlers(
 	authHandler *AuthHandler,
@@ -170,7 +179,7 @@ var ProviderSet = wire.NewSet(
 	NewPaymentWebhookHandler,
 	NewAvailableChannelHandler,
 	NewPublicModelCatalogHandler,
-	NewAdminModelCatalogHandler,
+	ProvideAdminModelCatalogHandler,
 	NewPublicBundlePlanHandler,
 	NewBundleHandler,
 	NewBatchImageHandler,

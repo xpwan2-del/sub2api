@@ -304,3 +304,34 @@ func catalogToCatalogItems(t *testing.T, catalog []publicModelCatalogItem) []ser
 	}
 	return out
 }
+
+// TestPublicModelCatalogInvalidateCacheClearsCachedEntry 验证 InvalidateCache 立即清除内存缓存：
+// 管理员保存运营配置（推荐/精选/置顶/隐藏）后必须能让首页下次请求重新构建目录，
+// 而非继续吃 publicModelCatalogCacheTTL（120s）的自然过期——否则会出现"管理页已取消推荐、
+// 首页最长 120s 仍显示推荐标签"的不一致。
+func TestPublicModelCatalogInvalidateCacheClearsCachedEntry(t *testing.T) {
+	h := &PublicModelCatalogHandler{}
+	h.storeCache([]publicModelCatalogItem{
+		{Name: "gpt-4o", Platform: service.PlatformOpenAI, Tags: []string{}},
+	})
+
+	// 前置：缓存命中
+	cached, ok := h.cached()
+	require.True(t, ok, "precondition: cache should hit after storeCache")
+	require.Len(t, cached, 1)
+
+	h.InvalidateCache()
+
+	cached, ok = h.cached()
+	require.False(t, ok, "after InvalidateCache, cached() must miss")
+	require.Nil(t, cached, "cached entry must be cleared")
+
+	// 失效后可重新填充（下次请求重新构建）
+	h.storeCache([]publicModelCatalogItem{
+		{Name: "claude-opus-4", Platform: service.PlatformAnthropic, Tags: []string{}},
+	})
+	cached, ok = h.cached()
+	require.True(t, ok, "cache should hit again after re-store")
+	require.Len(t, cached, 1)
+	require.Equal(t, "claude-opus-4", cached[0].Name)
+}

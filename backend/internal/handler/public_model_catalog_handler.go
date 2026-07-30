@@ -260,6 +260,18 @@ func (h *PublicModelCatalogHandler) storeCache(catalog []publicModelCatalogItem)
 	h.cachedCatalog = copyPublicCatalog(catalog)
 }
 
+// InvalidateCache 清除公开模型广场的内存缓存。
+// 管理员保存运营配置（推荐/精选/置顶/隐藏等）后由 AdminModelCatalogHandler.Update 调用，
+// 使首页下次请求重新构建目录并读到最新配置，而非继续返回最长 publicModelCatalogCacheTTL
+// （120s）的过期缓存——否则会出现"管理页已取消推荐、首页仍显示推荐标签"的不一致。
+func (h *PublicModelCatalogHandler) InvalidateCache() {
+	h.cacheMu.Lock()
+	defer h.cacheMu.Unlock()
+
+	h.cachedAt = time.Time{}
+	h.cachedCatalog = nil
+}
+
 func buildPublicModelCatalog(channels []service.AvailableChannel) []publicModelCatalogItem {
 	byModel := make(map[string]publicModelCatalogItem)
 

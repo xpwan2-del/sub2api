@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -221,4 +222,65 @@ func TestAdminModelCatalogUpdateRejectsInvalidJSON(t *testing.T) {
 	h.Update(c)
 
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
+}
+
+// --- Update → 失效公开广场缓存 ---
+
+// TestAdminModelCatalogUpdateInvalidatesPublicCacheOnSuccess 验证保存成功后必须触发公开广场
+// 缓存失效回调，使首页下次请求读到最新运营配置（修复"管理页取消推荐后首页最长 120s 仍显示旧标签"）。
+func TestAdminModelCatalogUpdateInvalidatesPublicCacheOnSuccess(t *testing.T) {
+	svc := &fakeAdminCatalogSvc{}
+	calls := 0
+	h := &AdminModelCatalogHandler{
+		modelCatalogSvc:       svc,
+		invalidatePublicCache: func() { calls++ },
+	}
+
+	body := `[{"platform":"openai","model_name":"gpt-4o","featured":false,"custom_tags":[]}]`
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/catalog/config", strings.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	h.Update(c)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Equal(t, 1, calls, "cache invalidator must fire exactly once on successful save")
+}
+
+// TestAdminModelCatalogUpdateSkipsInvalidationOnSaveFailure 验证 BatchSave 失败时不触发失效：
+// 写入未落库，不应让缓存提前失效而暴露一个"既非旧也非新"的中间态。
+func TestAdminModelCatalogUpdateSkipsInvalidationOnSaveFailure(t *testing.T) {
+	svc := &fakeAdminCatalogSvc{saveErr: errors.New("db down")}
+	calls := 0
+	h := &AdminModelCatalogHandler{
+		modelCatalogSvc:       svc,
+		invalidatePublicCache: func() { calls++ },
+	}
+
+	body := `[{"platform":"openai","model_name":"gpt-4o"}]`
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/catalog/config", strings.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	h.Update(c)
+
+	require.Equal(t, http.StatusInternalServerError, recorder.Code)
+	require.Equal(t, 0, calls, "must not invalidate cache when save failed")
+}
+
+// TestAdminModelCatalogUpdateWithoutInvalidatorIsNoop 验证未注入失效回调时 Update 不 panic
+// （向后兼容：测试直接构造、或 wire 未接线时的安全降级）。
+func TestAdminModelCatalogUpdateWithoutInvalidatorIsNoop(t *testing.T) {
+	h := &AdminModelCatalogHandler{modelCatalogSvc: &fakeAdminCatalogSvc{}}
+
+	body := `[{"platform":"openai","model_name":"gpt-4o"}]`
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/catalog/config", strings.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	require.NotPanics(t, func() { h.Update(c) })
+	require.Equal(t, http.StatusOK, recorder.Code)
 }
