@@ -25,6 +25,7 @@ export interface BundlePlanCardData {
   name: string
   description?: string
   tier?: string
+  featured?: boolean
   price: number
   original_price?: number
   validity_days: number
@@ -118,6 +119,7 @@ function platformDotClass(p: string): string {
           <div class="flex items-center gap-2">
             <h3 class="truncate text-base font-bold text-gray-900 dark:text-white">{{ plan.name }}</h3>
             <span :class="tierBadgeClass(plan.tier)">{{ tierLabel(plan.tier) }}</span>
+            <span v-if="plan.featured" class="inline-flex items-center rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">{{ t('modelCatalog.bundleFeaturedTag') }}</span>
           </div>
           <p v-if="plan.description"
             class="mt-0.5 line-clamp-2 text-xs leading-relaxed text-gray-500 dark:text-dark-400"
