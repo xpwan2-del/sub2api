@@ -38,7 +38,7 @@
                   <span :class="tierBadgeClass(activePlan?.tier)">
                     {{ tierLabel(activePlan?.tier) }}
                   </span>
-                  <span v-if="activePlan?.featured" class="inline-flex items-center rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                  <span v-if="activePlan?.featured" class="rounded-full border border-primary-500/30 bg-primary-500/10 px-2 py-0.5 text-[11px] font-medium text-primary-600 dark:text-primary-400">
                     {{ t('modelCatalog.bundleFeaturedTag') }}
                   </span>
                   <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">

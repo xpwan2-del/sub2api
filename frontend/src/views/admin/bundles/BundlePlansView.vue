@@ -19,7 +19,7 @@
               <span class="text-sm font-medium text-gray-900 dark:text-white">{{ row.name }}</span>
               <span
                 v-if="row.featured"
-                class="inline-flex items-center rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+                class="rounded-full border border-primary-500/30 bg-primary-500/10 px-2 py-0.5 text-[11px] font-medium text-primary-600 dark:text-primary-400"
               >
                 {{ t('bundles.admin.featured') }}
               </span>
