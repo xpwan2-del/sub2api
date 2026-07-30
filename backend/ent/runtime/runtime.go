@@ -654,22 +654,26 @@ func init() {
 	bundleplanDescForSale := bundleplanFields[10].Descriptor()
 	// bundleplan.DefaultForSale holds the default value on creation for the for_sale field.
 	bundleplan.DefaultForSale = bundleplanDescForSale.Default.(bool)
+	// bundleplanDescFeatured is the schema descriptor for featured field.
+	bundleplanDescFeatured := bundleplanFields[11].Descriptor()
+	// bundleplan.DefaultFeatured holds the default value on creation for the featured field.
+	bundleplan.DefaultFeatured = bundleplanDescFeatured.Default.(bool)
 	// bundleplanDescSortOrder is the schema descriptor for sort_order field.
-	bundleplanDescSortOrder := bundleplanFields[11].Descriptor()
+	bundleplanDescSortOrder := bundleplanFields[12].Descriptor()
 	// bundleplan.DefaultSortOrder holds the default value on creation for the sort_order field.
 	bundleplan.DefaultSortOrder = bundleplanDescSortOrder.Default.(int)
 	// bundleplan.SortOrderValidator is a validator for the "sort_order" field. It is called by the builders before save.
 	bundleplan.SortOrderValidator = bundleplanDescSortOrder.Validators[0].(func(int) error)
 	// bundleplanDescStatus is the schema descriptor for status field.
-	bundleplanDescStatus := bundleplanFields[12].Descriptor()
+	bundleplanDescStatus := bundleplanFields[13].Descriptor()
 	// bundleplan.DefaultStatus holds the default value on creation for the status field.
 	bundleplan.DefaultStatus = bundleplanDescStatus.Default.(string)
 	// bundleplanDescCreatedAt is the schema descriptor for created_at field.
-	bundleplanDescCreatedAt := bundleplanFields[13].Descriptor()
+	bundleplanDescCreatedAt := bundleplanFields[14].Descriptor()
 	// bundleplan.DefaultCreatedAt holds the default value on creation for the created_at field.
 	bundleplan.DefaultCreatedAt = bundleplanDescCreatedAt.Default.(func() time.Time)
 	// bundleplanDescUpdatedAt is the schema descriptor for updated_at field.
-	bundleplanDescUpdatedAt := bundleplanFields[14].Descriptor()
+	bundleplanDescUpdatedAt := bundleplanFields[15].Descriptor()
 	// bundleplan.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	bundleplan.DefaultUpdatedAt = bundleplanDescUpdatedAt.Default.(func() time.Time)
 	// bundleplan.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

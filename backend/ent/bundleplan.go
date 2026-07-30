@@ -40,6 +40,8 @@ type BundlePlan struct {
 	Features []string `json:"features,omitempty"`
 	// 是否在售
 	ForSale bool `json:"for_sale,omitempty"`
+	// 是否推荐
+	Featured bool `json:"featured,omitempty"`
 	// 排序
 	SortOrder int `json:"sort_order,omitempty"`
 	// 状态: active/disabled
@@ -58,7 +60,7 @@ func (*BundlePlan) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case bundleplan.FieldFeatures:
 			values[i] = new([]byte)
-		case bundleplan.FieldForSale:
+		case bundleplan.FieldForSale, bundleplan.FieldFeatured:
 			values[i] = new(sql.NullBool)
 		case bundleplan.FieldPrice, bundleplan.FieldOriginalPrice:
 			values[i] = new(sql.NullFloat64)
@@ -157,6 +159,12 @@ func (_m *BundlePlan) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ForSale = value.Bool
 			}
+		case bundleplan.FieldFeatured:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field featured", values[i])
+			} else if value.Valid {
+				_m.Featured = value.Bool
+			}
 		case bundleplan.FieldSortOrder:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field sort_order", values[i])
@@ -249,6 +257,9 @@ func (_m *BundlePlan) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("for_sale=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ForSale))
+	builder.WriteString(", ")
+	builder.WriteString("featured=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Featured))
 	builder.WriteString(", ")
 	builder.WriteString("sort_order=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SortOrder))

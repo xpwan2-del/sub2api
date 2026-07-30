@@ -24,6 +24,7 @@ type BundlePlan struct {
 	RPMLimit         int       `json:"rpm_limit"`
 	Features         []string  `json:"features"`
 	ForSale          bool      `json:"for_sale"`
+	Featured         bool      `json:"featured"`
 	SortOrder        int       `json:"sort_order"`
 	Status           string    `json:"status"`
 	CreatedAt        time.Time `json:"created_at"`
@@ -109,6 +110,7 @@ type CreateBundlePlanRequest struct {
 	RPMLimit         int                       `json:"rpm_limit"`
 	Features         []string                  `json:"features"`
 	ForSale          *bool                     `json:"for_sale"`
+	Featured         *bool                     `json:"featured"`
 	SortOrder        int                       `json:"sort_order"`
 	GroupQuotas      []CreateGroupQuotaRequest `json:"group_quotas" binding:"required,min=1"`
 }
@@ -144,6 +146,7 @@ type UpdateBundlePlanRequest struct {
 	RPMLimit         *int                       `json:"rpm_limit"`
 	Features         *[]string                  `json:"features"`
 	ForSale          *bool                      `json:"for_sale"`
+	Featured         *bool                      `json:"featured"`
 	SortOrder        *int                       `json:"sort_order"`
 	Status           *string                    `json:"status"`
 	GroupQuotas      *[]CreateGroupQuotaRequest `json:"group_quotas"`

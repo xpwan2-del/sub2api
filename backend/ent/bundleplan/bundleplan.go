@@ -35,6 +35,8 @@ const (
 	FieldFeatures = "features"
 	// FieldForSale holds the string denoting the for_sale field in the database.
 	FieldForSale = "for_sale"
+	// FieldFeatured holds the string denoting the featured field in the database.
+	FieldFeatured = "featured"
 	// FieldSortOrder holds the string denoting the sort_order field in the database.
 	FieldSortOrder = "sort_order"
 	// FieldStatus holds the string denoting the status field in the database.
@@ -61,6 +63,7 @@ var Columns = []string{
 	FieldRpmLimit,
 	FieldFeatures,
 	FieldForSale,
+	FieldFeatured,
 	FieldSortOrder,
 	FieldStatus,
 	FieldCreatedAt,
@@ -104,6 +107,8 @@ var (
 	RpmLimitValidator func(int) error
 	// DefaultForSale holds the default value on creation for the "for_sale" field.
 	DefaultForSale bool
+	// DefaultFeatured holds the default value on creation for the "featured" field.
+	DefaultFeatured bool
 	// DefaultSortOrder holds the default value on creation for the "sort_order" field.
 	DefaultSortOrder int
 	// SortOrderValidator is a validator for the "sort_order" field. It is called by the builders before save.
@@ -174,6 +179,11 @@ func ByRpmLimit(opts ...sql.OrderTermOption) OrderOption {
 // ByForSale orders the results by the for_sale field.
 func ByForSale(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldForSale, opts...).ToFunc()
+}
+
+// ByFeatured orders the results by the featured field.
+func ByFeatured(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFeatured, opts...).ToFunc()
 }
 
 // BySortOrder orders the results by the sort_order field.

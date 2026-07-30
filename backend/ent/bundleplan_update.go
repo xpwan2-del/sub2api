@@ -222,6 +222,20 @@ func (_u *BundlePlanUpdate) SetNillableForSale(v *bool) *BundlePlanUpdate {
 	return _u
 }
 
+// SetFeatured sets the "featured" field.
+func (_u *BundlePlanUpdate) SetFeatured(v bool) *BundlePlanUpdate {
+	_u.mutation.SetFeatured(v)
+	return _u
+}
+
+// SetNillableFeatured sets the "featured" field if the given value is not nil.
+func (_u *BundlePlanUpdate) SetNillableFeatured(v *bool) *BundlePlanUpdate {
+	if v != nil {
+		_u.SetFeatured(*v)
+	}
+	return _u
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (_u *BundlePlanUpdate) SetSortOrder(v int) *BundlePlanUpdate {
 	_u.mutation.ResetSortOrder()
@@ -406,6 +420,9 @@ func (_u *BundlePlanUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.ForSale(); ok {
 		_spec.SetField(bundleplan.FieldForSale, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Featured(); ok {
+		_spec.SetField(bundleplan.FieldFeatured, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.SortOrder(); ok {
 		_spec.SetField(bundleplan.FieldSortOrder, field.TypeInt, value)
@@ -632,6 +649,20 @@ func (_u *BundlePlanUpdateOne) SetNillableForSale(v *bool) *BundlePlanUpdateOne 
 	return _u
 }
 
+// SetFeatured sets the "featured" field.
+func (_u *BundlePlanUpdateOne) SetFeatured(v bool) *BundlePlanUpdateOne {
+	_u.mutation.SetFeatured(v)
+	return _u
+}
+
+// SetNillableFeatured sets the "featured" field if the given value is not nil.
+func (_u *BundlePlanUpdateOne) SetNillableFeatured(v *bool) *BundlePlanUpdateOne {
+	if v != nil {
+		_u.SetFeatured(*v)
+	}
+	return _u
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (_u *BundlePlanUpdateOne) SetSortOrder(v int) *BundlePlanUpdateOne {
 	_u.mutation.ResetSortOrder()
@@ -846,6 +877,9 @@ func (_u *BundlePlanUpdateOne) sqlSave(ctx context.Context) (_node *BundlePlan, 
 	}
 	if value, ok := _u.mutation.ForSale(); ok {
 		_spec.SetField(bundleplan.FieldForSale, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Featured(); ok {
+		_spec.SetField(bundleplan.FieldFeatured, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.SortOrder(); ok {
 		_spec.SetField(bundleplan.FieldSortOrder, field.TypeInt, value)

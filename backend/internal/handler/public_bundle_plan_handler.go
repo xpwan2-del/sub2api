@@ -52,6 +52,7 @@ type PublicBundlePlan struct {
 	ValidityDays  int      `json:"validity_days"`
 	Features      []string `json:"features"`
 	SortOrder     int      `json:"sort_order"`
+	Featured      bool     `json:"featured"`
 	Platforms     []string `json:"platforms"`
 }
 
@@ -104,6 +105,7 @@ func toPublicBundlePlans(plans []service.BundlePlan) []PublicBundlePlan {
 			ValidityDays:  plans[i].ValidityDays,
 			Features:      features,
 			SortOrder:     plans[i].SortOrder,
+			Featured:      plans[i].Featured,
 			Platforms:     dedupPlatforms(plans[i].GroupQuotas),
 		})
 	}

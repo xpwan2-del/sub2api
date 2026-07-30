@@ -104,6 +104,11 @@ func ForSale(v bool) predicate.BundlePlan {
 	return predicate.BundlePlan(sql.FieldEQ(FieldForSale, v))
 }
 
+// Featured applies equality check predicate on the "featured" field. It's identical to FeaturedEQ.
+func Featured(v bool) predicate.BundlePlan {
+	return predicate.BundlePlan(sql.FieldEQ(FieldFeatured, v))
+}
+
 // SortOrder applies equality check predicate on the "sort_order" field. It's identical to SortOrderEQ.
 func SortOrder(v int) predicate.BundlePlan {
 	return predicate.BundlePlan(sql.FieldEQ(FieldSortOrder, v))
@@ -602,6 +607,16 @@ func ForSaleEQ(v bool) predicate.BundlePlan {
 // ForSaleNEQ applies the NEQ predicate on the "for_sale" field.
 func ForSaleNEQ(v bool) predicate.BundlePlan {
 	return predicate.BundlePlan(sql.FieldNEQ(FieldForSale, v))
+}
+
+// FeaturedEQ applies the EQ predicate on the "featured" field.
+func FeaturedEQ(v bool) predicate.BundlePlan {
+	return predicate.BundlePlan(sql.FieldEQ(FieldFeatured, v))
+}
+
+// FeaturedNEQ applies the NEQ predicate on the "featured" field.
+func FeaturedNEQ(v bool) predicate.BundlePlan {
+	return predicate.BundlePlan(sql.FieldNEQ(FieldFeatured, v))
 }
 
 // SortOrderEQ applies the EQ predicate on the "sort_order" field.

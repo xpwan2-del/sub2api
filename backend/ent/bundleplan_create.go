@@ -152,6 +152,20 @@ func (_c *BundlePlanCreate) SetNillableForSale(v *bool) *BundlePlanCreate {
 	return _c
 }
 
+// SetFeatured sets the "featured" field.
+func (_c *BundlePlanCreate) SetFeatured(v bool) *BundlePlanCreate {
+	_c.mutation.SetFeatured(v)
+	return _c
+}
+
+// SetNillableFeatured sets the "featured" field if the given value is not nil.
+func (_c *BundlePlanCreate) SetNillableFeatured(v *bool) *BundlePlanCreate {
+	if v != nil {
+		_c.SetFeatured(*v)
+	}
+	return _c
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (_c *BundlePlanCreate) SetSortOrder(v int) *BundlePlanCreate {
 	_c.mutation.SetSortOrder(v)
@@ -275,6 +289,10 @@ func (_c *BundlePlanCreate) defaults() {
 		v := bundleplan.DefaultForSale
 		_c.mutation.SetForSale(v)
 	}
+	if _, ok := _c.mutation.Featured(); !ok {
+		v := bundleplan.DefaultFeatured
+		_c.mutation.SetFeatured(v)
+	}
 	if _, ok := _c.mutation.SortOrder(); !ok {
 		v := bundleplan.DefaultSortOrder
 		_c.mutation.SetSortOrder(v)
@@ -349,6 +367,9 @@ func (_c *BundlePlanCreate) check() error {
 	}
 	if _, ok := _c.mutation.ForSale(); !ok {
 		return &ValidationError{Name: "for_sale", err: errors.New(`ent: missing required field "BundlePlan.for_sale"`)}
+	}
+	if _, ok := _c.mutation.Featured(); !ok {
+		return &ValidationError{Name: "featured", err: errors.New(`ent: missing required field "BundlePlan.featured"`)}
 	}
 	if _, ok := _c.mutation.SortOrder(); !ok {
 		return &ValidationError{Name: "sort_order", err: errors.New(`ent: missing required field "BundlePlan.sort_order"`)}
@@ -437,6 +458,10 @@ func (_c *BundlePlanCreate) createSpec() (*BundlePlan, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ForSale(); ok {
 		_spec.SetField(bundleplan.FieldForSale, field.TypeBool, value)
 		_node.ForSale = value
+	}
+	if value, ok := _c.mutation.Featured(); ok {
+		_spec.SetField(bundleplan.FieldFeatured, field.TypeBool, value)
+		_node.Featured = value
 	}
 	if value, ok := _c.mutation.SortOrder(); ok {
 		_spec.SetField(bundleplan.FieldSortOrder, field.TypeInt, value)
@@ -671,6 +696,18 @@ func (u *BundlePlanUpsert) SetForSale(v bool) *BundlePlanUpsert {
 // UpdateForSale sets the "for_sale" field to the value that was provided on create.
 func (u *BundlePlanUpsert) UpdateForSale() *BundlePlanUpsert {
 	u.SetExcluded(bundleplan.FieldForSale)
+	return u
+}
+
+// SetFeatured sets the "featured" field.
+func (u *BundlePlanUpsert) SetFeatured(v bool) *BundlePlanUpsert {
+	u.Set(bundleplan.FieldFeatured, v)
+	return u
+}
+
+// UpdateFeatured sets the "featured" field to the value that was provided on create.
+func (u *BundlePlanUpsert) UpdateFeatured() *BundlePlanUpsert {
+	u.SetExcluded(bundleplan.FieldFeatured)
 	return u
 }
 
@@ -954,6 +991,20 @@ func (u *BundlePlanUpsertOne) SetForSale(v bool) *BundlePlanUpsertOne {
 func (u *BundlePlanUpsertOne) UpdateForSale() *BundlePlanUpsertOne {
 	return u.Update(func(s *BundlePlanUpsert) {
 		s.UpdateForSale()
+	})
+}
+
+// SetFeatured sets the "featured" field.
+func (u *BundlePlanUpsertOne) SetFeatured(v bool) *BundlePlanUpsertOne {
+	return u.Update(func(s *BundlePlanUpsert) {
+		s.SetFeatured(v)
+	})
+}
+
+// UpdateFeatured sets the "featured" field to the value that was provided on create.
+func (u *BundlePlanUpsertOne) UpdateFeatured() *BundlePlanUpsertOne {
+	return u.Update(func(s *BundlePlanUpsert) {
+		s.UpdateFeatured()
 	})
 }
 
@@ -1410,6 +1461,20 @@ func (u *BundlePlanUpsertBulk) SetForSale(v bool) *BundlePlanUpsertBulk {
 func (u *BundlePlanUpsertBulk) UpdateForSale() *BundlePlanUpsertBulk {
 	return u.Update(func(s *BundlePlanUpsert) {
 		s.UpdateForSale()
+	})
+}
+
+// SetFeatured sets the "featured" field.
+func (u *BundlePlanUpsertBulk) SetFeatured(v bool) *BundlePlanUpsertBulk {
+	return u.Update(func(s *BundlePlanUpsert) {
+		s.SetFeatured(v)
+	})
+}
+
+// UpdateFeatured sets the "featured" field to the value that was provided on create.
+func (u *BundlePlanUpsertBulk) UpdateFeatured() *BundlePlanUpsertBulk {
+	return u.Update(func(s *BundlePlanUpsert) {
+		s.UpdateFeatured()
 	})
 }
 

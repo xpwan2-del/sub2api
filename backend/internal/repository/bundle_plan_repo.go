@@ -46,6 +46,7 @@ func (r *bundlePlanRepository) Create(ctx context.Context, plan *service.BundleP
 		SetRpmLimit(plan.RPMLimit).
 		SetFeatures(plan.Features).
 		SetForSale(plan.ForSale).
+		SetFeatured(plan.Featured).
 		SetSortOrder(plan.SortOrder).
 		SetStatus(plan.Status).
 		Save(ctx)
@@ -110,6 +111,7 @@ func (r *bundlePlanRepository) Update(ctx context.Context, plan *service.BundleP
 		SetRpmLimit(plan.RPMLimit).
 		SetFeatures(plan.Features).
 		SetForSale(plan.ForSale).
+		SetFeatured(plan.Featured).
 		SetSortOrder(plan.SortOrder).
 		SetStatus(plan.Status).
 		Save(ctx)
@@ -308,6 +310,7 @@ func bundlePlanToService(src *dbent.BundlePlan) *service.BundlePlan {
 		RPMLimit:         src.RpmLimit,
 		Features:         src.Features,
 		ForSale:          src.ForSale,
+		Featured:         src.Featured,
 		SortOrder:        src.SortOrder,
 		Status:           src.Status,
 		CreatedAt:        src.CreatedAt,

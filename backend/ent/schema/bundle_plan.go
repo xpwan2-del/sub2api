@@ -45,6 +45,7 @@ func (BundlePlan) Fields() []ent.Field {
 		field.Int("rpm_limit").Default(0).NonNegative().Comment("RPM上限（0=不限）"),
 		field.Strings("features").Optional().Comment("功能特性列表"),
 		field.Bool("for_sale").Default(true).Comment("是否在售"),
+		field.Bool("featured").Default(false).Comment("是否推荐"),
 		field.Int("sort_order").Default(0).NonNegative().Comment("排序"),
 		field.String("status").Default("active").Comment("状态: active/disabled"),
 		field.Time("created_at").Immutable().Default(time.Now).SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).Comment("创建时间"),

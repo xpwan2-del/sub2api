@@ -59,6 +59,7 @@ func (s *BundlePlanService) CreatePlan(ctx context.Context, req *CreateBundlePla
 		RPMLimit:         req.RPMLimit,
 		Features:         req.Features,
 		ForSale:          forSale,
+		Featured:         req.Featured != nil && *req.Featured,
 		SortOrder:        req.SortOrder,
 		Status:           domain.StatusActive,
 		GroupQuotas:      make([]BundlePlanGroupQuota, 0, len(req.GroupQuotas)),
@@ -140,6 +141,9 @@ func (s *BundlePlanService) UpdatePlan(ctx context.Context, planID int64, req *U
 	}
 	if req.ForSale != nil {
 		existing.ForSale = *req.ForSale
+	}
+	if req.Featured != nil {
+		existing.Featured = *req.Featured
 	}
 	if req.SortOrder != nil {
 		existing.SortOrder = *req.SortOrder

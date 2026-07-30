@@ -632,6 +632,7 @@ var (
 		{Name: "rpm_limit", Type: field.TypeInt, Default: 0},
 		{Name: "features", Type: field.TypeJSON, Nullable: true},
 		{Name: "for_sale", Type: field.TypeBool, Default: true},
+		{Name: "featured", Type: field.TypeBool, Default: false},
 		{Name: "sort_order", Type: field.TypeInt, Default: 0},
 		{Name: "status", Type: field.TypeString, Default: "active"},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
@@ -646,7 +647,7 @@ var (
 			{
 				Name:    "bundleplan_status_for_sale",
 				Unique:  false,
-				Columns: []*schema.Column{BundlePlansColumns[13], BundlePlansColumns[11]},
+				Columns: []*schema.Column{BundlePlansColumns[14], BundlePlansColumns[11]},
 			},
 			{
 				Name:    "bundleplan_tier",

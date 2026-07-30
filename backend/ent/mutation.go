@@ -14736,6 +14736,7 @@ type BundlePlanMutation struct {
 	features             *[]string
 	appendfeatures       []string
 	for_sale             *bool
+	featured             *bool
 	sort_order           *int
 	addsort_order        *int
 	status               *string
@@ -15370,6 +15371,42 @@ func (m *BundlePlanMutation) ResetForSale() {
 	m.for_sale = nil
 }
 
+// SetFeatured sets the "featured" field.
+func (m *BundlePlanMutation) SetFeatured(b bool) {
+	m.featured = &b
+}
+
+// Featured returns the value of the "featured" field in the mutation.
+func (m *BundlePlanMutation) Featured() (r bool, exists bool) {
+	v := m.featured
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFeatured returns the old "featured" field's value of the BundlePlan entity.
+// If the BundlePlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundlePlanMutation) OldFeatured(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFeatured is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFeatured requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFeatured: %w", err)
+	}
+	return oldValue.Featured, nil
+}
+
+// ResetFeatured resets all changes to the "featured" field.
+func (m *BundlePlanMutation) ResetFeatured() {
+	m.featured = nil
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (m *BundlePlanMutation) SetSortOrder(i int) {
 	m.sort_order = &i
@@ -15568,7 +15605,7 @@ func (m *BundlePlanMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BundlePlanMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 16)
 	if m.name != nil {
 		fields = append(fields, bundleplan.FieldName)
 	}
@@ -15601,6 +15638,9 @@ func (m *BundlePlanMutation) Fields() []string {
 	}
 	if m.for_sale != nil {
 		fields = append(fields, bundleplan.FieldForSale)
+	}
+	if m.featured != nil {
+		fields = append(fields, bundleplan.FieldFeatured)
 	}
 	if m.sort_order != nil {
 		fields = append(fields, bundleplan.FieldSortOrder)
@@ -15644,6 +15684,8 @@ func (m *BundlePlanMutation) Field(name string) (ent.Value, bool) {
 		return m.Features()
 	case bundleplan.FieldForSale:
 		return m.ForSale()
+	case bundleplan.FieldFeatured:
+		return m.Featured()
 	case bundleplan.FieldSortOrder:
 		return m.SortOrder()
 	case bundleplan.FieldStatus:
@@ -15683,6 +15725,8 @@ func (m *BundlePlanMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldFeatures(ctx)
 	case bundleplan.FieldForSale:
 		return m.OldForSale(ctx)
+	case bundleplan.FieldFeatured:
+		return m.OldFeatured(ctx)
 	case bundleplan.FieldSortOrder:
 		return m.OldSortOrder(ctx)
 	case bundleplan.FieldStatus:
@@ -15776,6 +15820,13 @@ func (m *BundlePlanMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetForSale(v)
+		return nil
+	case bundleplan.FieldFeatured:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFeatured(v)
 		return nil
 	case bundleplan.FieldSortOrder:
 		v, ok := value.(int)
@@ -15970,6 +16021,9 @@ func (m *BundlePlanMutation) ResetField(name string) error {
 		return nil
 	case bundleplan.FieldForSale:
 		m.ResetForSale()
+		return nil
+	case bundleplan.FieldFeatured:
+		m.ResetFeatured()
 		return nil
 	case bundleplan.FieldSortOrder:
 		m.ResetSortOrder()
