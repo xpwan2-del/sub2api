@@ -6,29 +6,28 @@ function plan(over: Partial<PublicBundlePlan> = {}): PublicBundlePlan {
   return {
     name: 'x', tier: 'starter', description: '', price: 10,
     original_price: 0, currency: 'USD', validity_days: 30,
-    features: [], sort_order: 0, platforms: [], ...over,
+    features: [], sort_order: 0, platforms: [], featured: false, ...over,
   }
 }
 
 describe('pickFeaturedPlan', () => {
-  it('套餐数 < 2 时返回 null（单套餐无需突出）', () => {
-    expect(pickFeaturedPlan([])).toBeNull()
-    expect(pickFeaturedPlan([plan()])).toBeNull()
-  })
-  it('优先选 tier=pro 的套餐', () => {
-    const pro = plan({ tier: 'pro', name: '专业版', sort_order: 1 })
+  it('返回 featured=true 的套餐', () => {
+    const featured = plan({ featured: true, name: '专业版', sort_order: 1 })
     const result = pickFeaturedPlan([
-      plan({ tier: 'starter', sort_order: 0 }),
-      pro,
-      plan({ tier: 'enterprise', price: 200, sort_order: 2 }),
+      plan({ featured: false, sort_order: 0 }),
+      featured,
+      plan({ featured: false, price: 200, sort_order: 2 }),
     ])
-    expect(result).toBe(pro)
+    expect(result).toBe(featured)
   })
-  it('无 pro 时取价格升序的中间档', () => {
-    const low = plan({ price: 9, name: '低', sort_order: 0 })
-    const mid = plan({ price: 49, name: '中', sort_order: 1 })
-    const high = plan({ price: 199, name: '高', sort_order: 2 })
-    expect(pickFeaturedPlan([high, low, mid])).toBe(mid)
+  it('多个 featured 取第一个（按数组顺序）', () => {
+    const a = plan({ featured: true, name: 'A', sort_order: 0 })
+    const b = plan({ featured: true, name: 'B', sort_order: 1 })
+    expect(pickFeaturedPlan([a, b])).toBe(a)
+  })
+  it('无 featured 时返回 null', () => {
+    expect(pickFeaturedPlan([plan({ featured: false }), plan({ featured: false })])).toBeNull()
+    expect(pickFeaturedPlan([])).toBeNull()
   })
 })
 

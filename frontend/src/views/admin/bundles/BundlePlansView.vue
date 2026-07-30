@@ -124,6 +124,29 @@
               </span>
             </div>
           </div>
+          <div>
+            <label class="input-label">{{ t('bundles.admin.featured') }}</label>
+            <div class="mt-2 flex items-center gap-2">
+              <button
+                type="button"
+                @click="planForm.featured = !planForm.featured"
+                :class="[
+                  'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                  planForm.featured ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+                ]"
+              >
+                <span
+                  :class="[
+                    'pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                    planForm.featured ? 'translate-x-4' : 'translate-x-0'
+                  ]"
+                />
+              </button>
+              <span class="text-sm" :class="planForm.featured ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400'">
+                {{ planForm.featured ? t('bundles.admin.featuredOn') : t('bundles.admin.featuredOff') }}
+              </span>
+            </div>
+          </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -353,6 +376,7 @@ interface PlanFormData {
   rpm_limit: number
   sort_order: number
   for_sale: boolean
+  featured: boolean
   features: string[]
   group_quotas: CreateGroupQuotaRequest[]
 }
@@ -369,6 +393,7 @@ const planForm = reactive<PlanFormData>({
   rpm_limit: 0,
   sort_order: 0,
   for_sale: true,
+  featured: false,
   features: [],
   group_quotas: [],
 })
@@ -453,6 +478,7 @@ function openPlanEdit(plan: BundlePlan | null) {
       rpm_limit: plan.rpm_limit || 0,
       sort_order: plan.sort_order || 0,
       for_sale: plan.for_sale ?? true,
+      featured: plan.featured ?? false,
       features: plan.features || [],
       group_quotas: (plan.group_quotas || []).map(q => ({
         group_id: q.group_id,
@@ -483,6 +509,7 @@ function openPlanEdit(plan: BundlePlan | null) {
       rpm_limit: 0,
       sort_order: 0,
       for_sale: true,
+      featured: false,
       features: [],
       group_quotas: [],
     })
@@ -547,6 +574,7 @@ function buildPayload() {
     rpm_limit: planForm.rpm_limit || undefined,
     sort_order: planForm.sort_order,
     for_sale: planForm.for_sale,
+    featured: planForm.featured,
     features,
     group_quotas: planForm.group_quotas,
   }

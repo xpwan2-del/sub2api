@@ -12,6 +12,7 @@ const plan: PublicBundlePlan = {
   name: '专业版', tier: 'pro', description: '一句话描述', price: 49,
   original_price: 98, currency: 'USD', validity_days: 30,
   features: ['特性A', '特性B'], sort_order: 1, platforms: ['openai', 'anthropic'],
+  featured: false,
 }
 
 describe('ShowcaseBundleCard', () => {
@@ -36,12 +37,18 @@ describe('ShowcaseBundleCard', () => {
     expect(w.classes()).not.toContain('is-featured')
   })
 
-  it('点击卡片触发 click 并携带 plan', async () => {
+  it('点击「查看详情」按钮触发 click 并携带 plan', async () => {
     const w = mount(ShowcaseBundleCard, { props: { plan } })
-    await w.trigger('click')
+    await w.find('.sbc-cta').trigger('click')
     expect(w.emitted('click')).toBeTruthy()
     // props.plan 经 Vue 包装后与原 plan 非同一引用,用深度结构相等比较
     expect((w.emitted('click')![0] as unknown[])[0]).toStrictEqual(plan)
+  })
+
+  it('点击卡片其它区域不触发 click', async () => {
+    const w = mount(ShowcaseBundleCard, { props: { plan } })
+    await w.find('.sbc-name').trigger('click')
+    expect(w.emitted('click')).toBeFalsy()
   })
 
   it('original_price 不大于 price 时不渲染划线价', () => {

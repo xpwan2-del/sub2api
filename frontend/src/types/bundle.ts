@@ -22,6 +22,7 @@ export interface BundlePlan {
   rpm_limit: number
   features: string[]
   for_sale: boolean
+  featured: boolean
   sort_order: number
   status: 'active' | 'disabled'
   group_quotas: BundlePlanGroupQuota[]
@@ -102,6 +103,7 @@ export interface CreateBundlePlanRequest {
   rpm_limit?: number
   features?: string[]
   for_sale?: boolean
+  featured?: boolean
   group_quotas: CreateGroupQuotaRequest[]
 }
 

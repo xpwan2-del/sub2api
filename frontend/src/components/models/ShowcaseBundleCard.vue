@@ -6,6 +6,9 @@
  * 内发光 + monospace），用 scoped CSS + isDark prop（非 Tailwind dark:），
  * 不含 concurrency/rpm/精确额度（公开 DTO 无此数据）。
  * 仅展示 PublicBundlePlan 字段。featured 由父级据 pickFeaturedPlan 传入。
+ *
+ * 交互：只有「查看详情」按钮触发 click（跳 /bundles）；点卡片其它区域无反应。
+ * 描述过长时 hover 显示完整内容气泡（纯 CSS popover）。
  */
 </script>
 
@@ -38,13 +41,15 @@ function onClick() {
   <article
     class="sbc-card"
     :class="{ 'is-featured': featured, 'is-dark': isDark }"
-    @click="onClick"
   >
     <span v-if="featured" class="sbc-featured-badge">{{ t('modelCatalog.bundleFeaturedTag') }}</span>
 
     <span class="sbc-tier">{{ tierCode }}</span>
     <h3 class="sbc-name">{{ plan.name }}</h3>
-    <p v-if="plan.description" class="sbc-desc">{{ plan.description }}</p>
+    <div v-if="plan.description" class="sbc-desc-wrap">
+      <p class="sbc-desc">{{ plan.description }}</p>
+      <span class="sbc-desc-popover" role="tooltip">{{ plan.description }}</span>
+    </div>
 
     <div class="sbc-price">
       <span class="sbc-price-num">${{ plan.price }}</span>
@@ -63,7 +68,7 @@ function onClick() {
       </span>
     </div>
 
-    <button type="button" class="sbc-cta" @click.stop="onClick">
+    <button type="button" class="sbc-cta" @click="onClick">
       {{ t('modelCatalog.bundleViewDetails') }}
     </button>
   </article>
@@ -83,7 +88,6 @@ function onClick() {
     linear-gradient(145deg, rgba(15, 23, 42, 0.94), rgba(3, 7, 18, 0.86));
   box-shadow: 0 26px 60px rgba(0, 0, 0, 0.32), inset 0 0 32px rgba(45, 212, 191, 0.04);
   clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
-  cursor: pointer;
 }
 .sbc-card::before {
   content: "";
@@ -104,7 +108,7 @@ function onClick() {
   position: absolute;
   top: 0;
   right: 0;
-  z-index: 1;
+  z-index: 2;
   padding: 5px 11px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 10px;
@@ -137,6 +141,9 @@ function onClick() {
   line-height: 1.15;
   color: #f8fafc;
 }
+
+/* 描述：两行截断 + hover 气泡显示全文 */
+.sbc-desc-wrap { position: relative; cursor: help; }
 .sbc-desc {
   margin: -6px 0 0;
   min-height: 32px;
@@ -147,6 +154,30 @@ function onClick() {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.sbc-desc-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  width: max-content;
+  max-width: 260px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #f8fafc;
+  background: rgba(2, 6, 23, 0.96);
+  border: 1px solid rgba(94, 234, 212, 0.25);
+  border-radius: 6px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.sbc-desc-wrap:hover .sbc-desc-popover {
+  opacity: 1;
+  visibility: visible;
 }
 
 .sbc-price {

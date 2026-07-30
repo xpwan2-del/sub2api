@@ -22,6 +22,7 @@ export interface PublicBundlePlan {
   validity_days: number
   features: string[]
   sort_order: number
+  featured: boolean
   /** 覆盖平台列表（由后端 group_quotas 去重聚合，如 ['openai','anthropic']） */
   platforms: string[]
 }

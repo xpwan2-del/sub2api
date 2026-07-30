@@ -25,13 +25,13 @@ function plan(over: Partial<PublicBundlePlan> = {}): PublicBundlePlan {
   return {
     name: 'x', tier: 'starter', description: '', price: 10,
     original_price: 0, currency: 'USD', validity_days: 30,
-    features: [], sort_order: 0, platforms: [], ...over,
+    features: [], sort_order: 0, platforms: [], featured: false, ...over,
   }
 }
 
 const plans: PublicBundlePlan[] = [
   plan({ name: '入门', tier: 'starter', sort_order: 0, platforms: ['openai'], price: 9 }),
-  plan({ name: '专业', tier: 'pro', sort_order: 1, platforms: ['openai', 'anthropic'], price: 49 }),
+  plan({ name: '专业', tier: 'pro', sort_order: 1, platforms: ['openai', 'anthropic'], price: 49, featured: true }),
   plan({ name: '企业', tier: 'enterprise', sort_order: 2, platforms: ['openai', 'gemini'], price: 199 }),
 ]
 
@@ -48,7 +48,7 @@ describe('BundleShowcaseSection', () => {
     expect(w.findAll('.stub')).toHaveLength(3)
   })
 
-  it('把 featured 标记到 tier=pro 的卡', () => {
+  it('把 featured 标记到勾选推荐的卡', () => {
     const w = mountSection()
     const cards = w.findAll('.stub')
     expect(cards[0].attributes('data-featured')).toBe('false')
