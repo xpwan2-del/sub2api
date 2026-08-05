@@ -793,6 +793,9 @@ func (s *GatewayService) calculateRecordUsageCost(
 	// 图片生成：渠道定价为 token 计费时走 token 路径，否则走图片计费
 	if result.ImageCount > 0 {
 		if resolved := s.resolveChannelPricing(ctx, billingModel, apiKey); resolved != nil && resolved.Mode == BillingModeToken {
+			if result.VideoCount == 0 && apiKey.Group != nil && apiKey.Group.ImageRateIndependent {
+				multiplier = imageMultiplier
+			}
 			return s.calculateTokenCost(ctx, result, apiKey, billingModel, multiplier, opts)
 		}
 		return s.calculateImageCost(ctx, result, apiKey, billingModel, imageMultiplier)
@@ -966,6 +969,8 @@ func (s *GatewayService) buildRecordUsageLog(
 		CreatedAt:             time.Now(),
 	}
 	if result.ImageCount > 0 && (cost == nil || cost.BillingMode != string(BillingModeToken)) {
+		usageLog.RateMultiplier = imageMultiplier
+	} else if result.ImageCount > 0 && result.VideoCount == 0 && apiKey.Group != nil && apiKey.Group.ImageRateIndependent {
 		usageLog.RateMultiplier = imageMultiplier
 	}
 	if cost != nil {

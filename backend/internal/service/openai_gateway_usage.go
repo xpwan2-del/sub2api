@@ -178,7 +178,12 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	if result.ServiceTier != nil {
 		serviceTier = strings.TrimSpace(*result.ServiceTier)
 	}
-	cost, err = s.calculateOpenAIRecordUsageCost(ctx, result, apiKey, billingModels, multiplier, imageMultiplier, videoMultiplier, tokens, serviceTier)
+	isVideoUsage := s.isOpenAIVideoUsage(ctx, result, billingModels, apiKey)
+	costMultiplier := multiplier
+	if result.ImageCount > 0 && !isVideoUsage && apiKey.Group != nil && apiKey.Group.ImageRateIndependent {
+		costMultiplier = imageMultiplier
+	}
+	cost, err = s.calculateOpenAIRecordUsageCost(ctx, result, apiKey, billingModels, costMultiplier, imageMultiplier, videoMultiplier, tokens, serviceTier)
 	if err != nil {
 		if !isUsagePricingUnavailableError(err) {
 			return err
@@ -242,7 +247,6 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		ImageSizeSource:     optionalTrimmedStringPtr(result.ImageSizeSource),
 		ImageSizeBreakdown:  result.ImageSizeBreakdown,
 	}
-	isVideoUsage := s.isOpenAIVideoUsage(ctx, result, billingModels, apiKey)
 	if isVideoUsage {
 		usageLog.VideoCount = result.VideoCount
 		usageLog.VideoResolution = optionalTrimmedStringPtr(NormalizeVideoBillingResolutionOrDefault(result.VideoResolution))
@@ -260,6 +264,8 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	}
 	if isVideoUsage && (cost == nil || cost.BillingMode != string(BillingModeToken)) {
 		usageLog.RateMultiplier = videoMultiplier
+	} else if result.ImageCount > 0 && !isVideoUsage && apiKey.Group != nil && apiKey.Group.ImageRateIndependent {
+		usageLog.RateMultiplier = imageMultiplier
 	} else if result.ImageCount > 0 && (cost == nil || cost.BillingMode != string(BillingModeToken)) {
 		usageLog.RateMultiplier = imageMultiplier
 	} else {
