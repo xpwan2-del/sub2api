@@ -661,6 +661,7 @@ type URLAllowlistConfig struct {
 	UpstreamHosts     []string `mapstructure:"upstream_hosts"`
 	PricingHosts      []string `mapstructure:"pricing_hosts"`
 	CRSHosts          []string `mapstructure:"crs_hosts"`
+	NewAPIHosts       []string `mapstructure:"newapi_hosts"`
 	AllowPrivateHosts bool     `mapstructure:"allow_private_hosts"`
 	// 关闭 URL 白名单校验时，是否允许 http URL（默认只允许 https）
 	AllowInsecureHTTP bool `mapstructure:"allow_insecure_http"`
