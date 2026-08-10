@@ -3,10 +3,14 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"math"
 	"strings"
 	"time"
 )
+
+// ErrRequestNotCloseable 审批批次无法关闭(不存在、或状态非 open/partially_applied、或仍有 pending 条目)。
+var ErrRequestNotCloseable = errors.New("price change request not closeable")
 
 // PricingSource 上游定价数据源选择
 type UpstreamPricingSource string
@@ -267,6 +271,7 @@ type UpstreamPriceSyncRepository interface {
 	GetItem(ctx context.Context, id int64) (*PriceChangeItem, error)
 	UpdateItemStatus(ctx context.Context, id int64, status string, reviewerID int64, note string, appliedAt *time.Time) error
 	ExpireOpenRequests(ctx context.Context, configID int64) (int, error)
+	CloseRequest(ctx context.Context, requestID int64) error
 }
 
 // MarshalConverted / UnmarshalConverted — JSONB 落库辅助。

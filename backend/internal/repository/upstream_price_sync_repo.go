@@ -375,6 +375,26 @@ WHERE source_config_id=$1 AND status='open'`, configID)
 	return int(n), nil
 }
 
+// CloseRequest 把单个审批批次标记为 closed(仅 open / partially_applied 可关闭)。
+// 由 service 层在确认无 pending 条目后调用。
+func (r *upstreamPriceSyncRepo) CloseRequest(ctx context.Context, requestID int64) error {
+	res, err := r.db.ExecContext(ctx, `
+UPDATE upstream_price_change_requests
+SET status='closed', closed_at=now()
+WHERE id=$1 AND status IN ('open', 'partially_applied')`, requestID)
+	if err != nil {
+		return fmt.Errorf("close upstream price change request: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("close upstream price change request rows affected: %w", err)
+	}
+	if n == 0 {
+		return service.ErrRequestNotCloseable
+	}
+	return nil
+}
+
 // ---------- scan helpers ----------
 
 func scanRequest(row rowScanner) (*service.PriceChangeRequest, error) {

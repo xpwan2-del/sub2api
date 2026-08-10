@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -66,7 +67,8 @@ func (c *UpstreamPricingClient) FetchPricing(ctx context.Context, baseURL string
 		if source == PricingSourceRatioConfig {
 			return nil, err
 		}
-		// auto: 回退 pricing
+		// auto: ratio_config 失败,记录被丢弃的错误后回退到 /api/pricing
+		slog.WarnContext(ctx, "upstream ratio_config failed, falling back to pricing", "base_url", baseURL, "err", err)
 	}
 	return c.fetchPricing(ctx, client, baseURL)
 }
