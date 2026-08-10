@@ -70,8 +70,20 @@ export async function syncNow(id: number) {
   return data
 }
 
+/** 后端 `response.Paginated` 信封(apiClient 拦截器已剥离外层 `data`)。 */
+export interface PaginatedPriceChangeRequests {
+  items: PriceChangeRequest[]
+  total: number
+  page: number
+  page_size: number
+  pages: number
+}
+
 export async function listRequests(params: { status?: string }) {
-  const { data } = await apiClient.get<PriceChangeRequest[]>(`${base}/price-change-requests`, { params })
+  const { data } = await apiClient.get<PaginatedPriceChangeRequests>(
+    `${base}/price-change-requests`,
+    { params },
+  )
   return data
 }
 

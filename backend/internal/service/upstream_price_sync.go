@@ -44,13 +44,17 @@ type PricingSnapshot struct {
 }
 
 // ConvertedPrice 还原后的 USD 定价(对应 channel_model_pricing 字段)
+//
+// JSON tag 同时服务于:① HTTP 响应序列化(gin c.JSON);② JSONB 落库
+// (MarshalConverted/UnmarshalConverted → upstream_converted/local_current/apply_value)。
+// 两端字段名保持一致,确保 marshal→unmarshal 可往返。
 type ConvertedPrice struct {
-	BillingMode     BillingMode // token / per_request
-	InputPrice      *float64
-	OutputPrice     *float64
-	CacheReadPrice  *float64
-	CacheWritePrice *float64
-	PerRequestPrice *float64
+	BillingMode     BillingMode `json:"billing_mode"` // token / per_request
+	InputPrice      *float64    `json:"input_price"`
+	OutputPrice     *float64    `json:"output_price"`
+	CacheReadPrice  *float64    `json:"cache_read_price"`
+	CacheWritePrice *float64    `json:"cache_write_price"`
+	PerRequestPrice *float64    `json:"per_request_price"`
 }
 
 // PriceChangeItemKind 审批条目类型
@@ -73,35 +77,35 @@ const (
 
 // PriceChangeRequest 审批批次
 type PriceChangeRequest struct {
-	ID                     int64
-	SourceConfigID         int64
-	TriggerType            string // manual/scheduled
-	Status                 string // open/partially_applied/closed/expired
-	UpstreamPricingVersion string
-	Summary                map[string]int
-	CreatedBy              int64
-	CreatedAt              time.Time
-	ClosedAt               *time.Time
+	ID                     int64          `json:"id"`
+	SourceConfigID         int64          `json:"source_config_id"`
+	TriggerType            string         `json:"trigger_type"` // manual/scheduled
+	Status                 string         `json:"status"`       // open/partially_applied/closed/expired
+	UpstreamPricingVersion string         `json:"upstream_pricing_version"`
+	Summary                map[string]int `json:"summary"`
+	CreatedBy              int64          `json:"created_by"`
+	CreatedAt              time.Time      `json:"created_at"`
+	ClosedAt               *time.Time     `json:"closed_at"`
 }
 
 // PriceChangeItem 审批条目
 type PriceChangeItem struct {
-	ID                int64
-	RequestID         int64
-	Kind              PriceChangeItemKind
-	Platform          string
-	ModelName         string
-	TargetChannelID   int64
-	UpstreamRaw       map[string]any
-	UpstreamConverted *ConvertedPrice
-	LocalCurrent      *ConvertedPrice
-	ApplyValue        *ConvertedPrice
-	Status            string // pending/approved/rejected/ignored/applied/failed
-	ReviewerID        int64
-	ReviewNote        string
-	ReviewedAt        *time.Time
-	AppliedAt         *time.Time
-	CreatedAt         time.Time
+	ID                int64               `json:"id"`
+	RequestID         int64               `json:"request_id"`
+	Kind              PriceChangeItemKind `json:"kind"`
+	Platform          string              `json:"platform"`
+	ModelName         string              `json:"model_name"`
+	TargetChannelID   int64               `json:"target_channel_id"`
+	UpstreamRaw       map[string]any      `json:"upstream_raw"`
+	UpstreamConverted *ConvertedPrice     `json:"upstream_converted"`
+	LocalCurrent      *ConvertedPrice     `json:"local_current"`
+	ApplyValue        *ConvertedPrice     `json:"apply_value"`
+	Status            string              `json:"status"` // pending/approved/rejected/ignored/applied/failed
+	ReviewerID        int64               `json:"reviewer_id"`
+	ReviewNote        string              `json:"review_note"`
+	ReviewedAt        *time.Time          `json:"reviewed_at"`
+	AppliedAt         *time.Time          `json:"applied_at"`
+	CreatedAt         time.Time           `json:"created_at"`
 }
 
 // ConvertPricing 把上游倍率还原成 USD 绝对单价。
@@ -226,24 +230,24 @@ func floatEq(a, b *float64) bool {
 // UpstreamSourceConfig 上游 new-api 同步源配置。APIKey/DashboardToken 在内存中
 // 为明文,落库时由 repository 层加密存储。
 type UpstreamSourceConfig struct {
-	ID                  int64
-	Name                string
-	BaseURL             string
-	APIKey              string // 内存明文;落库加密
-	DashboardToken      string // 内存明文;落库加密(P2 余额用)
-	TargetChannelID     int64
-	Enabled             bool
-	BasePricePer1k      float64
-	PricingSource       UpstreamPricingSource
-	SyncModelPrice      bool
-	SyncGroupRatio      bool
-	GroupMapping        map[string]int64
-	BalanceThresholdUSD *float64
-	LastSyncAt          *time.Time
-	LastPricingVersion  string
-	LastError           string
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
+	ID                  int64                 `json:"id"`
+	Name                string                `json:"name"`
+	BaseURL             string                `json:"base_url"`
+	APIKey              string                `json:"api_key"`         // 内存明文;落库加密
+	DashboardToken      string                `json:"dashboard_token"` // 内存明文;落库加密(P2 余额用)
+	TargetChannelID     int64                 `json:"target_channel_id"`
+	Enabled             bool                  `json:"enabled"`
+	BasePricePer1k      float64               `json:"base_price_per_1k"`
+	PricingSource       UpstreamPricingSource `json:"pricing_source"`
+	SyncModelPrice      bool                  `json:"sync_model_price"`
+	SyncGroupRatio      bool                  `json:"sync_group_ratio"`
+	GroupMapping        map[string]int64      `json:"group_mapping"`
+	BalanceThresholdUSD *float64              `json:"balance_threshold_usd"`
+	LastSyncAt          *time.Time            `json:"last_sync_at"`
+	LastPricingVersion  string                `json:"last_pricing_version"`
+	LastError           string                `json:"last_error"`
+	CreatedAt           time.Time             `json:"created_at"`
+	UpdatedAt           time.Time             `json:"updated_at"`
 }
 
 // RequestFilter 审批批次列表过滤 + 分页参数。
