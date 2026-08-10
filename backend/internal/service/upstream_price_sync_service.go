@@ -149,6 +149,38 @@ func (s *UpstreamPriceSyncService) ReviewItem(ctx context.Context, itemID int64,
 	return fmt.Errorf("unknown action: %s", action)
 }
 
+// --- 上游源配置 CRUD(薄封装,落库加密由 repository 层负责)---
+
+// ListConfigs 列出全部上游源配置。
+func (s *UpstreamPriceSyncService) ListConfigs(ctx context.Context) ([]UpstreamSourceConfig, error) {
+	return s.repo.ListConfigs(ctx)
+}
+
+// GetConfig 按 id 取单个上游源配置。
+func (s *UpstreamPriceSyncService) GetConfig(ctx context.Context, id int64) (*UpstreamSourceConfig, error) {
+	return s.repo.GetConfig(ctx, id)
+}
+
+// CreateConfig 新建上游源配置(APIKey/DashboardToken 由 repo 加密落库)。
+func (s *UpstreamPriceSyncService) CreateConfig(ctx context.Context, c *UpstreamSourceConfig) error {
+	return s.repo.CreateConfig(ctx, c)
+}
+
+// UpdateConfig 更新上游源配置。
+func (s *UpstreamPriceSyncService) UpdateConfig(ctx context.Context, c *UpstreamSourceConfig) error {
+	return s.repo.UpdateConfig(ctx, c)
+}
+
+// DeleteConfig 按 id 删除上游源配置。
+func (s *UpstreamPriceSyncService) DeleteConfig(ctx context.Context, id int64) error {
+	return s.repo.DeleteConfig(ctx, id)
+}
+
+// ListItems 列审批批次下的条目(薄封装)。
+func (s *UpstreamPriceSyncService) ListItems(ctx context.Context, requestID int64) ([]PriceChangeItem, error) {
+	return s.repo.ListItems(ctx, requestID)
+}
+
 // GetRequest 取审批批次详情(薄封装)。
 func (s *UpstreamPriceSyncService) GetRequest(ctx context.Context, id int64) (*PriceChangeRequest, error) {
 	return s.repo.GetRequest(ctx, id)
