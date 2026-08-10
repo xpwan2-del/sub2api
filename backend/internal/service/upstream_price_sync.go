@@ -1,6 +1,7 @@
 package service
 
 import (
+	"math"
 	"strings"
 	"time"
 )
@@ -135,4 +136,83 @@ func InferPlatform(modelName string) string {
 		return PlatformGrok
 	}
 	return ""
+}
+
+const priceTolerance = 1e-9
+
+// PriceChangeItemDraft diff 产出的待落库草稿
+type PriceChangeItemDraft struct {
+	Kind        PriceChangeItemKind
+	Platform    string
+	ModelName   string
+	UpstreamRaw map[string]any
+	Upstream    *ConvertedPrice
+	Local       *ConvertedPrice
+}
+
+// DiffPricing 对比上游快照(已还原)与本地渠道现有定价。
+// 以 (platform, model_name) 为键;local 一条 ChannelModelPricing 可能含多模型,展开。
+func DiffPricing(upstream map[string]ConvertedPrice, upstreamPlatforms map[string]string, local []ChannelModelPricing, channelID int64) []PriceChangeItemDraft {
+	type key struct{ platform, model string }
+	localIdx := map[key]*ChannelModelPricing{}
+	for i := range local {
+		p := &local[i]
+		for _, m := range p.Models {
+			localIdx[key{p.Platform, m}] = p
+		}
+	}
+	seen := map[key]bool{}
+	var drafts []PriceChangeItemDraft
+	for name, up := range upstream {
+		plat := upstreamPlatforms[name]
+		k := key{plat, name}
+		seen[k] = true
+		lp := localIdx[k]
+		if lp == nil {
+			upCopy := up
+			drafts = append(drafts, PriceChangeItemDraft{Kind: ItemKindModelAdded, Platform: plat, ModelName: name, Upstream: &upCopy})
+			continue
+		}
+		localPrice := channelPricingToConverted(lp)
+		if !convertedEqual(&up, localPrice) {
+			upCopy := up
+			drafts = append(drafts, PriceChangeItemDraft{Kind: ItemKindModelPrice, Platform: plat, ModelName: name, Upstream: &upCopy, Local: localPrice})
+		}
+	}
+	// 本地有、上游无
+	for k, lp := range localIdx {
+		if !seen[k] {
+			localPrice := channelPricingToConverted(lp)
+			drafts = append(drafts, PriceChangeItemDraft{Kind: ItemKindModelRemoved, Platform: k.platform, ModelName: k.model, Local: localPrice})
+		}
+	}
+	return drafts
+}
+
+func channelPricingToConverted(p *ChannelModelPricing) *ConvertedPrice {
+	return &ConvertedPrice{
+		BillingMode:     p.BillingMode,
+		InputPrice:      p.InputPrice,
+		OutputPrice:     p.OutputPrice,
+		CacheReadPrice:  p.CacheReadPrice,
+		CacheWritePrice: p.CacheWritePrice,
+		PerRequestPrice: p.PerRequestPrice,
+	}
+}
+
+func convertedEqual(a, b *ConvertedPrice) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return a.BillingMode == b.BillingMode &&
+		floatEq(a.InputPrice, b.InputPrice) && floatEq(a.OutputPrice, b.OutputPrice) &&
+		floatEq(a.CacheReadPrice, b.CacheReadPrice) && floatEq(a.CacheWritePrice, b.CacheWritePrice) &&
+		floatEq(a.PerRequestPrice, b.PerRequestPrice)
+}
+
+func floatEq(a, b *float64) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return math.Abs(*a-*b) <= priceTolerance
 }

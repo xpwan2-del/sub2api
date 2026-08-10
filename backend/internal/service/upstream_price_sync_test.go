@@ -64,3 +64,42 @@ func TestInferPlatform(t *testing.T) {
 		}
 	}
 }
+
+func TestDiffPricing_PriceChange(t *testing.T) {
+	up := map[string]ConvertedPrice{"claude-x": {BillingMode: BillingModeToken, InputPrice: floatPtr(3e-6), OutputPrice: floatPtr(6e-6)}}
+	plat := map[string]string{"claude-x": PlatformAnthropic}
+	local := []ChannelModelPricing{{ID: 10, ChannelID: 1, Platform: PlatformAnthropic, Models: []string{"claude-x"},
+		BillingMode: BillingModeToken, InputPrice: floatPtr(2e-6), OutputPrice: floatPtr(6e-6)}}
+	drafts := DiffPricing(up, plat, local, 1)
+	if len(drafts) != 1 {
+		t.Fatalf("got %d drafts, want 1", len(drafts))
+	}
+	if drafts[0].Kind != ItemKindModelPrice {
+		t.Fatalf("kind = %v, want model_price", drafts[0].Kind)
+	}
+}
+
+func TestDiffPricing_AddedAndRemoved(t *testing.T) {
+	up := map[string]ConvertedPrice{"new-model": {BillingMode: BillingModeToken, InputPrice: floatPtr(1e-6)}}
+	plat := map[string]string{"new-model": PlatformOpenAI}
+	local := []ChannelModelPricing{{ID: 9, ChannelID: 1, Platform: PlatformOpenAI, Models: []string{"gone-model"},
+		BillingMode: BillingModeToken, InputPrice: floatPtr(1e-6)}}
+	drafts := DiffPricing(up, plat, local, 1)
+	kinds := map[string]bool{}
+	for _, d := range drafts {
+		kinds[string(d.Kind)] = true
+	}
+	if !kinds[string(ItemKindModelAdded)] || !kinds[string(ItemKindModelRemoved)] {
+		t.Fatalf("expected model_added + model_removed, got %v", kinds)
+	}
+}
+
+func TestDiffPricing_NoChange(t *testing.T) {
+	up := map[string]ConvertedPrice{"m": {BillingMode: BillingModeToken, InputPrice: floatPtr(1e-6), OutputPrice: floatPtr(2e-6)}}
+	plat := map[string]string{"m": PlatformOpenAI}
+	local := []ChannelModelPricing{{ID: 1, ChannelID: 1, Platform: PlatformOpenAI, Models: []string{"m"},
+		BillingMode: BillingModeToken, InputPrice: floatPtr(1e-6), OutputPrice: floatPtr(2e-6)}}
+	if got := DiffPricing(up, plat, local, 1); len(got) != 0 {
+		t.Fatalf("expected no drafts, got %d", len(got))
+	}
+}
