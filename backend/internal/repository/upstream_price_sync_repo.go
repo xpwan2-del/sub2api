@@ -57,9 +57,18 @@ const selectConfigSQL = `SELECT id, name, base_url, api_key_encrypted, dashboard
 FROM upstream_source_configs`
 
 func (r *upstreamPriceSyncRepo) CreateConfig(ctx context.Context, c *service.UpstreamSourceConfig) error {
-	ak, _ := r.encrypt(c.APIKey)
-	dt, _ := r.encrypt(c.DashboardToken)
-	gm, _ := json.Marshal(c.GroupMapping)
+	ak, err := r.encrypt(c.APIKey)
+	if err != nil {
+		return fmt.Errorf("encrypt api_key: %w", err)
+	}
+	dt, err := r.encrypt(c.DashboardToken)
+	if err != nil {
+		return fmt.Errorf("encrypt dashboard_token: %w", err)
+	}
+	gm, err := json.Marshal(c.GroupMapping)
+	if err != nil {
+		return fmt.Errorf("marshal group_mapping: %w", err)
+	}
 	return r.db.QueryRowContext(ctx, `
 INSERT INTO upstream_source_configs
 (name, base_url, api_key_encrypted, dashboard_token_encrypted, target_channel_id, enabled,
@@ -228,10 +237,22 @@ VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, created_at`,
 	for i := range items {
 		it := &items[i]
 		it.RequestID = req.ID
-		raw, _ := json.Marshal(it.UpstreamRaw)
-		up, _ := service.MarshalConverted(it.UpstreamConverted)
-		loc, _ := service.MarshalConverted(it.LocalCurrent)
-		apv, _ := service.MarshalConverted(it.ApplyValue)
+		raw, mErr := json.Marshal(it.UpstreamRaw)
+		if mErr != nil {
+			return fmt.Errorf("marshal upstream_raw: %w", mErr)
+		}
+		up, mErr := service.MarshalConverted(it.UpstreamConverted)
+		if mErr != nil {
+			return fmt.Errorf("marshal upstream_converted: %w", mErr)
+		}
+		loc, mErr := service.MarshalConverted(it.LocalCurrent)
+		if mErr != nil {
+			return fmt.Errorf("marshal local_current: %w", mErr)
+		}
+		apv, mErr := service.MarshalConverted(it.ApplyValue)
+		if mErr != nil {
+			return fmt.Errorf("marshal apply_value: %w", mErr)
+		}
 		_, err = tx.ExecContext(ctx, `
 INSERT INTO upstream_price_change_items
 (request_id, kind, platform, model_name, target_channel_id, upstream_raw, upstream_converted, local_current, apply_value, status)
