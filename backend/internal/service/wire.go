@@ -677,6 +677,12 @@ var ProviderSet = wire.NewSet(
 	NewModelCatalogService,
 	// modelCatalogSettings 未导出，由 *SettingService 结构化满足。
 	wire.Bind(new(modelCatalogSettings), new(*SettingService)),
+
+	// 上游 new-api 定价同步：客户端 + 编排服务。
+	// channelApplier 未导出，由 *ChannelService 结构化满足。
+	NewUpstreamPricingClient,
+	NewUpstreamPriceSyncService,
+	wire.Bind(new(channelApplier), new(*ChannelService)),
 )
 
 // ProvideUserPlatformQuotaUsageFlusher 创建并启动 UserPlatformQuotaUsageFlusher。
