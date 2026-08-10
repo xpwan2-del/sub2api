@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
 	"math"
 	"strings"
 	"time"
@@ -215,4 +217,67 @@ func floatEq(a, b *float64) bool {
 		return a == b
 	}
 	return math.Abs(*a-*b) <= priceTolerance
+}
+
+// UpstreamSourceConfig 上游 new-api 同步源配置。APIKey/DashboardToken 在内存中
+// 为明文,落库时由 repository 层加密存储。
+type UpstreamSourceConfig struct {
+	ID                  int64
+	Name                string
+	BaseURL             string
+	APIKey              string // 内存明文;落库加密
+	DashboardToken      string // 内存明文;落库加密(P2 余额用)
+	TargetChannelID     int64
+	Enabled             bool
+	BasePricePer1k      float64
+	PricingSource       UpstreamPricingSource
+	SyncModelPrice      bool
+	SyncGroupRatio      bool
+	GroupMapping        map[string]int64
+	BalanceThresholdUSD *float64
+	LastSyncAt          *time.Time
+	LastPricingVersion  string
+	LastError           string
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+}
+
+// RequestFilter 审批批次列表过滤 + 分页参数。
+type RequestFilter struct {
+	SourceConfigID *int64
+	Status         string
+	Page           int
+	PageSize       int
+}
+
+// UpstreamPriceSyncRepository 上游定价同步的持久化接口(config + request/items CRUD)。
+type UpstreamPriceSyncRepository interface {
+	CreateConfig(ctx context.Context, c *UpstreamSourceConfig) error
+	GetConfig(ctx context.Context, id int64) (*UpstreamSourceConfig, error)
+	GetConfigByName(ctx context.Context, name string) (*UpstreamSourceConfig, error)
+	ListConfigs(ctx context.Context) ([]UpstreamSourceConfig, error)
+	UpdateConfig(ctx context.Context, c *UpstreamSourceConfig) error
+	DeleteConfig(ctx context.Context, id int64) error
+	UpdateConfigSyncState(ctx context.Context, id int64, lastSyncAt time.Time, version, lastErr string) error
+
+	CreateRequest(ctx context.Context, req *PriceChangeRequest, items []PriceChangeItem) error
+	GetRequest(ctx context.Context, id int64) (*PriceChangeRequest, error)
+	ListRequests(ctx context.Context, f RequestFilter) ([]PriceChangeRequest, int64, error)
+	ListItems(ctx context.Context, requestID int64) ([]PriceChangeItem, error)
+	GetItem(ctx context.Context, id int64) (*PriceChangeItem, error)
+	UpdateItemStatus(ctx context.Context, id int64, status string, reviewerID int64, note string, appliedAt *time.Time) error
+	ExpireOpenRequests(ctx context.Context, configID int64) (int, error)
+}
+
+// MarshalConverted / UnmarshalConverted — JSONB 落库辅助。
+func MarshalConverted(c *ConvertedPrice) ([]byte, error) { return json.Marshal(c) }
+func UnmarshalConverted(b []byte) (*ConvertedPrice, error) {
+	if len(b) == 0 {
+		return nil, nil
+	}
+	var c ConvertedPrice
+	if err := json.Unmarshal(b, &c); err != nil {
+		return nil, err
+	}
+	return &c, nil
 }
