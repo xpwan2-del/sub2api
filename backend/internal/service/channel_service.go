@@ -1024,3 +1024,90 @@ type UpdateChannelInput struct {
 	ApplyPricingToAccountStats *bool
 	AccountStatsPricingRules   *[]AccountStatsPricingRule
 }
+
+// ApplyUpstreamPricingEntry 对目标渠道写入/更新单条模型定价,不影响该渠道其他定价。
+// 同 (platform, models) 命中则更新,否则新建。用于上游价格同步审批应用。
+func (s *ChannelService) ApplyUpstreamPricingEntry(ctx context.Context, channelID int64, platform string, models []string, price ConvertedPrice) (*ChannelModelPricing, error) {
+	if channelID <= 0 {
+		return nil, infraerrors.BadRequest("invalid_channel", "channel id required")
+	}
+	if platform == "" {
+		platform = "anthropic" // 与 repo 默认一致(channel_repo_pricing.go:227)
+	}
+	existing, err := s.repo.ListModelPricing(ctx, channelID)
+	if err != nil {
+		return nil, fmt.Errorf("list model pricing: %w", err)
+	}
+	for i := range existing {
+		p := &existing[i]
+		if p.Platform != platform {
+			continue
+		}
+		if overlapModel(p.Models, models) {
+			p.Models = mergeModels(p.Models, models)
+			applyConvertedToPricing(p, price)
+			if err := s.repo.UpdateModelPricing(ctx, p); err != nil {
+				return nil, err
+			}
+			s.invalidateCache()
+			return p, nil
+		}
+	}
+	np := &ChannelModelPricing{ChannelID: channelID, Platform: platform, Models: models, BillingMode: price.BillingMode}
+	applyConvertedToPricing(np, price)
+	if err := s.repo.CreateModelPricing(ctx, np); err != nil {
+		return nil, err
+	}
+	s.invalidateCache()
+	return np, nil
+}
+
+// applyConvertedToPricing 把 ConvertedPrice 的价格字段写入 ChannelModelPricing。
+func applyConvertedToPricing(p *ChannelModelPricing, c ConvertedPrice) {
+	p.BillingMode = c.BillingMode
+	p.InputPrice = c.InputPrice
+	p.OutputPrice = c.OutputPrice
+	p.CacheReadPrice = c.CacheReadPrice
+	p.CacheWritePrice = c.CacheWritePrice
+	p.PerRequestPrice = c.PerRequestPrice
+}
+
+// overlapModel 判断两组模型名是否存在交集(大小写不敏感)。
+func overlapModel(a, b []string) bool {
+	if len(a) == 0 || len(b) == 0 {
+		return false
+	}
+	set := make(map[string]struct{}, len(a))
+	for _, m := range a {
+		set[strings.ToLower(m)] = struct{}{}
+	}
+	for _, m := range b {
+		if _, ok := set[strings.ToLower(m)]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+// mergeModels 合并两组模型名并去重(大小写不敏感),保留首次出现的大小写与顺序。
+func mergeModels(a, b []string) []string {
+	seen := make(map[string]struct{}, len(a)+len(b))
+	out := make([]string, 0, len(a)+len(b))
+	for _, m := range a {
+		key := strings.ToLower(m)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, m)
+	}
+	for _, m := range b {
+		key := strings.ToLower(m)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, m)
+	}
+	return out
+}
