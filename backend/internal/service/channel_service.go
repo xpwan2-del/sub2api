@@ -1043,8 +1043,9 @@ func (s *ChannelService) ApplyUpstreamPricingEntry(ctx context.Context, channelI
 		if p.Platform != platform {
 			continue
 		}
-		if overlapModel(p.Models, models) {
-			p.Models = mergeModels(p.Models, models)
+		// 仅当模型集合完全一致时才就地更新;部分重叠(例如对单模型 [a] 同步时
+		// 命中多模型行 [a,b])落到下方 create 分支,避免连带改写同行的其它模型价格。
+		if sameModelSet(p.Models, models) {
 			applyConvertedToPricing(p, price)
 			if err := s.repo.UpdateModelPricing(ctx, p); err != nil {
 				return nil, err
@@ -1072,42 +1073,27 @@ func applyConvertedToPricing(p *ChannelModelPricing, c ConvertedPrice) {
 	p.PerRequestPrice = c.PerRequestPrice
 }
 
-// overlapModel 判断两组模型名是否存在交集(大小写不敏感)。
-func overlapModel(a, b []string) bool {
+// sameModelSet 判断两组模型名是否构成同一集合(大小写不敏感;忽略顺序与重复)。
+// 用于 ApplyUpstreamPricingEntry 精确匹配现有定价行,避免部分重叠时误改多模型行。
+func sameModelSet(a, b []string) bool {
 	if len(a) == 0 || len(b) == 0 {
 		return false
 	}
-	set := make(map[string]struct{}, len(a))
+	setA := make(map[string]struct{}, len(a))
 	for _, m := range a {
-		set[strings.ToLower(m)] = struct{}{}
+		setA[strings.ToLower(m)] = struct{}{}
 	}
+	setB := make(map[string]struct{}, len(b))
 	for _, m := range b {
-		if _, ok := set[strings.ToLower(m)]; ok {
-			return true
+		setB[strings.ToLower(m)] = struct{}{}
+	}
+	if len(setA) != len(setB) {
+		return false
+	}
+	for k := range setB {
+		if _, ok := setA[k]; !ok {
+			return false
 		}
 	}
-	return false
-}
-
-// mergeModels 合并两组模型名并去重(大小写不敏感),保留首次出现的大小写与顺序。
-func mergeModels(a, b []string) []string {
-	seen := make(map[string]struct{}, len(a)+len(b))
-	out := make([]string, 0, len(a)+len(b))
-	for _, m := range a {
-		key := strings.ToLower(m)
-		if _, ok := seen[key]; ok {
-			continue
-		}
-		seen[key] = struct{}{}
-		out = append(out, m)
-	}
-	for _, m := range b {
-		key := strings.ToLower(m)
-		if _, ok := seen[key]; ok {
-			continue
-		}
-		seen[key] = struct{}{}
-		out = append(out, m)
-	}
-	return out
+	return true
 }

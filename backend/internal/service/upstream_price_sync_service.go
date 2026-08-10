@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/util/urlvalidator"
 )
 
@@ -163,11 +164,17 @@ func (s *UpstreamPriceSyncService) GetConfig(ctx context.Context, id int64) (*Up
 
 // CreateConfig 新建上游源配置(APIKey/DashboardToken 由 repo 加密落库)。
 func (s *UpstreamPriceSyncService) CreateConfig(ctx context.Context, c *UpstreamSourceConfig) error {
+	if c.BasePricePer1k <= 0 {
+		return infraerrors.BadRequest("invalid_base_price", "base_price_per_1k must be > 0")
+	}
 	return s.repo.CreateConfig(ctx, c)
 }
 
 // UpdateConfig 更新上游源配置。
 func (s *UpstreamPriceSyncService) UpdateConfig(ctx context.Context, c *UpstreamSourceConfig) error {
+	if c.BasePricePer1k <= 0 {
+		return infraerrors.BadRequest("invalid_base_price", "base_price_per_1k must be > 0")
+	}
 	return s.repo.UpdateConfig(ctx, c)
 }
 

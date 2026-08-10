@@ -302,7 +302,7 @@ const form = reactive<SourceForm>({
   api_key: '',
   dashboard_token: '',
   target_channel_id: null,
-  base_price_per_1k: 0,
+  base_price_per_1k: 0.002,
   pricing_source: 'auto',
   enabled: true,
   sync_model_price: true,
@@ -359,7 +359,7 @@ function resetForm() {
   form.api_key = ''
   form.dashboard_token = ''
   form.target_channel_id = channels.value[0]?.id ?? null
-  form.base_price_per_1k = 0
+  form.base_price_per_1k = 0.002
   form.pricing_source = 'auto'
   form.enabled = true
   form.sync_model_price = true
@@ -380,7 +380,7 @@ async function openEditDialog(source: UpstreamSourceConfig) {
   form.api_key = source.api_key ?? ''
   form.dashboard_token = source.dashboard_token ?? ''
   form.target_channel_id = source.target_channel_id ?? null
-  form.base_price_per_1k = source.base_price_per_1k ?? 0
+  form.base_price_per_1k = source.base_price_per_1k ?? 0.002
   form.pricing_source = (source.pricing_source as SourceForm['pricing_source']) || 'auto'
   form.enabled = !!source.enabled
   form.sync_model_price = source.sync_model_price !== false

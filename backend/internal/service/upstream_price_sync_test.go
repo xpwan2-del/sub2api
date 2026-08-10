@@ -103,3 +103,28 @@ func TestDiffPricing_NoChange(t *testing.T) {
 		t.Fatalf("expected no drafts, got %d", len(got))
 	}
 }
+
+func TestSameModelSet(t *testing.T) {
+	cases := []struct {
+		name string
+		a, b []string
+		want bool
+	}{
+		{"identical single", []string{"claude-opus"}, []string{"claude-opus"}, true},
+		{"identical multi same order", []string{"a", "b"}, []string{"a", "b"}, true},
+		{"identical multi diff order", []string{"a", "b"}, []string{"b", "a"}, true},
+		{"case insensitive", []string{"Claude-Opus", "Claude-Sonnet"}, []string{"claude-opus", "claude-sonnet"}, true},
+		{"duplicates collapse", []string{"a", "a", "b"}, []string{"b", "a"}, true},
+		{"partial overlap", []string{"a", "b"}, []string{"a"}, false},
+		{"disjoint", []string{"a"}, []string{"b"}, false},
+		{"subset other direction", []string{"a"}, []string{"a", "b"}, false},
+		{"both empty", nil, nil, false},
+		{"one empty", []string{"a"}, nil, false},
+		{"same single dup vs single", []string{"a", "a"}, []string{"a"}, true},
+	}
+	for _, tc := range cases {
+		if got := sameModelSet(tc.a, tc.b); got != tc.want {
+			t.Errorf("%s: sameModelSet(%v, %v) = %v, want %v", tc.name, tc.a, tc.b, got, tc.want)
+		}
+	}
+}

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
 // ---------- test helpers ----------
@@ -405,5 +406,51 @@ func TestReviewItem_ApplyErrorMarksFailed(t *testing.T) {
 	got, _ := fakeRepo.GetItem(context.Background(), itemID)
 	if got.Status != "failed" {
 		t.Fatalf("item status = %s, want failed", got.Status)
+	}
+}
+
+// TestCreateConfig_RejectsNonPositiveBasePrice 验证 I4 后端守卫:
+// base_price_per_1k <= 0 时拒绝(避免 ConvertPricing 全零美元价)。
+func TestCreateConfig_RejectsNonPositiveBasePrice(t *testing.T) {
+	fakeRepo := newFakeRepo()
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, newFakeChannelService(), testConfig(""))
+
+	for _, base := range []float64{0, -0.002} {
+		cfg := &UpstreamSourceConfig{Name: "x", BaseURL: "https://example.com", BasePricePer1k: base}
+		err := svc.CreateConfig(context.Background(), cfg)
+		if err == nil {
+			t.Fatalf("CreateConfig base=%v: expected error, got nil", base)
+		}
+		if !infraerrors.IsBadRequest(err) {
+			t.Fatalf("CreateConfig base=%v: expected BadRequest, got %T: %v", base, err, err)
+		}
+		if len(fakeRepo.configs) != 0 {
+			t.Fatalf("CreateConfig base=%v: should not persist, got %d configs", base, len(fakeRepo.configs))
+		}
+	}
+}
+
+// TestUpdateConfig_RejectsNonPositiveBasePrice 同上,针对 UpdateConfig。
+func TestUpdateConfig_RejectsNonPositiveBasePrice(t *testing.T) {
+	fakeRepo := newFakeRepo()
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, newFakeChannelService(), testConfig(""))
+
+	// 先正常建一条。
+	good := &UpstreamSourceConfig{Name: "x", BaseURL: "https://example.com", BasePricePer1k: 0.002}
+	if err := svc.CreateConfig(context.Background(), good); err != nil {
+		t.Fatalf("CreateConfig (good) err: %v", err)
+	}
+	savedPrice := fakeRepo.configs[good.ID].BasePricePer1k
+
+	// 用非法 base 更新应被拒,且不应改动已存值。
+	bad := *good
+	bad.BasePricePer1k = 0
+	if err := svc.UpdateConfig(context.Background(), &bad); err == nil {
+		t.Fatal("UpdateConfig base=0: expected error, got nil")
+	} else if !infraerrors.IsBadRequest(err) {
+		t.Fatalf("UpdateConfig base=0: expected BadRequest, got %T: %v", err, err)
+	}
+	if fakeRepo.configs[good.ID].BasePricePer1k != savedPrice {
+		t.Fatalf("UpdateConfig base=0: persisted value changed to %v", fakeRepo.configs[good.ID].BasePricePer1k)
 	}
 }
