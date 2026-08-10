@@ -1,0 +1,651 @@
+<template>
+  <AppLayout>
+    <TablePageLayout>
+      <template #filters>
+        <div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+          <!-- Left: Status filter -->
+          <div class="flex flex-1 flex-wrap items-center gap-3">
+            <Select
+              v-model="filters.status"
+              :options="statusFilterOptions"
+              :placeholder="t('admin.priceChangeRequests.allStatuses', 'All Statuses')"
+              class="w-44"
+              @change="loadRequests"
+            />
+          </div>
+
+          <!-- Right: Actions -->
+          <div class="flex w-full flex-shrink-0 flex-wrap items-center justify-end gap-3 lg:w-auto">
+            <button
+              @click="loadRequests"
+              :disabled="loading"
+              class="btn btn-secondary"
+              :title="t('common.refresh', 'Refresh')"
+            >
+              <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <template #table>
+        <DataTable
+          :columns="columns"
+          :data="requests"
+          :loading="loading"
+          row-key="id"
+          :virtual="false"
+          :clickable-rows="true"
+          :expanded-row-key="expandedRequestId"
+          :default-sort-key="'created_at'"
+          :default-sort-order="'desc'"
+          @rowClick="toggleExpand"
+        >
+          <template #cell-id="{ value }">
+            <span class="font-mono text-sm text-gray-700 dark:text-gray-300">#{{ value }}</span>
+          </template>
+
+          <template #cell-source_config_id="{ value }">
+            <span class="text-sm text-gray-600 dark:text-gray-400">
+              {{ sourceLabel(value) }}
+            </span>
+          </template>
+
+          <template #cell-status="{ value }">
+            <span :class="['inline-flex items-center rounded px-2 py-0.5 text-xs font-medium', statusBadgeClass(value)]">
+              {{ value }}
+            </span>
+          </template>
+
+          <template #cell-summary="{ row }">
+            <div class="flex flex-wrap gap-1">
+              <template v-if="row.summary && Object.keys(row.summary).length">
+                <span
+                  v-for="(count, key) in row.summary"
+                  :key="key"
+                  class="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-700 dark:bg-dark-700 dark:text-gray-300"
+                >
+                  {{ key }}: <span class="ml-1 font-medium">{{ count }}</span>
+                </span>
+              </template>
+              <span v-else class="text-xs text-gray-400">-</span>
+            </div>
+          </template>
+
+          <template #cell-created_at="{ value }">
+            <span class="text-sm text-gray-600 dark:text-gray-400">{{ formatDateTime(value) }}</span>
+          </template>
+
+          <template #cell-actions="{ row }">
+            <button
+              @click.stop="toggleExpand(row)"
+              class="btn-icon text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              :title="expandedRequestId === row.id ? t('common.collapse', 'Collapse') : t('common.expand', 'Expand')"
+            >
+              <Icon :name="expandedRequestId === row.id ? 'chevronUp' : 'chevronDown'" size="md" />
+            </button>
+          </template>
+
+          <!-- Expanded: items review -->
+          <template #row-expansion="{ row }">
+            <div class="bg-gray-50 px-4 py-4 dark:bg-dark-800/60">
+              <!-- Batch bar -->
+              <div
+                v-if="expandedRequestId === row.id && expandedItems.length > 0"
+                class="mb-3 flex flex-wrap items-center gap-3"
+              >
+                <label class="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <input
+                    type="checkbox"
+                    :checked="allVisibleSelected(row.id)"
+                    :indeterminate.prop="someVisibleSelected(row.id)"
+                    @change="toggleSelectAllVisible(row.id, ($event.target as HTMLInputElement).checked)"
+                    class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  {{ t('admin.priceChangeRequests.selectAllPending', 'Select all pending') }}
+                </label>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.priceChangeRequests.selectedCount', { count: selectedCount(row.id) }) }}
+                </span>
+                <button
+                  @click="batchApply(row.id)"
+                  :disabled="batchRunning || selectedItemsForRequest(row.id).length === 0"
+                  class="btn btn-primary btn-sm"
+                >
+                  <Icon name="check" size="md" class="mr-1" />
+                  {{ t('admin.priceChangeRequests.batchApply', 'Batch Apply') }}
+                </button>
+                <button
+                  v-if="row.status === 'open' || row.status === 'partially_applied'"
+                  @click="closeRequest(row)"
+                  :disabled="batchRunning"
+                  class="btn btn-secondary btn-sm"
+                >
+                  {{ t('admin.priceChangeRequests.closeRequest', 'Close Request') }}
+                </button>
+                <span v-if="loadingItems" class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('common.loading', 'Loading...') }}
+                </span>
+              </div>
+
+              <!-- Items table -->
+              <div v-if="loadingItems && expandedItems.length === 0" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                {{ t('common.loading', 'Loading...') }}
+              </div>
+              <div v-else-if="expandedItems.length === 0" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                {{ t('admin.priceChangeRequests.noItems', 'No items') }}
+              </div>
+              <div v-else class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-700">
+                  <thead>
+                    <tr class="text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      <th class="px-2 py-2 w-8"></th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.model', 'Model') }}</th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.platform', 'Platform') }}</th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.kind', 'Kind') }}</th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.upstream', 'Upstream') }}</th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.local', 'Local Current') }}</th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.applyValue', 'Apply Value') }}</th>
+                      <th class="px-2 py-2 text-right">{{ t('admin.priceChangeRequests.items.actions', 'Actions') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 dark:divide-dark-800">
+                    <tr
+                      v-for="item in expandedItems"
+                      :key="item.id"
+                      :class="['text-sm', isRemoved(item) ? 'opacity-50' : '']"
+                    >
+                      <td class="px-2 py-2 align-top">
+                        <input
+                          v-if="!isRemoved(item)"
+                          type="checkbox"
+                          :checked="isSelected(item.id)"
+                          @change="toggleSelect(item.id, ($event.target as HTMLInputElement).checked)"
+                          class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        />
+                      </td>
+                      <td class="px-2 py-2 align-top font-medium text-gray-900 dark:text-white">
+                        {{ modelField(item, 'name') }}
+                      </td>
+                      <td class="px-2 py-2 align-top text-gray-600 dark:text-gray-400">{{ item.platform || '-' }}</td>
+                      <td class="px-2 py-2 align-top">
+                        <span :class="['inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium', kindBadgeClass(item.kind)]">
+                          {{ item.kind }}
+                        </span>
+                      </td>
+                      <td class="px-2 py-2 align-top font-mono text-xs text-gray-700 dark:text-gray-300">
+                        <div class="flex flex-col leading-tight">
+                          <span v-for="(line, idx) in priceDetailStrings(item.upstream_converted)" :key="'up-' + item.id + '-' + idx" class="block">{{ line }}</span>
+                        </div>
+                      </td>
+                      <td class="px-2 py-2 align-top font-mono text-xs text-gray-700 dark:text-gray-300">
+                        <div class="flex flex-col leading-tight">
+                          <span v-for="(line, idx) in priceDetailStrings(item.local_current)" :key="'lc-' + item.id + '-' + idx" class="block">{{ line }}</span>
+                        </div>
+                      </td>
+                      <td class="px-2 py-2 align-top">
+                        <input
+                          :value="primaryValue(drafts[item.id])"
+                          type="number"
+                          step="any"
+                          min="0"
+                          :disabled="isRemoved(item)"
+                          :placeholder="primaryHint(item)"
+                          class="input py-1 text-xs"
+                          style="width: 8rem"
+                          @input="setPrimaryValue(drafts[item.id], ($event.target as HTMLInputElement).value)"
+                        />
+                      </td>
+                      <td class="px-2 py-2 align-top text-right">
+                        <div class="flex items-center justify-end gap-1">
+                          <span
+                            v-if="item.status && item.status !== 'pending'"
+                            :class="['mr-1 inline-flex items-center rounded px-1.5 py-0.5 text-xs', statusBadgeClass(item.status)]"
+                          >
+                            {{ item.status }}
+                          </span>
+                          <button
+                            @click="reviewSingle(item, 'apply')"
+                            :disabled="isRemoved(item) || reviewingId === item.id"
+                            class="btn-icon text-green-600 hover:text-green-700 disabled:opacity-30 dark:text-green-400"
+                            :title="t('admin.priceChangeRequests.actions.apply', 'Apply')"
+                          >
+                            <Icon name="check" size="md" />
+                          </button>
+                          <button
+                            @click="reviewSingle(item, 'reject')"
+                            :disabled="reviewingId === item.id"
+                            class="btn-icon text-red-600 hover:text-red-700 disabled:opacity-30 dark:text-red-400"
+                            :title="t('admin.priceChangeRequests.actions.reject', 'Reject')"
+                          >
+                            <Icon name="x" size="md" />
+                          </button>
+                          <button
+                            @click="reviewSingle(item, 'ignore')"
+                            :disabled="reviewingId === item.id"
+                            class="btn-icon text-gray-500 hover:text-gray-700 disabled:opacity-30 dark:text-gray-400"
+                            :title="t('admin.priceChangeRequests.actions.ignore', 'Ignore')"
+                          >
+                            <Icon name="ban" size="md" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </template>
+
+          <template #empty>
+            <EmptyState
+              icon=""
+              :title="t('admin.priceChangeRequests.noRequestsTitle', 'No Price Change Requests')"
+              :description="t('admin.priceChangeRequests.noRequestsDesc', 'Trigger a sync from an upstream source to generate review items.')"
+            />
+          </template>
+        </DataTable>
+      </template>
+    </TablePageLayout>
+  </AppLayout>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useAppStore } from '@/stores/app'
+import { extractApiErrorMessage } from '@/utils/apiError'
+import { adminAPI } from '@/api/admin'
+import type { PriceChangeRequest, PriceChangeItem } from '@/api/admin/upstreamPriceSync'
+import type { Column } from '@/components/common/types'
+import AppLayout from '@/components/layout/AppLayout.vue'
+import TablePageLayout from '@/components/layout/TablePageLayout.vue'
+import DataTable from '@/components/common/DataTable.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import Select from '@/components/common/Select.vue'
+import Icon from '@/components/icons/Icon.vue'
+
+const { t } = useI18n()
+const appStore = useAppStore()
+
+// ── Inline PriceDetail render function (formats a ConvertedPrice-like object) ──
+// Reads both PascalCase (backend raw) and snake_case keys defensively.
+function pickPrice(p: any): {
+  mode: string
+  input: number | null
+  output: number | null
+  cacheRead: number | null
+  cacheWrite: number | null
+  perRequest: number | null
+} {
+  const g = (keys: string[]): any => {
+    for (const k of keys) {
+      const v = p?.[k]
+      if (v !== undefined && v !== null && v !== '') return v
+    }
+    return null
+  }
+  return {
+    mode: g(['BillingMode', 'billing_mode']) ?? '',
+    input: g(['InputPrice', 'input_price']),
+    output: g(['OutputPrice', 'output_price']),
+    cacheRead: g(['CacheReadPrice', 'cache_read_price']),
+    cacheWrite: g(['CacheWritePrice', 'cache_write_price']),
+    perRequest: g(['PerRequestPrice', 'per_request_price']),
+  }
+}
+
+function fmtNum(v: number | null | undefined): string {
+  if (v === null || v === undefined || Number.isNaN(v)) return '-'
+  // Per-token USD prices are small; show up to 8 sig decimals, trim trailing zeros.
+  const abs = Math.abs(v)
+  if (abs !== 0 && abs < 0.01) return v.toFixed(8).replace(/0+$/, '').replace(/\.$/, '')
+  return String(Number(v.toFixed(6)))
+}
+
+function priceDetailStrings(p: any): string[] {
+  if (!p || typeof p !== 'object') return ['-']
+  const c = pickPrice(p)
+  const lines: string[] = []
+  if (c.mode) lines.push(`[${c.mode}]`)
+  if (c.perRequest !== null) lines.push(`per_req=${fmtNum(c.perRequest)}`)
+  if (c.input !== null) lines.push(`in=${fmtNum(c.input)}`)
+  if (c.output !== null) lines.push(`out=${fmtNum(c.output)}`)
+  if (c.cacheRead !== null) lines.push(`cache_r=${fmtNum(c.cacheRead)}`)
+  if (c.cacheWrite !== null) lines.push(`cache_w=${fmtNum(c.cacheWrite)}`)
+  return lines.length ? lines : ['-']
+}
+
+// ── Columns ──
+const columns = computed<Column[]>(() => [
+  { key: 'id', label: t('admin.priceChangeRequests.columns.id', 'ID'), sortable: true },
+  { key: 'source_config_id', label: t('admin.priceChangeRequests.columns.source', 'Source'), sortable: false },
+  { key: 'status', label: t('admin.priceChangeRequests.columns.status', 'Status'), sortable: true },
+  { key: 'summary', label: t('admin.priceChangeRequests.columns.summary', 'Summary'), sortable: false },
+  { key: 'created_at', label: t('admin.priceChangeRequests.columns.created', 'Created'), sortable: true },
+  { key: 'actions', label: '', sortable: false },
+])
+
+const statusFilterOptions = computed(() => [
+  { value: '', label: t('admin.priceChangeRequests.allStatuses', 'All Statuses') },
+  { value: 'open', label: t('admin.priceChangeRequests.statusOpen', 'Open') },
+  { value: 'partially_applied', label: t('admin.priceChangeRequests.statusPartially', 'Partially Applied') },
+  { value: 'closed', label: t('admin.priceChangeRequests.statusClosed', 'Closed') },
+  { value: 'expired', label: t('admin.priceChangeRequests.statusExpired', 'Expired') },
+])
+
+// ── State ──
+const requests = ref<PriceChangeRequest[]>([])
+const loading = ref(false)
+const filters = reactive({ status: '' })
+const sourcesIndex = ref<Record<number, string>>({})
+
+const expandedRequestId = ref<number | null>(null)
+const expandedItems = ref<PriceChangeItem[]>([])
+const loadingItems = ref(false)
+const reviewingId = ref<number | null>(null)
+const batchRunning = ref(false)
+
+// Per-item editable apply_value drafts: itemId → { mode, input, output, cacheRead, cacheWrite, perRequest }
+interface Draft {
+  mode: string
+  input: string
+  output: string
+  cacheRead: string
+  cacheWrite: string
+  perRequest: string
+}
+const drafts = reactive<Record<number, Draft>>({})
+
+// Selected item ids (per request, but stored globally keyed by item id; current request implied)
+const selected = reactive<Set<number>>(new Set())
+
+// ── Helpers ──
+function formatDateTime(value: string): string {
+  if (!value) return '-'
+  return new Date(value).toLocaleString()
+}
+
+function sourceLabel(id: number): string {
+  return sourcesIndex.value[id] ?? `source #${id}`
+}
+
+function isRemoved(item: PriceChangeItem): boolean {
+  return item.kind === 'model_removed'
+}
+
+function modelField(item: PriceChangeItem, _key: string): string {
+  // Defensive: item.model_name (snake) or ModelName (pascal)
+  return (item as any).model_name ?? (item as any).ModelName ?? '-'
+}
+
+function statusBadgeClass(status: string): string {
+  switch (status) {
+    case 'open':
+      return 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+    case 'partially_applied':
+      return 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+    case 'closed':
+      return 'bg-gray-100 text-gray-600 dark:bg-dark-700 dark:text-gray-300'
+    case 'expired':
+      return 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+    case 'applied':
+      return 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+    case 'pending':
+      return 'bg-gray-50 text-gray-600 dark:bg-dark-700 dark:text-gray-300'
+    case 'rejected':
+    case 'failed':
+      return 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+    case 'ignored':
+      return 'bg-gray-50 text-gray-500 dark:bg-dark-700 dark:text-gray-400'
+    default:
+      return 'bg-gray-100 text-gray-600 dark:bg-dark-700 dark:text-gray-300'
+  }
+}
+
+function kindBadgeClass(kind: string): string {
+  switch (kind) {
+    case 'model_added':
+      return 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+    case 'model_removed':
+      return 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+    default:
+      return 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+  }
+}
+
+// Draft helpers
+function buildDraft(item: PriceChangeItem): Draft {
+  const src = pickPrice((item as any).apply_value) ?? null
+  const fallback = pickPrice((item as any).upstream_converted) ?? null
+  const base = src && (src.input !== null || src.perRequest !== null) ? src : fallback
+  const num = (v: number | null) => (v === null ? '' : String(v))
+  return {
+    mode: base.mode || 'token',
+    input: num(base.input),
+    output: num(base.output),
+    cacheRead: num(base.cacheRead),
+    cacheWrite: num(base.cacheWrite),
+    perRequest: num(base.perRequest),
+  }
+}
+
+// Primary editable value accessors bound directly to the reactive draft.
+function primaryValue(d: Draft | undefined): string {
+  if (!d) return ''
+  return d.mode === 'per_request' ? d.perRequest : d.input
+}
+
+function setPrimaryValue(d: Draft | undefined, v: string) {
+  if (!d) return
+  if (d.mode === 'per_request') d.perRequest = v
+  else d.input = v
+}
+
+function primaryHint(item: PriceChangeItem): string {
+  const c = pickPrice((item as any).apply_value) ?? pickPrice((item as any).upstream_converted)
+  if (!c) return '0'
+  return c.mode === 'per_request' ? fmtNum(c.perRequest) : fmtNum(c.input)
+}
+
+// Build apply_value payload from a draft. Send BOTH PascalCase and snake_case
+// keys so the value binds regardless of whether the backend service struct has
+// json tags (defensive against the cross-task serialization contract).
+function buildApplyPayload(itemId: number): Record<string, unknown> {
+  const d = drafts[itemId]
+  if (!d) return {}
+  const toNum = (s: string) => (s === '' ? null : Number(s))
+  const mode = d.mode || 'token'
+  const input = toNum(d.input)
+  const output = toNum(d.output)
+  const cacheRead = toNum(d.cacheRead)
+  const cacheWrite = toNum(d.cacheWrite)
+  const perRequest = toNum(d.perRequest)
+  return {
+    BillingMode: mode,
+    billing_mode: mode,
+    InputPrice: input,
+    input_price: input,
+    OutputPrice: output,
+    output_price: output,
+    CacheReadPrice: cacheRead,
+    cache_read_price: cacheRead,
+    CacheWritePrice: cacheWrite,
+    cache_write_price: cacheWrite,
+    PerRequestPrice: perRequest,
+    per_request_price: perRequest,
+  }
+}
+
+// Selection helpers (operate within the currently expanded request)
+function currentRequestItemIds(): number[] {
+  return expandedItems.value.filter((i) => !isRemoved(i)).map((i) => i.id)
+}
+
+function selectedItemsForRequest(_reqId: number): PriceChangeItem[] {
+  return expandedItems.value.filter((i) => selected.has(i.id))
+}
+
+function selectedCount(_reqId: number): number {
+  return selectedItemsForRequest(_reqId).length
+}
+
+function isSelected(itemId: number): boolean {
+  return selected.has(itemId)
+}
+
+function toggleSelect(itemId: number, checked: boolean) {
+  if (checked) selected.add(itemId)
+  else selected.delete(itemId)
+}
+
+function allVisibleSelected(_reqId: number): boolean {
+  const ids = currentRequestItemIds()
+  return ids.length > 0 && ids.every((id) => selected.has(id))
+}
+
+function someVisibleSelected(_reqId: number): boolean {
+  const ids = currentRequestItemIds()
+  return ids.some((id) => selected.has(id)) && !ids.every((id) => selected.has(id))
+}
+
+function toggleSelectAllVisible(_reqId: number, checked: boolean) {
+  for (const id of currentRequestItemIds()) {
+    if (checked) selected.add(id)
+    else selected.delete(id)
+  }
+}
+
+// ── Load ──
+async function loadRequests() {
+  loading.value = true
+  try {
+    const res: any = await adminAPI.upstreamPriceSync.listRequests({
+      status: filters.status || undefined,
+    })
+    // Defensive: backend may return a paginated {items, total} or a plain array.
+    const list = Array.isArray(res) ? res : (res?.items ?? [])
+    requests.value = list as PriceChangeRequest[]
+    // Index source labels (best-effort)
+    for (const r of requests.value) {
+      const sid = (r as any).source_config_id ?? (r as any).SourceConfigID
+      if (sid && !(sid in sourcesIndex.value)) sourcesIndex.value[sid] = `source #${sid}`
+    }
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('admin.priceChangeRequests.loadError', 'Failed to load requests')))
+  } finally {
+    loading.value = false
+  }
+}
+
+async function toggleExpand(row: PriceChangeRequest) {
+  const id = (row as any).id ?? (row as any).ID
+  if (expandedRequestId.value === id) {
+    expandedRequestId.value = null
+    expandedItems.value = []
+    return
+  }
+  expandedRequestId.value = id
+  expandedItems.value = []
+  selected.clear()
+  loadingItems.value = true
+  try {
+    const res: any = await adminAPI.upstreamPriceSync.getRequest(id)
+    // Defensive: backend may return {request, items} or a flattened {...request, items}.
+    const items = (res?.items ?? []) as PriceChangeItem[]
+    expandedItems.value = items
+    // Initialize drafts for pending items
+    for (const it of items) {
+      if (!(it.id in drafts)) drafts[it.id] = buildDraft(it)
+    }
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('admin.priceChangeRequests.loadItemsError', 'Failed to load request details')))
+  } finally {
+    loadingItems.value = false
+  }
+}
+
+// ── Review actions ──
+async function reviewSingle(item: PriceChangeItem, action: 'apply' | 'reject' | 'ignore') {
+  if (reviewingId.value !== null) return
+  const reqId = expandedRequestId.value
+  if (reqId == null) return
+  reviewingId.value = item.id
+  try {
+    const body: { action: string; apply_value?: Record<string, unknown> } = { action }
+    if (action === 'apply') body.apply_value = buildApplyPayload(item.id)
+    await adminAPI.upstreamPriceSync.reviewItem(reqId, item.id, body)
+    appStore.showSuccess(t('admin.priceChangeRequests.reviewDone', 'Item reviewed'))
+    await refreshExpanded()
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('admin.priceChangeRequests.reviewError', 'Failed to review item')))
+  } finally {
+    reviewingId.value = null
+  }
+}
+
+async function batchApply(_reqId: number) {
+  const items = selectedItemsForRequest(_reqId)
+  if (items.length === 0) return
+  batchRunning.value = true
+  let ok = 0
+  let fail = 0
+  try {
+    for (const item of items) {
+      try {
+        await adminAPI.upstreamPriceSync.reviewItem(expandedRequestId.value as number, item.id, {
+          action: 'apply',
+          apply_value: buildApplyPayload(item.id),
+        })
+        ok++
+      } catch {
+        fail++
+      }
+    }
+    if (fail === 0) {
+      appStore.showSuccess(t('admin.priceChangeRequests.batchDone', { count: ok }))
+    } else {
+      appStore.showWarning(t('admin.priceChangeRequests.batchPartial', { ok, fail }))
+    }
+    selected.clear()
+    await refreshExpanded()
+  } finally {
+    batchRunning.value = false
+  }
+}
+
+async function closeRequest(row: PriceChangeRequest) {
+  const id = (row as any).id ?? (row as any).ID
+  try {
+    await adminAPI.upstreamPriceSync.closeRequest(id)
+    appStore.showSuccess(t('admin.priceChangeRequests.closed', 'Request closed'))
+    await loadRequests()
+    expandedRequestId.value = null
+    expandedItems.value = []
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('admin.priceChangeRequests.closeError', 'Failed to close request')))
+  }
+}
+
+async function refreshExpanded() {
+  const reqId = expandedRequestId.value
+  if (reqId == null) return
+  try {
+    const res: any = await adminAPI.upstreamPriceSync.getRequest(reqId)
+    expandedItems.value = (res?.items ?? []) as PriceChangeItem[]
+    // Refresh drafts for any new pending items
+    for (const it of expandedItems.value) {
+      if (!(it.id in drafts)) drafts[it.id] = buildDraft(it)
+    }
+  } catch {
+    // non-fatal
+  }
+  // Also refresh the request list summary
+  await loadRequests()
+}
+
+// ── Lifecycle ──
+onMounted(() => {
+  loadRequests()
+})
+</script>

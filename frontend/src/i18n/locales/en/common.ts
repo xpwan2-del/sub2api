@@ -190,6 +190,9 @@ export default {
     channelMonitor: 'Channel Monitor',
     channelStatus: 'Channel Status',
     riskControl: 'Risk Control',
+    upstreamSync: 'Upstream Sync',
+    upstreamSources: 'Upstream Sources',
+    priceChangeRequests: 'Price Change Requests',
   },
 
   // Auth

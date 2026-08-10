@@ -190,6 +190,9 @@ export default {
     channelMonitor: '渠道监控',
     channelStatus: '渠道状态',
     riskControl: '风控中心',
+    upstreamSync: '上游同步',
+    upstreamSources: '上游源配置',
+    priceChangeRequests: '价格变更审批',
   },
 
   // Auth

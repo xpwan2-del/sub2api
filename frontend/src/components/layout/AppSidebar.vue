@@ -684,6 +684,36 @@ const GridIcon = {
     )
 }
 
+const CloudIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z'
+        })
+      ]
+    )
+}
+
+const ClipboardIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
+        })
+      ]
+    )
+}
+
 const ChevronDownIcon = {
   render: () =>
     h(
@@ -792,6 +822,17 @@ const adminNavItems = computed((): NavItem[] => {
       children: [
         { path: '/admin/channels/pricing', label: t('nav.channelPricing'), icon: PriceTagIcon },
         { path: '/admin/channels/monitor', label: t('nav.channelMonitor'), icon: SignalIcon, featureFlag: flagChannelMonitor },
+      ],
+    },
+    {
+      path: '/admin/upstream-sync',
+      label: t('nav.upstreamSync', 'Upstream Sync'),
+      icon: CloudIcon,
+      hideInSimpleMode: true,
+      expandOnly: true,
+      children: [
+        { path: '/admin/upstream-sources', label: t('nav.upstreamSources', 'Upstream Sources'), icon: CloudIcon },
+        { path: '/admin/price-change-requests', label: t('nav.priceChangeRequests', 'Price Change Requests'), icon: ClipboardIcon },
       ],
     },
     // { path: '/admin/subscriptions', label: t('nav.subscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
