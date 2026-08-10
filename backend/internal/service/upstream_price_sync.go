@@ -1,6 +1,9 @@
 package service
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 // PricingSource 上游定价数据源选择
 type UpstreamPricingSource string
@@ -92,4 +95,44 @@ type PriceChangeItem struct {
 	ReviewedAt        *time.Time
 	AppliedAt         *time.Time
 	CreatedAt         time.Time
+}
+
+// ConvertPricing 把上游倍率还原成 USD 绝对单价。
+func ConvertPricing(m UpstreamModelPricing, basePer1k float64) ConvertedPrice {
+	if m.QuotaType == 1 && m.ModelPrice != nil && *m.ModelPrice >= 0 {
+		p := *m.ModelPrice
+		return ConvertedPrice{BillingMode: BillingModePerRequest, PerRequestPrice: &p}
+	}
+	input := m.ModelRatio * basePer1k / 1000
+	out := ConvertedPrice{BillingMode: BillingModeToken, InputPrice: &input}
+	if m.CompletionRatio != 0 {
+		o := input * m.CompletionRatio
+		out.OutputPrice = &o
+	}
+	if m.CacheRatio != nil {
+		c := input * *m.CacheRatio
+		out.CacheReadPrice = &c
+	}
+	if m.CreateCacheRatio != nil {
+		cw := input * *m.CreateCacheRatio
+		out.CacheWritePrice = &cw
+	}
+	return out
+}
+
+// InferPlatform 按模型名前缀推断平台;未识别返回空串。
+func InferPlatform(modelName string) string {
+	name := strings.ToLower(modelName)
+	switch {
+	case strings.HasPrefix(name, "gpt-") || strings.HasPrefix(name, "chatgpt-") ||
+		strings.HasPrefix(name, "o1-") || strings.HasPrefix(name, "o3-") || strings.HasPrefix(name, "text-"):
+		return PlatformOpenAI
+	case strings.HasPrefix(name, "claude-"):
+		return PlatformAnthropic
+	case strings.HasPrefix(name, "gemini-"):
+		return PlatformGemini
+	case strings.HasPrefix(name, "grok-"):
+		return PlatformGrok
+	}
+	return ""
 }
