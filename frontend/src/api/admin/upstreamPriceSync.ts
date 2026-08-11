@@ -14,6 +14,8 @@ export interface UpstreamSourceConfig {
   base_url: string
   api_key: string
   dashboard_token?: string
+  dashboard_auth_mode?: 'auto' | 'bearer' | 'raw' | 'raw_user' | 'bearer_user'
+  dashboard_user_id?: number | null
   proxy_id?: number | null
   target_channel_id: number
   enabled: boolean

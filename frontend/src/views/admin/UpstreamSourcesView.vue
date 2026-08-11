@@ -206,6 +206,31 @@
           </div>
         </div>
 
+        <!-- Dashboard Auth Mode + User ID -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label class="input-label">{{ t('admin.upstreamSources.fields.dashboardAuthMode', 'Dashboard Auth Mode') }}</label>
+            <Select v-model="form.dashboard_auth_mode" :options="dashboardAuthModeOptions" />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.upstreamSources.fields.dashboardAuthModeHint', 'How to authenticate when querying balance. Use auto for most cases.') }}
+            </p>
+          </div>
+          <div>
+            <label class="input-label">{{ t('admin.upstreamSources.fields.dashboardUserId', 'Dashboard User ID') }}</label>
+            <input
+              v-model.number="form.dashboard_user_id"
+              type="number"
+              min="1"
+              class="input"
+              :placeholder="t('admin.upstreamSources.fields.optional', 'Optional')"
+              :disabled="!needsDashboardUserId"
+            />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.upstreamSources.fields.dashboardUserIdHint', 'Required only for raw_user/bearer_user modes (older new-api versions).') }}
+            </p>
+          </div>
+        </div>
+
         <!-- Target Channel + Proxy -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -329,6 +354,16 @@ const pricingSourceOptions = computed(() => [
   { value: 'pricing', label: t('admin.upstreamSources.pricingSourcePricing', 'pricing') },
 ])
 
+const dashboardAuthModeOptions = computed(() => [
+  { value: 'auto', label: t('admin.upstreamSources.dashboardAuthModeAuto', 'auto') },
+  { value: 'bearer', label: t('admin.upstreamSources.dashboardAuthModeBearer', 'bearer') },
+  { value: 'raw', label: t('admin.upstreamSources.dashboardAuthModeRaw', 'raw') },
+  { value: 'raw_user', label: t('admin.upstreamSources.dashboardAuthModeRawUser', 'raw_user') },
+  { value: 'bearer_user', label: t('admin.upstreamSources.dashboardAuthModeBearerUser', 'bearer_user') },
+])
+
+const needsDashboardUserId = computed(() => form.dashboard_auth_mode === 'raw_user' || form.dashboard_auth_mode === 'bearer_user')
+
 // ── State ──
 const sources = ref<UpstreamSourceConfig[]>([])
 const channels = ref<{ id: number; name: string }[]>([])
@@ -350,6 +385,8 @@ interface SourceForm {
   base_url: string
   api_key: string
   dashboard_token: string
+  dashboard_auth_mode: 'auto' | 'bearer' | 'raw' | 'raw_user' | 'bearer_user'
+  dashboard_user_id: number | null
   proxy_id: number | null
   target_channel_id: number | null
   balance_threshold_usd: number | null
@@ -364,6 +401,8 @@ const form = reactive<SourceForm>({
   base_url: '',
   api_key: '',
   dashboard_token: '',
+  dashboard_auth_mode: 'auto',
+  dashboard_user_id: null,
   proxy_id: null,
   target_channel_id: null,
   balance_threshold_usd: null,
@@ -453,6 +492,8 @@ function resetForm() {
   form.base_url = ''
   form.api_key = ''
   form.dashboard_token = ''
+  form.dashboard_auth_mode = 'auto'
+  form.dashboard_user_id = null
   form.proxy_id = null
   form.target_channel_id = channels.value[0]?.id ?? null
   form.balance_threshold_usd = null
@@ -476,6 +517,8 @@ async function openEditDialog(source: UpstreamSourceConfig) {
   form.base_url = source.base_url ?? ''
   form.api_key = source.api_key ?? ''
   form.dashboard_token = source.dashboard_token ?? ''
+  form.dashboard_auth_mode = (source.dashboard_auth_mode as SourceForm['dashboard_auth_mode']) || 'auto'
+  form.dashboard_user_id = source.dashboard_user_id ?? null
   form.proxy_id = source.proxy_id ?? null
   form.target_channel_id = source.target_channel_id ?? null
   form.balance_threshold_usd = source.balance_threshold_usd ?? null
@@ -501,6 +544,8 @@ async function handleSubmit() {
     base_url: form.base_url.trim(),
     api_key: form.api_key,
     dashboard_token: form.dashboard_token || '',
+    dashboard_auth_mode: form.dashboard_auth_mode,
+    dashboard_user_id: needsDashboardUserId.value ? form.dashboard_user_id : null,
     proxy_id: form.proxy_id,
     target_channel_id: form.target_channel_id,
     balance_threshold_usd: form.balance_threshold_usd,

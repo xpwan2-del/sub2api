@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -74,7 +75,7 @@ func TestFetchBalance(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	snapshot, err := newTestClient().FetchBalance(context.Background(), srv.URL, "dashboard-token", "")
+	snapshot, err := newTestClient().FetchBalance(context.Background(), srv.URL, "dashboard-token", DashboardAuthModeBearer, nil, "")
 	if err != nil {
 		t.Fatalf("FetchBalance err: %v", err)
 	}
@@ -89,12 +90,128 @@ func TestFetchBalance_AllowsNegativeQuota(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	snapshot, err := newTestClient().FetchBalance(context.Background(), srv.URL, "token", "")
+	snapshot, err := newTestClient().FetchBalance(context.Background(), srv.URL, "token", DashboardAuthModeBearer, nil, "")
 	if err != nil {
 		t.Fatalf("FetchBalance err: %v", err)
 	}
 	if snapshot.BalanceUSD != -0.5 {
 		t.Fatalf("balance = %v, want -0.5", snapshot.BalanceUSD)
+	}
+}
+
+// TestFetchBalance_AutoFallsBackToRaw 验证 auto 模式在 bearer 返回 401 时回退到裸 Token。
+func TestFetchBalance_AutoFallsBackToRaw(t *testing.T) {
+	var seenAuth []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenAuth = append(seenAuth, r.Header.Get("Authorization"))
+		if r.Header.Get("Authorization") == "Bearer token" {
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte(`{"success":false,"message":"invalid bearer token"}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"success":true,"data":{"quota":500000,"used_quota":0}}`))
+	}))
+	defer srv.Close()
+
+	snapshot, err := newTestClient().FetchBalance(context.Background(), srv.URL, "token", DashboardAuthModeAuto, nil, "")
+	if err != nil {
+		t.Fatalf("FetchBalance err: %v", err)
+	}
+	if snapshot.BalanceUSD != 1 {
+		t.Fatalf("balance = %v", snapshot.BalanceUSD)
+	}
+	if len(seenAuth) != 2 || seenAuth[0] != "Bearer token" || seenAuth[1] != "token" {
+		t.Fatalf("expected bearer then raw fallback, got %v", seenAuth)
+	}
+}
+
+// TestFetchBalance_RawUserSendsNewApiUserHeader 验证 raw_user 模式发送裸 Token + New-Api-User。
+func TestFetchBalance_RawUserSendsNewApiUserHeader(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "token" {
+			t.Fatalf("authorization = %q, want raw token", got)
+		}
+		if got := r.Header.Get("New-Api-User"); got != "12" {
+			t.Fatalf("New-Api-User = %q, want 12", got)
+		}
+		_, _ = w.Write([]byte(`{"success":true,"data":{"quota":1000000,"used_quota":0}}`))
+	}))
+	defer srv.Close()
+
+	uid := int64(12)
+	snapshot, err := newTestClient().FetchBalance(context.Background(), srv.URL, "token", DashboardAuthModeRawUser, &uid, "")
+	if err != nil {
+		t.Fatalf("FetchBalance err: %v", err)
+	}
+	if snapshot.BalanceUSD != 2 {
+		t.Fatalf("balance = %v", snapshot.BalanceUSD)
+	}
+}
+
+// TestFetchBalance_AutoFallsBackToRawUser 验证 auto 模式在配置了 user_id 时最终回退到 raw_user。
+func TestFetchBalance_AutoFallsBackToRawUser(t *testing.T) {
+	var attempts []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("Authorization")
+		user := r.Header.Get("New-Api-User")
+		attempts = append(attempts, auth+"|"+user)
+		// 仅裸 Token + New-Api-User 通过（旧版 QuantumNous/new-api 协议）。
+		if auth == "token" && user == "5" {
+			_, _ = w.Write([]byte(`{"success":true,"data":{"quota":250000,"used_quota":0}}`))
+			return
+		}
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"success":false,"message":"New-Api-User header not provided"}`))
+	}))
+	defer srv.Close()
+
+	uid := int64(5)
+	snapshot, err := newTestClient().FetchBalance(context.Background(), srv.URL, "token", DashboardAuthModeAuto, &uid, "")
+	if err != nil {
+		t.Fatalf("FetchBalance err: %v", err)
+	}
+	if snapshot.BalanceUSD != 0.5 {
+		t.Fatalf("balance = %v", snapshot.BalanceUSD)
+	}
+	// 应当依次尝试 bearer → raw → raw_user（命中）。
+	if len(attempts) < 3 {
+		t.Fatalf("expected at least 3 attempts, got %d: %v", len(attempts), attempts)
+	}
+}
+
+// TestFetchBalance_NonAuthErrorDoesNotFallback 验证 500 错误不触发 auto 回退。
+func TestFetchBalance_NonAuthErrorDoesNotFallback(t *testing.T) {
+	calls := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls++
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"success":false,"message":"upstream database error"}`))
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient().FetchBalance(context.Background(), srv.URL, "token", DashboardAuthModeAuto, nil, "")
+	if err == nil {
+		t.Fatal("expected error for 500")
+	}
+	if calls != 1 {
+		t.Fatalf("expected no fallback on 500, got %d calls", calls)
+	}
+}
+
+// TestFetchBalance_ErrorIncludesUpstreamMessage 验证错误信息包含上游 message 且被截断清洗。
+func TestFetchBalance_ErrorIncludesUpstreamMessage(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"success":false,"message":"access token invalid"}`))
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient().FetchBalance(context.Background(), srv.URL, "token", DashboardAuthModeBearer, nil, "")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "401") || !strings.Contains(err.Error(), "access token invalid") {
+		t.Fatalf("error should include status and message: %v", err)
 	}
 }
 

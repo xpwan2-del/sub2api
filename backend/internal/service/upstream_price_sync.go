@@ -21,6 +21,38 @@ const (
 	PricingSourcePricing     UpstreamPricingSource = "pricing"
 )
 
+// Dashboard 鉴权模式：不同 new-api/one-api 分支对 /api/user/self 的鉴权协议不一致。
+const (
+	// DashboardAuthModeAuto 自动探测：依次尝试 bearer → raw，若配置了 user_id 再尝试 raw_user、bearer_user；
+	// 仅在 401/403 时回退，避免无效 Token 产生过多请求。
+	DashboardAuthModeAuto = "auto"
+	// DashboardAuthModeBearer 使用 Authorization: Bearer <token>（新版 QuantumNous/new-api，2026-07-20 之后）。
+	DashboardAuthModeBearer = "bearer"
+	// DashboardAuthModeRaw 使用 Authorization: <token>（旧版 one-api）。
+	DashboardAuthModeRaw = "raw"
+	// DashboardAuthModeRawUser 使用 Authorization: <token> + New-Api-User: <userID>（旧版 QuantumNous/new-api，2026-07-20 之前）。
+	DashboardAuthModeRawUser = "raw_user"
+	// DashboardAuthModeBearerUser 使用 Authorization: Bearer <token> + New-Api-User: <userID>（部分分叉）。
+	DashboardAuthModeBearerUser = "bearer_user"
+)
+
+// NormalizeDashboardAuthMode 规范化鉴权模式；空值默认 auto。
+func NormalizeDashboardAuthMode(mode string) string {
+	switch strings.TrimSpace(strings.ToLower(mode)) {
+	case "", DashboardAuthModeAuto:
+		return DashboardAuthModeAuto
+	case DashboardAuthModeBearer, DashboardAuthModeRaw, DashboardAuthModeRawUser, DashboardAuthModeBearerUser:
+		return strings.TrimSpace(strings.ToLower(mode))
+	default:
+		return DashboardAuthModeAuto
+	}
+}
+
+// DashboardAuthModeNeedsUserID 报告该鉴权模式是否需要 Dashboard User ID。
+func DashboardAuthModeNeedsUserID(mode string) bool {
+	return mode == DashboardAuthModeRawUser || mode == DashboardAuthModeBearerUser
+}
+
 // UpstreamModelPricing 从上游拉到的单个模型原始定价
 type UpstreamModelPricing struct {
 	ModelName        string
@@ -234,7 +266,9 @@ type UpstreamSourceConfig struct {
 	Name                 string                `json:"name"`
 	BaseURL              string                `json:"base_url"`
 	APIKey               string                `json:"api_key"`         // 内存明文;落库加密
-	DashboardToken       string                `json:"dashboard_token"` // 内存明文;落库加密(P2 余额用)
+	DashboardToken       string                `json:"dashboard_token"` // 内存明文;落库加密(余额查询用)
+	DashboardAuthMode    string                `json:"dashboard_auth_mode"`
+	DashboardUserID      *int64                `json:"dashboard_user_id"`
 	ProxyID              *int64                `json:"proxy_id"`
 	TargetChannelID      int64                 `json:"target_channel_id"`
 	Enabled              bool                  `json:"enabled"`

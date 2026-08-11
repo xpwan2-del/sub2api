@@ -257,7 +257,7 @@ func (s *UpstreamPriceSyncService) RefreshBalance(ctx context.Context, id int64)
 	if err != nil {
 		return s.balanceRefreshError(ctx, cfgRec, fmt.Errorf("resolve proxy: %w", err))
 	}
-	snapshot, err := s.client.FetchBalance(ctx, baseURL, cfgRec.DashboardToken, proxyURL)
+	snapshot, err := s.client.FetchBalance(ctx, baseURL, cfgRec.DashboardToken, cfgRec.DashboardAuthMode, cfgRec.DashboardUserID, proxyURL)
 	if err != nil {
 		return s.balanceRefreshError(ctx, cfgRec, fmt.Errorf("fetch upstream balance: %w", err))
 	}
@@ -303,6 +303,11 @@ func (s *UpstreamPriceSyncService) validateConfig(ctx context.Context, c *Upstre
 		if strings.TrimSpace(c.DashboardToken) == "" {
 			return infraerrors.BadRequest("dashboard_token_required", "dashboard_token is required when balance threshold is configured")
 		}
+	}
+	// 规范化 Dashboard 鉴权模式；raw_user/bearer_user 必须提供 Dashboard User ID。
+	c.DashboardAuthMode = NormalizeDashboardAuthMode(c.DashboardAuthMode)
+	if DashboardAuthModeNeedsUserID(c.DashboardAuthMode) && (c.DashboardUserID == nil || *c.DashboardUserID <= 0) {
+		return infraerrors.BadRequest("invalid_dashboard_user_id", "dashboard_user_id is required for the selected dashboard auth mode")
 	}
 	if _, err := s.resolveProxyURL(ctx, c.ProxyID); err != nil {
 		return infraerrors.BadRequest("invalid_proxy", err.Error())
