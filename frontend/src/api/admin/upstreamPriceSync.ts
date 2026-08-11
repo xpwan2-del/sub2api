@@ -115,10 +115,10 @@ export async function listUpstreamGroups(id: number) {
 }
 
 /** 按 base_url 预览可用分组(新建 source 尚未保存时用)。 */
-export async function previewUpstreamGroups(baseURL: string, proxyId?: number | null, apiKey?: string) {
+export async function previewUpstreamGroups(baseURL: string, proxyId?: number | null, dashboardToken?: string, apiKey?: string) {
   const { data } = await apiClient.post<{ groups: Record<string, string> }>(
     `${base}/upstream-sources/groups/preview`,
-    { base_url: baseURL, proxy_id: proxyId ?? null, api_key: apiKey ?? '' },
+    { base_url: baseURL, proxy_id: proxyId ?? null, dashboard_token: dashboardToken ?? '', api_key: apiKey ?? '' },
   )
   return data
 }

@@ -88,13 +88,16 @@ func (c *UpstreamPricingClient) httpClient(proxyURL string) (*http.Client, error
 	return client, nil
 }
 
-func (c *UpstreamPricingClient) FetchPricing(ctx context.Context, baseURL string, source UpstreamPricingSource, proxyURL, apiKey string) (*PricingSnapshot, error) {
+func (c *UpstreamPricingClient) FetchPricing(ctx context.Context, baseURL string, source UpstreamPricingSource, proxyURL, dashboardToken, apiKey string) (*PricingSnapshot, error) {
 	client, err := c.httpClient(proxyURL)
 	if err != nil {
 		return nil, err
 	}
+	candidates := upstreamAuthCandidates(dashboardToken, apiKey)
 	if source == PricingSourceRatioConfig || source == PricingSourceAuto {
-		snap, err := c.fetchRatioConfig(ctx, client, baseURL, apiKey)
+		snap, err := fetchWithCandidates(ctx, baseURL, "ratio_config", candidates, func(token string) (*PricingSnapshot, error) {
+			return c.fetchRatioConfig(ctx, client, baseURL, token)
+		})
 		if err == nil {
 			return snap, nil
 		}
@@ -103,16 +106,18 @@ func (c *UpstreamPricingClient) FetchPricing(ctx context.Context, baseURL string
 		}
 		slog.WarnContext(ctx, "upstream ratio_config failed, falling back to pricing", "base_url", baseURL, "err", err)
 	}
-	return c.fetchPricing(ctx, client, baseURL, apiKey)
+	return fetchWithCandidates(ctx, baseURL, "pricing", candidates, func(token string) (*PricingSnapshot, error) {
+		return c.fetchPricing(ctx, client, baseURL, token)
+	})
 }
 
-func (c *UpstreamPricingClient) fetchRatioConfig(ctx context.Context, client *http.Client, baseURL, apiKey string) (*PricingSnapshot, error) {
+func (c *UpstreamPricingClient) fetchRatioConfig(ctx context.Context, client *http.Client, baseURL, token string) (*PricingSnapshot, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+"/api/ratio_config", nil)
 	if err != nil {
 		return nil, fmt.Errorf("create ratio_config request: %w", err)
 	}
-	if apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+apiKey)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -121,12 +126,15 @@ func (c *UpstreamPricingClient) fetchRatioConfig(ctx context.Context, client *ht
 	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		logUpstreamExchange(ctx, "ratio_config", req, resp.StatusCode, body, true)
 		return nil, fmt.Errorf("ratio_config status %d", resp.StatusCode)
 	}
 	var r ratioConfigResp
 	if err := json.Unmarshal(body, &r); err != nil || !r.Success {
+		logUpstreamExchange(ctx, "ratio_config", req, resp.StatusCode, body, true)
 		return nil, fmt.Errorf("ratio_config parse failed")
 	}
+	logUpstreamExchange(ctx, "ratio_config", req, resp.StatusCode, body, false)
 	snap := &PricingSnapshot{Source: "ratio_config", GroupRatio: r.Data.GroupRatio, FetchedAt: time.Now()}
 	for name, ratio := range r.Data.ModelRatio {
 		m := UpstreamModelPricing{ModelName: name, ModelRatio: ratio, QuotaType: 0}
@@ -145,13 +153,13 @@ func (c *UpstreamPricingClient) fetchRatioConfig(ctx context.Context, client *ht
 	return snap, nil
 }
 
-func (c *UpstreamPricingClient) fetchPricing(ctx context.Context, client *http.Client, baseURL, apiKey string) (*PricingSnapshot, error) {
+func (c *UpstreamPricingClient) fetchPricing(ctx context.Context, client *http.Client, baseURL, token string) (*PricingSnapshot, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+"/api/pricing", nil)
 	if err != nil {
 		return nil, fmt.Errorf("create pricing request: %w", err)
 	}
-	if apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+apiKey)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -160,16 +168,20 @@ func (c *UpstreamPricingClient) fetchPricing(ctx context.Context, client *http.C
 	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		logUpstreamExchange(ctx, "pricing", req, resp.StatusCode, body, true)
 		return nil, fmt.Errorf("pricing status %d", resp.StatusCode)
 	}
 	var r pricingResp
 	if err := json.Unmarshal(body, &r); err != nil {
+		logUpstreamExchange(ctx, "pricing", req, resp.StatusCode, body, true)
 		return nil, fmt.Errorf("pricing parse failed: %w (body: %s)", err, truncateUpstreamBody(body))
 	}
 	// 宽容:部分 new-api 分叉不返回顶层 success 字段;若已拿到 data 或 group_ratio 即视为有效响应。
 	if !r.Success && len(r.Data) == 0 && len(r.GroupRatio) == 0 {
+		logUpstreamExchange(ctx, "pricing", req, resp.StatusCode, body, true)
 		return nil, fmt.Errorf("pricing response unsuccessful (body: %s)", truncateUpstreamBody(body))
 	}
+	logUpstreamExchange(ctx, "pricing", req, resp.StatusCode, body, false)
 	snap := &PricingSnapshot{Source: "pricing", Version: r.PricingVersion, GroupRatio: r.GroupRatio, UsableGroup: r.UsableGroup, FetchedAt: time.Now()}
 	if len(snap.GroupRatio) == 0 && len(snap.UsableGroup) == 0 {
 		slog.WarnContext(ctx, "upstream pricing returned no group info", "base_url", baseURL, "models", len(snap.Models), "body_head", truncateUpstreamBody(body))
@@ -182,6 +194,62 @@ func (c *UpstreamPricingClient) fetchPricing(ctx context.Context, client *http.C
 		})
 	}
 	return snap, nil
+}
+
+// upstreamAuthCandidates 构造 /api/pricing 与 /api/ratio_config 的鉴权候选序列(去重,保持优先级):
+//   - dashboardToken: 系统访问令牌,/api/pricing 与 /api/user/self 同走 UserAuth,首选
+//   - ""(空):        无 token,兼容 pricing 模块公开的上游(标准 new-api 默认配置)
+//   - apiKey:        模型调用令牌(sk-xxx),仅作少数魔改上游兜底
+//
+// new-api 各部署对 pricing 可见性配置不同,硬编码任一 token 都会在某种上游下失效,
+// 故按"最可能成功 → 最特殊"顺序尝试,鉴权失败再 fallback。
+func upstreamAuthCandidates(dashboardToken, apiKey string) []string {
+	dash := strings.TrimSpace(dashboardToken)
+	key := strings.TrimSpace(apiKey)
+	seen := map[string]bool{}
+	var out []string
+	add := func(t string) {
+		if !seen[t] {
+			seen[t] = true
+			out = append(out, t)
+		}
+	}
+	add(dash)
+	add("") // 公开模式始终尝试(去重保证 dash 为空时不重复)
+	if key != "" {
+		add(key)
+	}
+	return out
+}
+
+// fetchWithCandidates 按 candidates 顺序调用 once;鉴权类错误(401/403 或 success:false)时
+// fallback 到下一个候选,其他错误(网络/5xx/解析)立即返回。低频操作,多次请求可接受。
+func fetchWithCandidates(ctx context.Context, baseURL, endpoint string, candidates []string, once func(token string) (*PricingSnapshot, error)) (*PricingSnapshot, error) {
+	var lastErr error
+	for i, token := range candidates {
+		snap, err := once(token)
+		if err == nil {
+			return snap, nil
+		}
+		lastErr = err
+		if !isUpstreamAuthError(err) {
+			return nil, err
+		}
+		slog.DebugContext(ctx, "upstream auth failed, trying next token", "endpoint", endpoint, "base_url", baseURL, "attempt", i+1, "total", len(candidates), "err", err)
+	}
+	return nil, lastErr
+}
+
+// isUpstreamAuthError 报告错误是否为可触发候选 fallback 的鉴权类错误。
+// 覆盖三种上游鉴权拒绝:HTTP 401、HTTP 403、200+success:false(部分分叉用 body 表达鉴权失败)。
+func isUpstreamAuthError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "status 401") ||
+		strings.Contains(msg, "status 403") ||
+		strings.Contains(msg, "response unsuccessful")
 }
 
 // balanceAuthAttempt 描述一次余额请求的鉴权头组合。
@@ -288,15 +356,19 @@ func (c *UpstreamPricingClient) fetchBalanceOnce(ctx context.Context, client *ht
 		return nil, fmt.Errorf("balance response too large")
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		logUpstreamExchange(ctx, "balance", req, resp.StatusCode, body, true)
 		return nil, fmt.Errorf("balance status %d: %s", resp.StatusCode, sanitizeUpstreamBalanceError(body))
 	}
 	var r balanceResp
 	if err := json.Unmarshal(body, &r); err != nil {
+		logUpstreamExchange(ctx, "balance", req, resp.StatusCode, body, true)
 		return nil, fmt.Errorf("balance parse failed: %w", err)
 	}
 	if !r.Success {
+		logUpstreamExchange(ctx, "balance", req, resp.StatusCode, body, true)
 		return nil, fmt.Errorf("balance response unsuccessful: %s", sanitizeUpstreamBalanceError(body))
 	}
+	logUpstreamExchange(ctx, "balance", req, resp.StatusCode, body, false)
 	return &BalanceSnapshot{
 		Quota:      r.Data.Quota,
 		UsedQuota:  r.Data.UsedQuota,
@@ -349,4 +421,44 @@ func truncateUpstreamBody(body []byte) string {
 		return s[:limit] + "..."
 	}
 	return s
+}
+
+// maskAuthHeader 脱敏 Authorization 头用于诊断日志,绝不回显 token 本体。
+// 仅暴露鉴权方式(bearer/raw/unset)与 token 长度,便于判断 token 是否注入、长度是否异常。
+func maskAuthHeader(req *http.Request) string {
+	v := req.Header.Get("Authorization")
+	if v == "" {
+		return "unset"
+	}
+	if strings.HasPrefix(v, "Bearer ") {
+		return fmt.Sprintf("Bearer <redacted,len=%d>", len(v)-len("Bearer "))
+	}
+	return fmt.Sprintf("raw <redacted,len=%d>", len(v))
+}
+
+// logUpstreamExchange 记录一次上游 HTTP 调用的请求与响应诊断信息。
+// failed=true 时用 Warn(生产默认可见,含响应体头部)——这是排查 401/403 的关键;
+// 否则用 Debug(避免定时同步刷屏,需要时调高日志级别即可见)。
+// body_head 已截断且上游 pricing/balance 响应不含 token,可安全记录。
+func logUpstreamExchange(ctx context.Context, endpoint string, req *http.Request, status int, body []byte, failed bool) {
+	if failed {
+		slog.WarnContext(ctx, "upstream http exchange failed",
+			"endpoint", endpoint,
+			"method", req.Method,
+			"url", req.URL.String(),
+			"auth", maskAuthHeader(req),
+			"new_api_user", req.Header.Get("New-Api-User"),
+			"status", status,
+			"body_head", truncateUpstreamBody(body),
+		)
+		return
+	}
+	slog.DebugContext(ctx, "upstream http exchange ok",
+		"endpoint", endpoint,
+		"method", req.Method,
+		"url", req.URL.String(),
+		"auth", maskAuthHeader(req),
+		"status", status,
+		"body_len", len(body),
+	)
 }

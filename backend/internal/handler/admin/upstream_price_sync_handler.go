@@ -141,15 +141,16 @@ func (h *ChannelHandler) ListUpstreamGroups(c *gin.Context) {
 // POST /api/v1/admin/channels/upstream-sources/groups/preview
 func (h *ChannelHandler) PreviewUpstreamGroups(c *gin.Context) {
 	var body struct {
-		BaseURL string `json:"base_url" binding:"required"`
-		ProxyID *int64 `json:"proxy_id"`
-		APIKey  string `json:"api_key"`
+		BaseURL        string `json:"base_url" binding:"required"`
+		ProxyID        *int64 `json:"proxy_id"`
+		DashboardToken string `json:"dashboard_token"`
+		APIKey         string `json:"api_key"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		response.BadRequest(c, "invalid request: "+err.Error())
 		return
 	}
-	groups, err := h.upstreamPriceSyncService.PreviewUpstreamGroups(c.Request.Context(), body.BaseURL, body.ProxyID, body.APIKey)
+	groups, err := h.upstreamPriceSyncService.PreviewUpstreamGroups(c.Request.Context(), body.BaseURL, body.ProxyID, body.DashboardToken, body.APIKey)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
