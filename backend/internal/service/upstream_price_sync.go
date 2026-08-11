@@ -230,24 +230,33 @@ func floatEq(a, b *float64) bool {
 // UpstreamSourceConfig 上游 new-api 同步源配置。APIKey/DashboardToken 在内存中
 // 为明文,落库时由 repository 层加密存储。
 type UpstreamSourceConfig struct {
-	ID                  int64                 `json:"id"`
-	Name                string                `json:"name"`
-	BaseURL             string                `json:"base_url"`
-	APIKey              string                `json:"api_key"`         // 内存明文;落库加密
-	DashboardToken      string                `json:"dashboard_token"` // 内存明文;落库加密(P2 余额用)
-	TargetChannelID     int64                 `json:"target_channel_id"`
-	Enabled             bool                  `json:"enabled"`
-	BasePricePer1k      float64               `json:"base_price_per_1k"`
-	PricingSource       UpstreamPricingSource `json:"pricing_source"`
-	SyncModelPrice      bool                  `json:"sync_model_price"`
-	SyncGroupRatio      bool                  `json:"sync_group_ratio"`
-	GroupMapping        map[string]int64      `json:"group_mapping"`
-	BalanceThresholdUSD *float64              `json:"balance_threshold_usd"`
-	LastSyncAt          *time.Time            `json:"last_sync_at"`
-	LastPricingVersion  string                `json:"last_pricing_version"`
-	LastError           string                `json:"last_error"`
-	CreatedAt           time.Time             `json:"created_at"`
-	UpdatedAt           time.Time             `json:"updated_at"`
+	ID                   int64                 `json:"id"`
+	Name                 string                `json:"name"`
+	BaseURL              string                `json:"base_url"`
+	APIKey               string                `json:"api_key"`         // 内存明文;落库加密
+	DashboardToken       string                `json:"dashboard_token"` // 内存明文;落库加密(P2 余额用)
+	ProxyID              *int64                `json:"proxy_id"`
+	TargetChannelID      int64                 `json:"target_channel_id"`
+	Enabled              bool                  `json:"enabled"`
+	BasePricePer1k       float64               `json:"base_price_per_1k"`
+	PricingSource        UpstreamPricingSource `json:"pricing_source"`
+	SyncModelPrice       bool                  `json:"sync_model_price"`
+	SyncGroupRatio       bool                  `json:"sync_group_ratio"`
+	GroupMapping         map[string]int64      `json:"group_mapping"`
+	BalanceThresholdUSD  *float64              `json:"balance_threshold_usd"`
+	LastBalanceQuota     *int64                `json:"last_balance_quota"`
+	LastUsedQuota        *int64                `json:"last_used_quota"`
+	LastBalanceUSD       *float64              `json:"last_balance_usd"`
+	LastBalanceAt        *time.Time            `json:"last_balance_at"`
+	LastBalanceCheckedAt *time.Time            `json:"last_balance_checked_at"`
+	LastBalanceError     string                `json:"last_balance_error"`
+	BalanceStatus        string                `json:"balance_status"`
+	LastSyncAt           *time.Time            `json:"last_sync_at"`
+	LastPricingVersion   string                `json:"last_pricing_version"`
+	LastError            string                `json:"last_error"`
+	CreatedAt            time.Time             `json:"created_at"`
+	UpdatedAt            time.Time             `json:"updated_at"`
+	ResetBalanceSnapshot bool                  `json:"-"`
 }
 
 // RequestFilter 审批批次列表过滤 + 分页参数。
@@ -267,6 +276,8 @@ type UpstreamPriceSyncRepository interface {
 	UpdateConfig(ctx context.Context, c *UpstreamSourceConfig) error
 	DeleteConfig(ctx context.Context, id int64) error
 	UpdateConfigSyncState(ctx context.Context, id int64, lastSyncAt time.Time, version, lastErr string) error
+	UpdateConfigBalanceSuccess(ctx context.Context, id int64, snapshot BalanceSnapshot) error
+	UpdateConfigBalanceError(ctx context.Context, id int64, checkedAt time.Time, lastErr string) error
 
 	CreateRequest(ctx context.Context, req *PriceChangeRequest, items []PriceChangeItem) error
 	GetRequest(ctx context.Context, id int64) (*PriceChangeRequest, error)

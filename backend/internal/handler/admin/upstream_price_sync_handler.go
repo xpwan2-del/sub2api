@@ -43,7 +43,7 @@ func (h *ChannelHandler) CreateUpstreamSource(c *gin.Context) {
 		return
 	}
 	if err := h.upstreamPriceSyncService.CreateConfig(c.Request.Context(), &req); err != nil {
-		response.InternalError(c, "create upstream source: "+err.Error())
+		response.ErrorFrom(c, err)
 		return
 	}
 	response.Created(c, req)
@@ -80,7 +80,7 @@ func (h *ChannelHandler) UpdateUpstreamSource(c *gin.Context) {
 	}
 	req.ID = id
 	if err := h.upstreamPriceSyncService.UpdateConfig(c.Request.Context(), &req); err != nil {
-		response.InternalError(c, "update upstream source: "+err.Error())
+		response.ErrorFrom(c, err)
 		return
 	}
 	response.Success(c, req)
@@ -115,6 +115,22 @@ func (h *ChannelHandler) SyncUpstreamNow(c *gin.Context) {
 		return
 	}
 	response.Success(c, gin.H{"request_id": reqID})
+}
+
+// RefreshUpstreamBalance 手动刷新单个上游源的余额快照。
+// POST /api/v1/admin/channels/upstream-sources/:id/balance/refresh
+func (h *ChannelHandler) RefreshUpstreamBalance(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		response.BadRequest(c, "invalid id")
+		return
+	}
+	cfgRec, err := h.upstreamPriceSyncService.RefreshBalance(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, cfgRec)
 }
 
 // --- 审批单 ---

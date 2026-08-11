@@ -28,6 +28,7 @@ const (
 	NotificationEmailEventBalanceLow                  = "balance.low"
 	NotificationEmailEventBalanceRechargeSuccess      = "balance.recharge_success"
 	NotificationEmailEventAccountQuotaAlert           = "account.quota_alert"
+	NotificationEmailEventUpstreamBalanceLow          = "upstream.balance_low"
 	NotificationEmailEventContentModerationViolation  = "content_moderation.violation_notice"
 	NotificationEmailEventContentModerationDisabled   = "content_moderation.account_disabled"
 	NotificationEmailEventCyberPolicyNotice           = "content_moderation.cyber_policy_notice"
@@ -869,6 +870,10 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 			"quota_limit":         "100.00",
 			"quota_remaining":     "20.00",
 			"quota_threshold":     "20%",
+			"source_id":           "42",
+			"source_name":         "主 new-api",
+			"balance_threshold":   "10.00",
+			"checked_at":          "2026-08-11 12:00 UTC",
 			"triggered_at":        "2026-05-20 12:00:00",
 			"group_name":          "默认分组",
 			"moderation_category": "violence",
@@ -915,6 +920,10 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 		"quota_limit":         "100.00",
 		"quota_remaining":     "20.00",
 		"quota_threshold":     "20%",
+		"source_id":           "42",
+		"source_name":         "Primary new-api",
+		"balance_threshold":   "10.00",
+		"checked_at":          "2026-08-11 12:00 UTC",
 		"triggered_at":        "2026-05-20 12:00:00",
 		"group_name":          "Default group",
 		"moderation_category": "violence",
@@ -946,6 +955,7 @@ var notificationEmailEventOrder = []string{
 	NotificationEmailEventBalanceLow,
 	NotificationEmailEventBalanceRechargeSuccess,
 	NotificationEmailEventAccountQuotaAlert,
+	NotificationEmailEventUpstreamBalanceLow,
 	NotificationEmailEventContentModerationViolation,
 	NotificationEmailEventContentModerationDisabled,
 	NotificationEmailEventCyberPolicyNotice,
@@ -1018,6 +1028,15 @@ var notificationEmailEventDefinitions = map[string]NotificationEmailEventInfo{
 		Optional:    false,
 		Placeholders: append(append([]string{}, notificationEmailCommonPlaceholders...),
 			"account_id", "account_name", "platform", "quota_dimension", "quota_used", "quota_limit", "quota_remaining", "quota_threshold"),
+	},
+	NotificationEmailEventUpstreamBalanceLow: {
+		Event:       NotificationEmailEventUpstreamBalanceLow,
+		Label:       "Upstream balance low",
+		Description: "Sent to configured admin notification emails while an upstream source balance is at or below its threshold.",
+		Category:    "admin",
+		Optional:    false,
+		Placeholders: append(append([]string{}, notificationEmailCommonPlaceholders...),
+			"source_id", "source_name", "current_balance", "balance_threshold", "checked_at", "recharge_url"),
 	},
 	NotificationEmailEventContentModerationViolation: {
 		Event:       NotificationEmailEventContentModerationViolation,
@@ -1230,6 +1249,34 @@ var notificationEmailOfficialTemplates = map[string]map[string]notificationEmail
   <tr><td>剩余额度</td><td>{{quota_remaining}}</td></tr>
   <tr><td>告警阈值</td><td>{{quota_threshold}}</td></tr>
 </table>`),
+		},
+	},
+	NotificationEmailEventUpstreamBalanceLow: {
+		notificationEmailDefaultLocale: {
+			Subject: "[{{site_name}}] Upstream balance low - {{source_name}}",
+			HTML: notificationEmailCard("#dc2626", "Upstream balance low", `
+<p>The upstream source <strong>{{source_name}}</strong> has a low balance.</p>
+<table style="width:100%;border-collapse:collapse;">
+  <tr><td>Source ID</td><td>{{source_id}}</td></tr>
+  <tr><td>Current balance</td><td>${{current_balance}}</td></tr>
+  <tr><td>Threshold</td><td>${{balance_threshold}}</td></tr>
+  <tr><td>Checked at</td><td>{{checked_at}}</td></tr>
+</table>
+<p>Please recharge in time to avoid service interruption.</p>
+<p><a class="button" href="{{recharge_url}}">Open upstream dashboard</a></p>`),
+		},
+		notificationEmailLocaleChinese: {
+			Subject: "[{{site_name}}] 上游余额不足 - {{source_name}}",
+			HTML: notificationEmailCard("#dc2626", "上游余额不足", `
+<p>上游源 <strong>{{source_name}}</strong> 的余额已不足。</p>
+<table style="width:100%;border-collapse:collapse;">
+  <tr><td>上游源 ID</td><td>{{source_id}}</td></tr>
+  <tr><td>当前余额</td><td>${{current_balance}}</td></tr>
+  <tr><td>告警阈值</td><td>${{balance_threshold}}</td></tr>
+  <tr><td>检查时间</td><td>{{checked_at}}</td></tr>
+</table>
+<p>请及时充值，以免服务中断。</p>
+<p><a class="button" href="{{recharge_url}}">打开上游控制台</a></p>`),
 		},
 	},
 	NotificationEmailEventContentModerationViolation: {

@@ -244,7 +244,8 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	scheduledTestHandler := admin.NewScheduledTestHandler(scheduledTestService)
 	upstreamPriceSyncRepository := repository.NewUpstreamPriceSyncRepository(db, encryptionKey)
 	upstreamPricingClient := service.NewUpstreamPricingClient(configConfig)
-	upstreamPriceSyncService := service.NewUpstreamPriceSyncService(upstreamPriceSyncRepository, upstreamPricingClient, channelService, configConfig)
+	proxyService := service.NewProxyService(proxyRepository)
+	upstreamPriceSyncService := service.NewUpstreamPriceSyncService(upstreamPriceSyncRepository, upstreamPricingClient, channelService, proxyService, balanceNotifyService, configConfig)
 	channelHandler := admin.NewChannelHandler(channelService, billingService, pricingService, upstreamPriceSyncService)
 	channelMonitorHandler := admin.NewChannelMonitorHandler(channelMonitorService)
 	channelMonitorRequestTemplateRepository := repository.NewChannelMonitorRequestTemplateRepository(client, db)
@@ -312,7 +313,8 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	paymentOrderExpiryService := service.ProvidePaymentOrderExpiryService(paymentService, leaderLockCache, db)
 	channelMonitorRunner := service.ProvideChannelMonitorRunner(channelMonitorService, settingService)
 	userPlatformQuotaUsageFlusher := service.ProvideUserPlatformQuotaUsageFlusher(configConfig, billingCache, serviceUserPlatformQuotaRepository, timingWheelService)
-	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, schedulerSnapshotService, tokenRefreshService, accountExpiryService, proxyExpiryService, subscriptionExpiryService, bundleExpiryService, usageCleanupService, idempotencyCleanupService, batchImageCleanupService, batchImageWorkerRuntime, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, grokOAuthService, openAIGatewayService, scheduledTestRunnerService, backupService, paymentOrderExpiryService, channelMonitorRunner, userPlatformQuotaUsageFlusher)
+	upstreamBalanceMonitorService := service.ProvideUpstreamBalanceMonitorService(upstreamPriceSyncService, timingWheelService, leaderLockCache, db)
+	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, schedulerSnapshotService, tokenRefreshService, accountExpiryService, proxyExpiryService, subscriptionExpiryService, bundleExpiryService, usageCleanupService, idempotencyCleanupService, batchImageCleanupService, batchImageWorkerRuntime, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, grokOAuthService, openAIGatewayService, scheduledTestRunnerService, backupService, paymentOrderExpiryService, channelMonitorRunner, userPlatformQuotaUsageFlusher, upstreamBalanceMonitorService)
 	application := &Application{
 		Server:  httpServer,
 		Cleanup: v,
@@ -374,6 +376,7 @@ func provideCleanup(
 	paymentOrderExpiry *service.PaymentOrderExpiryService,
 	channelMonitorRunner *service.ChannelMonitorRunner,
 	quotaFlusher *service.UserPlatformQuotaUsageFlusher,
+	upstreamBalanceMonitor *service.UpstreamBalanceMonitorService,
 ) func() {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -546,6 +549,12 @@ func provideCleanup(
 			{"ChannelMonitorRunner", func() error {
 				if channelMonitorRunner != nil {
 					channelMonitorRunner.Stop()
+				}
+				return nil
+			}},
+			{"UpstreamBalanceMonitorService", func() error {
+				if upstreamBalanceMonitor != nil {
+					upstreamBalanceMonitor.Stop()
 				}
 				return nil
 			}},

@@ -658,6 +658,7 @@ func registerChannelRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		channels.PUT("/upstream-sources/:id", h.Admin.Channel.UpdateUpstreamSource)
 		channels.DELETE("/upstream-sources/:id", h.Admin.Channel.DeleteUpstreamSource)
 		channels.POST("/upstream-sources/:id/sync", h.Admin.Channel.SyncUpstreamNow)
+		channels.POST("/upstream-sources/:id/balance/refresh", h.Admin.Channel.RefreshUpstreamBalance)
 
 		// 上游定价变更审批单
 		channels.GET("/price-change-requests", h.Admin.Channel.ListPriceChangeRequests)

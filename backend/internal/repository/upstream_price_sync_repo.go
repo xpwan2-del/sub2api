@@ -50,9 +50,11 @@ func (r *upstreamPriceSyncRepo) decrypt(cipher string) (string, error) {
 
 // selectConfigSQL 读取 upstream_source_configs 的全部列。api_key_encrypted /
 // dashboard_token_encrypted 以密文读出,由 scanConfig 解密。
-const selectConfigSQL = `SELECT id, name, base_url, api_key_encrypted, dashboard_token_encrypted,
+const selectConfigSQL = `SELECT id, name, base_url, api_key_encrypted, dashboard_token_encrypted, proxy_id,
  target_channel_id, enabled, base_price_per_1k, pricing_source,
  sync_model_price, sync_group_ratio, group_mapping, balance_threshold_usd,
+ last_balance_quota, last_used_quota, last_balance_usd, last_balance_at,
+ last_balance_checked_at, last_balance_error,
  last_sync_at, last_pricing_version, last_error, created_at, updated_at
 FROM upstream_source_configs`
 
@@ -71,10 +73,10 @@ func (r *upstreamPriceSyncRepo) CreateConfig(ctx context.Context, c *service.Ups
 	}
 	return r.db.QueryRowContext(ctx, `
 INSERT INTO upstream_source_configs
-(name, base_url, api_key_encrypted, dashboard_token_encrypted, target_channel_id, enabled,
+(name, base_url, api_key_encrypted, dashboard_token_encrypted, proxy_id, target_channel_id, enabled,
  base_price_per_1k, pricing_source, sync_model_price, sync_group_ratio, group_mapping, balance_threshold_usd)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id, created_at, updated_at`,
-		c.Name, c.BaseURL, ak, dt, c.TargetChannelID, c.Enabled,
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id, created_at, updated_at`,
+		c.Name, c.BaseURL, ak, dt, c.ProxyID, c.TargetChannelID, c.Enabled,
 		c.BasePricePer1k, string(c.PricingSource), c.SyncModelPrice, c.SyncGroupRatio, gm, c.BalanceThresholdUSD,
 	).Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
 }
@@ -121,15 +123,21 @@ func (r *upstreamPriceSyncRepo) UpdateConfig(ctx context.Context, c *service.Ups
 	}
 	return r.db.QueryRowContext(ctx, `
 UPDATE upstream_source_configs
-SET name=$2, base_url=$3, api_key_encrypted=$4, dashboard_token_encrypted=$5,
-    target_channel_id=$6, enabled=$7, base_price_per_1k=$8, pricing_source=$9,
-    sync_model_price=$10, sync_group_ratio=$11, group_mapping=$12, balance_threshold_usd=$13,
+SET name=$2, base_url=$3, api_key_encrypted=$4, dashboard_token_encrypted=$5, proxy_id=$6,
+    target_channel_id=$7, enabled=$8, base_price_per_1k=$9, pricing_source=$10,
+    sync_model_price=$11, sync_group_ratio=$12, group_mapping=$13, balance_threshold_usd=$14,
+    last_balance_quota=CASE WHEN $15 THEN NULL ELSE last_balance_quota END,
+    last_used_quota=CASE WHEN $15 THEN NULL ELSE last_used_quota END,
+    last_balance_usd=CASE WHEN $15 THEN NULL ELSE last_balance_usd END,
+    last_balance_at=CASE WHEN $15 THEN NULL ELSE last_balance_at END,
+    last_balance_checked_at=CASE WHEN $15 THEN NULL ELSE last_balance_checked_at END,
+    last_balance_error=CASE WHEN $15 THEN NULL ELSE last_balance_error END,
     updated_at=now()
 WHERE id=$1
 RETURNING updated_at`,
-		c.ID, c.Name, c.BaseURL, ak, dt, c.TargetChannelID, c.Enabled,
+		c.ID, c.Name, c.BaseURL, ak, dt, c.ProxyID, c.TargetChannelID, c.Enabled,
 		c.BasePricePer1k, string(c.PricingSource), c.SyncModelPrice, c.SyncGroupRatio,
-		gm, c.BalanceThresholdUSD,
+		gm, c.BalanceThresholdUSD, c.ResetBalanceSnapshot,
 	).Scan(&c.UpdatedAt)
 }
 
@@ -152,26 +160,55 @@ WHERE id=$1`, id, lastSyncAt, version, lastErr); err != nil {
 	return nil
 }
 
+func (r *upstreamPriceSyncRepo) UpdateConfigBalanceSuccess(ctx context.Context, id int64, snapshot service.BalanceSnapshot) error {
+	if _, err := r.db.ExecContext(ctx, `
+UPDATE upstream_source_configs
+SET last_balance_quota=$2, last_used_quota=$3, last_balance_usd=$4,
+    last_balance_at=$5, last_balance_checked_at=$5, last_balance_error=NULL, updated_at=now()
+WHERE id=$1`, id, snapshot.Quota, snapshot.UsedQuota, snapshot.BalanceUSD, snapshot.FetchedAt); err != nil {
+		return fmt.Errorf("update upstream source balance: %w", err)
+	}
+	return nil
+}
+
+func (r *upstreamPriceSyncRepo) UpdateConfigBalanceError(ctx context.Context, id int64, checkedAt time.Time, lastErr string) error {
+	if _, err := r.db.ExecContext(ctx, `
+UPDATE upstream_source_configs
+SET last_balance_checked_at=$2, last_balance_error=$3, updated_at=now()
+WHERE id=$1`, id, checkedAt, lastErr); err != nil {
+		return fmt.Errorf("update upstream source balance error: %w", err)
+	}
+	return nil
+}
+
 // scanConfig 把单行 upstream_source_configs 扫入 UpstreamSourceConfig:
 //   - 解密 api_key_encrypted / dashboard_token_encrypted;
 //   - 解析 group_mapping JSONB → map[string]int64;
 //   - pricing_source 转为 UpstreamPricingSource。
 func scanConfig(row rowScanner, r *upstreamPriceSyncRepo) (*service.UpstreamSourceConfig, error) {
 	var (
-		c             service.UpstreamSourceConfig
-		apiKeyEnc     string
-		dashTokenEnc  string
-		pricingSource string
-		groupMapping  []byte
-		balanceThresh sql.NullFloat64
-		lastSyncAt    sql.NullTime
-		lastPricingV  sql.NullString
-		lastErr       sql.NullString
+		c                service.UpstreamSourceConfig
+		apiKeyEnc        string
+		dashTokenEnc     string
+		pricingSource    string
+		groupMapping     []byte
+		balanceThresh    sql.NullFloat64
+		lastBalanceQuota sql.NullInt64
+		lastUsedQuota    sql.NullInt64
+		lastBalanceUSD   sql.NullFloat64
+		lastBalanceAt    sql.NullTime
+		lastBalanceCheck sql.NullTime
+		lastBalanceError sql.NullString
+		lastSyncAt       sql.NullTime
+		lastPricingV     sql.NullString
+		lastErr          sql.NullString
 	)
 	if err := row.Scan(
-		&c.ID, &c.Name, &c.BaseURL, &apiKeyEnc, &dashTokenEnc,
+		&c.ID, &c.Name, &c.BaseURL, &apiKeyEnc, &dashTokenEnc, &c.ProxyID,
 		&c.TargetChannelID, &c.Enabled, &c.BasePricePer1k, &pricingSource,
 		&c.SyncModelPrice, &c.SyncGroupRatio, &groupMapping, &balanceThresh,
+		&lastBalanceQuota, &lastUsedQuota, &lastBalanceUSD, &lastBalanceAt,
+		&lastBalanceCheck, &lastBalanceError,
 		&lastSyncAt, &lastPricingV, &lastErr, &c.CreatedAt, &c.UpdatedAt,
 	); err != nil {
 		return nil, err
@@ -196,6 +233,27 @@ func scanConfig(row rowScanner, r *upstreamPriceSyncRepo) (*service.UpstreamSour
 		v := balanceThresh.Float64
 		c.BalanceThresholdUSD = &v
 	}
+	if lastBalanceQuota.Valid {
+		v := lastBalanceQuota.Int64
+		c.LastBalanceQuota = &v
+	}
+	if lastUsedQuota.Valid {
+		v := lastUsedQuota.Int64
+		c.LastUsedQuota = &v
+	}
+	if lastBalanceUSD.Valid {
+		v := lastBalanceUSD.Float64
+		c.LastBalanceUSD = &v
+	}
+	if lastBalanceAt.Valid {
+		t := lastBalanceAt.Time
+		c.LastBalanceAt = &t
+	}
+	if lastBalanceCheck.Valid {
+		t := lastBalanceCheck.Time
+		c.LastBalanceCheckedAt = &t
+	}
+	c.LastBalanceError = lastBalanceError.String
 	if lastSyncAt.Valid {
 		t := lastSyncAt.Time
 		c.LastSyncAt = &t
@@ -224,7 +282,7 @@ func (r *upstreamPriceSyncRepo) CreateRequest(ctx context.Context, req *service.
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	summary, _ := json.Marshal(req.Summary)
 	err = tx.QueryRowContext(ctx, `
 INSERT INTO upstream_price_change_requests (source_config_id, trigger_type, status, upstream_pricing_version, summary, created_by)

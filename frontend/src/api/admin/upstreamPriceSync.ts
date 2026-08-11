@@ -14,11 +14,20 @@ export interface UpstreamSourceConfig {
   base_url: string
   api_key: string
   dashboard_token?: string
+  proxy_id?: number | null
   target_channel_id: number
   enabled: boolean
   base_price_per_1k: number
   pricing_source: 'auto' | 'ratio_config' | 'pricing'
   sync_model_price: boolean
+  balance_threshold_usd?: number | null
+  last_balance_quota?: number | null
+  last_used_quota?: number | null
+  last_balance_usd?: number | null
+  last_balance_at?: string | null
+  last_balance_checked_at?: string | null
+  last_balance_error?: string | null
+  balance_status?: 'not_configured' | 'unknown' | 'error' | 'low' | 'healthy'
   last_sync_at?: string | null
   last_error?: string | null
 }
@@ -63,6 +72,13 @@ export async function updateSource(id: number, p: UpstreamSourceConfig) {
 
 export async function deleteSource(id: number) {
   await apiClient.delete(`${base}/upstream-sources/${id}`)
+}
+
+export async function refreshBalance(id: number) {
+  const { data } = await apiClient.post<UpstreamSourceConfig>(
+    `${base}/upstream-sources/${id}/balance/refresh`,
+  )
+  return data
 }
 
 export async function syncNow(id: number) {
@@ -115,6 +131,7 @@ export const upstreamPriceSyncAPI = {
   createSource,
   updateSource,
   deleteSource,
+  refreshBalance,
   syncNow,
   listRequests,
   getRequest,

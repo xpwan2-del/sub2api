@@ -682,8 +682,16 @@ var ProviderSet = wire.NewSet(
 	// channelApplier 未导出，由 *ChannelService 结构化满足。
 	NewUpstreamPricingClient,
 	NewUpstreamPriceSyncService,
+	ProvideUpstreamBalanceMonitorService,
 	wire.Bind(new(channelApplier), new(*ChannelService)),
+	wire.Bind(new(upstreamProxyResolver), new(*ProxyService)),
 )
+
+func ProvideUpstreamBalanceMonitorService(syncService *UpstreamPriceSyncService, timingWheel *TimingWheelService, lockCache LeaderLockCache, db *sql.DB) *UpstreamBalanceMonitorService {
+	svc := NewUpstreamBalanceMonitorService(syncService, timingWheel, lockCache, db)
+	svc.Start()
+	return svc
+}
 
 // ProvideUserPlatformQuotaUsageFlusher 创建并启动 UserPlatformQuotaUsageFlusher。
 func ProvideUserPlatformQuotaUsageFlusher(cfg *config.Config, cache BillingCache, quotaRepo UserPlatformQuotaRepository, tw *TimingWheelService) *UserPlatformQuotaUsageFlusher {

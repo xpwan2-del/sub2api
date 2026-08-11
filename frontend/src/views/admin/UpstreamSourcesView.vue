@@ -77,6 +77,27 @@
             </span>
           </template>
 
+          <template #cell-proxy_id="{ row }">
+            <span class="text-sm text-gray-600 dark:text-gray-400">{{ proxyName(row.proxy_id) }}</span>
+          </template>
+
+          <template #cell-balance="{ row }">
+            <div class="flex flex-col items-start gap-1">
+              <div class="flex items-center gap-2">
+                <span class="font-medium text-gray-900 dark:text-white">{{ formatBalance(row.last_balance_usd) }}</span>
+                <span :class="balanceStatusClass(row.balance_status)" class="inline-flex rounded px-2 py-0.5 text-xs font-medium">
+                  {{ balanceStatusLabel(row.balance_status) }}
+                </span>
+              </div>
+              <span v-if="row.last_balance_checked_at" class="text-xs text-gray-500 dark:text-gray-400">
+                {{ formatDateTime(row.last_balance_checked_at) }}
+              </span>
+              <span v-if="row.last_balance_error" class="max-w-[15rem] truncate text-xs text-red-600 dark:text-red-400" :title="row.last_balance_error">
+                {{ row.last_balance_error }}
+              </span>
+            </div>
+          </template>
+
           <template #cell-last_sync_at="{ value, row }">
             <div class="flex flex-col">
               <span class="text-sm text-gray-600 dark:text-gray-400">
@@ -101,6 +122,14 @@
                 :title="t('admin.upstreamSources.syncNow', 'Sync Now')"
               >
                 <Icon name="sync" size="md" :class="syncingId === row.id ? 'animate-spin' : ''" />
+              </button>
+              <button
+                @click="handleRefreshBalance(row)"
+                :disabled="refreshingBalanceId === row.id || !row.dashboard_token"
+                class="btn-icon text-emerald-600 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-emerald-400"
+                :title="t('admin.upstreamSources.refreshBalance', 'Refresh Balance')"
+              >
+                <Icon name="refresh" size="md" :class="refreshingBalanceId === row.id ? 'animate-spin' : ''" />
               </button>
               <button
                 @click="openEditDialog(row)"
@@ -167,7 +196,7 @@
           </div>
         </div>
 
-        <!-- Target Channel + Pricing Source -->
+        <!-- Target Channel + Proxy -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label class="input-label">{{ t('admin.upstreamSources.fields.targetChannel', 'Target Channel') }} <span class="text-red-500">*</span></label>
@@ -179,8 +208,23 @@
             />
           </div>
           <div>
+            <label class="input-label">{{ t('admin.upstreamSources.fields.proxy', 'Proxy') }}</label>
+            <ProxySelector v-model="form.proxy_id" :proxies="proxies" />
+          </div>
+        </div>
+
+        <!-- Pricing Source + Balance Threshold -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
             <label class="input-label">{{ t('admin.upstreamSources.fields.pricingSource', 'Pricing Source') }}</label>
             <Select v-model="form.pricing_source" :options="pricingSourceOptions" />
+          </div>
+          <div>
+            <label class="input-label">{{ t('admin.upstreamSources.fields.balanceThreshold', 'Balance Alert Threshold (USD)') }}</label>
+            <input v-model.number="form.balance_threshold_usd" type="number" step="0.0001" min="0" class="input" :placeholder="t('admin.upstreamSources.fields.optional', 'Optional')" />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.upstreamSources.fields.balanceThresholdHint', 'Requires a Dashboard Token. Alerts use the configured admin quota emails.') }}
+            </p>
           </div>
         </div>
 
@@ -241,6 +285,7 @@ import { extractApiErrorMessage } from '@/utils/apiError'
 import { adminAPI } from '@/api/admin'
 import type { UpstreamSourceConfig } from '@/api/admin/upstreamPriceSync'
 import type { Column } from '@/components/common/types'
+import type { Proxy } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -248,6 +293,7 @@ import BaseDialog from '@/components/common/BaseDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import Select from '@/components/common/Select.vue'
+import ProxySelector from '@/components/common/ProxySelector.vue'
 import Toggle from '@/components/common/Toggle.vue'
 import Icon from '@/components/icons/Icon.vue'
 
@@ -261,6 +307,8 @@ const columns = computed<Column[]>(() => [
   { key: 'base_url', label: t('admin.upstreamSources.columns.baseUrl', 'Base URL'), sortable: true },
   { key: 'target_channel_id', label: t('admin.upstreamSources.columns.targetChannel', 'Target Channel'), sortable: false },
   { key: 'pricing_source', label: t('admin.upstreamSources.columns.pricingSource', 'Pricing Source'), sortable: false },
+  { key: 'proxy_id', label: t('admin.upstreamSources.columns.proxy', 'Proxy'), sortable: false },
+  { key: 'balance', label: t('admin.upstreamSources.columns.balance', 'Balance'), sortable: false },
   { key: 'last_sync_at', label: t('admin.upstreamSources.columns.lastSync', 'Last Sync'), sortable: true },
   { key: 'actions', label: t('admin.upstreamSources.columns.actions', 'Actions'), sortable: false },
 ])
@@ -274,10 +322,12 @@ const pricingSourceOptions = computed(() => [
 // ── State ──
 const sources = ref<UpstreamSourceConfig[]>([])
 const channels = ref<{ id: number; name: string }[]>([])
+const proxies = ref<Proxy[]>([])
 const loading = ref(false)
 const submitting = ref(false)
 const searchQuery = ref('')
 const syncingId = ref<number | null>(null)
+const refreshingBalanceId = ref<number | null>(null)
 
 const showDialog = ref(false)
 const editingSource = ref<UpstreamSourceConfig | null>(null)
@@ -289,7 +339,9 @@ interface SourceForm {
   base_url: string
   api_key: string
   dashboard_token: string
+  proxy_id: number | null
   target_channel_id: number | null
+  balance_threshold_usd: number | null
   base_price_per_1k: number
   pricing_source: 'auto' | 'ratio_config' | 'pricing'
   enabled: boolean
@@ -301,7 +353,9 @@ const form = reactive<SourceForm>({
   base_url: '',
   api_key: '',
   dashboard_token: '',
+  proxy_id: null,
   target_channel_id: null,
+  balance_threshold_usd: null,
   base_price_per_1k: 0.002,
   pricing_source: 'auto',
   enabled: true,
@@ -323,6 +377,28 @@ const channelOptions = computed(() =>
 
 function channelName(id: number): string {
   return channels.value.find((c) => c.id === id)?.name ?? `#${id}`
+}
+
+function proxyName(id?: number | null): string {
+  if (!id) return t('admin.upstreamSources.noProxy', 'Direct')
+  return proxies.value.find((proxy) => proxy.id === id)?.name ?? `#${id}`
+}
+
+function formatBalance(value?: number | null): string {
+  return value == null ? '-' : `$${value.toFixed(2)}`
+}
+
+function balanceStatusLabel(status?: UpstreamSourceConfig['balance_status']): string {
+  return t(`admin.upstreamSources.balanceStatus.${status || 'unknown'}`, status || 'Unknown')
+}
+
+function balanceStatusClass(status?: UpstreamSourceConfig['balance_status']): string {
+  switch (status) {
+    case 'healthy': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+    case 'low': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+    case 'error': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+    default: return 'bg-gray-100 text-gray-600 dark:bg-dark-700 dark:text-gray-300'
+  }
 }
 
 // ── Helpers ──
@@ -352,13 +428,23 @@ async function loadChannels() {
   }
 }
 
+async function loadProxies() {
+  try {
+    proxies.value = await adminAPI.proxies.getAll()
+  } catch (error) {
+    console.error('Failed to load proxies for dropdown:', error)
+  }
+}
+
 // ── Dialog ──
 function resetForm() {
   form.name = ''
   form.base_url = ''
   form.api_key = ''
   form.dashboard_token = ''
+  form.proxy_id = null
   form.target_channel_id = channels.value[0]?.id ?? null
+  form.balance_threshold_usd = null
   form.base_price_per_1k = 0.002
   form.pricing_source = 'auto'
   form.enabled = true
@@ -379,7 +465,9 @@ async function openEditDialog(source: UpstreamSourceConfig) {
   form.base_url = source.base_url ?? ''
   form.api_key = source.api_key ?? ''
   form.dashboard_token = source.dashboard_token ?? ''
+  form.proxy_id = source.proxy_id ?? null
   form.target_channel_id = source.target_channel_id ?? null
+  form.balance_threshold_usd = source.balance_threshold_usd ?? null
   form.base_price_per_1k = source.base_price_per_1k ?? 0.002
   form.pricing_source = (source.pricing_source as SourceForm['pricing_source']) || 'auto'
   form.enabled = !!source.enabled
@@ -402,7 +490,9 @@ async function handleSubmit() {
     base_url: form.base_url.trim(),
     api_key: form.api_key,
     dashboard_token: form.dashboard_token || '',
+    proxy_id: form.proxy_id,
     target_channel_id: form.target_channel_id,
+    balance_threshold_usd: form.balance_threshold_usd,
     base_price_per_1k: form.base_price_per_1k,
     pricing_source: form.pricing_source,
     enabled: form.enabled,
@@ -455,6 +545,22 @@ async function handleSync(source: UpstreamSourceConfig) {
   }
 }
 
+async function handleRefreshBalance(source: UpstreamSourceConfig) {
+  if (source.id == null) return
+  refreshingBalanceId.value = source.id
+  try {
+    const updated = await adminAPI.upstreamPriceSync.refreshBalance(source.id)
+    const index = sources.value.findIndex((item) => item.id === source.id)
+    if (index >= 0) sources.value[index] = updated
+    appStore.showSuccess(t('admin.upstreamSources.balanceRefreshSuccess', 'Balance refreshed'))
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('admin.upstreamSources.balanceRefreshError', 'Failed to refresh balance')))
+    await loadSources()
+  } finally {
+    refreshingBalanceId.value = null
+  }
+}
+
 // ── Delete ──
 function handleDelete(source: UpstreamSourceConfig) {
   deletingSource.value = source
@@ -478,5 +584,6 @@ async function confirmDelete() {
 onMounted(() => {
   loadSources()
   loadChannels()
+  loadProxies()
 })
 </script>
