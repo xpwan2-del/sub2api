@@ -59,7 +59,8 @@ type pricingResp struct {
 		QuotaType        int      `json:"quota_type"`
 		EnableGroups     []string `json:"enable_groups"`
 	} `json:"data"`
-	GroupRatio map[string]float64 `json:"group_ratio"`
+	GroupRatio  map[string]float64 `json:"group_ratio"`
+	UsableGroup map[string]string  `json:"usable_group"`
 }
 
 type BalanceSnapshot struct {
@@ -159,7 +160,7 @@ func (c *UpstreamPricingClient) fetchPricing(ctx context.Context, client *http.C
 	if err := json.Unmarshal(body, &r); err != nil || !r.Success {
 		return nil, fmt.Errorf("pricing parse failed")
 	}
-	snap := &PricingSnapshot{Source: "pricing", Version: r.PricingVersion, GroupRatio: r.GroupRatio, FetchedAt: time.Now()}
+	snap := &PricingSnapshot{Source: "pricing", Version: r.PricingVersion, GroupRatio: r.GroupRatio, UsableGroup: r.UsableGroup, FetchedAt: time.Now()}
 	for _, d := range r.Data {
 		snap.Models = append(snap.Models, UpstreamModelPricing{
 			ModelName: d.ModelName, ModelRatio: d.ModelRatio, CompletionRatio: d.CompletionRatio,

@@ -22,6 +22,7 @@ export interface UpstreamSourceConfig {
   base_price_per_1k: number
   pricing_source: 'auto' | 'ratio_config' | 'pricing'
   sync_model_price: boolean
+  target_upstream_group?: string
   balance_threshold_usd?: number | null
   last_balance_quota?: number | null
   last_used_quota?: number | null
@@ -105,6 +106,14 @@ export async function syncNow(id: number) {
   return data
 }
 
+/** 拉取上游可用分组字典({key: 展示名}),供 source 配置下拉。 */
+export async function listUpstreamGroups(id: number) {
+  const { data } = await apiClient.get<{ groups: Record<string, string> }>(
+    `${base}/upstream-sources/${id}/groups`,
+  )
+  return data
+}
+
 /** 后端 `response.Paginated` 信封(apiClient 拦截器已剥离外层 `data`)。 */
 export interface PaginatedPriceChangeRequests {
   items: PriceChangeRequest[]
@@ -153,6 +162,7 @@ export const upstreamPriceSyncAPI = {
   refreshBalance,
   refreshAllBalances,
   syncNow,
+  listUpstreamGroups,
   listRequests,
   getRequest,
   reviewItem,

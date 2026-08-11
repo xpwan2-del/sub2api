@@ -77,6 +77,10 @@ func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, create
 	platforms := make(map[string]string, len(snap.Models))
 	rawByName := make(map[string]map[string]any, len(snap.Models))
 	for _, m := range snap.Models {
+		// 按配置的目标上游分组过滤:modelGroupEnabled 在 target 为空时返回 true(不过滤,向后兼容)。
+		if !modelGroupEnabled(m.EnableGroups, cfgRec.TargetUpstreamGroup) {
+			continue
+		}
 		upstream[m.ModelName] = ConvertPricing(m, cfgRec.BasePricePer1k)
 		platforms[m.ModelName] = InferPlatform(m.ModelName)
 		rawByName[m.ModelName] = map[string]any{
@@ -275,6 +279,35 @@ func (s *UpstreamPriceSyncService) RefreshBalance(ctx context.Context, id int64)
 		s.balanceNotifyService.NotifyUpstreamBalanceLow(ctx, cfgRec)
 	}
 	return cfgRec, nil
+}
+
+// ListUpstreamGroups 拉取上游可用分组字典({group_key: 展示名}),供前端 source 配置下拉。
+// 复用 FetchPricing;强制走 /api/pricing(/api/ratio_config 不返回 usable_group)。
+// source 禁用或上游不可达时返回错误;上游未返回 usable_group 时返回空 map。
+func (s *UpstreamPriceSyncService) ListUpstreamGroups(ctx context.Context, configID int64) (map[string]string, error) {
+	cfgRec, err := s.repo.GetConfig(ctx, configID)
+	if err != nil {
+		return nil, fmt.Errorf("get source config: %w", err)
+	}
+	if !cfgRec.Enabled {
+		return nil, infraerrors.BadRequest("upstream_source_disabled", "upstream source is disabled")
+	}
+	baseURL, err := s.validateBaseURL(cfgRec.BaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid base url: %w", err)
+	}
+	proxyURL, err := s.resolveProxyURL(ctx, cfgRec.ProxyID)
+	if err != nil {
+		return nil, fmt.Errorf("resolve proxy: %w", err)
+	}
+	snap, err := s.client.FetchPricing(ctx, baseURL, PricingSourcePricing, proxyURL)
+	if err != nil {
+		return nil, fmt.Errorf("fetch upstream groups: %w", err)
+	}
+	if snap.UsableGroup == nil {
+		return map[string]string{}, nil
+	}
+	return snap.UsableGroup, nil
 }
 
 func (s *UpstreamPriceSyncService) balanceRefreshError(ctx context.Context, cfgRec *UpstreamSourceConfig, refreshErr error) (*UpstreamSourceConfig, error) {

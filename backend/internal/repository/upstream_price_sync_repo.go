@@ -53,7 +53,7 @@ func (r *upstreamPriceSyncRepo) decrypt(cipher string) (string, error) {
 const selectConfigSQL = `SELECT id, name, base_url, api_key_encrypted, dashboard_token_encrypted,
  dashboard_auth_mode, dashboard_user_id, proxy_id,
  target_channel_id, enabled, base_price_per_1k, pricing_source,
- sync_model_price, sync_group_ratio, group_mapping, balance_threshold_usd,
+ sync_model_price, sync_group_ratio, group_mapping, target_upstream_group, balance_threshold_usd,
  last_balance_quota, last_used_quota, last_balance_usd, last_balance_at,
  last_balance_checked_at, last_balance_error,
  last_sync_at, last_pricing_version, last_error, created_at, updated_at
@@ -76,11 +76,11 @@ func (r *upstreamPriceSyncRepo) CreateConfig(ctx context.Context, c *service.Ups
 INSERT INTO upstream_source_configs
 (name, base_url, api_key_encrypted, dashboard_token_encrypted, dashboard_auth_mode, dashboard_user_id, proxy_id,
  target_channel_id, enabled, base_price_per_1k, pricing_source,
- sync_model_price, sync_group_ratio, group_mapping, balance_threshold_usd)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id, created_at, updated_at`,
+ sync_model_price, sync_group_ratio, group_mapping, target_upstream_group, balance_threshold_usd)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id, created_at, updated_at`,
 		c.Name, c.BaseURL, ak, dt, service.NormalizeDashboardAuthMode(c.DashboardAuthMode), c.DashboardUserID, c.ProxyID,
 		c.TargetChannelID, c.Enabled,
-		c.BasePricePer1k, string(c.PricingSource), c.SyncModelPrice, c.SyncGroupRatio, gm, c.BalanceThresholdUSD,
+		c.BasePricePer1k, string(c.PricingSource), c.SyncModelPrice, c.SyncGroupRatio, gm, c.TargetUpstreamGroup, c.BalanceThresholdUSD,
 	).Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
 }
 
@@ -129,13 +129,13 @@ UPDATE upstream_source_configs
 SET name=$2, base_url=$3, api_key_encrypted=$4, dashboard_token_encrypted=$5,
     dashboard_auth_mode=$6, dashboard_user_id=$7, proxy_id=$8,
     target_channel_id=$9, enabled=$10, base_price_per_1k=$11, pricing_source=$12,
-    sync_model_price=$13, sync_group_ratio=$14, group_mapping=$15, balance_threshold_usd=$16,
-    last_balance_quota=CASE WHEN $17 THEN NULL ELSE last_balance_quota END,
-    last_used_quota=CASE WHEN $17 THEN NULL ELSE last_used_quota END,
-    last_balance_usd=CASE WHEN $17 THEN NULL ELSE last_balance_usd END,
-    last_balance_at=CASE WHEN $17 THEN NULL ELSE last_balance_at END,
-    last_balance_checked_at=CASE WHEN $17 THEN NULL ELSE last_balance_checked_at END,
-    last_balance_error=CASE WHEN $17 THEN NULL ELSE last_balance_error END,
+    sync_model_price=$13, sync_group_ratio=$14, group_mapping=$15, target_upstream_group=$16, balance_threshold_usd=$17,
+    last_balance_quota=CASE WHEN $18 THEN NULL ELSE last_balance_quota END,
+    last_used_quota=CASE WHEN $18 THEN NULL ELSE last_used_quota END,
+    last_balance_usd=CASE WHEN $18 THEN NULL ELSE last_balance_usd END,
+    last_balance_at=CASE WHEN $18 THEN NULL ELSE last_balance_at END,
+    last_balance_checked_at=CASE WHEN $18 THEN NULL ELSE last_balance_checked_at END,
+    last_balance_error=CASE WHEN $18 THEN NULL ELSE last_balance_error END,
     updated_at=now()
 WHERE id=$1
 RETURNING updated_at`,
@@ -143,7 +143,7 @@ RETURNING updated_at`,
 		service.NormalizeDashboardAuthMode(c.DashboardAuthMode), c.DashboardUserID, c.ProxyID,
 		c.TargetChannelID, c.Enabled,
 		c.BasePricePer1k, string(c.PricingSource), c.SyncModelPrice, c.SyncGroupRatio,
-		gm, c.BalanceThresholdUSD, c.ResetBalanceSnapshot,
+		gm, c.TargetUpstreamGroup, c.BalanceThresholdUSD, c.ResetBalanceSnapshot,
 	).Scan(&c.UpdatedAt)
 }
 
@@ -215,7 +215,7 @@ func scanConfig(row rowScanner, r *upstreamPriceSyncRepo) (*service.UpstreamSour
 		&c.ID, &c.Name, &c.BaseURL, &apiKeyEnc, &dashTokenEnc,
 		&dashboardAuthMode, &dashboardUserID, &c.ProxyID,
 		&c.TargetChannelID, &c.Enabled, &c.BasePricePer1k, &pricingSource,
-		&c.SyncModelPrice, &c.SyncGroupRatio, &groupMapping, &balanceThresh,
+		&c.SyncModelPrice, &c.SyncGroupRatio, &groupMapping, &c.TargetUpstreamGroup, &balanceThresh,
 		&lastBalanceQuota, &lastUsedQuota, &lastBalanceUSD, &lastBalanceAt,
 		&lastBalanceCheck, &lastBalanceError,
 		&lastSyncAt, &lastPricingV, &lastErr, &c.CreatedAt, &c.UpdatedAt,

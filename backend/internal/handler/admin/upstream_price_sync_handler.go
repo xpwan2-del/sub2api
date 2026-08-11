@@ -121,6 +121,22 @@ func (h *ChannelHandler) SyncUpstreamNow(c *gin.Context) {
 	response.Success(c, gin.H{"request_id": reqID})
 }
 
+// ListUpstreamGroups 拉取上游可用分组字典({key: 展示名}),供 source 配置下拉。
+// GET /api/v1/admin/channels/upstream-sources/:id/groups
+func (h *ChannelHandler) ListUpstreamGroups(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		response.BadRequest(c, "invalid id")
+		return
+	}
+	groups, err := h.upstreamPriceSyncService.ListUpstreamGroups(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"groups": groups})
+}
+
 // RefreshUpstreamBalance 手动刷新单个上游源的余额快照。
 // POST /api/v1/admin/channels/upstream-sources/:id/balance/refresh
 func (h *ChannelHandler) RefreshUpstreamBalance(c *gin.Context) {

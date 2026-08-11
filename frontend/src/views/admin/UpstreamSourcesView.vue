@@ -259,6 +259,22 @@
           </div>
         </div>
 
+        <!-- Upstream Group Filter -->
+        <div>
+          <label class="input-label">{{ t('admin.upstreamSources.fields.upstreamGroup', 'Upstream Group Filter') }}</label>
+          <Select
+            v-model="form.target_upstream_group"
+            :options="upstreamGroupOptions"
+            :disabled="!editingSource || loadingGroups"
+            searchable
+          />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ editingSource
+              ? t('admin.upstreamSources.fields.upstreamGroupHint', 'Only sync models enabled for the selected upstream group. Empty = sync all models.')
+              : t('admin.upstreamSources.fields.upstreamGroupHintCreate', 'Save the source first, then edit to load and pick an upstream group.') }}
+          </p>
+        </div>
+
         <!-- Pricing Source + Balance Threshold -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -400,6 +416,7 @@ interface SourceForm {
   dashboard_user_id: number | null
   proxy_id: number | null
   target_channel_id: number | null
+  target_upstream_group: string
   balance_threshold_usd: number | null
   base_price_per_1k: number
   pricing_source: 'auto' | 'ratio_config' | 'pricing'
@@ -416,6 +433,7 @@ const form = reactive<SourceForm>({
   dashboard_user_id: null,
   proxy_id: null,
   target_channel_id: null,
+  target_upstream_group: '',
   balance_threshold_usd: null,
   base_price_per_1k: 0.002,
   pricing_source: 'auto',
@@ -435,6 +453,32 @@ const filteredSources = computed(() => {
 const channelOptions = computed(() =>
   channels.value.map((c) => ({ value: c.id, label: c.name })),
 )
+
+// 上游可用分组:source 已保存后从 /api/pricing 全局 usable_group 拉取,用于按 group 过滤模型。
+const upstreamGroups = ref<Record<string, string>>({})
+const loadingGroups = ref(false)
+const upstreamGroupOptions = computed(() => {
+  const opts: { value: string; label: string }[] = [
+    { value: '', label: t('admin.upstreamSources.fields.noGroupFilter', 'No filter (all models)') },
+  ]
+  for (const [key, name] of Object.entries(upstreamGroups.value)) {
+    opts.push({ value: key, label: name ? `${key} — ${name}` : key })
+  }
+  return opts
+})
+
+async function loadUpstreamGroups(sourceId: number) {
+  loadingGroups.value = true
+  try {
+    const res = await adminAPI.upstreamPriceSync.listUpstreamGroups(sourceId)
+    upstreamGroups.value = res?.groups ?? {}
+  } catch (error) {
+    console.error('Failed to load upstream groups:', error)
+    upstreamGroups.value = {}
+  } finally {
+    loadingGroups.value = false
+  }
+}
 
 function channelName(id: number): string {
   return channels.value.find((c) => c.id === id)?.name ?? `#${id}`
@@ -512,6 +556,7 @@ function resetForm() {
   form.dashboard_user_id = null
   form.proxy_id = null
   form.target_channel_id = channels.value[0]?.id ?? null
+  form.target_upstream_group = ''
   form.balance_threshold_usd = null
   form.base_price_per_1k = 0.002
   form.pricing_source = 'auto'
@@ -521,6 +566,7 @@ function resetForm() {
 
 async function openCreateDialog() {
   editingSource.value = null
+  upstreamGroups.value = {}
   if (channels.value.length === 0) await loadChannels()
   resetForm()
   showDialog.value = true
@@ -529,6 +575,7 @@ async function openCreateDialog() {
 async function openEditDialog(source: UpstreamSourceConfig) {
   editingSource.value = source
   if (channels.value.length === 0) await loadChannels()
+  if (source.id != null) await loadUpstreamGroups(source.id)
   form.name = source.name ?? ''
   form.base_url = source.base_url ?? ''
   form.api_key = source.api_key ?? ''
@@ -537,6 +584,7 @@ async function openEditDialog(source: UpstreamSourceConfig) {
   form.dashboard_user_id = source.dashboard_user_id ?? null
   form.proxy_id = source.proxy_id ?? null
   form.target_channel_id = source.target_channel_id ?? null
+  form.target_upstream_group = source.target_upstream_group ?? ''
   form.balance_threshold_usd = source.balance_threshold_usd ?? null
   form.base_price_per_1k = source.base_price_per_1k ?? 0.002
   form.pricing_source = (source.pricing_source as SourceForm['pricing_source']) || 'auto'
@@ -564,6 +612,7 @@ async function handleSubmit() {
     dashboard_user_id: needsDashboardUserId.value ? form.dashboard_user_id : null,
     proxy_id: form.proxy_id,
     target_channel_id: form.target_channel_id,
+    target_upstream_group: form.target_upstream_group,
     balance_threshold_usd: form.balance_threshold_usd,
     base_price_per_1k: form.base_price_per_1k,
     pricing_source: form.pricing_source,

@@ -142,10 +142,11 @@
                       <th class="px-2 py-2 w-8"></th>
                       <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.model', 'Model') }}</th>
                       <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.platform', 'Platform') }}</th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.channel', 'Channel') }}</th>
                       <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.kind', 'Kind') }}</th>
-                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.upstream', 'Upstream') }}</th>
-                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.local', 'Local Current') }}</th>
-                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.applyValue', 'Apply Value') }}</th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.upstream', 'Upstream') }} <span class="font-normal normal-case text-gray-400">$/MTok</span></th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.local', 'Local Current') }} <span class="font-normal normal-case text-gray-400">$/MTok</span></th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.items.applyValue', 'Apply Value') }} <span class="font-normal normal-case text-gray-400">$/MTok</span></th>
                       <th class="px-2 py-2 text-right">{{ t('admin.priceChangeRequests.items.actions', 'Actions') }}</th>
                     </tr>
                   </thead>
@@ -168,6 +169,9 @@
                         {{ modelField(item, 'name') }}
                       </td>
                       <td class="px-2 py-2 align-top text-gray-600 dark:text-gray-400">{{ item.platform || '-' }}</td>
+                      <td class="px-2 py-2 align-top text-gray-600 dark:text-gray-400">
+                        {{ channelName((item as any).target_channel_id ?? (item as any).TargetChannelID) }}
+                      </td>
                       <td class="px-2 py-2 align-top">
                         <span :class="['inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium', kindBadgeClass(item.kind)]">
                           {{ item.kind }}
@@ -258,6 +262,7 @@ import { extractApiErrorMessage } from '@/utils/apiError'
 import { adminAPI } from '@/api/admin'
 import type { PriceChangeRequest, PriceChangeItem } from '@/api/admin/upstreamPriceSync'
 import type { Column } from '@/components/common/types'
+import { perTokenToMTok, mTokToPerToken } from '@/components/admin/channel/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -297,9 +302,7 @@ function pickPrice(p: any): {
 
 function fmtNum(v: number | null | undefined): string {
   if (v === null || v === undefined || Number.isNaN(v)) return '-'
-  // Per-token USD prices are small; show up to 8 sig decimals, trim trailing zeros.
-  const abs = Math.abs(v)
-  if (abs !== 0 && abs < 0.01) return v.toFixed(8).replace(/0+$/, '').replace(/\.$/, '')
+  // 价格以 $/MTok(token 字段)或 $/次(per_request)展示,均为常规量级;保留 6 位小数去尾零。
   return String(Number(v.toFixed(6)))
 }
 
@@ -308,11 +311,12 @@ function priceDetailStrings(p: any): string[] {
   const c = pickPrice(p)
   const lines: string[] = []
   if (c.mode) lines.push(`[${c.mode}]`)
-  if (c.perRequest !== null) lines.push(`per_req=${fmtNum(c.perRequest)}`)
-  if (c.input !== null) lines.push(`in=${fmtNum(c.input)}`)
-  if (c.output !== null) lines.push(`out=${fmtNum(c.output)}`)
-  if (c.cacheRead !== null) lines.push(`cache_r=${fmtNum(c.cacheRead)}`)
-  if (c.cacheWrite !== null) lines.push(`cache_w=${fmtNum(c.cacheWrite)}`)
+  // per_request 为 $/次,直接展示;token 字段(in/out/cache_*)为 per-token 存储,×1e6 显示成 $/MTok。
+  if (c.perRequest !== null) lines.push(`per_req=${fmtNum(c.perRequest)}/req`)
+  if (c.input !== null) lines.push(`in=${fmtNum(perTokenToMTok(c.input))}`)
+  if (c.output !== null) lines.push(`out=${fmtNum(perTokenToMTok(c.output))}`)
+  if (c.cacheRead !== null) lines.push(`cache_r=${fmtNum(perTokenToMTok(c.cacheRead))}`)
+  if (c.cacheWrite !== null) lines.push(`cache_w=${fmtNum(perTokenToMTok(c.cacheWrite))}`)
   return lines.length ? lines : ['-']
 }
 
@@ -339,6 +343,7 @@ const requests = ref<PriceChangeRequest[]>([])
 const loading = ref(false)
 const filters = reactive({ status: '' })
 const sourcesIndex = ref<Record<number, string>>({})
+const channelsIndex = ref<Record<number, string>>({})
 
 const expandedRequestId = ref<number | null>(null)
 const expandedItems = ref<PriceChangeItem[]>([])
@@ -368,6 +373,21 @@ function formatDateTime(value: string): string {
 
 function sourceLabel(id: number): string {
   return sourcesIndex.value[id] ?? `source #${id}`
+}
+
+function channelName(id?: number | null): string {
+  if (id == null) return '-'
+  return channelsIndex.value[id] ?? `#${id}`
+}
+
+async function loadChannelsIndex() {
+  try {
+    const res: any = await adminAPI.channels.list(1, 1000)
+    const items = res?.items ?? []
+    for (const c of items) channelsIndex.value[c.id] = c.name
+  } catch {
+    // best-effort: 列表为空时 channel 列回退显示 #id
+  }
 }
 
 function isRemoved(item: PriceChangeItem): boolean {
@@ -419,13 +439,15 @@ function buildDraft(item: PriceChangeItem): Draft {
   const src = pickPrice((item as any).apply_value) ?? null
   const fallback = pickPrice((item as any).upstream_converted) ?? null
   const base = src && (src.input !== null || src.perRequest !== null) ? src : fallback
+  // draft 以 $/MTok(token 字段)/ $/次(per_request)展示与编辑;token 字段从 per-token ×1e6。
+  const mTok = (v: number | null) => (v === null ? '' : String(perTokenToMTok(v)))
   const num = (v: number | null) => (v === null ? '' : String(v))
   return {
     mode: base.mode || 'token',
-    input: num(base.input),
-    output: num(base.output),
-    cacheRead: num(base.cacheRead),
-    cacheWrite: num(base.cacheWrite),
+    input: mTok(base.input),
+    output: mTok(base.output),
+    cacheRead: mTok(base.cacheRead),
+    cacheWrite: mTok(base.cacheWrite),
     perRequest: num(base.perRequest),
   }
 }
@@ -454,13 +476,13 @@ function primaryHint(item: PriceChangeItem): string {
 function buildApplyPayload(itemId: number): Record<string, unknown> {
   const d = drafts[itemId]
   if (!d) return {}
-  const toNum = (s: string) => (s === '' ? null : Number(s))
+  // token 字段:draft 为 $/MTok,提交前 ÷1e6 还原 per-token;per_request 直接透传。
   const mode = d.mode || 'token'
-  const input = toNum(d.input)
-  const output = toNum(d.output)
-  const cacheRead = toNum(d.cacheRead)
-  const cacheWrite = toNum(d.cacheWrite)
-  const perRequest = toNum(d.perRequest)
+  const input = mTokToPerToken(d.input)
+  const output = mTokToPerToken(d.output)
+  const cacheRead = mTokToPerToken(d.cacheRead)
+  const cacheWrite = mTokToPerToken(d.cacheWrite)
+  const perRequest = d.perRequest === '' ? null : Number(d.perRequest)
   return {
     BillingMode: mode,
     billing_mode: mode,
@@ -647,5 +669,6 @@ async function refreshExpanded() {
 // ── Lifecycle ──
 onMounted(() => {
   loadRequests()
+  loadChannelsIndex()
 })
 </script>

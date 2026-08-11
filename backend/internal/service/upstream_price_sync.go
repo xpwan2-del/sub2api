@@ -231,6 +231,26 @@ func DiffPricing(upstream map[string]ConvertedPrice, upstreamPlatforms map[strin
 	return drafts
 }
 
+// modelGroupEnabled 报告模型是否应当进入本次同步。
+//   - target 为空 → 调用方未配置过滤,全部保留(向后兼容);
+//   - enableGroups 为空 → new-api 语义视为全分组可用,保留;
+//   - enableGroups 含 target → 命中,保留;
+//   - 否则 → 该模型未在目标分组启用,跳过。
+func modelGroupEnabled(enableGroups []string, target string) bool {
+	if target == "" {
+		return true
+	}
+	if len(enableGroups) == 0 {
+		return true
+	}
+	for _, g := range enableGroups {
+		if g == target {
+			return true
+		}
+	}
+	return false
+}
+
 func channelPricingToConverted(p *ChannelModelPricing) *ConvertedPrice {
 	return &ConvertedPrice{
 		BillingMode:     p.BillingMode,
@@ -277,6 +297,7 @@ type UpstreamSourceConfig struct {
 	SyncModelPrice       bool                  `json:"sync_model_price"`
 	SyncGroupRatio       bool                  `json:"sync_group_ratio"`
 	GroupMapping         map[string]int64      `json:"group_mapping"`
+	TargetUpstreamGroup  string                `json:"target_upstream_group"` // 上游 group_ratio key;空=不过滤(全量同步)
 	BalanceThresholdUSD  *float64              `json:"balance_threshold_usd"`
 	LastBalanceQuota     *int64                `json:"last_balance_quota"`
 	LastUsedQuota        *int64                `json:"last_used_quota"`
