@@ -174,7 +174,7 @@
                   </thead>
                   <tbody class="divide-y divide-gray-100 dark:divide-dark-800">
                     <tr
-                      v-for="item in expandedItems"
+                      v-for="item in sortedExpandedItems"
                       :key="item.id"
                       :class="['text-sm', isRemoved(item) ? 'opacity-50' : '']"
                     >
@@ -427,6 +427,15 @@ const drafts = reactive<Record<number, Draft>>({})
 // Selected item ids (per request, but stored globally keyed by item id; current request implied)
 const selected = reactive<Set<number>>(new Set())
 
+// 渲染排序:本地已存在模型(price/unchanged/removed)优先显示,新增模型(added)置末;
+// 组内保持后端返回的原始顺序(Array.prototype.sort 在 V8 为 TimSort,稳定)。
+const sortedExpandedItems = computed<PriceChangeItem[]>(() =>
+  [...expandedItems.value].sort((a, b) => {
+    const rank = (k: string) => (k === 'model_added' ? 1 : 0)
+    return rank(a.kind) - rank(b.kind)
+  }),
+)
+
 // ── Helpers ──
 function formatDateTime(value: string): string {
   if (!value) return '-'
@@ -520,6 +529,9 @@ function statusBadgeClass(status: string): string {
     case 'rejected':
     case 'failed':
       return 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+    case 'no_change':
+      // 与 kind 列的 model_unchanged 保持同色(teal),避免与 ignored(灰)混淆。
+      return 'bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300'
     case 'ignored':
       return 'bg-gray-50 text-gray-500 dark:bg-dark-700 dark:text-gray-400'
     default:
@@ -534,7 +546,8 @@ function kindBadgeClass(kind: string): string {
     case 'model_removed':
       return 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'
     case 'model_unchanged':
-      return 'bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400'
+      // 用 teal(青)而非 gray,与 ignored(灰)状态徽章拉开视觉距离。
+      return 'bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300'
     default:
       return 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
   }
