@@ -163,10 +163,17 @@ func (c *UpstreamPricingClient) fetchPricing(ctx context.Context, client *http.C
 		return nil, fmt.Errorf("pricing status %d", resp.StatusCode)
 	}
 	var r pricingResp
-	if err := json.Unmarshal(body, &r); err != nil || !r.Success {
-		return nil, fmt.Errorf("pricing parse failed")
+	if err := json.Unmarshal(body, &r); err != nil {
+		return nil, fmt.Errorf("pricing parse failed: %w (body: %s)", err, truncateUpstreamBody(body))
+	}
+	// 宽容:部分 new-api 分叉不返回顶层 success 字段;若已拿到 data 或 group_ratio 即视为有效响应。
+	if !r.Success && len(r.Data) == 0 && len(r.GroupRatio) == 0 {
+		return nil, fmt.Errorf("pricing response unsuccessful (body: %s)", truncateUpstreamBody(body))
 	}
 	snap := &PricingSnapshot{Source: "pricing", Version: r.PricingVersion, GroupRatio: r.GroupRatio, UsableGroup: r.UsableGroup, FetchedAt: time.Now()}
+	if len(snap.GroupRatio) == 0 && len(snap.UsableGroup) == 0 {
+		slog.WarnContext(ctx, "upstream pricing returned no group info", "base_url", baseURL, "models", len(snap.Models), "body_head", truncateUpstreamBody(body))
+	}
 	for _, d := range r.Data {
 		snap.Models = append(snap.Models, UpstreamModelPricing{
 			ModelName: d.ModelName, ModelRatio: d.ModelRatio, CompletionRatio: d.CompletionRatio,
@@ -330,6 +337,16 @@ func sanitizeUpstreamBalanceError(body []byte) string {
 func truncateBalanceError(s string) string {
 	if len(s) > balanceErrorBodyPrintLimit {
 		return s[:balanceErrorBodyPrintLimit] + "..."
+	}
+	return s
+}
+
+// truncateUpstreamBody 截断上游响应体用于错误诊断,避免日志膨胀。
+func truncateUpstreamBody(body []byte) string {
+	const limit = 256
+	s := strings.TrimSpace(string(body))
+	if len(s) > limit {
+		return s[:limit] + "..."
 	}
 	return s
 }
