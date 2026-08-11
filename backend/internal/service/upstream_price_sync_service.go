@@ -66,7 +66,7 @@ func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, create
 	if err != nil {
 		return 0, fmt.Errorf("resolve proxy: %w", err)
 	}
-	snap, err := s.client.FetchPricing(ctx, baseURL, cfgRec.PricingSource, proxyURL)
+	snap, err := s.client.FetchPricing(ctx, baseURL, cfgRec.PricingSource, proxyURL, cfgRec.APIKey)
 	if err != nil {
 		_ = s.repo.UpdateConfigSyncState(ctx, configID, time.Now(), "", err.Error())
 		return 0, fmt.Errorf("fetch upstream: %w", err)
@@ -286,7 +286,7 @@ func (s *UpstreamPriceSyncService) RefreshBalance(ctx context.Context, id int64)
 // 数据源:优先 usable_group({key: 展示名},部分 new-api 版本返回);
 // 回退 group_ratio 的 keys(key 即分组标识,与每模型 enable_groups 对齐,
 // 所有 new-api 版本的 /api/pricing 都返回 group_ratio)。两者合并,保证有数据。
-func (s *UpstreamPriceSyncService) resolveUpstreamGroups(ctx context.Context, baseURL string, proxyID *int64) (map[string]string, error) {
+func (s *UpstreamPriceSyncService) resolveUpstreamGroups(ctx context.Context, baseURL string, proxyID *int64, apiKey string) (map[string]string, error) {
 	baseURL, err := s.validateBaseURL(baseURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid base url: %w", err)
@@ -295,7 +295,7 @@ func (s *UpstreamPriceSyncService) resolveUpstreamGroups(ctx context.Context, ba
 	if err != nil {
 		return nil, fmt.Errorf("resolve proxy: %w", err)
 	}
-	snap, err := s.client.FetchPricing(ctx, baseURL, PricingSourcePricing, proxyURL)
+	snap, err := s.client.FetchPricing(ctx, baseURL, PricingSourceAuto, proxyURL, apiKey)
 	if err != nil {
 		return nil, fmt.Errorf("fetch upstream groups: %w", err)
 	}
@@ -324,12 +324,12 @@ func (s *UpstreamPriceSyncService) ListUpstreamGroups(ctx context.Context, confi
 	if !cfgRec.Enabled {
 		return nil, infraerrors.BadRequest("upstream_source_disabled", "upstream source is disabled")
 	}
-	return s.resolveUpstreamGroups(ctx, cfgRec.BaseURL, cfgRec.ProxyID)
+	return s.resolveUpstreamGroups(ctx, cfgRec.BaseURL, cfgRec.ProxyID, cfgRec.APIKey)
 }
 
 // PreviewUpstreamGroups 按 base_url 直接拉取分组(新建 source 尚未保存时用)。
-func (s *UpstreamPriceSyncService) PreviewUpstreamGroups(ctx context.Context, baseURL string, proxyID *int64) (map[string]string, error) {
-	return s.resolveUpstreamGroups(ctx, baseURL, proxyID)
+func (s *UpstreamPriceSyncService) PreviewUpstreamGroups(ctx context.Context, baseURL string, proxyID *int64, apiKey string) (map[string]string, error) {
+	return s.resolveUpstreamGroups(ctx, baseURL, proxyID, apiKey)
 }
 
 func (s *UpstreamPriceSyncService) balanceRefreshError(ctx context.Context, cfgRec *UpstreamSourceConfig, refreshErr error) (*UpstreamSourceConfig, error) {

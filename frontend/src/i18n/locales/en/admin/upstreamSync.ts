@@ -39,6 +39,7 @@ export default {
     syncCreated: 'Sync started — review the new change request',
     syncNoChanges: 'Sync completed — no pricing changes detected',
     syncError: 'Failed to sync upstream',
+    loadGroupsError: 'Failed to load upstream groups',
     columns: {
       name: 'Name',
       baseUrl: 'Base URL',
@@ -72,6 +73,10 @@ export default {
       basePriceHint: 'USD price per 1k input tokens used to reverse-convert upstream ratios.',
       enabled: 'Enabled',
       syncModelPrice: 'Sync Model Price',
+      upstreamGroup: 'Upstream Group Filter',
+      upstreamGroupHint: 'Fill Base URL then click Load Groups. Only sync models enabled for the selected group; empty = sync all models.',
+      loadGroups: 'Load Groups',
+      noGroupFilter: 'No filter (all models)',
     },
     balanceStatus: {
       healthy: 'Healthy',
@@ -118,6 +123,7 @@ export default {
     items: {
       model: 'Model',
       platform: 'Platform',
+      channel: 'Channel',
       kind: 'Kind',
       upstream: 'Upstream',
       local: 'Local Current',

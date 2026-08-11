@@ -29,7 +29,7 @@ func TestFetchPricing_RatioConfig(t *testing.T) {
 		_, _ = w.Write([]byte(body))
 	}))
 	defer srv.Close()
-	snap, err := newTestClient().FetchPricing(context.Background(), srv.URL, PricingSourceRatioConfig, "")
+	snap, err := newTestClient().FetchPricing(context.Background(), srv.URL, PricingSourceRatioConfig, "", "")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -53,7 +53,7 @@ func TestFetchPricing_UsesConfiguredProxy(t *testing.T) {
 	}))
 	defer proxy.Close()
 
-	_, err := newTestClient().FetchPricing(context.Background(), "http://upstream.invalid", PricingSourceRatioConfig, proxy.URL)
+	_, err := newTestClient().FetchPricing(context.Background(), "http://upstream.invalid", PricingSourceRatioConfig, proxy.URL, "")
 	if err != nil {
 		t.Fatalf("FetchPricing via proxy err: %v", err)
 	}
@@ -228,7 +228,7 @@ func TestFetchPricing_AutoFallback(t *testing.T) {
 		_, _ = w.Write([]byte(`{"success":true,"pricing_version":"v9","data":[{"model_name":"gpt-4o","model_ratio":2.5,"completion_ratio":4,"quota_type":0,"enable_groups":["default"]}],"group_ratio":{"default":1}}`))
 	}))
 	defer srv.Close()
-	snap, err := newTestClient().FetchPricing(context.Background(), srv.URL, PricingSourceAuto, "")
+	snap, err := newTestClient().FetchPricing(context.Background(), srv.URL, PricingSourceAuto, "", "")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}

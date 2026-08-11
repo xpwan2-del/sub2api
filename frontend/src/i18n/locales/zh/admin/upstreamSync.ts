@@ -39,6 +39,7 @@ export default {
     syncCreated: '同步已开始 — 请审阅新的变更单',
     syncNoChanges: '同步完成 — 未检测到价格变更',
     syncError: '同步上游失败',
+    loadGroupsError: '加载上游分组失败',
     columns: {
       name: '名称',
       baseUrl: 'Base URL',
@@ -72,6 +73,10 @@ export default {
       basePriceHint: '每 1k 输入 token 的 USD 价格,用于还原上游倍率。',
       enabled: '启用',
       syncModelPrice: '同步模型价格',
+      upstreamGroup: '上游分组过滤',
+      upstreamGroupHint: '填写 Base URL 后点击「加载分组」。仅同步所选分组启用的模型;留空 = 同步全部模型。',
+      loadGroups: '加载分组',
+      noGroupFilter: '不过滤（全部模型）',
     },
     balanceStatus: {
       healthy: '充足',
@@ -118,6 +123,7 @@ export default {
     items: {
       model: '模型',
       platform: '平台',
+      channel: '渠道',
       kind: '类型',
       upstream: '上游还原值',
       local: '当前本地值',

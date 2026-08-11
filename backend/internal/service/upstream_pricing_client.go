@@ -88,13 +88,13 @@ func (c *UpstreamPricingClient) httpClient(proxyURL string) (*http.Client, error
 	return client, nil
 }
 
-func (c *UpstreamPricingClient) FetchPricing(ctx context.Context, baseURL string, source UpstreamPricingSource, proxyURL string) (*PricingSnapshot, error) {
+func (c *UpstreamPricingClient) FetchPricing(ctx context.Context, baseURL string, source UpstreamPricingSource, proxyURL, apiKey string) (*PricingSnapshot, error) {
 	client, err := c.httpClient(proxyURL)
 	if err != nil {
 		return nil, err
 	}
 	if source == PricingSourceRatioConfig || source == PricingSourceAuto {
-		snap, err := c.fetchRatioConfig(ctx, client, baseURL)
+		snap, err := c.fetchRatioConfig(ctx, client, baseURL, apiKey)
 		if err == nil {
 			return snap, nil
 		}
@@ -103,13 +103,16 @@ func (c *UpstreamPricingClient) FetchPricing(ctx context.Context, baseURL string
 		}
 		slog.WarnContext(ctx, "upstream ratio_config failed, falling back to pricing", "base_url", baseURL, "err", err)
 	}
-	return c.fetchPricing(ctx, client, baseURL)
+	return c.fetchPricing(ctx, client, baseURL, apiKey)
 }
 
-func (c *UpstreamPricingClient) fetchRatioConfig(ctx context.Context, client *http.Client, baseURL string) (*PricingSnapshot, error) {
+func (c *UpstreamPricingClient) fetchRatioConfig(ctx context.Context, client *http.Client, baseURL, apiKey string) (*PricingSnapshot, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+"/api/ratio_config", nil)
 	if err != nil {
 		return nil, fmt.Errorf("create ratio_config request: %w", err)
+	}
+	if apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -142,10 +145,13 @@ func (c *UpstreamPricingClient) fetchRatioConfig(ctx context.Context, client *ht
 	return snap, nil
 }
 
-func (c *UpstreamPricingClient) fetchPricing(ctx context.Context, client *http.Client, baseURL string) (*PricingSnapshot, error) {
+func (c *UpstreamPricingClient) fetchPricing(ctx context.Context, client *http.Client, baseURL, apiKey string) (*PricingSnapshot, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+"/api/pricing", nil)
 	if err != nil {
 		return nil, fmt.Errorf("create pricing request: %w", err)
+	}
+	if apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 	resp, err := client.Do(req)
 	if err != nil {

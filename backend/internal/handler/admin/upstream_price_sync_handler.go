@@ -143,12 +143,13 @@ func (h *ChannelHandler) PreviewUpstreamGroups(c *gin.Context) {
 	var body struct {
 		BaseURL string `json:"base_url" binding:"required"`
 		ProxyID *int64 `json:"proxy_id"`
+		APIKey  string `json:"api_key"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		response.BadRequest(c, "invalid request: "+err.Error())
 		return
 	}
-	groups, err := h.upstreamPriceSyncService.PreviewUpstreamGroups(c.Request.Context(), body.BaseURL, body.ProxyID)
+	groups, err := h.upstreamPriceSyncService.PreviewUpstreamGroups(c.Request.Context(), body.BaseURL, body.ProxyID, body.APIKey)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
