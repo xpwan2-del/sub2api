@@ -69,7 +69,7 @@
                 <span
                   v-for="(count, key) in row.summary"
                   :key="key"
-                  class="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-700 dark:bg-dark-700 dark:text-gray-300"
+                  :class="['inline-flex items-center rounded px-1.5 py-0.5 text-xs', statusBadgeClass(String(key))]"
                 >
                   {{ statusLabel(String(key)) }}: <span class="ml-1 font-medium">{{ count }}</span>
                 </span>
