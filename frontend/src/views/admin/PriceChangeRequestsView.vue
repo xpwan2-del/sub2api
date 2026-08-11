@@ -427,8 +427,10 @@ const drafts = reactive<Record<number, Draft>>({})
 // Selected item ids (per request, but stored globally keyed by item id; current request implied)
 const selected = reactive<Set<number>>(new Set())
 
-// 渲染排序:价格变更 → 模型移除 → 新增模型 → 无变化;同类内按 id 升序
-// (后端 ListItems 已 ORDER BY id ASC,id 升序 = 入库添加的时间顺序)。
+// 渲染排序:价格变更 → 模型移除 → 新增模型 → 无变化;同类内按 id 升序。
+// id 升序对齐渠道管理顺序:后端 DiffPricing 按 channel_model_pricing.id 升序
+// (渠道添加顺序)落库本地已有模型,新增模型按模型名稳定排序后追加;
+// ListItems ORDER BY id ASC → 同类内即按渠道顺序(新增类按模型名序)展示。
 const kindRank: Record<string, number> = {
   model_price: 0,
   model_removed: 1,

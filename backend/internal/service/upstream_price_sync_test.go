@@ -134,6 +134,58 @@ func TestDiffPricing_MixedUnchanged(t *testing.T) {
 	}
 }
 
+// TestDiffPricing_PreservesChannelOrder 锁死排序对齐「渠道管理 → 模型定价」添加顺序
+// (= channel_model_pricing.id 升序,即 local 切片传入顺序):
+//   - 本地已有模型(价格变更/无变化/移除)按 local 顺序输出,而非按 kind 聚集;
+//   - 上游有、本地无的新增模型按模型名稳定排序追加。
+//
+// 落库后 item.id 升序继承该顺序,审批单同类型分组内(ListItems ORDER BY id ASC)即按渠道顺序展示。
+func TestDiffPricing_PreservesChannelOrder(t *testing.T) {
+	// local 故意按 id 升序、且 kind 交织(price/removed/unchanged/price)。
+	local := []ChannelModelPricing{
+		{ID: 10, ChannelID: 7, Platform: PlatformAnthropic, Models: []string{"claude-a"}, BillingMode: BillingModeToken, InputPrice: floatPtr(1e-6)},
+		{ID: 20, ChannelID: 7, Platform: PlatformOpenAI, Models: []string{"gpt-old"}, BillingMode: BillingModeToken, InputPrice: floatPtr(2e-6)},
+		{ID: 30, ChannelID: 7, Platform: PlatformAnthropic, Models: []string{"claude-b"}, BillingMode: BillingModeToken, InputPrice: floatPtr(3e-6)},
+		{ID: 40, ChannelID: 7, Platform: PlatformOpenAI, Models: []string{"gpt-a"}, BillingMode: BillingModeToken, InputPrice: floatPtr(4e-6)},
+	}
+	upstream := map[string]ConvertedPrice{
+		"claude-a": {BillingMode: BillingModeToken, InputPrice: floatPtr(9e-6)}, // ≠ local 1e-6 → price
+		"claude-b": {BillingMode: BillingModeToken, InputPrice: floatPtr(3e-6)}, // == local 3e-6 → unchanged
+		"gpt-a":    {BillingMode: BillingModeToken, InputPrice: floatPtr(9e-6)}, // ≠ local 4e-6 → price
+		"new-x":    {BillingMode: BillingModeToken, InputPrice: floatPtr(5e-6)}, // 本地无 → added
+		"new-a":    {BillingMode: BillingModeToken, InputPrice: floatPtr(6e-6)}, // 本地无 → added
+	}
+	plat := map[string]string{
+		"claude-a": PlatformAnthropic, "claude-b": PlatformAnthropic,
+		"gpt-a": PlatformOpenAI, "new-x": PlatformOpenAI, "new-a": PlatformAnthropic,
+	}
+
+	drafts := DiffPricing(upstream, plat, local, 7)
+
+	want := []struct {
+		kind PriceChangeItemKind
+		name string
+	}{
+		{ItemKindModelPrice, "claude-a"},     // 渠道第1条:价格变更
+		{ItemKindModelRemoved, "gpt-old"},    // 渠道第2条:上游无 → 移除
+		{ItemKindModelUnchanged, "claude-b"}, // 渠道第3条:与上游一致
+		{ItemKindModelPrice, "gpt-a"},        // 渠道第4条:价格变更
+		{ItemKindModelAdded, "new-a"},        // 新增:按模型名,new-a < new-x
+		{ItemKindModelAdded, "new-x"},        // 新增
+	}
+	if len(drafts) != len(want) {
+		t.Fatalf("drafts len = %d, want %d", len(drafts), len(want))
+	}
+	for i, w := range want {
+		if drafts[i].Kind != w.kind {
+			t.Errorf("drafts[%d].Kind = %s, want %s", i, drafts[i].Kind, w.kind)
+		}
+		if drafts[i].ModelName != w.name {
+			t.Errorf("drafts[%d].ModelName = %s, want %s", i, drafts[i].ModelName, w.name)
+		}
+	}
+}
+
 func TestSameModelSet(t *testing.T) {
 	cases := []struct {
 		name string

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"sort"
 	"strings"
 	"time"
 )
@@ -93,9 +94,9 @@ type ConvertedPrice struct {
 type PriceChangeItemKind string
 
 const (
-	ItemKindModelPrice    PriceChangeItemKind = "model_price"    // 价格变更
-	ItemKindModelAdded    PriceChangeItemKind = "model_added"    // 新增模型
-	ItemKindModelRemoved  PriceChangeItemKind = "model_removed"  // 移除模型
+	ItemKindModelPrice     PriceChangeItemKind = "model_price"     // 价格变更
+	ItemKindModelAdded     PriceChangeItemKind = "model_added"     // 新增模型
+	ItemKindModelRemoved   PriceChangeItemKind = "model_removed"   // 移除模型
 	ItemKindModelUnchanged PriceChangeItemKind = "model_unchanged" // 与本地一致(无变化,仅展示)
 )
 
@@ -195,43 +196,66 @@ type PriceChangeItemDraft struct {
 
 // DiffPricing 对比上游快照(已还原)与本地渠道现有定价。
 // 以 (platform, model_name) 为键;local 一条 ChannelModelPricing 可能含多模型,展开。
+//
+// 输出顺序对齐「渠道管理 → 模型定价」的添加顺序(= channel_model_pricing.id 升序,
+// 即 local 切片的传入顺序):第一遍按 local 顺序遍历本地模型 → 价格变更 / 无变化 / 移除;
+// 第二遍把上游有、本地无的新增模型按模型名稳定排序后追加(渠道里没有对应顺序,
+// 按名排序避免上游 map 随机迭代导致每次同步顺序都变)。落库后 item.id 升序继承该顺序,
+// 审批单同类型分组内(ListItems ORDER BY id ASC)即按渠道顺序展示。
 func DiffPricing(upstream map[string]ConvertedPrice, upstreamPlatforms map[string]string, local []ChannelModelPricing, channelID int64) []PriceChangeItemDraft {
 	type key struct{ platform, model string }
+	// localIdx: (platform, model) → 本地定价记录;localOrder 保持 local 切片顺序(渠道添加顺序)。
 	localIdx := map[key]*ChannelModelPricing{}
+	var localOrder []key
 	for i := range local {
 		p := &local[i]
 		for _, m := range p.Models {
-			localIdx[key{p.Platform, m}] = p
+			k := key{p.Platform, m}
+			if _, dup := localIdx[k]; !dup {
+				localOrder = append(localOrder, k)
+			}
+			localIdx[k] = p
 		}
 	}
-	seen := map[key]bool{}
+	// 上游每个模型名唯一对应一个平台;upstreamKey[name] = (platform, name)。
+	upstreamKey := make(map[string]key, len(upstream))
+	for name := range upstream {
+		upstreamKey[name] = key{upstreamPlatforms[name], name}
+	}
+
 	var drafts []PriceChangeItemDraft
-	for name, up := range upstream {
-		plat := upstreamPlatforms[name]
-		k := key{plat, name}
-		seen[k] = true
+	// 第一遍:按渠道添加顺序遍历本地已有模型 → 价格变更 / 无变化 / 移除。
+	matched := map[key]bool{} // 上游 key 中已被本地认领的(平台,模型)
+	for _, k := range localOrder {
 		lp := localIdx[k]
-		if lp == nil {
-			upCopy := up
-			drafts = append(drafts, PriceChangeItemDraft{Kind: ItemKindModelAdded, Platform: plat, ModelName: name, Upstream: &upCopy})
+		localPrice := channelPricingToConverted(lp)
+		uk, hasUp := upstreamKey[k.model]
+		if hasUp && uk == k {
+			matched[uk] = true
+			upCopy := upstream[k.model]
+			if convertedEqual(&upCopy, localPrice) {
+				// 与本地完全一致:仍生成条目(kind=model_unchanged)供审批单完整展示,
+				// 但落库即终态 no_change,不参与审批、不阻塞状态机闭环。
+				drafts = append(drafts, PriceChangeItemDraft{Kind: ItemKindModelUnchanged, Platform: k.platform, ModelName: k.model, Upstream: &upCopy, Local: localPrice})
+			} else {
+				drafts = append(drafts, PriceChangeItemDraft{Kind: ItemKindModelPrice, Platform: k.platform, ModelName: k.model, Upstream: &upCopy, Local: localPrice})
+			}
 			continue
 		}
-		localPrice := channelPricingToConverted(lp)
-		upCopy := up
-		if convertedEqual(&up, localPrice) {
-			// 与本地完全一致:仍生成条目(kind=model_unchanged)供审批单完整展示,
-			// 但落库即终态 no_change,不参与审批、不阻塞状态机闭环。
-			drafts = append(drafts, PriceChangeItemDraft{Kind: ItemKindModelUnchanged, Platform: plat, ModelName: name, Upstream: &upCopy, Local: localPrice})
-		} else {
-			drafts = append(drafts, PriceChangeItemDraft{Kind: ItemKindModelPrice, Platform: plat, ModelName: name, Upstream: &upCopy, Local: localPrice})
+		// 本地有、上游无(或上游推断平台与本地记录不一致) → 移除。
+		drafts = append(drafts, PriceChangeItemDraft{Kind: ItemKindModelRemoved, Platform: k.platform, ModelName: k.model, Local: localPrice})
+	}
+	// 第二遍:上游有、本地无 → 新增。按模型名稳定排序追加。
+	var addedNames []string
+	for name, uk := range upstreamKey {
+		if !matched[uk] {
+			addedNames = append(addedNames, name)
 		}
 	}
-	// 本地有、上游无
-	for k, lp := range localIdx {
-		if !seen[k] {
-			localPrice := channelPricingToConverted(lp)
-			drafts = append(drafts, PriceChangeItemDraft{Kind: ItemKindModelRemoved, Platform: k.platform, ModelName: k.model, Local: localPrice})
-		}
+	sort.Strings(addedNames)
+	for _, name := range addedNames {
+		upCopy := upstream[name]
+		drafts = append(drafts, PriceChangeItemDraft{Kind: ItemKindModelAdded, Platform: upstreamPlatforms[name], ModelName: name, Upstream: &upCopy})
 	}
 	return drafts
 }
