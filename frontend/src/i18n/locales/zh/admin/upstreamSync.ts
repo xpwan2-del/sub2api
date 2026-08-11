@@ -115,7 +115,8 @@ export default {
     loadItemsError: '加载审批单详情失败',
     columns: {
       id: 'ID',
-      source: '来源',
+      upstreamSource: '上游源名称',
+      channel: '渠道',
       status: '状态',
       summary: '汇总',
       created: '创建时间',

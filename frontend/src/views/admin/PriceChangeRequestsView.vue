@@ -51,6 +51,12 @@
             </span>
           </template>
 
+          <template #cell-channel="{ row }">
+            <span class="text-sm text-gray-600 dark:text-gray-400">
+              {{ channelName(sourceChannelFor(row)) }}
+            </span>
+          </template>
+
           <template #cell-status="{ value }">
             <span :class="['inline-flex items-center rounded px-2 py-0.5 text-xs font-medium', statusBadgeClass(value)]">
               {{ value }}
@@ -188,17 +194,39 @@
                         </div>
                       </td>
                       <td class="px-2 py-2 align-top">
-                        <input
-                          :value="primaryValue(drafts[item.id])"
-                          type="number"
-                          step="any"
-                          min="0"
-                          :disabled="isRemoved(item)"
-                          :placeholder="primaryHint(item)"
-                          class="input py-1 text-xs"
-                          style="width: 8rem"
-                          @input="setPrimaryValue(drafts[item.id], ($event.target as HTMLInputElement).value)"
-                        />
+                        <span v-if="isRemoved(item)" class="text-xs text-gray-400">—</span>
+                        <!-- per_request 计费:单一按次价格 -->
+                        <div v-else-if="draftMode(drafts[item.id]) === 'per_request'" class="flex flex-col gap-1">
+                          <label class="flex items-center gap-1 text-xs">
+                            <span class="inline-block w-14 shrink-0 text-right text-gray-500 dark:text-gray-400">per_req</span>
+                            <input
+                              :value="drafts[item.id]?.perRequest"
+                              type="number"
+                              step="any"
+                              min="0"
+                              :placeholder="upstreamFieldHint(item, 'perRequest')"
+                              class="input py-1 text-xs"
+                              style="width: 6rem"
+                              @input="setDraftField(drafts[item.id], 'perRequest', ($event.target as HTMLInputElement).value)"
+                            />
+                          </label>
+                        </div>
+                        <!-- token 计费:逐字段编辑 in / out / cache_r / cache_w(默认 = 上游还原值) -->
+                        <div v-else class="flex flex-col gap-1">
+                          <label v-for="f in tokenApplyFields" :key="f.key" class="flex items-center gap-1 text-xs">
+                            <span class="inline-block w-14 shrink-0 text-right text-gray-500 dark:text-gray-400">{{ f.label }}</span>
+                            <input
+                              :value="drafts[item.id]?.[f.key]"
+                              type="number"
+                              step="any"
+                              min="0"
+                              :placeholder="upstreamFieldHint(item, f.key)"
+                              class="input py-1 text-xs"
+                              style="width: 6rem"
+                              @input="setDraftField(drafts[item.id], f.key, ($event.target as HTMLInputElement).value)"
+                            />
+                          </label>
+                        </div>
                       </td>
                       <td class="px-2 py-2 align-top text-right">
                         <div class="flex items-center justify-end gap-1">
@@ -323,7 +351,8 @@ function priceDetailStrings(p: any): string[] {
 // ── Columns ──
 const columns = computed<Column[]>(() => [
   { key: 'id', label: t('admin.priceChangeRequests.columns.id', 'ID'), sortable: true },
-  { key: 'source_config_id', label: t('admin.priceChangeRequests.columns.source', 'Source'), sortable: false },
+  { key: 'source_config_id', label: t('admin.priceChangeRequests.columns.upstreamSource', 'Upstream Source'), sortable: false },
+  { key: 'channel', label: t('admin.priceChangeRequests.columns.channel', 'Channel'), sortable: false },
   { key: 'status', label: t('admin.priceChangeRequests.columns.status', 'Status'), sortable: true },
   { key: 'summary', label: t('admin.priceChangeRequests.columns.summary', 'Summary'), sortable: false },
   { key: 'created_at', label: t('admin.priceChangeRequests.columns.created', 'Created'), sortable: true },
@@ -343,6 +372,7 @@ const requests = ref<PriceChangeRequest[]>([])
 const loading = ref(false)
 const filters = reactive({ status: '' })
 const sourcesIndex = ref<Record<number, string>>({})
+const sourceChannelIndex = ref<Record<number, number>>({})
 const channelsIndex = ref<Record<number, string>>({})
 
 const expandedRequestId = ref<number | null>(null)
@@ -375,6 +405,12 @@ function sourceLabel(id: number): string {
   return sourcesIndex.value[id] ?? `source #${id}`
 }
 
+// 顶层 request 通过 source_config_id 反查其目标渠道(一个 source 一对一绑一个 target channel)。
+function sourceChannelFor(row: PriceChangeRequest): number | undefined {
+  const sid = (row as any).source_config_id ?? (row as any).SourceConfigID
+  return sid != null ? sourceChannelIndex.value[sid] : undefined
+}
+
 function channelName(id?: number | null): string {
   if (id == null) return '-'
   return channelsIndex.value[id] ?? `#${id}`
@@ -387,6 +423,23 @@ async function loadChannelsIndex() {
     for (const c of items) channelsIndex.value[c.id] = c.name
   } catch {
     // best-effort: 列表为空时 channel 列回退显示 #id
+  }
+}
+
+// 拉取上游源配置,建立 source_config_id → name(上游源名称)与 → target_channel_id(渠道)映射。
+// 修复历史问题:此前 sourcesIndex 只塞 `source #N` 占位,"来源"列始终无真实名称。
+async function loadSourcesIndex() {
+  try {
+    const list = await adminAPI.upstreamPriceSync.listSources()
+    for (const s of list ?? []) {
+      const sid = (s as any).id
+      if (sid == null) continue
+      sourcesIndex.value[sid] = s.name || `source #${sid}`
+      const cid = (s as any).target_channel_id
+      if (cid != null) sourceChannelIndex.value[sid] = cid
+    }
+  } catch {
+    // best-effort: 失败时顶层"上游源名称/渠道"列回退占位
   }
 }
 
@@ -436,38 +489,55 @@ function kindBadgeClass(kind: string): string {
 
 // Draft helpers
 function buildDraft(item: PriceChangeItem): Draft {
-  const src = pickPrice((item as any).apply_value) ?? null
-  const fallback = pickPrice((item as any).upstream_converted) ?? null
-  const base = src && (src.input !== null || src.perRequest !== null) ? src : fallback
+  // 已保存的 apply_value 优先,逐字段缺失则回退上游还原值(满足"同步后默认 = 上游还原值")。
+  const a = pickPrice((item as any).apply_value)
+  const u = pickPrice((item as any).upstream_converted)
+  const mode = (a?.mode || u?.mode) || 'token'
   // draft 以 $/MTok(token 字段)/ $/次(per_request)展示与编辑;token 字段从 per-token ×1e6。
-  const mTok = (v: number | null) => (v === null ? '' : String(perTokenToMTok(v)))
-  const num = (v: number | null) => (v === null ? '' : String(v))
+  const mTok = (av: number | null | undefined, uv: number | null | undefined): string => {
+    const v = av !== null && av !== undefined ? av : uv
+    return v === null || v === undefined ? '' : String(perTokenToMTok(v))
+  }
+  const num = (av: number | null | undefined, uv: number | null | undefined): string => {
+    const v = av !== null && av !== undefined ? av : uv
+    return v === null || v === undefined ? '' : String(v)
+  }
   return {
-    mode: base.mode || 'token',
-    input: mTok(base.input),
-    output: mTok(base.output),
-    cacheRead: mTok(base.cacheRead),
-    cacheWrite: mTok(base.cacheWrite),
-    perRequest: num(base.perRequest),
+    mode,
+    input: mTok(a?.input, u?.input),
+    output: mTok(a?.output, u?.output),
+    cacheRead: mTok(a?.cacheRead, u?.cacheRead),
+    cacheWrite: mTok(a?.cacheWrite, u?.cacheWrite),
+    perRequest: num(a?.perRequest, u?.perRequest),
   }
 }
 
-// Primary editable value accessors bound directly to the reactive draft.
-function primaryValue(d: Draft | undefined): string {
-  if (!d) return ''
-  return d.mode === 'per_request' ? d.perRequest : d.input
+// token 计费下逐字段编辑的输入框定义(label 与 priceDetailStrings 的 in/out/cache_r/cache_w 对齐)。
+const tokenApplyFields: ReadonlyArray<{ key: 'input' | 'output' | 'cacheRead' | 'cacheWrite'; label: string }> = [
+  { key: 'input', label: 'in' },
+  { key: 'output', label: 'out' },
+  { key: 'cacheRead', label: 'cache_r' },
+  { key: 'cacheWrite', label: 'cache_w' },
+]
+
+type DraftFieldKey = 'input' | 'output' | 'cacheRead' | 'cacheWrite' | 'perRequest'
+
+function draftMode(d: Draft | undefined): string {
+  return d?.mode || 'token'
 }
 
-function setPrimaryValue(d: Draft | undefined, v: string) {
+function setDraftField(d: Draft | undefined, key: DraftFieldKey, v: string) {
   if (!d) return
-  if (d.mode === 'per_request') d.perRequest = v
-  else d.input = v
+  d[key] = v
 }
 
-function primaryHint(item: PriceChangeItem): string {
-  const c = pickPrice((item as any).apply_value) ?? pickPrice((item as any).upstream_converted)
-  if (!c) return '0'
-  return c.mode === 'per_request' ? fmtNum(c.perRequest) : fmtNum(c.input)
+// placeholder:提示上游还原值对应的 $/MTok(token 字段)或 $/次(per_request),为空则不提示。
+function upstreamFieldHint(item: PriceChangeItem, key: DraftFieldKey): string {
+  const c = pickPrice((item as any).upstream_converted)
+  if (!c) return ''
+  if (key === 'perRequest') return c.perRequest === null ? '' : fmtNum(c.perRequest)
+  const v = c[key]
+  return v === null ? '' : fmtNum(perTokenToMTok(v))
 }
 
 // Build apply_value payload from a draft. Send BOTH PascalCase and snake_case
@@ -670,5 +740,6 @@ async function refreshExpanded() {
 onMounted(() => {
   loadRequests()
   loadChannelsIndex()
+  loadSourcesIndex()
 })
 </script>

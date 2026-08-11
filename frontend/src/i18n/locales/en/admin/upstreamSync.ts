@@ -115,7 +115,8 @@ export default {
     loadItemsError: 'Failed to load request details',
     columns: {
       id: 'ID',
-      source: 'Source',
+      upstreamSource: 'Upstream Source',
+      channel: 'Channel',
       status: 'Status',
       summary: 'Summary',
       created: 'Created',
