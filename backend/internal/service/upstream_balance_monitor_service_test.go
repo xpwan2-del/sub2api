@@ -23,7 +23,7 @@ func TestUpstreamBalanceMonitorRunOnceRefreshesEligibleSources(t *testing.T) {
 		}
 	}
 
-	syncSvc := NewUpstreamPriceSyncService(repo, newTestClient(), newFakeChannelService(), nil, nil, testConfig(srv.URL))
+	syncSvc := NewUpstreamPriceSyncService(repo, newTestClient(), newFakeChannelService(), nil, nil, testUpstreamConfig(srv.URL))
 	monitor := NewUpstreamBalanceMonitorService(syncSvc, nil, nil, nil)
 	monitor.runOnce()
 
@@ -47,7 +47,7 @@ func TestUpstreamBalanceMonitorRunOnceSkipsWhenLeaderLockHeld(t *testing.T) {
 	lockCache := &fakeLeaderLockCache{}
 	_, _ = lockCache.TryAcquireLeaderLock(context.Background(), upstreamBalanceMonitorLockKey, "peer", upstreamBalanceMonitorLockTTL)
 
-	syncSvc := NewUpstreamPriceSyncService(repo, newTestClient(), newFakeChannelService(), nil, nil, testConfig(""))
+	syncSvc := NewUpstreamPriceSyncService(repo, newTestClient(), newFakeChannelService(), nil, nil, testUpstreamConfig(""))
 	monitor := NewUpstreamBalanceMonitorService(syncSvc, nil, lockCache, nil)
 	monitor.runOnce()
 

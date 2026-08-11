@@ -16,7 +16,7 @@ import (
 // testConfig 构造一个允许 httptest(127.0.0.1 + http + 私网)的 *config.Config。
 // Enabled=false 意味着不强制白名单,但 NewAPIHosts 仍包含 127.0.0.1 以便
 // urlvalidator 在显式传入 AllowedHosts 时放行。
-func testConfig(baseURL string) *config.Config {
+func testUpstreamConfig(baseURL string) *config.Config {
 	_ = baseURL
 	return &config.Config{
 		Security: config.SecurityConfig{
@@ -299,7 +299,7 @@ func TestSyncNow_BuildsRequest(t *testing.T) {
 		_, _ = w.Write([]byte(`{"success":true,"data":{"ModelRatio":{"claude-x":1.5},"CompletionRatio":{"claude-x":2},"ModelPrice":{},"GroupRatio":{}}}`))
 	}))
 	defer srv.Close()
-	cfg := testConfig(srv.URL) // NewAPIHosts 含 127.0.0.1, AllowPrivateHosts=true
+	cfg := testUpstreamConfig(srv.URL) // NewAPIHosts 含 127.0.0.1, AllowPrivateHosts=true
 	fakeRepo := newFakeRepo()
 	client := &UpstreamPricingClient{httpOpts: testHTTPOpts()}
 	chSvc := newFakeChannelService() // 记录 ApplyUpstreamPricingEntry 调用
@@ -342,7 +342,7 @@ func TestSyncNow_BuildsRequest(t *testing.T) {
 func TestReviewItem_ApplyWrites(t *testing.T) {
 	fakeRepo := newFakeRepo()
 	chSvc := newFakeChannelService()
-	cfg := testConfig("")
+	cfg := testUpstreamConfig("")
 	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, cfg)
 
 	// 预置 config + request + 一条 pending item(model_added: claude-x)
@@ -395,7 +395,7 @@ func TestReviewItem_ApplyWrites(t *testing.T) {
 func TestReviewItem_RejectMarksRejected(t *testing.T) {
 	fakeRepo := newFakeRepo()
 	chSvc := newFakeChannelService()
-	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, testConfig(""))
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, testUpstreamConfig(""))
 
 	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
 	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
@@ -423,7 +423,7 @@ func TestReviewItem_ApplyErrorMarksFailed(t *testing.T) {
 	fakeRepo := newFakeRepo()
 	chSvc := newFakeChannelService()
 	chSvc.applyErr = errFakeNotFound // 任意非 nil 错误
-	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, testConfig(""))
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, testUpstreamConfig(""))
 
 	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
 	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
@@ -480,7 +480,7 @@ func TestRefreshBalancePersistsSnapshot(t *testing.T) {
 	if err := repo.CreateConfig(context.Background(), cfgRec); err != nil {
 		t.Fatal(err)
 	}
-	svc := NewUpstreamPriceSyncService(repo, newTestClient(), newFakeChannelService(), nil, nil, testConfig(srv.URL))
+	svc := NewUpstreamPriceSyncService(repo, newTestClient(), newFakeChannelService(), nil, nil, testUpstreamConfig(srv.URL))
 	got, err := svc.RefreshBalance(context.Background(), cfgRec.ID)
 	if err != nil {
 		t.Fatalf("RefreshBalance err: %v", err)
@@ -497,7 +497,7 @@ func TestRefreshBalancePersistsSnapshot(t *testing.T) {
 // base_price_per_1k <= 0 时拒绝(避免 ConvertPricing 全零美元价)。
 func TestCreateConfig_RejectsNonPositiveBasePrice(t *testing.T) {
 	fakeRepo := newFakeRepo()
-	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, newFakeChannelService(), nil, nil, testConfig(""))
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, newFakeChannelService(), nil, nil, testUpstreamConfig(""))
 
 	for _, base := range []float64{0, -0.002} {
 		cfg := &UpstreamSourceConfig{Name: "x", BaseURL: "https://example.com", BasePricePer1k: base}
@@ -517,7 +517,7 @@ func TestCreateConfig_RejectsNonPositiveBasePrice(t *testing.T) {
 // TestUpdateConfig_RejectsNonPositiveBasePrice 同上,针对 UpdateConfig。
 func TestUpdateConfig_RejectsNonPositiveBasePrice(t *testing.T) {
 	fakeRepo := newFakeRepo()
-	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, newFakeChannelService(), nil, nil, testConfig(""))
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, newFakeChannelService(), nil, nil, testUpstreamConfig(""))
 
 	// 先正常建一条。
 	good := &UpstreamSourceConfig{Name: "x", BaseURL: "https://example.com", BasePricePer1k: 0.002}
@@ -548,7 +548,7 @@ func TestSyncNow_AllUnchangedNoRequest(t *testing.T) {
 		_, _ = w.Write([]byte(`{"success":true,"data":{"ModelRatio":{"claude-m":1},"ModelPrice":{},"GroupRatio":{}}}`))
 	}))
 	defer srv.Close()
-	cfg := testConfig(srv.URL)
+	cfg := testUpstreamConfig(srv.URL)
 	fakeRepo := newFakeRepo()
 	client := &UpstreamPricingClient{httpOpts: testHTTPOpts()}
 	chSvc := newFakeChannelService()
@@ -578,7 +578,7 @@ func TestSyncNow_AllUnchangedNoRequest(t *testing.T) {
 func TestReviewItem_RecomputeRequestStatus(t *testing.T) {
 	fakeRepo := newFakeRepo()
 	chSvc := newFakeChannelService()
-	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, testConfig(""))
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, testUpstreamConfig(""))
 
 	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
 	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
