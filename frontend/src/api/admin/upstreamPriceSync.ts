@@ -114,6 +114,15 @@ export async function listUpstreamGroups(id: number) {
   return data
 }
 
+/** 按 base_url 预览可用分组(新建 source 尚未保存时用)。 */
+export async function previewUpstreamGroups(baseURL: string, proxyId?: number | null) {
+  const { data } = await apiClient.post<{ groups: Record<string, string> }>(
+    `${base}/upstream-sources/groups/preview`,
+    { base_url: baseURL, proxy_id: proxyId ?? null },
+  )
+  return data
+}
+
 /** 后端 `response.Paginated` 信封(apiClient 拦截器已剥离外层 `data`)。 */
 export interface PaginatedPriceChangeRequests {
   items: PriceChangeRequest[]
@@ -163,6 +172,7 @@ export const upstreamPriceSyncAPI = {
   refreshAllBalances,
   syncNow,
   listUpstreamGroups,
+  previewUpstreamGroups,
   listRequests,
   getRequest,
   reviewItem,

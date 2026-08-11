@@ -281,9 +281,41 @@ func (s *UpstreamPriceSyncService) RefreshBalance(ctx context.Context, id int64)
 	return cfgRec, nil
 }
 
-// ListUpstreamGroups 拉取上游可用分组字典({group_key: 展示名}),供前端 source 配置下拉。
-// 复用 FetchPricing;强制走 /api/pricing(/api/ratio_config 不返回 usable_group)。
-// source 禁用或上游不可达时返回错误;上游未返回 usable_group 时返回空 map。
+// resolveUpstreamGroups 拉取上游可用分组字典({key: 展示名}),供前端 source 配置下拉。
+// 强制走 /api/pricing(/api/ratio_config 不返回分组信息)。
+// 数据源:优先 usable_group({key: 展示名},部分 new-api 版本返回);
+// 回退 group_ratio 的 keys(key 即分组标识,与每模型 enable_groups 对齐,
+// 所有 new-api 版本的 /api/pricing 都返回 group_ratio)。两者合并,保证有数据。
+func (s *UpstreamPriceSyncService) resolveUpstreamGroups(ctx context.Context, baseURL string, proxyID *int64) (map[string]string, error) {
+	baseURL, err := s.validateBaseURL(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid base url: %w", err)
+	}
+	proxyURL, err := s.resolveProxyURL(ctx, proxyID)
+	if err != nil {
+		return nil, fmt.Errorf("resolve proxy: %w", err)
+	}
+	snap, err := s.client.FetchPricing(ctx, baseURL, PricingSourcePricing, proxyURL)
+	if err != nil {
+		return nil, fmt.Errorf("fetch upstream groups: %w", err)
+	}
+	groups := map[string]string{}
+	if snap.UsableGroup != nil {
+		for k, v := range snap.UsableGroup {
+			groups[k] = v
+		}
+	}
+	if snap.GroupRatio != nil {
+		for k := range snap.GroupRatio {
+			if _, ok := groups[k]; !ok {
+				groups[k] = k // 无展示名时用 key 本身
+			}
+		}
+	}
+	return groups, nil
+}
+
+// ListUpstreamGroups 按已保存 source 的配置拉取分组(编辑现有 source 用)。
 func (s *UpstreamPriceSyncService) ListUpstreamGroups(ctx context.Context, configID int64) (map[string]string, error) {
 	cfgRec, err := s.repo.GetConfig(ctx, configID)
 	if err != nil {
@@ -292,22 +324,12 @@ func (s *UpstreamPriceSyncService) ListUpstreamGroups(ctx context.Context, confi
 	if !cfgRec.Enabled {
 		return nil, infraerrors.BadRequest("upstream_source_disabled", "upstream source is disabled")
 	}
-	baseURL, err := s.validateBaseURL(cfgRec.BaseURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid base url: %w", err)
-	}
-	proxyURL, err := s.resolveProxyURL(ctx, cfgRec.ProxyID)
-	if err != nil {
-		return nil, fmt.Errorf("resolve proxy: %w", err)
-	}
-	snap, err := s.client.FetchPricing(ctx, baseURL, PricingSourcePricing, proxyURL)
-	if err != nil {
-		return nil, fmt.Errorf("fetch upstream groups: %w", err)
-	}
-	if snap.UsableGroup == nil {
-		return map[string]string{}, nil
-	}
-	return snap.UsableGroup, nil
+	return s.resolveUpstreamGroups(ctx, cfgRec.BaseURL, cfgRec.ProxyID)
+}
+
+// PreviewUpstreamGroups 按 base_url 直接拉取分组(新建 source 尚未保存时用)。
+func (s *UpstreamPriceSyncService) PreviewUpstreamGroups(ctx context.Context, baseURL string, proxyID *int64) (map[string]string, error) {
+	return s.resolveUpstreamGroups(ctx, baseURL, proxyID)
 }
 
 func (s *UpstreamPriceSyncService) balanceRefreshError(ctx context.Context, cfgRec *UpstreamSourceConfig, refreshErr error) (*UpstreamSourceConfig, error) {

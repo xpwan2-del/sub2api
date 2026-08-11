@@ -262,16 +262,27 @@
         <!-- Upstream Group Filter -->
         <div>
           <label class="input-label">{{ t('admin.upstreamSources.fields.upstreamGroup', 'Upstream Group Filter') }}</label>
-          <Select
-            v-model="form.target_upstream_group"
-            :options="upstreamGroupOptions"
-            :disabled="!editingSource || loadingGroups"
-            searchable
-          />
+          <div class="flex gap-2">
+            <Select
+              v-model="form.target_upstream_group"
+              :options="upstreamGroupOptions"
+              :disabled="loadingGroups"
+              searchable
+              class="flex-1"
+            />
+            <button
+              type="button"
+              @click="loadGroupsFromForm"
+              :disabled="!form.base_url || loadingGroups"
+              class="btn btn-secondary whitespace-nowrap"
+              :title="t('admin.upstreamSources.fields.loadGroups', 'Load Groups')"
+            >
+              <Icon name="refresh" size="sm" class="mr-1" :class="loadingGroups ? 'animate-spin' : ''" />
+              {{ t('admin.upstreamSources.fields.loadGroups', 'Load Groups') }}
+            </button>
+          </div>
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {{ editingSource
-              ? t('admin.upstreamSources.fields.upstreamGroupHint', 'Only sync models enabled for the selected upstream group. Empty = sync all models.')
-              : t('admin.upstreamSources.fields.upstreamGroupHintCreate', 'Save the source first, then edit to load and pick an upstream group.') }}
+            {{ t('admin.upstreamSources.fields.upstreamGroupHint', 'Fill Base URL then click Load Groups. Only sync models enabled for the selected group; empty = sync all models.') }}
           </p>
         </div>
 
@@ -467,13 +478,18 @@ const upstreamGroupOptions = computed(() => {
   return opts
 })
 
-async function loadUpstreamGroups(sourceId: number) {
+async function loadGroupsFromForm() {
+  const url = form.base_url.trim()
+  if (!url) {
+    upstreamGroups.value = {}
+    return
+  }
   loadingGroups.value = true
   try {
-    const res = await adminAPI.upstreamPriceSync.listUpstreamGroups(sourceId)
+    const res = await adminAPI.upstreamPriceSync.previewUpstreamGroups(url, form.proxy_id)
     upstreamGroups.value = res?.groups ?? {}
-  } catch (error) {
-    console.error('Failed to load upstream groups:', error)
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('admin.upstreamSources.loadGroupsError', 'Failed to load upstream groups')))
     upstreamGroups.value = {}
   } finally {
     loadingGroups.value = false
@@ -575,7 +591,6 @@ async function openCreateDialog() {
 async function openEditDialog(source: UpstreamSourceConfig) {
   editingSource.value = source
   if (channels.value.length === 0) await loadChannels()
-  if (source.id != null) await loadUpstreamGroups(source.id)
   form.name = source.name ?? ''
   form.base_url = source.base_url ?? ''
   form.api_key = source.api_key ?? ''
@@ -590,6 +605,7 @@ async function openEditDialog(source: UpstreamSourceConfig) {
   form.pricing_source = (source.pricing_source as SourceForm['pricing_source']) || 'auto'
   form.enabled = !!source.enabled
   form.sync_model_price = source.sync_model_price !== false
+  await loadGroupsFromForm()
   showDialog.value = true
 }
 
