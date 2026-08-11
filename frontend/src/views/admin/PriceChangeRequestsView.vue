@@ -427,12 +427,20 @@ const drafts = reactive<Record<number, Draft>>({})
 // Selected item ids (per request, but stored globally keyed by item id; current request implied)
 const selected = reactive<Set<number>>(new Set())
 
-// 渲染排序:本地已存在模型(price/unchanged/removed)优先显示,新增模型(added)置末;
-// 组内保持后端返回的原始顺序(Array.prototype.sort 在 V8 为 TimSort,稳定)。
+// 渲染排序:价格变更 → 模型移除 → 新增模型 → 无变化;同类内按 id 升序
+// (后端 ListItems 已 ORDER BY id ASC,id 升序 = 入库添加的时间顺序)。
+const kindRank: Record<string, number> = {
+  model_price: 0,
+  model_removed: 1,
+  model_added: 2,
+  model_unchanged: 3,
+}
 const sortedExpandedItems = computed<PriceChangeItem[]>(() =>
   [...expandedItems.value].sort((a, b) => {
-    const rank = (k: string) => (k === 'model_added' ? 1 : 0)
-    return rank(a.kind) - rank(b.kind)
+    const ra = kindRank[a.kind] ?? 99
+    const rb = kindRank[b.kind] ?? 99
+    if (ra !== rb) return ra - rb
+    return a.id - b.id
   }),
 )
 
