@@ -70,7 +70,17 @@
           </template>
 
           <template #cell-base_url="{ value }">
-            <span class="text-sm text-gray-600 dark:text-gray-400">{{ value }}</span>
+            <a
+              v-if="value"
+              :href="ensureProtocol(value)"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex max-w-[16rem] items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300"
+            >
+              <span class="truncate">{{ value }}</span>
+              <Icon name="externalLink" size="xs" class="flex-shrink-0 opacity-70" />
+            </a>
+            <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
           </template>
 
           <template #cell-target_channel_id="{ row }">
@@ -136,10 +146,11 @@
               <button
                 @click="handleRefreshBalance(row)"
                 :disabled="refreshingBalanceId === row.id || !row.dashboard_token"
-                class="btn-icon text-emerald-600 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-emerald-400"
+                class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
                 :title="t('admin.upstreamSources.refreshBalance', 'Refresh Balance')"
               >
-                <Icon name="refresh" size="md" :class="refreshingBalanceId === row.id ? 'animate-spin' : ''" />
+                <Icon name="refresh" size="sm" :class="refreshingBalanceId === row.id ? 'animate-spin' : ''" />
+                {{ t('admin.upstreamSources.refreshBalance', 'Refresh Balance') }}
               </button>
               <button
                 @click="openEditDialog(row)"
@@ -455,6 +466,11 @@ function balanceStatusClass(status?: UpstreamSourceConfig['balance_status']): st
 function formatDateTime(value: string): string {
   if (!value) return '-'
   return new Date(value).toLocaleString()
+}
+
+function ensureProtocol(url: string): string {
+  if (!url) return '#'
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`
 }
 
 // ── Load ──
