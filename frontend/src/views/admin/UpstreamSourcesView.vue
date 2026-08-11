@@ -24,11 +24,21 @@
           <div class="flex w-full flex-shrink-0 flex-wrap items-center justify-end gap-3 lg:w-auto">
             <button
               @click="loadSources"
-              :disabled="loading"
+              :disabled="loading || batchRefreshingBalances"
               class="btn btn-secondary"
               :title="t('common.refresh', 'Refresh')"
             >
               <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
+            </button>
+            <button
+              @click="handleBatchRefreshBalances"
+              :disabled="loading || batchRefreshingBalances || sources.length === 0"
+              class="btn btn-secondary"
+            >
+              <Icon name="refresh" size="md" class="mr-2" :class="batchRefreshingBalances ? 'animate-spin' : ''" />
+              {{ batchRefreshingBalances
+                ? t('admin.upstreamSources.refreshingBalances', 'Refreshing...')
+                : t('admin.upstreamSources.refreshAllBalances', 'Refresh All Balances') }}
             </button>
             <button @click="openCreateDialog" class="btn btn-primary">
               <Icon name="plus" size="md" class="mr-2" />
@@ -328,6 +338,7 @@ const submitting = ref(false)
 const searchQuery = ref('')
 const syncingId = ref<number | null>(null)
 const refreshingBalanceId = ref<number | null>(null)
+const batchRefreshingBalances = ref(false)
 
 const showDialog = ref(false)
 const editingSource = ref<UpstreamSourceConfig | null>(null)
@@ -542,6 +553,29 @@ async function handleSync(source: UpstreamSourceConfig) {
     appStore.showError(extractApiErrorMessage(error, t('admin.upstreamSources.syncError', 'Failed to sync upstream')))
   } finally {
     syncingId.value = null
+  }
+}
+
+async function handleBatchRefreshBalances() {
+  if (batchRefreshingBalances.value || sources.value.length === 0) return
+  batchRefreshingBalances.value = true
+  try {
+    const result = await adminAPI.upstreamPriceSync.refreshAllBalances()
+    if (result.failed > 0 || result.skipped > 0) {
+      appStore.showInfo(t('admin.upstreamSources.batchBalanceRefreshPartial', {
+        success: result.success,
+        failed: result.failed,
+        skipped: result.skipped,
+      }))
+    } else {
+      appStore.showSuccess(t('admin.upstreamSources.batchBalanceRefreshSuccess', { success: result.success }))
+    }
+    await loadSources()
+  } catch (error: unknown) {
+    appStore.showError(extractApiErrorMessage(error, t('admin.upstreamSources.batchBalanceRefreshError', 'Failed to refresh upstream balances')))
+    await loadSources()
+  } finally {
+    batchRefreshingBalances.value = false
   }
 }
 

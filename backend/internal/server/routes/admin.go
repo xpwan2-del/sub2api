@@ -654,6 +654,7 @@ func registerChannelRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		// 上游 new-api 定价同步:同步源配置 + 立即触发
 		channels.GET("/upstream-sources", h.Admin.Channel.ListUpstreamSources)
 		channels.POST("/upstream-sources", h.Admin.Channel.CreateUpstreamSource)
+		channels.POST("/upstream-sources/balance/refresh", h.Admin.Channel.BatchRefreshUpstreamBalances)
 		channels.GET("/upstream-sources/:id", h.Admin.Channel.GetUpstreamSource)
 		channels.PUT("/upstream-sources/:id", h.Admin.Channel.UpdateUpstreamSource)
 		channels.DELETE("/upstream-sources/:id", h.Admin.Channel.DeleteUpstreamSource)

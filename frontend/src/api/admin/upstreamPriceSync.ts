@@ -81,6 +81,23 @@ export async function refreshBalance(id: number) {
   return data
 }
 
+export interface BatchBalanceRefreshResult {
+  total: number
+  success: number
+  failed: number
+  skipped: number
+  errors: Array<{ source_id: number; source_name: string; error: string }>
+}
+
+export async function refreshAllBalances() {
+  const { data } = await apiClient.post<BatchBalanceRefreshResult>(
+    `${base}/upstream-sources/balance/refresh`,
+    undefined,
+    { timeout: 120000 },
+  )
+  return data
+}
+
 export async function syncNow(id: number) {
   const { data } = await apiClient.post<{ request_id: number }>(`${base}/upstream-sources/${id}/sync`)
   return data
@@ -132,6 +149,7 @@ export const upstreamPriceSyncAPI = {
   updateSource,
   deleteSource,
   refreshBalance,
+  refreshAllBalances,
   syncNow,
   listRequests,
   getRequest,

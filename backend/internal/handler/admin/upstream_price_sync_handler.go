@@ -2,6 +2,10 @@ package admin
 
 import (
 	"strconv"
+	"strings"
+	"sync"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -131,6 +135,59 @@ func (h *ChannelHandler) RefreshUpstreamBalance(c *gin.Context) {
 		return
 	}
 	response.Success(c, cfgRec)
+}
+
+// BatchRefreshUpstreamBalances 批量刷新所有可用上游源的余额快照。
+// POST /api/v1/admin/channels/upstream-sources/balance/refresh
+func (h *ChannelHandler) BatchRefreshUpstreamBalances(c *gin.Context) {
+	ctx := c.Request.Context()
+	configs, err := h.upstreamPriceSyncService.ListConfigs(ctx)
+	if err != nil {
+		response.InternalError(c, "list upstream sources: "+err.Error())
+		return
+	}
+
+	eligible := make([]service.UpstreamSourceConfig, 0, len(configs))
+	for i := range configs {
+		if configs[i].Enabled && strings.TrimSpace(configs[i].DashboardToken) != "" {
+			eligible = append(eligible, configs[i])
+		}
+	}
+
+	const maxConcurrency = 10
+	g, gctx := errgroup.WithContext(ctx)
+	g.SetLimit(maxConcurrency)
+
+	var mu sync.Mutex
+	successCount := 0
+	errors := make([]gin.H, 0)
+	for i := range eligible {
+		cfgRec := eligible[i]
+		g.Go(func() error {
+			_, refreshErr := h.upstreamPriceSyncService.RefreshBalance(gctx, cfgRec.ID)
+			mu.Lock()
+			defer mu.Unlock()
+			if refreshErr != nil {
+				errors = append(errors, gin.H{
+					"source_id":   cfgRec.ID,
+					"source_name": cfgRec.Name,
+					"error":       refreshErr.Error(),
+				})
+				return nil
+			}
+			successCount++
+			return nil
+		})
+	}
+	_ = g.Wait()
+
+	response.Success(c, gin.H{
+		"total":   len(eligible),
+		"success": successCount,
+		"failed":  len(errors),
+		"skipped": len(configs) - len(eligible),
+		"errors":  errors,
+	})
 }
 
 // --- 审批单 ---
