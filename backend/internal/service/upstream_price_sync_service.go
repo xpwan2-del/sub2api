@@ -152,7 +152,7 @@ func (s *UpstreamPriceSyncService) ReviewItem(ctx context.Context, itemID int64,
 		if action == ReviewIgnore {
 			status = "ignored"
 		}
-		return s.repo.UpdateItemStatus(ctx, itemID, status, reviewerID, note, nil)
+		return s.finalizeItem(ctx, itemID, it.RequestID, status, reviewerID, note, nil)
 	case ReviewApply:
 		val := applyValue
 		if val == nil {
@@ -165,13 +165,60 @@ func (s *UpstreamPriceSyncService) ReviewItem(ctx context.Context, itemID int64,
 			return fmt.Errorf("no apply value for item %d", itemID)
 		}
 		if _, err := s.channelService.ApplyUpstreamPricingEntry(ctx, it.TargetChannelID, it.Platform, []string{it.ModelName}, *val); err != nil {
-			_ = s.repo.UpdateItemStatus(ctx, itemID, "failed", reviewerID, err.Error(), nil)
+			// 应用失败:item 落 failed(失败亦是终态决定),仍触发审批单状态重算。
+			if ferr := s.finalizeItem(ctx, itemID, it.RequestID, "failed", reviewerID, err.Error(), nil); ferr != nil {
+				slog.WarnContext(ctx, "finalize failed item after apply error", "item_id", itemID, "err", ferr)
+			}
 			return fmt.Errorf("apply: %w", err)
 		}
 		now := time.Now()
-		return s.repo.UpdateItemStatus(ctx, itemID, "applied", reviewerID, note, &now)
+		return s.finalizeItem(ctx, itemID, it.RequestID, "applied", reviewerID, note, &now)
 	}
 	return fmt.Errorf("unknown action: %s", action)
+}
+
+// finalizeItem 落库 item 终态后,顺带重算所属审批单的状态与汇总。
+// recompute 为 best-effort:其失败只记日志,不覆盖 item 已成功落库的事实。
+func (s *UpstreamPriceSyncService) finalizeItem(ctx context.Context, itemID, requestID int64, status string, reviewerID int64, note string, appliedAt *time.Time) error {
+	if err := s.repo.UpdateItemStatus(ctx, itemID, status, reviewerID, note, appliedAt); err != nil {
+		return err
+	}
+	if err := s.recomputeRequestStatus(ctx, requestID); err != nil {
+		slog.WarnContext(ctx, "recompute request status after review",
+			"request_id", requestID, "item_id", itemID, "err", err)
+	}
+	return nil
+}
+
+// recomputeRequestStatus 在单条 item 落库后,根据该审批单全部 item 的状态重算其状态与汇总:
+//   - 无 pending 条目(全部到达终态) → closed,自动闭环,免去手动「关闭审批单」;
+//   - 仍有 pending 且已有非 pending 条目 → partially_applied(打通此前从未写入的中间态);
+//   - 全部 pending(防御性,review 后理论不发生) → open。
+//
+// summary 同步刷新为各 item status 的计数,供列表「汇总」列展示操作结果分布。
+func (s *UpstreamPriceSyncService) recomputeRequestStatus(ctx context.Context, requestID int64) error {
+	items, err := s.repo.ListItems(ctx, requestID)
+	if err != nil {
+		return fmt.Errorf("list items for recompute: %w", err)
+	}
+	summary := make(map[string]int, len(items))
+	pending := 0
+	for _, it := range items {
+		summary[it.Status]++
+		if it.Status == "pending" {
+			pending++
+		}
+	}
+	var newStatus string
+	switch {
+	case pending == 0:
+		newStatus = "closed" // 全部终态 → 自动闭环(空单亦归此分支,防御性)
+	case pending < len(items):
+		newStatus = "partially_applied" // 有 pending 且有已处理 → 部分应用
+	default:
+		newStatus = "open" // 全 pending(防御性)
+	}
+	return s.repo.UpdateRequestStatus(ctx, requestID, newStatus, summary)
 }
 
 // --- 上游源配置 CRUD(薄封装,落库加密由 repository 层负责)---

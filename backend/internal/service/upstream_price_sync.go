@@ -342,6 +342,7 @@ type UpstreamPriceSyncRepository interface {
 	UpdateItemStatus(ctx context.Context, id int64, status string, reviewerID int64, note string, appliedAt *time.Time) error
 	ExpireOpenRequests(ctx context.Context, configID int64) (int, error)
 	CloseRequest(ctx context.Context, requestID int64) error
+	UpdateRequestStatus(ctx context.Context, requestID int64, status string, summary map[string]int) error
 }
 
 // MarshalConverted / UnmarshalConverted — JSONB 落库辅助。

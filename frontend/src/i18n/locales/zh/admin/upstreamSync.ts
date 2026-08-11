@@ -136,5 +136,22 @@ export default {
       reject: '拒绝',
       ignore: '忽略',
     },
+    statuses: {
+      open: '待处理',
+      partially_applied: '部分应用',
+      closed: '已关闭',
+      expired: '已过期',
+      pending: '待处理',
+      applied: '已应用',
+      rejected: '已拒绝',
+      ignored: '已忽略',
+      failed: '失败',
+      approved: '已批准',
+    },
+    kinds: {
+      model_price: '价格变更',
+      model_added: '新增模型',
+      model_removed: '移除模型',
+    },
   },
 }

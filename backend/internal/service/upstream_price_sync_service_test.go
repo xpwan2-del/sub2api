@@ -225,6 +225,18 @@ func (r *fakeRepo) CloseRequest(_ context.Context, requestID int64) error {
 	return nil
 }
 
+func (r *fakeRepo) UpdateRequestStatus(_ context.Context, requestID int64, status string, summary map[string]int) error {
+	req, ok := r.requests[requestID]
+	if !ok {
+		return errFakeNotFound
+	}
+	req.Status = status
+	if summary != nil {
+		req.Summary = summary
+	}
+	return nil
+}
+
 // errFakeNotFound fakeRepo 的 not-found 错误。
 var errFakeNotFound = errFakeNotFoundErr{}
 

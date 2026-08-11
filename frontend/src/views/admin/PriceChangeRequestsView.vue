@@ -59,7 +59,7 @@
 
           <template #cell-status="{ value }">
             <span :class="['inline-flex items-center rounded px-2 py-0.5 text-xs font-medium', statusBadgeClass(value)]">
-              {{ value }}
+              {{ statusLabel(value) }}
             </span>
           </template>
 
@@ -71,7 +71,7 @@
                   :key="key"
                   class="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-700 dark:bg-dark-700 dark:text-gray-300"
                 >
-                  {{ key }}: <span class="ml-1 font-medium">{{ count }}</span>
+                  {{ statusLabel(String(key)) }}: <span class="ml-1 font-medium">{{ count }}</span>
                 </span>
               </template>
               <span v-else class="text-xs text-gray-400">-</span>
@@ -164,7 +164,7 @@
                     >
                       <td class="px-2 py-2 align-top">
                         <input
-                          v-if="!isRemoved(item)"
+                          v-if="!isRemoved(item) && !isItemDone(item)"
                           type="checkbox"
                           :checked="isSelected(item.id)"
                           @change="toggleSelect(item.id, ($event.target as HTMLInputElement).checked)"
@@ -180,7 +180,7 @@
                       </td>
                       <td class="px-2 py-2 align-top">
                         <span :class="['inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium', kindBadgeClass(item.kind)]">
-                          {{ item.kind }}
+                          {{ kindLabel(item.kind) }}
                         </span>
                       </td>
                       <td class="px-2 py-2 align-top font-mono text-xs text-gray-700 dark:text-gray-300">
@@ -204,6 +204,7 @@
                               type="number"
                               step="any"
                               min="0"
+                              :disabled="isItemDone(item)"
                               :placeholder="upstreamFieldHint(item, 'perRequest')"
                               class="input py-1 text-xs"
                               style="width: 6rem"
@@ -220,6 +221,7 @@
                               type="number"
                               step="any"
                               min="0"
+                              :disabled="isItemDone(item)"
                               :placeholder="upstreamFieldHint(item, f.key)"
                               class="input py-1 text-xs"
                               style="width: 6rem"
@@ -234,11 +236,11 @@
                             v-if="item.status && item.status !== 'pending'"
                             :class="['mr-1 inline-flex items-center rounded px-1.5 py-0.5 text-xs', statusBadgeClass(item.status)]"
                           >
-                            {{ item.status }}
+                            {{ statusLabel(item.status) }}
                           </span>
                           <button
                             @click="reviewSingle(item, 'apply')"
-                            :disabled="isRemoved(item) || reviewingId === item.id"
+                            :disabled="isRemoved(item) || isItemDone(item) || reviewingId === item.id"
                             class="btn-icon text-green-600 hover:text-green-700 disabled:opacity-30 dark:text-green-400"
                             :title="t('admin.priceChangeRequests.actions.apply', 'Apply')"
                           >
@@ -246,7 +248,7 @@
                           </button>
                           <button
                             @click="reviewSingle(item, 'reject')"
-                            :disabled="reviewingId === item.id"
+                            :disabled="isItemDone(item) || reviewingId === item.id"
                             class="btn-icon text-red-600 hover:text-red-700 disabled:opacity-30 dark:text-red-400"
                             :title="t('admin.priceChangeRequests.actions.reject', 'Reject')"
                           >
@@ -254,7 +256,7 @@
                           </button>
                           <button
                             @click="reviewSingle(item, 'ignore')"
-                            :disabled="reviewingId === item.id"
+                            :disabled="isItemDone(item) || reviewingId === item.id"
                             class="btn-icon text-gray-500 hover:text-gray-700 disabled:opacity-30 dark:text-gray-400"
                             :title="t('admin.priceChangeRequests.actions.ignore', 'Ignore')"
                           >
@@ -447,6 +449,20 @@ function isRemoved(item: PriceChangeItem): boolean {
   return item.kind === 'model_removed'
 }
 
+// item 是否已处理(非 pending 终态:applied/rejected/ignored/failed)。
+// 已处理条目禁止再编辑应用值、再审批、被批量选中(与后端 ReviewItem 的 pending 守卫对齐)。
+function isItemDone(item: PriceChangeItem): boolean {
+  return !!item.status && item.status !== 'pending'
+}
+
+// 状态/类型枚举 → 本地化文本(未知值回退原始字符串,防御后端未来新增枚举)。
+function statusLabel(status: string): string {
+  return t(`admin.priceChangeRequests.statuses.${status}`, status)
+}
+function kindLabel(kind: string): string {
+  return t(`admin.priceChangeRequests.kinds.${kind}`, kind)
+}
+
 function modelField(item: PriceChangeItem, _key: string): string {
   // Defensive: item.model_name (snake) or ModelName (pascal)
   return (item as any).model_name ?? (item as any).ModelName ?? '-'
@@ -571,7 +587,7 @@ function buildApplyPayload(itemId: number): Record<string, unknown> {
 
 // Selection helpers (operate within the currently expanded request)
 function currentRequestItemIds(): number[] {
-  return expandedItems.value.filter((i) => !isRemoved(i)).map((i) => i.id)
+  return expandedItems.value.filter((i) => !isRemoved(i) && !isItemDone(i)).map((i) => i.id)
 }
 
 function selectedItemsForRequest(_reqId: number): PriceChangeItem[] {

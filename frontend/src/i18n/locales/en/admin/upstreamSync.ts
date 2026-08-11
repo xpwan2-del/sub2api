@@ -136,5 +136,22 @@ export default {
       reject: 'Reject',
       ignore: 'Ignore',
     },
+    statuses: {
+      open: 'Open',
+      partially_applied: 'Partially Applied',
+      closed: 'Closed',
+      expired: 'Expired',
+      pending: 'Pending',
+      applied: 'Applied',
+      rejected: 'Rejected',
+      ignored: 'Ignored',
+      failed: 'Failed',
+      approved: 'Approved',
+    },
+    kinds: {
+      model_price: 'Price Change',
+      model_added: 'Model Added',
+      model_removed: 'Model Removed',
+    },
   },
 }

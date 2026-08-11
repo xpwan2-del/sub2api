@@ -467,6 +467,23 @@ WHERE id=$1 AND status IN ('open', 'partially_applied')`, requestID)
 	return nil
 }
 
+// UpdateRequestStatus 由 service 层在 review 条目后重算并推进审批单状态:
+// 同时刷新 summary(各 item status 的计数);status=closed 时一并落 closed_at。
+// 与 CloseRequest 不同,此处不做「无 pending 才允许」校验——校验已在 service 层
+// recomputeRequestStatus 内完成,这里仅负责落库。
+func (r *upstreamPriceSyncRepo) UpdateRequestStatus(ctx context.Context, requestID int64, status string, summary map[string]int) error {
+	summaryJSON, _ := json.Marshal(summary) // nil/空 map → "null"/"{}",前端按空处理
+	_, err := r.db.ExecContext(ctx, `
+UPDATE upstream_price_change_requests
+SET status=$2, summary=$3,
+    closed_at=CASE WHEN $2='closed' THEN now() ELSE closed_at END
+WHERE id=$1`, requestID, status, summaryJSON)
+	if err != nil {
+		return fmt.Errorf("update upstream price change request status: %w", err)
+	}
+	return nil
+}
+
 // ---------- scan helpers ----------
 
 func scanRequest(row rowScanner) (*service.PriceChangeRequest, error) {
