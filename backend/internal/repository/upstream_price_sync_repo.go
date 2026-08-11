@@ -478,11 +478,16 @@ WHERE id=$1 AND status IN ('open', 'partially_applied')`, requestID)
 // recomputeRequestStatus 内完成,这里仅负责落库。
 func (r *upstreamPriceSyncRepo) UpdateRequestStatus(ctx context.Context, requestID int64, status string, summary map[string]int) error {
 	summaryJSON, _ := json.Marshal(summary) // nil/空 map → "null"/"{}",前端按空处理
+	// 注意:$2 不能同时裸用于 SET status=$2(varchar) 与 CASE WHEN $2='closed'(text)——
+	// lib/pq 会报 "inconsistent types deduced for parameter $2",整条 UPDATE 失败、
+	// recompute 静默(best-effort),表现为 item 已落终态但审批单 status 不变。
+	// 改用独立 bool 参数 $4 表达「是否闭环」,每个占位符仅单一类型上下文,规避推断冲突。
+	isClosed := status == "closed"
 	_, err := r.db.ExecContext(ctx, `
 UPDATE upstream_price_change_requests
 SET status=$2, summary=$3,
-    closed_at=CASE WHEN $2='closed' THEN now() ELSE closed_at END
-WHERE id=$1`, requestID, status, summaryJSON)
+    closed_at=CASE WHEN $4 THEN now() ELSE closed_at END
+WHERE id=$1`, requestID, status, summaryJSON, isClosed)
 	if err != nil {
 		return fmt.Errorf("update upstream price change request status: %w", err)
 	}

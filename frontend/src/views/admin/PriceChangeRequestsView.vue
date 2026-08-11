@@ -124,7 +124,7 @@
                 <button
                   @click="requestBatch('reject')"
                   :disabled="batchRunning || selectedItemsForRequest(row.id).length === 0"
-                  class="btn btn-sm text-red-600 dark:text-red-400"
+                  class="btn btn-sm border border-red-300 bg-white text-red-600 hover:bg-red-50 dark:border-red-700 dark:bg-dark-800 dark:text-red-400 dark:hover:bg-red-900/20"
                 >
                   <Icon name="x" size="md" class="mr-1" />
                   {{ t('admin.priceChangeRequests.batchReject', 'Batch Reject') }}

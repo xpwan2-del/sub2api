@@ -138,10 +138,11 @@
               <button
                 @click="handleSync(row)"
                 :disabled="syncingId === row.id"
-                class="btn-icon text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-40 dark:text-indigo-400 dark:hover:bg-indigo-900/20"
                 :title="t('admin.upstreamSources.syncNow', 'Sync Now')"
               >
-                <Icon name="sync" size="md" :class="syncingId === row.id ? 'animate-spin' : ''" />
+                <Icon name="sync" size="sm" :class="syncingId === row.id ? 'animate-spin' : ''" />
+                {{ t('admin.upstreamSources.syncNow', 'Sync Now') }}
               </button>
               <button
                 @click="handleRefreshBalance(row)"
