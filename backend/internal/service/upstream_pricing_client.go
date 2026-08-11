@@ -88,15 +88,15 @@ func (c *UpstreamPricingClient) httpClient(proxyURL string) (*http.Client, error
 	return client, nil
 }
 
-func (c *UpstreamPricingClient) FetchPricing(ctx context.Context, baseURL string, source UpstreamPricingSource, proxyURL, dashboardToken, apiKey string) (*PricingSnapshot, error) {
+func (c *UpstreamPricingClient) FetchPricing(ctx context.Context, baseURL string, source UpstreamPricingSource, proxyURL, dashboardToken, apiKey, authMode string, userID *int64) (*PricingSnapshot, error) {
 	client, err := c.httpClient(proxyURL)
 	if err != nil {
 		return nil, err
 	}
-	candidates := upstreamAuthCandidates(dashboardToken, apiKey)
+	attempts := pricingAuthAttempts(dashboardToken, apiKey, authMode, userID)
 	if source == PricingSourceRatioConfig || source == PricingSourceAuto {
-		snap, err := fetchWithCandidates(ctx, baseURL, "ratio_config", candidates, func(token string) (*PricingSnapshot, error) {
-			return c.fetchRatioConfig(ctx, client, baseURL, token)
+		snap, err := fetchWithAttempts(ctx, baseURL, "ratio_config", attempts, func(attempt pricingAuthAttempt) (*PricingSnapshot, error) {
+			return c.fetchRatioConfig(ctx, client, baseURL, attempt)
 		})
 		if err == nil {
 			return snap, nil
@@ -106,19 +106,17 @@ func (c *UpstreamPricingClient) FetchPricing(ctx context.Context, baseURL string
 		}
 		slog.WarnContext(ctx, "upstream ratio_config failed, falling back to pricing", "base_url", baseURL, "err", err)
 	}
-	return fetchWithCandidates(ctx, baseURL, "pricing", candidates, func(token string) (*PricingSnapshot, error) {
-		return c.fetchPricing(ctx, client, baseURL, token)
+	return fetchWithAttempts(ctx, baseURL, "pricing", attempts, func(attempt pricingAuthAttempt) (*PricingSnapshot, error) {
+		return c.fetchPricing(ctx, client, baseURL, attempt)
 	})
 }
 
-func (c *UpstreamPricingClient) fetchRatioConfig(ctx context.Context, client *http.Client, baseURL, token string) (*PricingSnapshot, error) {
+func (c *UpstreamPricingClient) fetchRatioConfig(ctx context.Context, client *http.Client, baseURL string, attempt pricingAuthAttempt) (*PricingSnapshot, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+"/api/ratio_config", nil)
 	if err != nil {
 		return nil, fmt.Errorf("create ratio_config request: %w", err)
 	}
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
+	applyPricingAuthHeaders(req, attempt)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -153,14 +151,12 @@ func (c *UpstreamPricingClient) fetchRatioConfig(ctx context.Context, client *ht
 	return snap, nil
 }
 
-func (c *UpstreamPricingClient) fetchPricing(ctx context.Context, client *http.Client, baseURL, token string) (*PricingSnapshot, error) {
+func (c *UpstreamPricingClient) fetchPricing(ctx context.Context, client *http.Client, baseURL string, attempt pricingAuthAttempt) (*PricingSnapshot, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+"/api/pricing", nil)
 	if err != nil {
 		return nil, fmt.Errorf("create pricing request: %w", err)
 	}
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
+	applyPricingAuthHeaders(req, attempt)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -196,38 +192,12 @@ func (c *UpstreamPricingClient) fetchPricing(ctx context.Context, client *http.C
 	return snap, nil
 }
 
-// upstreamAuthCandidates 构造 /api/pricing 与 /api/ratio_config 的鉴权候选序列(去重,保持优先级):
-//   - dashboardToken: 系统访问令牌,/api/pricing 与 /api/user/self 同走 UserAuth,首选
-//   - ""(空):        无 token,兼容 pricing 模块公开的上游(标准 new-api 默认配置)
-//   - apiKey:        模型调用令牌(sk-xxx),仅作少数魔改上游兜底
-//
-// new-api 各部署对 pricing 可见性配置不同,硬编码任一 token 都会在某种上游下失效,
-// 故按"最可能成功 → 最特殊"顺序尝试,鉴权失败再 fallback。
-func upstreamAuthCandidates(dashboardToken, apiKey string) []string {
-	dash := strings.TrimSpace(dashboardToken)
-	key := strings.TrimSpace(apiKey)
-	seen := map[string]bool{}
-	var out []string
-	add := func(t string) {
-		if !seen[t] {
-			seen[t] = true
-			out = append(out, t)
-		}
-	}
-	add(dash)
-	add("") // 公开模式始终尝试(去重保证 dash 为空时不重复)
-	if key != "" {
-		add(key)
-	}
-	return out
-}
-
-// fetchWithCandidates 按 candidates 顺序调用 once;鉴权类错误(401/403 或 success:false)时
-// fallback 到下一个候选,其他错误(网络/5xx/解析)立即返回。低频操作,多次请求可接受。
-func fetchWithCandidates(ctx context.Context, baseURL, endpoint string, candidates []string, once func(token string) (*PricingSnapshot, error)) (*PricingSnapshot, error) {
+// fetchWithAttempts 按 attempts 顺序调用 once;鉴权类错误(401/403 或 success:false)时
+// fallback 到下一个鉴权变体,其他错误(网络/5xx/解析)立即返回。低频操作,多次请求可接受。
+func fetchWithAttempts(ctx context.Context, baseURL, endpoint string, attempts []pricingAuthAttempt, once func(attempt pricingAuthAttempt) (*PricingSnapshot, error)) (*PricingSnapshot, error) {
 	var lastErr error
-	for i, token := range candidates {
-		snap, err := once(token)
+	for i, attempt := range attempts {
+		snap, err := once(attempt)
 		if err == nil {
 			return snap, nil
 		}
@@ -235,7 +205,7 @@ func fetchWithCandidates(ctx context.Context, baseURL, endpoint string, candidat
 		if !isUpstreamAuthError(err) {
 			return nil, err
 		}
-		slog.DebugContext(ctx, "upstream auth failed, trying next token", "endpoint", endpoint, "base_url", baseURL, "attempt", i+1, "total", len(candidates), "err", err)
+		slog.DebugContext(ctx, "upstream auth failed, trying next variant", "endpoint", endpoint, "base_url", baseURL, "attempt", i+1, "total", len(attempts), "err", err)
 	}
 	return nil, lastErr
 }
@@ -288,6 +258,74 @@ func dashboardAuthVariants(mode string, hasUserID bool) []balanceAuthAttempt {
 			)
 		}
 		return variants
+	}
+}
+
+// pricingAuthAttempt 描述一次 /api/pricing 或 /api/ratio_config 请求的鉴权头组合。
+// 比 balanceAuthAttempt 多一个 token 维度:pricing 路径需在 dashboardToken/""(公开)/apiKey
+// 多个 token 之间 fallback,而 balance 仅用 dashboardToken。
+type pricingAuthAttempt struct {
+	token     string // dashboardToken / ""(公开模式) / apiKey
+	useBearer bool   // true=Bearer 前缀,false=raw token(旧版 one-api)
+	userIDStr string // 非空时发送 New-Api-User 头
+}
+
+// pricingAuthAttempts 构造 pricing 路径的鉴权变体序列(复用 dashboardAuthVariants,去重,保持优先级):
+//  1. dashboardToken 按 authMode 展开的鉴权变体(bearer/raw/raw_user/bearer_user,auto 时全探测)
+//  2. ""(公开模式):兼容 pricing 模块公开的上游(标准 new-api 默认配置)
+//  3. apiKey:模型调用令牌(sk-xxx),仅作少数魔改上游兜底
+//
+// new-api 各部署对 pricing 可见性配置不同,硬编码任一组合都会在某种上游下失效,
+// 故按"最可能成功 → 最特殊"顺序尝试,鉴权失败再 fallback。
+func pricingAuthAttempts(dashboardToken, apiKey, authMode string, userID *int64) []pricingAuthAttempt {
+	dash := strings.TrimSpace(dashboardToken)
+	var uidStr string
+	hasUserID := false
+	if userID != nil && *userID > 0 {
+		uidStr = strconv.FormatInt(*userID, 10)
+		hasUserID = true
+	}
+	seen := map[string]bool{}
+	var out []pricingAuthAttempt
+	add := func(token string, useBearer, withUser bool) {
+		u := ""
+		if withUser {
+			u = uidStr
+		}
+		key := token + "|" + strconv.FormatBool(useBearer) + "|" + u
+		if seen[key] {
+			return
+		}
+		seen[key] = true
+		out = append(out, pricingAuthAttempt{token: token, useBearer: useBearer, userIDStr: u})
+	}
+	// 1. dashboardToken 的鉴权变体(复用 balance 路径已验证的 dashboardAuthVariants)。
+	if dash != "" {
+		for _, v := range dashboardAuthVariants(NormalizeDashboardAuthMode(authMode), hasUserID) {
+			add(dash, v.useBearer, v.withUser)
+		}
+	}
+	// 2. 公开模式(pricing 模块默认公开的上游);去重保证 dash 为空时不重复。
+	add("", true, false)
+	// 3. apiKey 兜底(少数魔改上游接受模型令牌)。
+	if key := strings.TrimSpace(apiKey); key != "" {
+		add(key, true, false)
+	}
+	return out
+}
+
+// applyPricingAuthHeaders 按 attempt 设置 pricing/ratio_config 请求的鉴权头,
+// 与 fetchBalanceOnce 的 header 设置同构(bearer/raw + New-Api-User 双因子)。
+func applyPricingAuthHeaders(req *http.Request, attempt pricingAuthAttempt) {
+	if attempt.token != "" {
+		if attempt.useBearer {
+			req.Header.Set("Authorization", "Bearer "+attempt.token)
+		} else {
+			req.Header.Set("Authorization", attempt.token)
+		}
+	}
+	if attempt.userIDStr != "" {
+		req.Header.Set("New-Api-User", attempt.userIDStr)
 	}
 }
 

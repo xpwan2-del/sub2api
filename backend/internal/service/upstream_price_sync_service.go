@@ -67,7 +67,7 @@ func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, create
 	if err != nil {
 		return 0, fmt.Errorf("resolve proxy: %w", err)
 	}
-	snap, err := s.client.FetchPricing(ctx, baseURL, cfgRec.PricingSource, proxyURL, cfgRec.DashboardToken, cfgRec.APIKey)
+	snap, err := s.client.FetchPricing(ctx, baseURL, cfgRec.PricingSource, proxyURL, cfgRec.DashboardToken, cfgRec.APIKey, cfgRec.DashboardAuthMode, cfgRec.DashboardUserID)
 	if err != nil {
 		_ = s.repo.UpdateConfigSyncState(ctx, configID, time.Now(), "", err.Error())
 		return 0, fmt.Errorf("fetch upstream: %w", err)
@@ -287,7 +287,7 @@ func (s *UpstreamPriceSyncService) RefreshBalance(ctx context.Context, id int64)
 // 数据源:优先 usable_group({key: 展示名},部分 new-api 版本返回);
 // 回退 group_ratio 的 keys(key 即分组标识,与每模型 enable_groups 对齐,
 // 所有 new-api 版本的 /api/pricing 都返回 group_ratio)。两者合并,保证有数据。
-func (s *UpstreamPriceSyncService) resolveUpstreamGroups(ctx context.Context, baseURL string, proxyID *int64, dashboardToken, apiKey string) (map[string]string, error) {
+func (s *UpstreamPriceSyncService) resolveUpstreamGroups(ctx context.Context, baseURL string, proxyID *int64, dashboardToken, apiKey, authMode string, userID *int64) (map[string]string, error) {
 	baseURL, err := s.validateBaseURL(baseURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid base url: %w", err)
@@ -296,14 +296,16 @@ func (s *UpstreamPriceSyncService) resolveUpstreamGroups(ctx context.Context, ba
 	if err != nil {
 		return nil, fmt.Errorf("resolve proxy: %w", err)
 	}
-	// 诊断:记录传入的 dashboard_token / api_key 是否非空(脱敏,只记长度)。
+	// 诊断:记录传入的鉴权参数是否非空(脱敏,只记存在性)。
 	slog.InfoContext(ctx, "resolve upstream groups",
 		"base_url", baseURL,
 		"proxy_id", proxyID,
+		"auth_mode", authMode,
 		"has_dashboard_token", strings.TrimSpace(dashboardToken) != "",
 		"has_api_key", strings.TrimSpace(apiKey) != "",
+		"has_user_id", userID != nil && *userID > 0,
 	)
-	snap, err := s.client.FetchPricing(ctx, baseURL, PricingSourceAuto, proxyURL, dashboardToken, apiKey)
+	snap, err := s.client.FetchPricing(ctx, baseURL, PricingSourceAuto, proxyURL, dashboardToken, apiKey, authMode, userID)
 	if err != nil {
 		return nil, fmt.Errorf("fetch upstream groups: %w", err)
 	}
@@ -332,12 +334,12 @@ func (s *UpstreamPriceSyncService) ListUpstreamGroups(ctx context.Context, confi
 	if !cfgRec.Enabled {
 		return nil, infraerrors.BadRequest("upstream_source_disabled", "upstream source is disabled")
 	}
-	return s.resolveUpstreamGroups(ctx, cfgRec.BaseURL, cfgRec.ProxyID, cfgRec.DashboardToken, cfgRec.APIKey)
+	return s.resolveUpstreamGroups(ctx, cfgRec.BaseURL, cfgRec.ProxyID, cfgRec.DashboardToken, cfgRec.APIKey, cfgRec.DashboardAuthMode, cfgRec.DashboardUserID)
 }
 
 // PreviewUpstreamGroups 按 base_url 直接拉取分组(新建 source 尚未保存时用)。
-func (s *UpstreamPriceSyncService) PreviewUpstreamGroups(ctx context.Context, baseURL string, proxyID *int64, dashboardToken, apiKey string) (map[string]string, error) {
-	return s.resolveUpstreamGroups(ctx, baseURL, proxyID, dashboardToken, apiKey)
+func (s *UpstreamPriceSyncService) PreviewUpstreamGroups(ctx context.Context, baseURL string, proxyID *int64, dashboardToken, apiKey, authMode string, userID *int64) (map[string]string, error) {
+	return s.resolveUpstreamGroups(ctx, baseURL, proxyID, dashboardToken, apiKey, authMode, userID)
 }
 
 func (s *UpstreamPriceSyncService) balanceRefreshError(ctx context.Context, cfgRec *UpstreamSourceConfig, refreshErr error) (*UpstreamSourceConfig, error) {

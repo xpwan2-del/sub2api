@@ -29,7 +29,7 @@ func TestFetchPricing_RatioConfig(t *testing.T) {
 		_, _ = w.Write([]byte(body))
 	}))
 	defer srv.Close()
-	snap, err := newTestClient().FetchPricing(context.Background(), srv.URL, PricingSourceRatioConfig, "", "")
+	snap, err := newTestClient().FetchPricing(context.Background(), srv.URL, PricingSourceRatioConfig, "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -53,7 +53,7 @@ func TestFetchPricing_UsesConfiguredProxy(t *testing.T) {
 	}))
 	defer proxy.Close()
 
-	_, err := newTestClient().FetchPricing(context.Background(), "http://upstream.invalid", PricingSourceRatioConfig, proxy.URL, "")
+	_, err := newTestClient().FetchPricing(context.Background(), "http://upstream.invalid", PricingSourceRatioConfig, proxy.URL, "", "", "", nil)
 	if err != nil {
 		t.Fatalf("FetchPricing via proxy err: %v", err)
 	}
@@ -228,7 +228,7 @@ func TestFetchPricing_AutoFallback(t *testing.T) {
 		_, _ = w.Write([]byte(`{"success":true,"pricing_version":"v9","data":[{"model_name":"gpt-4o","model_ratio":2.5,"completion_ratio":4,"quota_type":0,"enable_groups":["default"]}],"group_ratio":{"default":1}}`))
 	}))
 	defer srv.Close()
-	snap, err := newTestClient().FetchPricing(context.Background(), srv.URL, PricingSourceAuto, "", "")
+	snap, err := newTestClient().FetchPricing(context.Background(), srv.URL, PricingSourceAuto, "", "", "", "", nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -237,5 +237,75 @@ func TestFetchPricing_AutoFallback(t *testing.T) {
 	}
 	if snap.Source != "pricing" || snap.Models[0].ModelName != "gpt-4o" {
 		t.Fatalf("unexpected snap: %+v", snap)
+	}
+}
+
+// TestFetchPricing_RawUserSendsNewApiUserHeader 验证 raw_user 模式发送裸 Token + New-Api-User。
+func TestFetchPricing_RawUserSendsNewApiUserHeader(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/ratio_config" {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		if got := r.Header.Get("Authorization"); got != "token" {
+			t.Fatalf("authorization = %q, want raw token", got)
+		}
+		if got := r.Header.Get("New-Api-User"); got != "12" {
+			t.Fatalf("New-Api-User = %q, want 12", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"success":true,"data":[{"model_name":"gpt-4o","model_ratio":2.5,"completion_ratio":4,"quota_type":0,"enable_groups":["default"]}],"group_ratio":{"default":1}}`))
+	}))
+	defer srv.Close()
+
+	uid := int64(12)
+	snap, err := newTestClient().FetchPricing(context.Background(), srv.URL, PricingSourceAuto, "", "token", "", DashboardAuthModeRawUser, &uid)
+	if err != nil {
+		t.Fatalf("FetchPricing err: %v", err)
+	}
+	if len(snap.Models) != 1 || snap.Models[0].ModelName != "gpt-4o" {
+		t.Fatalf("unexpected models: %+v", snap.Models)
+	}
+}
+
+// TestFetchPricing_AutoFallsBackToRawUser 验证 auto 模式配置 user_id 时最终回退到 raw + New-Api-User。
+func TestFetchPricing_AutoFallsBackToRawUser(t *testing.T) {
+	var attempts []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/ratio_config" {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		auth := r.Header.Get("Authorization")
+		user := r.Header.Get("New-Api-User")
+		attempts = append(attempts, auth+"|"+user)
+		// 仅裸 Token + New-Api-User 通过(旧版 QuantumNous/new-api 协议)。
+		if auth == "token" && user == "5" {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"success":true,"data":[{"model_name":"gpt-4o","model_ratio":2.5,"completion_ratio":4,"quota_type":0,"enable_groups":["default"]}],"group_ratio":{"default":1}}`))
+			return
+		}
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"success":false,"message":"New-Api-User header not provided"}`))
+	}))
+	defer srv.Close()
+
+	uid := int64(5)
+	snap, err := newTestClient().FetchPricing(context.Background(), srv.URL, PricingSourceAuto, "", "token", "", DashboardAuthModeAuto, &uid)
+	if err != nil {
+		t.Fatalf("FetchPricing err: %v", err)
+	}
+	if len(snap.Models) != 1 || snap.Models[0].ModelName != "gpt-4o" {
+		t.Fatalf("unexpected models: %+v", snap.Models)
+	}
+	// 确认确实经过了 raw_user 变体(否则可能误命中公开模式)。
+	hit := false
+	for _, a := range attempts {
+		if a == "token|5" {
+			hit = true
+		}
+	}
+	if !hit {
+		t.Fatalf("never attempted raw token + New-Api-User, attempts=%v", attempts)
 	}
 }

@@ -486,7 +486,7 @@ async function loadGroupsFromForm() {
   }
   loadingGroups.value = true
   try {
-    const res = await adminAPI.upstreamPriceSync.previewUpstreamGroups(url, form.proxy_id, form.dashboard_token, form.api_key)
+    const res = await adminAPI.upstreamPriceSync.previewUpstreamGroups(url, form.proxy_id, form.dashboard_token, form.api_key, form.dashboard_auth_mode, form.dashboard_user_id)
     upstreamGroups.value = res?.groups ?? {}
   } catch (error: unknown) {
     appStore.showError(extractApiErrorMessage(error, t('admin.upstreamSources.loadGroupsError', 'Failed to load upstream groups')))
