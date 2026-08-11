@@ -325,12 +325,17 @@ VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, created_at`,
 		if mErr != nil {
 			return fmt.Errorf("marshal apply_value: %w", mErr)
 		}
+		// item.Status 由 service 层指定(unchanged → no_change 终态);空回退 pending。
+		itemStatus := it.Status
+		if itemStatus == "" {
+			itemStatus = "pending"
+		}
 		_, err = tx.ExecContext(ctx, `
 INSERT INTO upstream_price_change_items
 (request_id, kind, platform, model_name, target_channel_id, upstream_raw, upstream_converted, local_current, apply_value, status)
 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
 			it.RequestID, string(it.Kind), it.Platform, it.ModelName, it.TargetChannelID,
-			raw, up, loc, apv, "pending")
+			raw, up, loc, apv, itemStatus)
 		if err != nil {
 			return fmt.Errorf("create item: %w", err)
 		}

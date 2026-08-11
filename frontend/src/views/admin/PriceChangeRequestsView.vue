@@ -114,12 +114,28 @@
                   {{ t('admin.priceChangeRequests.selectedCount', { count: selectedCount(row.id) }) }}
                 </span>
                 <button
-                  @click="batchApply(row.id)"
+                  @click="requestBatch('apply')"
                   :disabled="batchRunning || selectedItemsForRequest(row.id).length === 0"
                   class="btn btn-primary btn-sm"
                 >
                   <Icon name="check" size="md" class="mr-1" />
                   {{ t('admin.priceChangeRequests.batchApply', 'Batch Apply') }}
+                </button>
+                <button
+                  @click="requestBatch('reject')"
+                  :disabled="batchRunning || selectedItemsForRequest(row.id).length === 0"
+                  class="btn btn-sm text-red-600 dark:text-red-400"
+                >
+                  <Icon name="x" size="md" class="mr-1" />
+                  {{ t('admin.priceChangeRequests.batchReject', 'Batch Reject') }}
+                </button>
+                <button
+                  @click="requestBatch('ignore')"
+                  :disabled="batchRunning || selectedItemsForRequest(row.id).length === 0"
+                  class="btn btn-secondary btn-sm"
+                >
+                  <Icon name="ban" size="md" class="mr-1" />
+                  {{ t('admin.priceChangeRequests.batchIgnore', 'Batch Ignore') }}
                 </button>
                 <button
                   v-if="row.status === 'open' || row.status === 'partially_applied'"
@@ -194,7 +210,7 @@
                         </div>
                       </td>
                       <td class="px-2 py-2 align-top">
-                        <span v-if="isRemoved(item)" class="text-xs text-gray-400">—</span>
+                        <span v-if="isRemoved(item) || isUnchanged(item)" class="text-xs text-gray-400">—</span>
                         <!-- per_request 计费:单一按次价格 -->
                         <div v-else-if="draftMode(drafts[item.id]) === 'per_request'" class="flex flex-col gap-1">
                           <label class="flex items-center gap-1 text-xs">
@@ -281,6 +297,17 @@
         </DataTable>
       </template>
     </TablePageLayout>
+
+    <ConfirmDialog
+      :show="showBatchConfirm"
+      :title="batchConfirmTitle"
+      :message="batchConfirmMessage"
+      :confirm-text="t('common.confirm', 'Confirm')"
+      :cancel-text="t('common.cancel', 'Cancel')"
+      :danger="pendingBatchAction === 'reject'"
+      @confirm="confirmBatch"
+      @cancel="showBatchConfirm = false"
+    />
   </AppLayout>
 </template>
 
@@ -299,6 +326,7 @@ import DataTable from '@/components/common/DataTable.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import Select from '@/components/common/Select.vue'
 import Icon from '@/components/icons/Icon.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -382,6 +410,8 @@ const expandedItems = ref<PriceChangeItem[]>([])
 const loadingItems = ref(false)
 const reviewingId = ref<number | null>(null)
 const batchRunning = ref(false)
+const showBatchConfirm = ref(false)
+const pendingBatchAction = ref<'apply' | 'reject' | 'ignore' | null>(null)
 
 // Per-item editable apply_value drafts: itemId → { mode, input, output, cacheRead, cacheWrite, perRequest }
 interface Draft {
@@ -449,6 +479,11 @@ function isRemoved(item: PriceChangeItem): boolean {
   return item.kind === 'model_removed'
 }
 
+// model_unchanged:与本地一致(无变化),落库即终态 no_change,只读展示、无需审批。
+function isUnchanged(item: PriceChangeItem): boolean {
+  return item.kind === 'model_unchanged'
+}
+
 // item 是否已处理(非 pending 终态:applied/rejected/ignored/failed)。
 // 已处理条目禁止再编辑应用值、再审批、被批量选中(与后端 ReviewItem 的 pending 守卫对齐)。
 function isItemDone(item: PriceChangeItem): boolean {
@@ -498,6 +533,8 @@ function kindBadgeClass(kind: string): string {
       return 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'
     case 'model_removed':
       return 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+    case 'model_unchanged':
+      return 'bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400'
     default:
       return 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
   }
@@ -692,8 +729,44 @@ async function reviewSingle(item: PriceChangeItem, action: 'apply' | 'reject' | 
   }
 }
 
-async function batchApply(_reqId: number) {
-  const items = selectedItemsForRequest(_reqId)
+// 批量操作确认框标题/文案(按 pendingBatchAction 动态切换)。
+const batchConfirmTitle = computed(() => {
+  switch (pendingBatchAction.value) {
+    case 'reject':
+      return t('admin.priceChangeRequests.batchReject', 'Batch Reject')
+    case 'ignore':
+      return t('admin.priceChangeRequests.batchIgnore', 'Batch Ignore')
+    default:
+      return t('admin.priceChangeRequests.batchApply', 'Batch Apply')
+  }
+})
+const batchConfirmMessage = computed(() =>
+  t('admin.priceChangeRequests.batchConfirmMessage', {
+    count: selectedItemsForRequest(expandedRequestId.value!).length,
+  }),
+)
+
+// 批量操作:先弹框确认(action 存入 pendingBatchAction),确认后执行 runBatch。
+function requestBatch(action: 'apply' | 'reject' | 'ignore') {
+  if (batchRunning.value) return
+  if (selectedItemsForRequest(expandedRequestId.value!).length === 0) return
+  pendingBatchAction.value = action
+  showBatchConfirm.value = true
+}
+
+async function confirmBatch() {
+  showBatchConfirm.value = false
+  const action = pendingBatchAction.value
+  pendingBatchAction.value = null
+  if (action) await runBatch(action)
+}
+
+// runBatch 顺序对选中项执行 apply/reject/ignore(纯前端循环,每次 review 后端触发状态机重算)。
+// 仅 apply 携带 apply_value;reject/ignore 只改 item 状态。
+async function runBatch(action: 'apply' | 'reject' | 'ignore') {
+  const reqId = expandedRequestId.value
+  if (reqId == null) return
+  const items = selectedItemsForRequest(reqId)
   if (items.length === 0) return
   batchRunning.value = true
   let ok = 0
@@ -701,17 +774,17 @@ async function batchApply(_reqId: number) {
   try {
     for (const item of items) {
       try {
-        await adminAPI.upstreamPriceSync.reviewItem(expandedRequestId.value as number, item.id, {
-          action: 'apply',
-          apply_value: buildApplyPayload(item.id),
-        })
+        const body: { action: string; apply_value?: Record<string, unknown> } = { action }
+        if (action === 'apply') body.apply_value = buildApplyPayload(item.id)
+        await adminAPI.upstreamPriceSync.reviewItem(reqId, item.id, body)
         ok++
       } catch {
         fail++
       }
     }
+    const doneKey = action === 'reject' ? 'batchRejectDone' : action === 'ignore' ? 'batchIgnoreDone' : 'batchDone'
     if (fail === 0) {
-      appStore.showSuccess(t('admin.priceChangeRequests.batchDone', { count: ok }))
+      appStore.showSuccess(t(`admin.priceChangeRequests.${doneKey}`, { count: ok }))
     } else {
       appStore.showWarning(t('admin.priceChangeRequests.batchPartial', { ok, fail }))
     }

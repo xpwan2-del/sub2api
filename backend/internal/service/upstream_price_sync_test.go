@@ -99,8 +99,38 @@ func TestDiffPricing_NoChange(t *testing.T) {
 	plat := map[string]string{"m": PlatformOpenAI}
 	local := []ChannelModelPricing{{ID: 1, ChannelID: 1, Platform: PlatformOpenAI, Models: []string{"m"},
 		BillingMode: BillingModeToken, InputPrice: floatPtr(1e-6), OutputPrice: floatPtr(2e-6)}}
-	if got := DiffPricing(up, plat, local, 1); len(got) != 0 {
-		t.Fatalf("expected no drafts, got %d", len(got))
+	got := DiffPricing(up, plat, local, 1)
+	// 价格一致 → 仍生成 1 条 model_unchanged 草稿(供审批单完整展示),而非 0 条。
+	if len(got) != 1 {
+		t.Fatalf("expected 1 unchanged draft, got %d", len(got))
+	}
+	if got[0].Kind != ItemKindModelUnchanged {
+		t.Fatalf("kind = %v, want model_unchanged", got[0].Kind)
+	}
+	if got[0].Upstream == nil || got[0].Local == nil {
+		t.Fatal("unchanged draft should carry both upstream and local prices")
+	}
+}
+
+// TestDiffPricing_MixedUnchanged 同批含一致与变更:一致 → model_unchanged,变更 → model_price。
+func TestDiffPricing_MixedUnchanged(t *testing.T) {
+	up := map[string]ConvertedPrice{
+		"same-model": {BillingMode: BillingModeToken, InputPrice: floatPtr(1e-6), OutputPrice: floatPtr(2e-6)},
+		"diff-model": {BillingMode: BillingModeToken, InputPrice: floatPtr(3e-6), OutputPrice: floatPtr(6e-6)},
+	}
+	plat := map[string]string{"same-model": PlatformOpenAI, "diff-model": PlatformOpenAI}
+	local := []ChannelModelPricing{{ID: 1, ChannelID: 1, Platform: PlatformOpenAI, Models: []string{"same-model", "diff-model"},
+		BillingMode: BillingModeToken, InputPrice: floatPtr(1e-6), OutputPrice: floatPtr(2e-6)}}
+	got := DiffPricing(up, plat, local, 1)
+	if len(got) != 2 {
+		t.Fatalf("expected 2 drafts (unchanged + price), got %d", len(got))
+	}
+	kinds := map[string]bool{}
+	for _, d := range got {
+		kinds[string(d.Kind)] = true
+	}
+	if !kinds[string(ItemKindModelUnchanged)] || !kinds[string(ItemKindModelPrice)] {
+		t.Fatalf("expected model_unchanged + model_price, got %v", kinds)
 	}
 }
 

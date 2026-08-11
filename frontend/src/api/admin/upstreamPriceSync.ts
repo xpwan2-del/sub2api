@@ -38,7 +38,7 @@ export interface UpstreamSourceConfig {
 export interface PriceChangeItem {
   id: number
   request_id: number
-  kind: 'model_price' | 'model_added' | 'model_removed'
+  kind: 'model_price' | 'model_added' | 'model_removed' | 'model_unchanged'
   platform: string
   model_name: string
   target_channel_id: number

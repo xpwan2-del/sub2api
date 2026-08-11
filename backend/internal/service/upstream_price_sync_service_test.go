@@ -538,3 +538,79 @@ func TestUpdateConfig_RejectsNonPositiveBasePrice(t *testing.T) {
 		t.Fatalf("UpdateConfig base=0: persisted value changed to %v", fakeRepo.configs[good.ID].BasePricePer1k)
 	}
 }
+
+// TestSyncNow_AllUnchangedNoRequest 全部模型与本地一致时(无实际变更)不建审批单,
+// 保持「无价格变更」语义;unchanged 条目只在已有实际变更时随单一并展示。
+func TestSyncNow_AllUnchangedNoRequest(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		// ModelRatio=1, base=0.002 → input=2e-6;不传 CompletionRatio → output=nil。
+		_, _ = w.Write([]byte(`{"success":true,"data":{"ModelRatio":{"claude-m":1},"ModelPrice":{},"GroupRatio":{}}}`))
+	}))
+	defer srv.Close()
+	cfg := testConfig(srv.URL)
+	fakeRepo := newFakeRepo()
+	client := &UpstreamPricingClient{httpOpts: testHTTPOpts()}
+	chSvc := newFakeChannelService()
+	// 目标渠道已有与上游还原值完全一致的定价 → 全部 unchanged → 无 actionable → 不建单。
+	inputPrice := 2e-6 // 1 * 0.002 / 1000
+	chSvc.channel = &Channel{ModelPricing: []ChannelModelPricing{{
+		ID: 1, ChannelID: 7, Platform: PlatformAnthropic, Models: []string{"claude-m"},
+		BillingMode: BillingModeToken, InputPrice: &inputPrice,
+	}}}
+	svc := NewUpstreamPriceSyncService(fakeRepo, client, chSvc, nil, nil, cfg)
+
+	cfgRec := &UpstreamSourceConfig{ID: 1, BaseURL: srv.URL, TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
+	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
+
+	reqID, err := svc.SyncNow(context.Background(), 1, 99)
+	if err != nil {
+		t.Fatalf("SyncNow err: %v", err)
+	}
+	if reqID != 0 {
+		t.Fatalf("expected no request (all unchanged), got request #%d", reqID)
+	}
+}
+
+// TestReviewItem_RecomputeRequestStatus 锁死 recompute 状态机(68bdb277 修复):
+// review 后审批单状态应随 item 终态推进——部分处理 → partially_applied,全部终态 → closed,
+// 并同步刷新 summary。此前的 bug 是 ReviewItem 只改 item 状态、request 恒停 open。
+func TestReviewItem_RecomputeRequestStatus(t *testing.T) {
+	fakeRepo := newFakeRepo()
+	chSvc := newFakeChannelService()
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, testConfig(""))
+
+	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
+	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
+	price := ConvertedPrice{BillingMode: BillingModeToken, InputPrice: floatPtr(3e-6)}
+	items := []PriceChangeItem{
+		{Kind: ItemKindModelAdded, Platform: PlatformAnthropic, ModelName: "claude-a", TargetChannelID: 7, UpstreamConverted: &price, ApplyValue: &price, Status: "pending"},
+		{Kind: ItemKindModelAdded, Platform: PlatformAnthropic, ModelName: "claude-b", TargetChannelID: 7, UpstreamConverted: &price, ApplyValue: &price, Status: "pending"},
+	}
+	req := &PriceChangeRequest{SourceConfigID: cfgRec.ID, TriggerType: "manual"}
+	_ = fakeRepo.CreateRequest(context.Background(), req, items)
+
+	// ignore 第 1 条 → 仍有 pending → partially_applied;summary 反映 ignored=1、pending=1。
+	if err := svc.ReviewItem(context.Background(), items[0].ID, ReviewIgnore, nil, 1, ""); err != nil {
+		t.Fatalf("ReviewItem ignore #1 err: %v", err)
+	}
+	r1, _ := fakeRepo.GetRequest(context.Background(), req.ID)
+	if r1.Status != "partially_applied" {
+		t.Fatalf("after 1st ignore: status=%s, want partially_applied", r1.Status)
+	}
+	if r1.Summary["ignored"] != 1 || r1.Summary["pending"] != 1 {
+		t.Fatalf("after 1st ignore: summary=%v, want ignored=1 pending=1", r1.Summary)
+	}
+
+	// ignore 第 2 条 → 全部终态 → closed;summary 反映 ignored=2。
+	if err := svc.ReviewItem(context.Background(), items[1].ID, ReviewIgnore, nil, 1, ""); err != nil {
+		t.Fatalf("ReviewItem ignore #2 err: %v", err)
+	}
+	r2, _ := fakeRepo.GetRequest(context.Background(), req.ID)
+	if r2.Status != "closed" {
+		t.Fatalf("after 2nd ignore: status=%s, want closed", r2.Status)
+	}
+	if r2.Summary["ignored"] != 2 {
+		t.Fatalf("after 2nd ignore: summary=%v, want ignored=2", r2.Summary)
+	}
+}

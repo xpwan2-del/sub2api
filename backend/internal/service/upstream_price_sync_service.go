@@ -97,9 +97,18 @@ func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, create
 		return 0, fmt.Errorf("load target channel: %w", err)
 	}
 	drafts := DiffPricing(upstream, platforms, ch.ModelPricing, cfgRec.TargetChannelID)
-	if len(drafts) == 0 {
+	// 仅当存在实际变更(非 unchanged)才建审批单;全部一致时保持「无价格变更」语义不建单。
+	// unchanged 条目只在已有实际变更时随单一并展示,供完整对比查阅。
+	hasActionable := false
+	for _, d := range drafts {
+		if d.Kind != ItemKindModelUnchanged {
+			hasActionable = true
+			break
+		}
+	}
+	if !hasActionable {
 		_ = s.repo.UpdateConfigSyncState(ctx, configID, time.Now(), snap.Version, "")
-		return 0, nil // 无变化,不建空审批单
+		return 0, nil // 无实际变更,不建空审批单
 	}
 
 	// 旧 open 单批量过期,避免同源堆积多份并发审批
@@ -109,6 +118,12 @@ func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, create
 
 	items := make([]PriceChangeItem, 0, len(drafts))
 	for _, d := range drafts {
+		// unchanged 落库即终态 no_change(非 pending),不参与审批、不阻塞状态机闭环;
+		// 其余变更项默认 pending 等待审批。
+		status := "pending"
+		if d.Kind == ItemKindModelUnchanged {
+			status = "no_change"
+		}
 		items = append(items, PriceChangeItem{
 			Kind:              d.Kind,
 			Platform:          d.Platform,
@@ -119,6 +134,7 @@ func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, create
 			LocalCurrent:      d.Local,
 			// 默认以上游还原值作为 apply_value;model_removed 无上游值 → nil
 			ApplyValue: d.Upstream,
+			Status:     status,
 		})
 	}
 	req := &PriceChangeRequest{

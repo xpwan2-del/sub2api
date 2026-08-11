@@ -93,9 +93,10 @@ type ConvertedPrice struct {
 type PriceChangeItemKind string
 
 const (
-	ItemKindModelPrice   PriceChangeItemKind = "model_price"
-	ItemKindModelAdded   PriceChangeItemKind = "model_added"
-	ItemKindModelRemoved PriceChangeItemKind = "model_removed"
+	ItemKindModelPrice    PriceChangeItemKind = "model_price"    // 价格变更
+	ItemKindModelAdded    PriceChangeItemKind = "model_added"    // 新增模型
+	ItemKindModelRemoved  PriceChangeItemKind = "model_removed"  // 移除模型
+	ItemKindModelUnchanged PriceChangeItemKind = "model_unchanged" // 与本地一致(无变化,仅展示)
 )
 
 // ReviewAction 审批动作
@@ -132,7 +133,7 @@ type PriceChangeItem struct {
 	UpstreamConverted *ConvertedPrice     `json:"upstream_converted"`
 	LocalCurrent      *ConvertedPrice     `json:"local_current"`
 	ApplyValue        *ConvertedPrice     `json:"apply_value"`
-	Status            string              `json:"status"` // pending/approved/rejected/ignored/applied/failed
+	Status            string              `json:"status"` // pending/approved/rejected/ignored/applied/failed/no_change
 	ReviewerID        int64               `json:"reviewer_id"`
 	ReviewNote        string              `json:"review_note"`
 	ReviewedAt        *time.Time          `json:"reviewed_at"`
@@ -216,8 +217,12 @@ func DiffPricing(upstream map[string]ConvertedPrice, upstreamPlatforms map[strin
 			continue
 		}
 		localPrice := channelPricingToConverted(lp)
-		if !convertedEqual(&up, localPrice) {
-			upCopy := up
+		upCopy := up
+		if convertedEqual(&up, localPrice) {
+			// 与本地完全一致:仍生成条目(kind=model_unchanged)供审批单完整展示,
+			// 但落库即终态 no_change,不参与审批、不阻塞状态机闭环。
+			drafts = append(drafts, PriceChangeItemDraft{Kind: ItemKindModelUnchanged, Platform: plat, ModelName: name, Upstream: &upCopy, Local: localPrice})
+		} else {
 			drafts = append(drafts, PriceChangeItemDraft{Kind: ItemKindModelPrice, Platform: plat, ModelName: name, Upstream: &upCopy, Local: localPrice})
 		}
 	}
