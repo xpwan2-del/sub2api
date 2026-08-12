@@ -35,8 +35,8 @@ func (r *pricingEntryRepo) Create(context.Context, *Channel) error { return nil 
 func (r *pricingEntryRepo) GetByID(context.Context, int64) (*Channel, error) {
 	return nil, nil
 }
-func (r *pricingEntryRepo) Update(context.Context, *Channel) error  { return nil }
-func (r *pricingEntryRepo) Delete(context.Context, int64) error     { return nil }
+func (r *pricingEntryRepo) Update(context.Context, *Channel) error { return nil }
+func (r *pricingEntryRepo) Delete(context.Context, int64) error    { return nil }
 func (r *pricingEntryRepo) List(context.Context, pagination.PaginationParams, string, string) ([]Channel, *pagination.PaginationResult, error) {
 	return nil, nil, nil
 }
@@ -48,7 +48,7 @@ func (r *pricingEntryRepo) ExistsByNameExcluding(context.Context, string, int64)
 	return false, nil
 }
 func (r *pricingEntryRepo) GetGroupIDs(context.Context, int64) ([]int64, error) { return nil, nil }
-func (r *pricingEntryRepo) SetGroupIDs(context.Context, int64, []int64) error    { return nil }
+func (r *pricingEntryRepo) SetGroupIDs(context.Context, int64, []int64) error   { return nil }
 func (r *pricingEntryRepo) GetChannelIDByGroupID(context.Context, int64) (int64, error) {
 	return 0, nil
 }

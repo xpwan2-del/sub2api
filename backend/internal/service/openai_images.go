@@ -454,30 +454,24 @@ func applyOpenAIImagesDefaults(req *OpenAIImagesRequest) {
 	req.Model = "gpt-image-2"
 }
 
-// openAIImageGenerationModelPrefixes 列出 images 端点接受的图片生成模型名前缀。
-// 除 OpenAI 原生 gpt-image-* 家族外，还包含经 OpenAI 兼容渠道暴露的第三方图片模型
-// （如 xAI 的 grok-imagine-image*）。前缀必须精确到 grok-imagine-image，
-// 否则会把同系列的 grok-imagine-video（视频模型）误归入图片端点。
-var openAIImageGenerationModelPrefixes = []string{
-	"gpt-image-",         // OpenAI 原生图片生成
-	"grok-imagine-image", // xAI Grok 图片生成（grok-imagine-image / -2 / ...）
-	"grok-imagine-edit",  // xAI Grok 图片编辑
+func isOpenAIImageGenerationModel(model string) bool {
+	return IsGPTImageGenerationModel(model) || isGrokImageGenerationModel(model)
 }
 
-// isOpenAIImageGenerationModel 判定 model 是否为 images 端点支持的图片生成模型。
-// 模型名大小写不敏感，并去除首尾空白后再做前缀匹配。
-func isOpenAIImageGenerationModel(model string) bool {
+// IsGPTImageGenerationModel identifies the GPT native image-generation model family.
+func IsGPTImageGenerationModel(model string) bool {
 	model = strings.ToLower(strings.TrimSpace(model))
-	if model == "" {
-		return false
-	}
-	for _, prefix := range openAIImageGenerationModelPrefixes {
-		if strings.HasPrefix(model, prefix) {
-			return true
-		}
-	}
-	return false
+	return strings.HasPrefix(model, "gpt-image-")
 }
+
+func isGrokImageGenerationModel(model string) bool {
+	model = strings.ToLower(strings.TrimSpace(model))
+	return model == "grok-imagine" ||
+		model == "grok-imagine-edit" ||
+		strings.HasPrefix(model, "grok-imagine-image")
+}
+
+// isOpenAIImageGenerationModel 已在上方定义（IsGPTImageGenerationModel || isGrokImageGenerationModel）。
 
 func validateOpenAIImagesModel(model string) error {
 	model = strings.TrimSpace(model)
@@ -609,7 +603,12 @@ func (s *OpenAIGatewayService) forwardOpenAIImagesAPIKey(
 	if err != nil {
 		return nil, err
 	}
-	upstreamCtx, releaseUpstreamCtx := detachStreamUpstreamContext(ctx, parsed.Stream)
+	// 生图是长耗时、上游侧已产生实际成本的操作：客户端中途断开不应连带取消上游请求。
+	// detachStreamUpstreamContext 在非流式时原样返回请求 context，于是客户端一断开
+	// 就把已经在出图的上游调用打断成 context canceled，网关记 502、不扣费，而上游那边
+	// 图已经生成并计费。同一端点的 OAuth 分支 forwardOpenAIImagesOAuth 以及 Grok 媒体
+	// 路径本来就无条件脱钩，这里对齐；上游侧仍由 ResponseHeaderTimeout 兜底。
+	upstreamCtx, releaseUpstreamCtx := detachUpstreamContext(ctx)
 	defer releaseUpstreamCtx()
 
 	token, _, err := s.GetAccessToken(upstreamCtx, account)
@@ -645,6 +644,7 @@ func (s *OpenAIGatewayService) forwardOpenAIImagesAPIKey(
 	if resp.StatusCode >= 400 {
 		respBody := s.readUpstreamErrorBody(resp)
 		_ = resp.Body.Close()
+		respBody = s.redactAgentIdentitySensitiveBody(upstreamCtx, account, respBody)
 		resp.Body = io.NopCloser(bytes.NewReader(respBody))
 		upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(respBody))
 		upstreamMsg = sanitizeUpstreamErrorMessage(upstreamMsg)
@@ -659,11 +659,11 @@ func (s *OpenAIGatewayService) forwardOpenAIImagesAPIKey(
 				Kind:               "failover",
 				Message:            upstreamMsg,
 			})
-			s.handleFailoverSideEffects(upstreamCtx, resp, account, respBody, upstreamModel)
+			shouldDisable := s.handleFailoverSideEffects(upstreamCtx, resp, account, respBody, upstreamModel)
 			return nil, &UpstreamFailoverError{
 				StatusCode:             resp.StatusCode,
 				ResponseBody:           respBody,
-				RetryableOnSameAccount: account.IsPoolMode() && account.IsPoolModeRetryableStatus(resp.StatusCode),
+				RetryableOnSameAccount: !shouldDisable && account.IsPoolMode() && account.IsPoolModeRetryableStatus(resp.StatusCode),
 			}
 		}
 		return s.handleOpenAIImagesErrorResponse(upstreamCtx, resp, c, account, upstreamModel)
@@ -765,7 +765,15 @@ func (s *OpenAIGatewayService) buildOpenAIImagesRequest(
 		return nil, err
 	}
 	req = req.WithContext(WithHTTPUpstreamProfile(req.Context(), HTTPUpstreamProfileOpenAI))
-	req.Header.Set("Authorization", "Bearer "+token)
+	authHeaders, err := s.buildOpenAIAuthenticationHeaders(ctx, account, token)
+	if err != nil {
+		return nil, fmt.Errorf("build openai authentication headers: %w", err)
+	}
+	for key, values := range authHeaders {
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
+	}
 	for key, values := range c.Request.Header {
 		if !openaiPassthroughAllowedHeaders[strings.ToLower(key)] {
 			continue
@@ -1149,6 +1157,9 @@ func mergeOpenAIUsage(dst *OpenAIUsage, body []byte) {
 		}
 		if parsed.CacheReadInputTokens > 0 {
 			dst.CacheReadInputTokens = parsed.CacheReadInputTokens
+		}
+		if parsed.ImageInputTokens > 0 {
+			dst.ImageInputTokens = parsed.ImageInputTokens
 		}
 		if parsed.ImageOutputTokens > 0 {
 			dst.ImageOutputTokens = parsed.ImageOutputTokens

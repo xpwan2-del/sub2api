@@ -302,6 +302,18 @@ func (c mwFakeVideoCache) GetVideoTaskBinding(_ context.Context, groupID int64, 
 func (c mwFakeVideoCache) DeleteVideoTaskBinding(_ context.Context, _ int64, _ string) error {
 	return nil
 }
+func (c mwFakeVideoCache) SetGrokVideoPendingBilling(_ context.Context, _ string, _ []byte, _ time.Duration) error {
+	return nil
+}
+func (c mwFakeVideoCache) GetGrokVideoPendingBilling(_ context.Context, _ string) ([]byte, error) {
+	return nil, nil
+}
+func (c mwFakeVideoCache) ClaimGrokVideoBilled(_ context.Context, _ string, _ time.Duration) (bool, error) {
+	return false, nil
+}
+func (c mwFakeVideoCache) ReleaseGrokVideoBilled(_ context.Context, _ string) error {
+	return nil
+}
 
 // TestBundleResolver_GETVideosResolvesGroupViaTaskBinding 验证通用 Key 查询视频进度
 // （GET /v1/videos/:id，按 OpenAI 规范不带 model）时，中间件用 taskID 反查创建时写入的

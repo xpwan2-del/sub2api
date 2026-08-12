@@ -13,7 +13,6 @@ type opsRepoMock struct {
 	ListSystemLogsFn              func(ctx context.Context, filter *OpsSystemLogFilter) (*OpsSystemLogList, error)
 	DeleteSystemLogsFn            func(ctx context.Context, filter *OpsSystemLogCleanupFilter) (int64, error)
 	InsertSystemLogCleanupAuditFn func(ctx context.Context, input *OpsSystemLogCleanupAudit) error
-	LookupDeletedKeyAuditFn       func(ctx context.Context, key string) (*DeletedKeyAuditResult, error)
 	GetModelTrafficStatsFn        func(ctx context.Context, filter *OpsModelStatusFilter) ([]*OpsModelTrafficStats, error)
 	GetModelHealthBucketsFn       func(ctx context.Context, filter *OpsModelStatusFilter, bucketSeconds int) ([]*OpsModelHealthBucket, error)
 	GetGatewayRouteHealthFn       func(ctx context.Context, filter *OpsModelStatusFilter, limit int) ([]*OpsGatewayRouteHealth, error)
@@ -212,13 +211,6 @@ func (m *opsRepoMock) GetLatestHourlyBucketStart(ctx context.Context) (time.Time
 
 func (m *opsRepoMock) GetLatestDailyBucketDate(ctx context.Context) (time.Time, bool, error) {
 	return time.Time{}, false, nil
-}
-
-func (m *opsRepoMock) LookupDeletedKeyAudit(ctx context.Context, key string) (*DeletedKeyAuditResult, error) {
-	if m.LookupDeletedKeyAuditFn != nil {
-		return m.LookupDeletedKeyAuditFn(ctx, key)
-	}
-	return nil, nil
 }
 
 var _ OpsRepository = (*opsRepoMock)(nil)
