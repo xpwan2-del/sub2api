@@ -177,6 +177,45 @@ func buildQuotaDimsFromState(account *Account, state *AccountQuotaState) []quota
 	}
 }
 
+func (s *BalanceNotifyService) NotifyUpstreamBalanceLow(ctx context.Context, source *UpstreamSourceConfig) {
+	if s == nil || source == nil || source.LastBalanceUSD == nil || source.BalanceThresholdUSD == nil || s.notificationEmailService == nil || s.settingRepo == nil {
+		return
+	}
+	recipients := s.getAccountQuotaNotifyEmails(ctx)
+	if len(recipients) == 0 {
+		return
+	}
+	checkedAt := time.Now().UTC()
+	if source.LastBalanceCheckedAt != nil {
+		checkedAt = source.LastBalanceCheckedAt.UTC()
+	}
+	go func() {
+		for _, to := range recipients {
+			sendCtx, cancel := context.WithTimeout(context.Background(), emailSendTimeout)
+			err := s.notificationEmailService.Send(sendCtx, NotificationEmailSendInput{
+				Event:          NotificationEmailEventUpstreamBalanceLow,
+				RecipientEmail: to,
+				RecipientName:  emailRecipientName(to),
+				SourceType:     "upstream_source",
+				SourceID:       strconv.FormatInt(source.ID, 10),
+				ReminderKey:    checkedAt.Format("2006-01-02"),
+				Variables: map[string]string{
+					"source_id":         strconv.FormatInt(source.ID, 10),
+					"source_name":       source.Name,
+					"current_balance":   fmt.Sprintf("%.2f", *source.LastBalanceUSD),
+					"balance_threshold": fmt.Sprintf("%.2f", *source.BalanceThresholdUSD),
+					"checked_at":        checkedAt.Format("2006-01-02 15:04 MST"),
+					"recharge_url":      source.BaseURL,
+				},
+			})
+			cancel()
+			if err != nil {
+				slog.Error("failed to send upstream balance notification", "source_id", source.ID, "to", to, "error", err)
+			}
+		}
+	}()
+}
+
 // CheckAccountQuotaAfterIncrement checks if any quota dimension crossed above its notify threshold.
 // When quotaState is non-nil (from DB transaction RETURNING), it is used directly for threshold
 // checking, avoiding a separate DB read. Otherwise it falls back to fetching fresh account data.

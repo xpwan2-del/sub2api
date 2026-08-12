@@ -15,14 +15,20 @@ import (
 
 // ChannelHandler handles admin channel management
 type ChannelHandler struct {
-	channelService *service.ChannelService
-	billingService *service.BillingService
-	pricingService *service.PricingService
+	channelService           *service.ChannelService
+	billingService           *service.BillingService
+	pricingService           *service.PricingService
+	upstreamPriceSyncService *service.UpstreamPriceSyncService
 }
 
 // NewChannelHandler creates a new admin channel handler
-func NewChannelHandler(channelService *service.ChannelService, billingService *service.BillingService, pricingService *service.PricingService) *ChannelHandler {
-	return &ChannelHandler{channelService: channelService, billingService: billingService, pricingService: pricingService}
+func NewChannelHandler(channelService *service.ChannelService, billingService *service.BillingService, pricingService *service.PricingService, upstreamPriceSyncService *service.UpstreamPriceSyncService) *ChannelHandler {
+	return &ChannelHandler{
+		channelService:           channelService,
+		billingService:           billingService,
+		pricingService:           pricingService,
+		upstreamPriceSyncService: upstreamPriceSyncService,
+	}
 }
 
 // --- Request / Response types ---

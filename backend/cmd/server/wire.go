@@ -105,6 +105,7 @@ func provideCleanup(
 	paymentOrderExpiry *service.PaymentOrderExpiryService,
 	channelMonitorRunner *service.ChannelMonitorRunner,
 	quotaFlusher *service.UserPlatformQuotaUsageFlusher,
+	upstreamBalanceMonitor *service.UpstreamBalanceMonitorService,
 ) func() {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -278,6 +279,12 @@ func provideCleanup(
 			{"ChannelMonitorRunner", func() error {
 				if channelMonitorRunner != nil {
 					channelMonitorRunner.Stop()
+				}
+				return nil
+			}},
+			{"UpstreamBalanceMonitorService", func() error {
+				if upstreamBalanceMonitor != nil {
+					upstreamBalanceMonitor.Stop()
 				}
 				return nil
 			}},

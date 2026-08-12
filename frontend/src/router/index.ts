@@ -530,6 +530,30 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/upstream-sources',
+    name: 'AdminUpstreamSources',
+    component: () => import('@/views/admin/UpstreamSourcesView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Upstream Sources',
+      titleKey: 'admin.upstreamSources.title',
+      descriptionKey: 'admin.upstreamSources.description'
+    }
+  },
+  {
+    path: '/admin/price-change-requests',
+    name: 'AdminPriceChangeRequests',
+    component: () => import('@/views/admin/PriceChangeRequestsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Price Change Requests',
+      titleKey: 'admin.priceChangeRequests.title',
+      descriptionKey: 'admin.priceChangeRequests.description'
+    }
+  },
+  {
     path: '/monitor',
     name: 'ChannelStatus',
     component: () => import('@/views/user/ChannelStatusView.vue'),

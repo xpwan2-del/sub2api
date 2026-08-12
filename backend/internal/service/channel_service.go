@@ -1024,3 +1024,76 @@ type UpdateChannelInput struct {
 	ApplyPricingToAccountStats *bool
 	AccountStatsPricingRules   *[]AccountStatsPricingRule
 }
+
+// ApplyUpstreamPricingEntry 对目标渠道写入/更新单条模型定价,不影响该渠道其他定价。
+// 同 (platform, models) 命中则更新,否则新建。用于上游价格同步审批应用。
+func (s *ChannelService) ApplyUpstreamPricingEntry(ctx context.Context, channelID int64, platform string, models []string, price ConvertedPrice) (*ChannelModelPricing, error) {
+	if channelID <= 0 {
+		return nil, infraerrors.BadRequest("invalid_channel", "channel id required")
+	}
+	if platform == "" {
+		platform = "anthropic" // 与 repo 默认一致(channel_repo_pricing.go:227)
+	}
+	existing, err := s.repo.ListModelPricing(ctx, channelID)
+	if err != nil {
+		return nil, fmt.Errorf("list model pricing: %w", err)
+	}
+	for i := range existing {
+		p := &existing[i]
+		if p.Platform != platform {
+			continue
+		}
+		// 仅当模型集合完全一致时才就地更新;部分重叠(例如对单模型 [a] 同步时
+		// 命中多模型行 [a,b])落到下方 create 分支,避免连带改写同行的其它模型价格。
+		if sameModelSet(p.Models, models) {
+			applyConvertedToPricing(p, price)
+			if err := s.repo.UpdateModelPricing(ctx, p); err != nil {
+				return nil, err
+			}
+			s.invalidateCache()
+			return p, nil
+		}
+	}
+	np := &ChannelModelPricing{ChannelID: channelID, Platform: platform, Models: models, BillingMode: price.BillingMode}
+	applyConvertedToPricing(np, price)
+	if err := s.repo.CreateModelPricing(ctx, np); err != nil {
+		return nil, err
+	}
+	s.invalidateCache()
+	return np, nil
+}
+
+// applyConvertedToPricing 把 ConvertedPrice 的价格字段写入 ChannelModelPricing。
+func applyConvertedToPricing(p *ChannelModelPricing, c ConvertedPrice) {
+	p.BillingMode = c.BillingMode
+	p.InputPrice = c.InputPrice
+	p.OutputPrice = c.OutputPrice
+	p.CacheReadPrice = c.CacheReadPrice
+	p.CacheWritePrice = c.CacheWritePrice
+	p.PerRequestPrice = c.PerRequestPrice
+}
+
+// sameModelSet 判断两组模型名是否构成同一集合(大小写不敏感;忽略顺序与重复)。
+// 用于 ApplyUpstreamPricingEntry 精确匹配现有定价行,避免部分重叠时误改多模型行。
+func sameModelSet(a, b []string) bool {
+	if len(a) == 0 || len(b) == 0 {
+		return false
+	}
+	setA := make(map[string]struct{}, len(a))
+	for _, m := range a {
+		setA[strings.ToLower(m)] = struct{}{}
+	}
+	setB := make(map[string]struct{}, len(b))
+	for _, m := range b {
+		setB[strings.ToLower(m)] = struct{}{}
+	}
+	if len(setA) != len(setB) {
+		return false
+	}
+	for k := range setB {
+		if _, ok := setA[k]; !ok {
+			return false
+		}
+	}
+	return true
+}
