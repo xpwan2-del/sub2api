@@ -141,8 +141,17 @@ export async function refreshAllBalances() {
   return data
 }
 
+export interface SyncOutcome {
+  request_id: number
+  group_ratio_enabled: boolean
+  group_ratio_current: number | null
+  group_ratio_baseline: number | null
+  group_ratio_established: boolean
+  group_ratio_items_created: number
+}
+
 export async function syncNow(id: number) {
-  const { data } = await apiClient.post<{ request_id: number }>(`${base}/upstream-sources/${id}/sync`)
+  const { data } = await apiClient.post<SyncOutcome>(`${base}/upstream-sources/${id}/sync`)
   return data
 }
 

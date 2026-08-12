@@ -101,6 +101,16 @@
             <span class="text-sm text-gray-600 dark:text-gray-400">{{ proxyName(row.proxy_id) }}</span>
           </template>
 
+          <template #cell-group_ratio="{ row }">
+            <div v-if="row.sync_group_ratio" class="flex flex-col">
+              <span class="text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                {{ row.group_ratio_baseline_value != null ? t('admin.upstreamSources.groupRatioBaseline', { ratio: row.group_ratio_baseline_value }) : t('admin.upstreamSources.groupRatioAwaiting', 'Baseline pending') }}
+              </span>
+              <span v-if="row.target_upstream_group" class="text-xs text-gray-500 dark:text-gray-400">{{ row.target_upstream_group }}</span>
+            </div>
+            <span v-else class="text-xs text-gray-400 dark:text-gray-500">-</span>
+          </template>
+
           <template #cell-balance="{ row }">
             <div class="flex flex-col items-start gap-1">
               <div class="flex items-center gap-2">
@@ -416,6 +426,7 @@ const columns = computed<Column[]>(() => [
   { key: 'base_url', label: t('admin.upstreamSources.columns.baseUrl', 'Base URL'), sortable: true },
   { key: 'target_channel_id', label: t('admin.upstreamSources.columns.targetChannel', 'Target Channel'), sortable: false },
   { key: 'pricing_source', label: t('admin.upstreamSources.columns.pricingSource', 'Pricing Source'), sortable: false },
+  { key: 'group_ratio', label: t('admin.upstreamSources.columns.groupRatio', 'Group Ratio'), sortable: false },
   { key: 'proxy_id', label: t('admin.upstreamSources.columns.proxy', 'Proxy'), sortable: false },
   { key: 'balance', label: t('admin.upstreamSources.columns.balance', 'Balance'), sortable: false },
   { key: 'last_sync_at', label: t('admin.upstreamSources.columns.lastSync', 'Last Sync'), sortable: true },
@@ -740,11 +751,19 @@ async function handleSync(source: UpstreamSourceConfig) {
   if (source.id == null) return
   syncingId.value = source.id
   try {
-    const res: any = await adminAPI.upstreamPriceSync.syncNow(source.id)
-    const reqId = res?.request_id
-    if (reqId && reqId > 0) {
-      appStore.showSuccess(t('admin.upstreamSources.syncCreated', 'Sync started — review the new change request'))
+    const res = await adminAPI.upstreamPriceSync.syncNow(source.id)
+    if (res.request_id > 0) {
+      const msg = res.group_ratio_items_created > 0
+        ? t('admin.upstreamSources.syncGroupRatioCreated', { count: res.group_ratio_items_created })
+        : t('admin.upstreamSources.syncCreated', 'Sync started — review the new change request')
+      appStore.showSuccess(msg)
       router.push('/admin/price-change-requests')
+    } else if (res.group_ratio_established) {
+      appStore.showInfo(t('admin.upstreamSources.syncBaselineEstablished', { ratio: res.group_ratio_current }, `Baseline recorded: ${res.group_ratio_current}`))
+      loadSources()
+    } else if (res.group_ratio_enabled) {
+      appStore.showInfo(t('admin.upstreamSources.syncGroupRatioUnchanged', { ratio: res.group_ratio_current }, `Group ratio unchanged (${res.group_ratio_current})`))
+      loadSources()
     } else {
       appStore.showInfo(t('admin.upstreamSources.syncNoChanges', 'Sync completed — no pricing changes detected'))
       loadSources()
