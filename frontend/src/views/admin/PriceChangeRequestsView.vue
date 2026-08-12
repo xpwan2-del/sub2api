@@ -67,7 +67,7 @@
             <div class="flex flex-wrap gap-1">
               <template v-if="row.summary && Object.keys(row.summary).length">
                 <span
-                  v-for="(count, key) in row.summary"
+                  v-for="[key, count] in sortedSummaryEntries(row.summary)"
                   :key="key"
                   :class="['inline-flex items-center rounded px-1.5 py-0.5 text-xs', statusBadgeClass(String(key))]"
                 >
@@ -596,7 +596,8 @@ function statusBadgeClass(status: string): string {
     case 'applied':
       return 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'
     case 'pending':
-      return 'bg-gray-50 text-gray-600 dark:bg-dark-700 dark:text-gray-300'
+      // 与状态列 open(待处理)同色:汇总里的 item 级 pending 也用蓝色,保持"待处理"视觉一致。
+      return 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
     case 'rejected':
     case 'failed':
       return 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'
@@ -608,6 +609,12 @@ function statusBadgeClass(status: string): string {
     default:
       return 'bg-gray-100 text-gray-600 dark:bg-dark-700 dark:text-gray-300'
   }
+}
+
+// 汇总列展示顺序:待处理 → 应用 → 拒绝 → 忽略 → 无变化。
+const summaryOrder: Record<string, number> = { pending: 0, applied: 1, rejected: 2, ignored: 3, no_change: 4 }
+function sortedSummaryEntries(summary: Record<string, number>): [string, number][] {
+  return Object.entries(summary).sort((a, b) => (summaryOrder[a[0]] ?? 99) - (summaryOrder[b[0]] ?? 99))
 }
 
 function kindBadgeClass(kind: string): string {
