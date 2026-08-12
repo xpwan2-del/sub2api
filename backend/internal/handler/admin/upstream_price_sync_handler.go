@@ -115,7 +115,7 @@ func (h *ChannelHandler) SyncUpstreamNow(c *gin.Context) {
 	}
 	reqID, err := h.upstreamPriceSyncService.SyncNow(c.Request.Context(), id, adminUserID(c))
 	if err != nil {
-		response.InternalError(c, "sync upstream: "+err.Error())
+		response.ErrorFrom(c, err)
 		return
 	}
 	response.Success(c, gin.H{"request_id": reqID})
@@ -290,14 +290,15 @@ func (h *ChannelHandler) GetPriceChangeRequest(c *gin.Context) {
 type reviewPriceChangeItemBody struct {
 	Action     string                  `json:"action" binding:"required,oneof=apply reject ignore"`
 	ApplyValue *service.ConvertedPrice `json:"apply_value"`
+	ApplyRate  *float64                `json:"apply_rate"`
 	Note       string                  `json:"note"`
 }
 
 // ReviewPriceChangeItem 对单条审批条目执行 apply / reject / ignore。
 // POST /api/v1/admin/channels/price-change-requests/:id/items/:itemId/review
 func (h *ChannelHandler) ReviewPriceChangeItem(c *gin.Context) {
-	// :id 现仅作路径占位,实际以 :itemId 为准;仍校验其合法性以保持 URL 一致性。
-	if _, err := strconv.ParseInt(c.Param("id"), 10, 64); err != nil {
+	requestID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || requestID <= 0 {
 		response.BadRequest(c, "invalid request id")
 		return
 	}
@@ -311,8 +312,8 @@ func (h *ChannelHandler) ReviewPriceChangeItem(c *gin.Context) {
 		response.BadRequest(c, "invalid request: "+err.Error())
 		return
 	}
-	if err := h.upstreamPriceSyncService.ReviewItem(c.Request.Context(), itemID, service.ReviewAction(body.Action), body.ApplyValue, adminUserID(c), body.Note); err != nil {
-		response.InternalError(c, "review price change item: "+err.Error())
+	if err := h.upstreamPriceSyncService.ReviewItem(c.Request.Context(), requestID, itemID, service.ReviewAction(body.Action), body.ApplyValue, body.ApplyRate, adminUserID(c), body.Note); err != nil {
+		response.ErrorFrom(c, err)
 		return
 	}
 	response.Success(c, gin.H{"reviewed": itemID})

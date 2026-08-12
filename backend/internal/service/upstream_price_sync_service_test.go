@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -37,6 +39,7 @@ type fakeRepo struct {
 	requests      map[int64]*PriceChangeRequest
 	items         map[int64]*PriceChangeItem
 	itemsByReq    map[int64][]int64
+	groupTargets  []GroupRateTarget
 	nextConfigID  int64
 	nextRequestID int64
 	nextItemID    int64
@@ -237,7 +240,92 @@ func (r *fakeRepo) UpdateRequestStatus(_ context.Context, requestID int64, statu
 	return nil
 }
 
+func (r *fakeRepo) recomputeRequestStatus(requestID int64) error {
+	req, ok := r.requests[requestID]
+	if !ok {
+		return errFakeNotFound
+	}
+	summary := make(map[string]int)
+	pending, total := 0, 0
+	for _, itemID := range r.itemsByReq[requestID] {
+		item := r.items[itemID]
+		summary[item.Status]++
+		total++
+		if item.Status == "pending" {
+			pending++
+		}
+	}
+	req.Summary = summary
+	switch {
+	case pending == 0:
+		req.Status = "closed"
+	case pending < total:
+		req.Status = "partially_applied"
+	default:
+		req.Status = "open"
+	}
+	return nil
+}
+
 // errFakeNotFound fakeRepo 的 not-found 错误。
+func (f *fakeRepo) WithSourceSyncLock(ctx context.Context, _ int64, fn func(context.Context) error) error {
+	return fn(ctx)
+}
+
+func (f *fakeRepo) ListGroupRateTargets(context.Context, int64, int64) ([]GroupRateTarget, error) {
+	return append([]GroupRateTarget(nil), f.groupTargets...), nil
+}
+
+func (f *fakeRepo) HasPendingGroupRateItems(context.Context, int64) (bool, error) {
+	return false, nil
+}
+
+func (f *fakeRepo) PersistSyncResult(ctx context.Context, input SyncPersistInput) error {
+	if input.AdvanceBaseline {
+		if cfg := f.configs[input.ConfigID]; cfg != nil {
+			cfg.GroupRatioBaselineKey = input.BaselineKey
+			if input.BaselineValue != nil {
+				value := *input.BaselineValue
+				cfg.GroupRatioBaselineValue = &value
+			}
+			observedAt := input.ObservedAt
+			cfg.GroupRatioBaselineObserved = &observedAt
+		}
+	}
+	if input.Request != nil {
+		return f.CreateRequest(ctx, input.Request, input.Items)
+	}
+	return nil
+}
+
+func (f *fakeRepo) FinalizeItemCAS(ctx context.Context, requestID, itemID int64, status string, reviewerID int64, note string, applyValue *ConvertedPrice) error {
+	item, err := f.GetItem(ctx, itemID)
+	if err != nil {
+		return err
+	}
+	if item.RequestID != requestID {
+		return ErrItemRequestMismatch
+	}
+	if item.Status != "pending" {
+		return ErrItemNotPending
+	}
+	item.Status = status
+	item.ReviewerID = reviewerID
+	item.ReviewNote = note
+	if status == "applied" {
+		now := time.Now()
+		item.AppliedAt = &now
+	}
+	if applyValue != nil {
+		item.ApplyValue = applyValue
+	}
+	return f.recomputeRequestStatus(requestID)
+}
+
+func (f *fakeRepo) ApplyGroupRateItem(context.Context, GroupRateApplyInput) (int64, float64, error) {
+	return 0, 0, errors.New("not implemented by fake")
+}
+
 var errFakeNotFound = errFakeNotFoundErr{}
 
 type errFakeNotFoundErr struct{}
@@ -303,7 +391,7 @@ func TestSyncNow_BuildsRequest(t *testing.T) {
 	fakeRepo := newFakeRepo()
 	client := &UpstreamPricingClient{httpOpts: testHTTPOpts()}
 	chSvc := newFakeChannelService() // 记录 ApplyUpstreamPricingEntry 调用
-	svc := NewUpstreamPriceSyncService(fakeRepo, client, chSvc, nil, nil, cfg)
+	svc := NewUpstreamPriceSyncService(fakeRepo, client, chSvc, nil, nil, nil, cfg)
 
 	cfgRec := &UpstreamSourceConfig{ID: 1, BaseURL: srv.URL, TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
 	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
@@ -343,7 +431,7 @@ func TestReviewItem_ApplyWrites(t *testing.T) {
 	fakeRepo := newFakeRepo()
 	chSvc := newFakeChannelService()
 	cfg := testUpstreamConfig("")
-	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, cfg)
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, nil, cfg)
 
 	// 预置 config + request + 一条 pending item(model_added: claude-x)
 	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
@@ -362,7 +450,7 @@ func TestReviewItem_ApplyWrites(t *testing.T) {
 	itemID := items[0].ID
 
 	// ReviewItem(apply) → 应写入渠道定价 + item.status=applied
-	if err := svc.ReviewItem(context.Background(), itemID, ReviewApply, nil, 42, "lgtm"); err != nil {
+	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewApply, nil, nil, 42, "lgtm"); err != nil {
 		t.Fatalf("ReviewItem err: %v", err)
 	}
 	if chSvc.applied == nil {
@@ -395,7 +483,7 @@ func TestReviewItem_ApplyWrites(t *testing.T) {
 func TestReviewItem_RejectMarksRejected(t *testing.T) {
 	fakeRepo := newFakeRepo()
 	chSvc := newFakeChannelService()
-	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, testUpstreamConfig(""))
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, nil, testUpstreamConfig(""))
 
 	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
 	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
@@ -407,7 +495,7 @@ func TestReviewItem_RejectMarksRejected(t *testing.T) {
 	_ = fakeRepo.CreateRequest(context.Background(), req, items)
 	itemID := items[0].ID
 
-	if err := svc.ReviewItem(context.Background(), itemID, ReviewReject, nil, 5, "nope"); err != nil {
+	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewReject, nil, nil, 5, "nope"); err != nil {
 		t.Fatalf("ReviewItem err: %v", err)
 	}
 	if chSvc.applied != nil {
@@ -423,7 +511,7 @@ func TestReviewItem_ApplyErrorMarksFailed(t *testing.T) {
 	fakeRepo := newFakeRepo()
 	chSvc := newFakeChannelService()
 	chSvc.applyErr = errFakeNotFound // 任意非 nil 错误
-	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, testUpstreamConfig(""))
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, nil, testUpstreamConfig(""))
 
 	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
 	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
@@ -436,7 +524,7 @@ func TestReviewItem_ApplyErrorMarksFailed(t *testing.T) {
 	_ = fakeRepo.CreateRequest(context.Background(), req, items)
 	itemID := items[0].ID
 
-	if err := svc.ReviewItem(context.Background(), itemID, ReviewApply, nil, 9, ""); err == nil {
+	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewApply, nil, nil, 9, ""); err == nil {
 		t.Fatal("expected ReviewItem to return error when apply fails")
 	}
 	got, _ := fakeRepo.GetItem(context.Background(), itemID)
@@ -480,7 +568,7 @@ func TestRefreshBalancePersistsSnapshot(t *testing.T) {
 	if err := repo.CreateConfig(context.Background(), cfgRec); err != nil {
 		t.Fatal(err)
 	}
-	svc := NewUpstreamPriceSyncService(repo, newTestClient(), newFakeChannelService(), nil, nil, testUpstreamConfig(srv.URL))
+	svc := NewUpstreamPriceSyncService(repo, newTestClient(), newFakeChannelService(), nil, nil, nil, testUpstreamConfig(srv.URL))
 	got, err := svc.RefreshBalance(context.Background(), cfgRec.ID)
 	if err != nil {
 		t.Fatalf("RefreshBalance err: %v", err)
@@ -497,7 +585,7 @@ func TestRefreshBalancePersistsSnapshot(t *testing.T) {
 // base_price_per_1k <= 0 时拒绝(避免 ConvertPricing 全零美元价)。
 func TestCreateConfig_RejectsNonPositiveBasePrice(t *testing.T) {
 	fakeRepo := newFakeRepo()
-	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, newFakeChannelService(), nil, nil, testUpstreamConfig(""))
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, newFakeChannelService(), nil, nil, nil, testUpstreamConfig(""))
 
 	for _, base := range []float64{0, -0.002} {
 		cfg := &UpstreamSourceConfig{Name: "x", BaseURL: "https://example.com", BasePricePer1k: base}
@@ -517,7 +605,7 @@ func TestCreateConfig_RejectsNonPositiveBasePrice(t *testing.T) {
 // TestUpdateConfig_RejectsNonPositiveBasePrice 同上,针对 UpdateConfig。
 func TestUpdateConfig_RejectsNonPositiveBasePrice(t *testing.T) {
 	fakeRepo := newFakeRepo()
-	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, newFakeChannelService(), nil, nil, testUpstreamConfig(""))
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, newFakeChannelService(), nil, nil, nil, testUpstreamConfig(""))
 
 	// 先正常建一条。
 	good := &UpstreamSourceConfig{Name: "x", BaseURL: "https://example.com", BasePricePer1k: 0.002}
@@ -558,7 +646,7 @@ func TestSyncNow_AllUnchangedNoRequest(t *testing.T) {
 		ID: 1, ChannelID: 7, Platform: PlatformAnthropic, Models: []string{"claude-m"},
 		BillingMode: BillingModeToken, InputPrice: &inputPrice,
 	}}}
-	svc := NewUpstreamPriceSyncService(fakeRepo, client, chSvc, nil, nil, cfg)
+	svc := NewUpstreamPriceSyncService(fakeRepo, client, chSvc, nil, nil, nil, cfg)
 
 	cfgRec := &UpstreamSourceConfig{ID: 1, BaseURL: srv.URL, TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
 	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
@@ -578,7 +666,7 @@ func TestSyncNow_AllUnchangedNoRequest(t *testing.T) {
 func TestReviewItem_RecomputeRequestStatus(t *testing.T) {
 	fakeRepo := newFakeRepo()
 	chSvc := newFakeChannelService()
-	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, testUpstreamConfig(""))
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, nil, testUpstreamConfig(""))
 
 	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
 	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
@@ -591,7 +679,7 @@ func TestReviewItem_RecomputeRequestStatus(t *testing.T) {
 	_ = fakeRepo.CreateRequest(context.Background(), req, items)
 
 	// ignore 第 1 条 → 仍有 pending → partially_applied;summary 反映 ignored=1、pending=1。
-	if err := svc.ReviewItem(context.Background(), items[0].ID, ReviewIgnore, nil, 1, ""); err != nil {
+	if err := svc.ReviewItem(context.Background(), req.ID, items[0].ID, ReviewIgnore, nil, nil, 1, ""); err != nil {
 		t.Fatalf("ReviewItem ignore #1 err: %v", err)
 	}
 	r1, _ := fakeRepo.GetRequest(context.Background(), req.ID)
@@ -603,7 +691,7 @@ func TestReviewItem_RecomputeRequestStatus(t *testing.T) {
 	}
 
 	// ignore 第 2 条 → 全部终态 → closed;summary 反映 ignored=2。
-	if err := svc.ReviewItem(context.Background(), items[1].ID, ReviewIgnore, nil, 1, ""); err != nil {
+	if err := svc.ReviewItem(context.Background(), req.ID, items[1].ID, ReviewIgnore, nil, nil, 1, ""); err != nil {
 		t.Fatalf("ReviewItem ignore #2 err: %v", err)
 	}
 	r2, _ := fakeRepo.GetRequest(context.Background(), req.ID)
@@ -612,5 +700,47 @@ func TestReviewItem_RecomputeRequestStatus(t *testing.T) {
 	}
 	if r2.Summary["ignored"] != 2 {
 		t.Fatalf("after 2nd ignore: summary=%v, want ignored=2", r2.Summary)
+	}
+}
+
+func TestSyncNow_GroupRatioBaselineThenCreatesPerGroupItems(t *testing.T) {
+	upstreamRatio := 1.0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprintf(w, `{"success":true,"data":{"ModelRatio":{},"ModelPrice":{},"GroupRatio":{"default":%v}}}`, upstreamRatio)
+	}))
+	defer srv.Close()
+	repo := newFakeRepo()
+	repo.groupTargets = []GroupRateTarget{
+		{ID: 1, Name: "default", SortOrder: 1, RateMultiplier: 1},
+		{ID: 2, Name: "优惠", SortOrder: 2, RateMultiplier: 0.7},
+	}
+	cfgRec := &UpstreamSourceConfig{
+		ID: 1, BaseURL: srv.URL, TargetChannelID: 7, BasePricePer1k: 0.002,
+		Enabled: true, PricingSource: PricingSourceRatioConfig, SyncGroupRatio: true,
+		TargetUpstreamGroup: "default",
+	}
+	_ = repo.CreateConfig(context.Background(), cfgRec)
+	svc := NewUpstreamPriceSyncService(repo, newTestClient(), newFakeChannelService(), nil, nil, nil, testUpstreamConfig(srv.URL))
+
+	requestID, err := svc.SyncNow(context.Background(), cfgRec.ID, 9)
+	if err != nil || requestID != 0 {
+		t.Fatalf("baseline sync: request=%d err=%v", requestID, err)
+	}
+	if cfgRec.GroupRatioBaselineValue == nil || *cfgRec.GroupRatioBaselineValue != 1 {
+		t.Fatalf("baseline = %v", cfgRec.GroupRatioBaselineValue)
+	}
+
+	upstreamRatio = 1.2
+	requestID, err = svc.SyncNow(context.Background(), cfgRec.ID, 9)
+	if err != nil || requestID == 0 {
+		t.Fatalf("change sync: request=%d err=%v", requestID, err)
+	}
+	items, _ := repo.ListItems(context.Background(), requestID)
+	if len(items) != 2 || items[0].Kind != ItemKindGroupRatio || items[1].Kind != ItemKindGroupRatio {
+		t.Fatalf("items = %+v", items)
+	}
+	if items[0].GroupRateChange.SuggestedRate != 1.2 || items[1].GroupRateChange.SuggestedRate != 0.84 {
+		t.Fatalf("suggestions = %v, %v", items[0].GroupRateChange.SuggestedRate, items[1].GroupRateChange.SuggestedRate)
 	}
 }

@@ -245,7 +245,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	upstreamPriceSyncRepository := repository.NewUpstreamPriceSyncRepository(db, encryptionKey)
 	upstreamPricingClient := service.NewUpstreamPricingClient(configConfig)
 	proxyService := service.NewProxyService(proxyRepository)
-	upstreamPriceSyncService := service.NewUpstreamPriceSyncService(upstreamPriceSyncRepository, upstreamPricingClient, channelService, proxyService, balanceNotifyService, configConfig)
+	upstreamPriceSyncService := service.NewUpstreamPriceSyncService(upstreamPriceSyncRepository, upstreamPricingClient, channelService, proxyService, balanceNotifyService, apiKeyAuthCacheInvalidator, configConfig)
 	channelHandler := admin.NewChannelHandler(channelService, billingService, pricingService, upstreamPriceSyncService)
 	channelMonitorHandler := admin.NewChannelMonitorHandler(channelMonitorService)
 	channelMonitorRequestTemplateRepository := repository.NewChannelMonitorRequestTemplateRepository(client, db)

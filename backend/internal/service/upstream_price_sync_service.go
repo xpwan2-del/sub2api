@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -33,18 +34,20 @@ type UpstreamPriceSyncService struct {
 	channelService       channelApplier
 	proxyResolver        upstreamProxyResolver
 	balanceNotifyService *BalanceNotifyService
+	authCacheInvalidator APIKeyAuthCacheInvalidator
 	cfg                  *config.Config
 }
 
 // NewUpstreamPriceSyncService 构造同步服务。chSvc 通常是 *ChannelService
 // (满足 channelApplier);声明为接口类型以便测试注入 fake,生产侧传 *ChannelService 即可。
-func NewUpstreamPriceSyncService(repo UpstreamPriceSyncRepository, client *UpstreamPricingClient, chSvc channelApplier, proxyResolver upstreamProxyResolver, balanceNotifyService *BalanceNotifyService, cfg *config.Config) *UpstreamPriceSyncService {
+func NewUpstreamPriceSyncService(repo UpstreamPriceSyncRepository, client *UpstreamPricingClient, chSvc channelApplier, proxyResolver upstreamProxyResolver, balanceNotifyService *BalanceNotifyService, authCacheInvalidator APIKeyAuthCacheInvalidator, cfg *config.Config) *UpstreamPriceSyncService {
 	return &UpstreamPriceSyncService{
 		repo:                 repo,
 		client:               client,
 		channelService:       chSvc,
 		proxyResolver:        proxyResolver,
 		balanceNotifyService: balanceNotifyService,
+		authCacheInvalidator: authCacheInvalidator,
 		cfg:                  cfg,
 	}
 }
@@ -52,145 +55,220 @@ func NewUpstreamPriceSyncService(repo UpstreamPriceSyncRepository, client *Upstr
 // SyncNow 立即拉取上游定价、diff 出变更草稿并落成审批单。
 // 无变更时不建空审批单,返回 0;成功返回新建审批单 ID。
 func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, createdBy int64) (int64, error) {
-	cfgRec, err := s.repo.GetConfig(ctx, configID)
-	if err != nil {
-		return 0, fmt.Errorf("get source config: %w", err)
-	}
-	if !cfgRec.Enabled {
-		return 0, fmt.Errorf("source disabled")
-	}
-	baseURL, err := s.validateBaseURL(cfgRec.BaseURL)
-	if err != nil {
-		return 0, fmt.Errorf("invalid base url: %w", err)
-	}
-	proxyURL, err := s.resolveProxyURL(ctx, cfgRec.ProxyID)
-	if err != nil {
-		return 0, fmt.Errorf("resolve proxy: %w", err)
-	}
-	snap, err := s.client.FetchPricing(ctx, baseURL, cfgRec.PricingSource, proxyURL, cfgRec.DashboardToken, cfgRec.APIKey, cfgRec.DashboardAuthMode, cfgRec.DashboardUserID)
-	if err != nil {
-		_ = s.repo.UpdateConfigSyncState(ctx, configID, time.Now(), "", err.Error())
-		return 0, fmt.Errorf("fetch upstream: %w", err)
-	}
-
-	// 还原 USD 单价 + 推断平台 + 保留原始倍率快照
-	upstream := make(map[string]ConvertedPrice, len(snap.Models))
-	platforms := make(map[string]string, len(snap.Models))
-	rawByName := make(map[string]map[string]any, len(snap.Models))
-	for _, m := range snap.Models {
-		// 按配置的目标上游分组过滤:modelGroupEnabled 在 target 为空时返回 true(不过滤,向后兼容)。
-		if !modelGroupEnabled(m.EnableGroups, cfgRec.TargetUpstreamGroup) {
-			continue
+	var requestID int64
+	err := s.repo.WithSourceSyncLock(ctx, configID, func(ctx context.Context) error {
+		cfgRec, err := s.repo.GetConfig(ctx, configID)
+		if err != nil {
+			return fmt.Errorf("get source config: %w", err)
 		}
-		upstream[m.ModelName] = ConvertPricing(m, cfgRec.BasePricePer1k)
-		platforms[m.ModelName] = InferPlatform(m.ModelName)
-		rawByName[m.ModelName] = map[string]any{
-			"model_ratio":      m.ModelRatio,
-			"completion_ratio": m.CompletionRatio,
-			"quota_type":       m.QuotaType,
+		if !cfgRec.Enabled {
+			return infraerrors.BadRequest("upstream_source_disabled", "upstream source is disabled")
 		}
-	}
-
-	// 本地渠道现有定价(ChannelService.GetByID 经 repo.ListModelPricing 装填 ModelPricing)
-	ch, err := s.channelService.GetByID(ctx, cfgRec.TargetChannelID)
-	if err != nil {
-		return 0, fmt.Errorf("load target channel: %w", err)
-	}
-	drafts := DiffPricing(upstream, platforms, ch.ModelPricing, cfgRec.TargetChannelID)
-	// 仅当存在实际变更(非 unchanged)才建审批单;全部一致时保持「无价格变更」语义不建单。
-	// unchanged 条目只在已有实际变更时随单一并展示,供完整对比查阅。
-	hasActionable := false
-	for _, d := range drafts {
-		if d.Kind != ItemKindModelUnchanged {
-			hasActionable = true
-			break
+		baseURL, err := s.validateBaseURL(cfgRec.BaseURL)
+		if err != nil {
+			return fmt.Errorf("invalid base url: %w", err)
 		}
-	}
-	if !hasActionable {
-		_ = s.repo.UpdateConfigSyncState(ctx, configID, time.Now(), snap.Version, "")
-		return 0, nil // 无实际变更,不建空审批单
-	}
-
-	// 旧 open 单批量过期,避免同源堆积多份并发审批
-	if _, err := s.repo.ExpireOpenRequests(ctx, configID); err != nil {
-		return 0, fmt.Errorf("expire open requests: %w", err)
-	}
-
-	items := make([]PriceChangeItem, 0, len(drafts))
-	for _, d := range drafts {
-		// unchanged 落库即终态 no_change(非 pending),不参与审批、不阻塞状态机闭环;
-		// 其余变更项默认 pending 等待审批。
-		status := "pending"
-		if d.Kind == ItemKindModelUnchanged {
-			status = "no_change"
+		proxyURL, err := s.resolveProxyURL(ctx, cfgRec.ProxyID)
+		if err != nil {
+			return fmt.Errorf("resolve proxy: %w", err)
 		}
-		items = append(items, PriceChangeItem{
-			Kind:              d.Kind,
-			Platform:          d.Platform,
-			ModelName:         d.ModelName,
-			TargetChannelID:   cfgRec.TargetChannelID,
-			UpstreamRaw:       rawByName[d.ModelName],
-			UpstreamConverted: d.Upstream,
-			LocalCurrent:      d.Local,
-			// 默认以上游还原值作为 apply_value;model_removed 无上游值 → nil
-			ApplyValue: d.Upstream,
-			Status:     status,
-		})
+		snap, err := s.client.FetchPricing(ctx, baseURL, cfgRec.PricingSource, proxyURL, cfgRec.DashboardToken, cfgRec.APIKey, cfgRec.DashboardAuthMode, cfgRec.DashboardUserID)
+		if err != nil {
+			_ = s.repo.UpdateConfigSyncState(ctx, configID, time.Now(), "", err.Error())
+			return fmt.Errorf("fetch upstream: %w", err)
+		}
+		observedAt := time.Now()
+		ch, err := s.channelService.GetByID(ctx, cfgRec.TargetChannelID)
+		if err != nil {
+			return fmt.Errorf("load target channel: %w", err)
+		}
+
+		items := make([]PriceChangeItem, 0)
+		syncModelPrice := cfgRec.SyncModelPrice || (!cfgRec.SyncModelPrice && !cfgRec.SyncGroupRatio)
+		if syncModelPrice {
+			upstream := make(map[string]ConvertedPrice, len(snap.Models))
+			platforms := make(map[string]string, len(snap.Models))
+			rawByName := make(map[string]map[string]any, len(snap.Models))
+			for _, model := range snap.Models {
+				if !modelGroupEnabled(model.EnableGroups, cfgRec.TargetUpstreamGroup) {
+					continue
+				}
+				upstream[model.ModelName] = ConvertPricing(model, cfgRec.BasePricePer1k)
+				platforms[model.ModelName] = InferPlatform(model.ModelName)
+				rawByName[model.ModelName] = map[string]any{
+					"model_ratio": model.ModelRatio, "completion_ratio": model.CompletionRatio, "quota_type": model.QuotaType,
+				}
+			}
+			drafts := DiffPricing(upstream, platforms, ch.ModelPricing, cfgRec.TargetChannelID)
+			hasModelChange := false
+			for _, draft := range drafts {
+				if draft.Kind != ItemKindModelUnchanged {
+					hasModelChange = true
+					break
+				}
+			}
+			if hasModelChange {
+				for _, draft := range drafts {
+					status := "pending"
+					if draft.Kind == ItemKindModelUnchanged {
+						status = "no_change"
+					}
+					items = append(items, PriceChangeItem{
+						Kind: draft.Kind, Platform: draft.Platform, ModelName: draft.ModelName,
+						TargetChannelID: cfgRec.TargetChannelID, UpstreamRaw: rawByName[draft.ModelName],
+						UpstreamConverted: draft.Upstream, LocalCurrent: draft.Local, ApplyValue: draft.Upstream, Status: status,
+					})
+				}
+			}
+		}
+
+		persist := SyncPersistInput{ConfigID: configID, ObservedAt: observedAt, PricingVersion: snap.Version}
+		if cfgRec.SyncGroupRatio {
+			key := strings.TrimSpace(cfgRec.TargetUpstreamGroup)
+			newRatio, ok := snap.GroupRatio[key]
+			if !ok {
+				return infraerrors.BadRequest("UPSTREAM_GROUP_RATIO_MISSING", "selected upstream group ratio is missing")
+			}
+			if !validPositiveFinite(newRatio) {
+				return infraerrors.BadRequest("INVALID_UPSTREAM_GROUP_RATIO", "selected upstream group ratio must be finite and > 0")
+			}
+			newRatio = math.Round(newRatio*1e8) / 1e8
+			persist.BaselineKey = key
+			persist.BaselineValue = &newRatio
+			persist.AdvanceBaseline = true
+			baselineMissing := cfgRec.GroupRatioBaselineValue == nil || cfgRec.GroupRatioBaselineKey != key || !validPositiveFinite(*cfgRec.GroupRatioBaselineValue)
+			if !baselineMissing && math.Abs(*cfgRec.GroupRatioBaselineValue-newRatio) > 1e-8 {
+				pending, err := s.repo.HasPendingGroupRateItems(ctx, configID)
+				if err != nil {
+					return err
+				}
+				if pending {
+					return infraerrors.Conflict("PENDING_GROUP_APPROVAL", ErrPendingGroupApproval.Error())
+				}
+				targets, err := s.repo.ListGroupRateTargets(ctx, configID, cfgRec.TargetChannelID)
+				if err != nil {
+					return err
+				}
+				name := snap.UsableGroup[key]
+				if name == "" {
+					name = key
+				}
+				changes, err := BuildGroupRateChanges(targets, key, name, *cfgRec.GroupRatioBaselineValue, newRatio)
+				if err != nil {
+					return err
+				}
+				for i := range changes {
+					change := changes[i]
+					groupID := change.LocalGroupID
+					items = append(items, PriceChangeItem{
+						Kind: ItemKindGroupRatio, TargetChannelID: cfgRec.TargetChannelID,
+						TargetGroupID: &groupID, GroupRateChange: &change, Status: "pending",
+					})
+				}
+			}
+		}
+
+		if len(items) > 0 {
+			req := &PriceChangeRequest{
+				SourceConfigID: configID, TriggerType: "manual",
+				UpstreamPricingVersion: snap.Version, CreatedBy: createdBy,
+			}
+			persist.Request = req
+			persist.Items = items
+		}
+		if err := s.repo.PersistSyncResult(ctx, persist); err != nil {
+			return fmt.Errorf("persist sync result: %w", err)
+		}
+		if persist.Request != nil {
+			requestID = persist.Request.ID
+		}
+		return nil
+	})
+	if errors.Is(err, ErrSourceSyncBusy) {
+		return 0, infraerrors.Conflict("SOURCE_SYNC_BUSY", err.Error())
 	}
-	req := &PriceChangeRequest{
-		SourceConfigID:         configID,
-		TriggerType:            "manual",
-		UpstreamPricingVersion: snap.Version,
-		CreatedBy:              createdBy,
-	}
-	if err := s.repo.CreateRequest(ctx, req, items); err != nil {
-		return 0, fmt.Errorf("create request: %w", err)
-	}
-	_ = s.repo.UpdateConfigSyncState(ctx, configID, time.Now(), snap.Version, "")
-	return req.ID, nil
+	return requestID, err
 }
 
 // ReviewItem 对单条审批条目执行 apply / reject / ignore。
 //   - apply: 写入目标渠道定价(Task 8 ApplyUpstreamPricingEntry)+ item.status=applied;
 //     应用失败则 item.status=failed 并返回错误(失败原因记录到 review_note)。
 //   - reject / ignore: 仅更新 item 状态,不触碰渠道。
-func (s *UpstreamPriceSyncService) ReviewItem(ctx context.Context, itemID int64, action ReviewAction, applyValue *ConvertedPrice, reviewerID int64, note string) error {
+func (s *UpstreamPriceSyncService) ReviewItem(ctx context.Context, requestID, itemID int64, action ReviewAction, applyValue *ConvertedPrice, applyRate *float64, reviewerID int64, note string) error {
 	it, err := s.repo.GetItem(ctx, itemID)
 	if err != nil {
 		return fmt.Errorf("get item: %w", err)
 	}
-	if it.Status != "pending" {
-		return fmt.Errorf("item not pending (status=%s)", it.Status)
+	if it.RequestID != requestID {
+		return infraerrors.Conflict("ITEM_REQUEST_MISMATCH", ErrItemRequestMismatch.Error())
 	}
-	switch action {
-	case ReviewReject, ReviewIgnore:
+	if it.Status != "pending" {
+		return infraerrors.Conflict("ITEM_NOT_PENDING", ErrItemNotPending.Error())
+	}
+	if action == ReviewReject || action == ReviewIgnore {
 		status := "rejected"
 		if action == ReviewIgnore {
 			status = "ignored"
 		}
-		return s.finalizeItem(ctx, itemID, it.RequestID, status, reviewerID, note, nil)
-	case ReviewApply:
-		val := applyValue
-		if val == nil {
-			val = it.ApplyValue
+		if err := s.repo.FinalizeItemCAS(ctx, requestID, itemID, status, reviewerID, note, nil); err != nil {
+			return mapReviewConflict(err)
 		}
-		if val == nil {
-			val = it.UpstreamConverted
-		}
-		if val == nil {
-			return fmt.Errorf("no apply value for item %d", itemID)
-		}
-		if _, err := s.channelService.ApplyUpstreamPricingEntry(ctx, it.TargetChannelID, it.Platform, []string{it.ModelName}, *val); err != nil {
-			// 应用失败:item 落 failed(失败亦是终态决定),仍触发审批单状态重算。
-			if ferr := s.finalizeItem(ctx, itemID, it.RequestID, "failed", reviewerID, err.Error(), nil); ferr != nil {
-				slog.WarnContext(ctx, "finalize failed item after apply error", "item_id", itemID, "err", ferr)
-			}
-			return fmt.Errorf("apply: %w", err)
-		}
-		now := time.Now()
-		return s.finalizeItem(ctx, itemID, it.RequestID, "applied", reviewerID, note, &now)
+		return nil
 	}
-	return fmt.Errorf("unknown action: %s", action)
+	if action != ReviewApply {
+		return infraerrors.BadRequest("UNKNOWN_REVIEW_ACTION", "unknown review action")
+	}
+	if it.Kind == ItemKindGroupRatio {
+		if applyRate == nil || !validPositiveFinite(*applyRate) {
+			return infraerrors.BadRequest("INVALID_APPLY_RATE", "apply_rate must be finite and > 0")
+		}
+		groupID, actualRate, err := s.repo.ApplyGroupRateItem(ctx, GroupRateApplyInput{
+			RequestID: requestID, ItemID: itemID, ReviewerID: reviewerID, Note: note, ApplyRate: *applyRate,
+		})
+		if err != nil {
+			return mapReviewConflict(err)
+		}
+		if s.authCacheInvalidator != nil {
+			s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, groupID)
+		}
+		it.ApplyRate = &actualRate
+		return nil
+	}
+	val := applyValue
+	if val == nil {
+		val = it.ApplyValue
+	}
+	if val == nil {
+		val = it.UpstreamConverted
+	}
+	if val == nil {
+		return infraerrors.BadRequest("NO_APPLY_VALUE", "no apply value for item")
+	}
+	if _, err := s.channelService.ApplyUpstreamPricingEntry(ctx, it.TargetChannelID, it.Platform, []string{it.ModelName}, *val); err != nil {
+		if ferr := s.repo.FinalizeItemCAS(ctx, requestID, itemID, "failed", reviewerID, err.Error(), val); ferr != nil {
+			slog.WarnContext(ctx, "finalize failed item after apply error", "item_id", itemID, "err", ferr)
+		}
+		return fmt.Errorf("apply: %w", err)
+	}
+	if err := s.repo.FinalizeItemCAS(ctx, requestID, itemID, "applied", reviewerID, note, val); err != nil {
+		return mapReviewConflict(err)
+	}
+	return nil
+}
+
+func mapReviewConflict(err error) error {
+	switch {
+	case errors.Is(err, ErrItemRequestMismatch):
+		return infraerrors.Conflict("ITEM_REQUEST_MISMATCH", err.Error())
+	case errors.Is(err, ErrItemNotPending):
+		return infraerrors.Conflict("ITEM_NOT_PENDING", err.Error())
+	case errors.Is(err, ErrGroupRateDrift):
+		return infraerrors.Conflict("GROUP_RATE_DRIFT", err.Error())
+	case errors.Is(err, ErrGroupRateTargetUnavailable):
+		return infraerrors.Conflict("GROUP_RATE_TARGET_UNAVAILABLE", err.Error())
+	default:
+		return err
+	}
 }
 
 // finalizeItem 落库 item 终态后,顺带重算所属审批单的状态与汇总。
@@ -278,32 +356,48 @@ func (s *UpstreamPriceSyncService) UpdateConfig(ctx context.Context, c *Upstream
 	if err := s.validateConfig(ctx, c); err != nil {
 		return err
 	}
-	existing, err := s.repo.GetConfig(ctx, c.ID)
-	if err != nil {
-		return err
+	err := s.repo.WithSourceSyncLock(ctx, c.ID, func(ctx context.Context) error {
+		existing, err := s.repo.GetConfig(ctx, c.ID)
+		if err != nil {
+			return err
+		}
+		c.ResetBalanceSnapshot = strings.TrimSpace(existing.BaseURL) != strings.TrimSpace(c.BaseURL) ||
+			strings.TrimSpace(existing.DashboardToken) != strings.TrimSpace(c.DashboardToken)
+		c.ResetGroupRatioBaseline = strings.TrimSpace(existing.BaseURL) != strings.TrimSpace(c.BaseURL) ||
+			existing.TargetChannelID != c.TargetChannelID ||
+			strings.TrimSpace(existing.TargetUpstreamGroup) != strings.TrimSpace(c.TargetUpstreamGroup)
+		c.ExpirePendingApprovals = c.ResetGroupRatioBaseline
+		c.ExpirePendingGroupApprovals = !c.ResetGroupRatioBaseline && !sameUpstreamInt64Set(existing.ExcludedGroupIDs, c.ExcludedGroupIDs)
+		if err := s.repo.UpdateConfig(ctx, c); err != nil {
+			return err
+		}
+		if c.ResetBalanceSnapshot {
+			c.LastBalanceQuota = nil
+			c.LastUsedQuota = nil
+			c.LastBalanceUSD = nil
+			c.LastBalanceAt = nil
+			c.LastBalanceCheckedAt = nil
+			c.LastBalanceError = ""
+		} else {
+			c.LastBalanceQuota = existing.LastBalanceQuota
+			c.LastUsedQuota = existing.LastUsedQuota
+			c.LastBalanceUSD = existing.LastBalanceUSD
+			c.LastBalanceAt = existing.LastBalanceAt
+			c.LastBalanceCheckedAt = existing.LastBalanceCheckedAt
+			c.LastBalanceError = existing.LastBalanceError
+		}
+		if !c.ResetGroupRatioBaseline {
+			c.GroupRatioBaselineKey = existing.GroupRatioBaselineKey
+			c.GroupRatioBaselineValue = existing.GroupRatioBaselineValue
+			c.GroupRatioBaselineObserved = existing.GroupRatioBaselineObserved
+		}
+		populateBalanceStatus(c)
+		return nil
+	})
+	if errors.Is(err, ErrSourceSyncBusy) {
+		return infraerrors.Conflict("SOURCE_SYNC_BUSY", err.Error())
 	}
-	c.ResetBalanceSnapshot = strings.TrimSpace(existing.BaseURL) != strings.TrimSpace(c.BaseURL) ||
-		strings.TrimSpace(existing.DashboardToken) != strings.TrimSpace(c.DashboardToken)
-	if err := s.repo.UpdateConfig(ctx, c); err != nil {
-		return err
-	}
-	if c.ResetBalanceSnapshot {
-		c.LastBalanceQuota = nil
-		c.LastUsedQuota = nil
-		c.LastBalanceUSD = nil
-		c.LastBalanceAt = nil
-		c.LastBalanceCheckedAt = nil
-		c.LastBalanceError = ""
-	} else {
-		c.LastBalanceQuota = existing.LastBalanceQuota
-		c.LastUsedQuota = existing.LastUsedQuota
-		c.LastBalanceUSD = existing.LastBalanceUSD
-		c.LastBalanceAt = existing.LastBalanceAt
-		c.LastBalanceCheckedAt = existing.LastBalanceCheckedAt
-		c.LastBalanceError = existing.LastBalanceError
-	}
-	populateBalanceStatus(c)
-	return nil
+	return err
 }
 
 func (s *UpstreamPriceSyncService) RefreshBalance(ctx context.Context, id int64) (*UpstreamSourceConfig, error) {
@@ -423,6 +517,13 @@ func (s *UpstreamPriceSyncService) validateConfig(ctx context.Context, c *Upstre
 	if c.BasePricePer1k <= 0 || math.IsNaN(c.BasePricePer1k) || math.IsInf(c.BasePricePer1k, 0) {
 		return infraerrors.BadRequest("invalid_base_price", "base_price_per_1k must be finite and > 0")
 	}
+	// 兼容 183 之前未提交开关字段的客户端：两个 false 按历史行为回退模型同步。
+	if !c.SyncModelPrice && !c.SyncGroupRatio {
+		c.SyncModelPrice = true
+	}
+	if c.SyncGroupRatio && strings.TrimSpace(c.TargetUpstreamGroup) == "" {
+		return infraerrors.BadRequest("target_upstream_group_required", "target_upstream_group is required when group ratio sync is enabled")
+	}
 	if c.BalanceThresholdUSD != nil {
 		threshold := *c.BalanceThresholdUSD
 		if threshold < 0 || math.IsNaN(threshold) || math.IsInf(threshold, 0) {
@@ -460,6 +561,23 @@ func (s *UpstreamPriceSyncService) resolveProxyURL(ctx context.Context, proxyID 
 	return proxy.URL(), nil
 }
 
+func sameUpstreamInt64Set(a, b []int64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	set := make(map[int64]int, len(a))
+	for _, value := range a {
+		set[value]++
+	}
+	for _, value := range b {
+		if set[value] == 0 {
+			return false
+		}
+		set[value]--
+	}
+	return true
+}
+
 func populateBalanceStatus(c *UpstreamSourceConfig) {
 	if c == nil {
 		return
@@ -483,7 +601,13 @@ func upstreamFloat64Ptr(v float64) *float64 { return &v }
 
 // DeleteConfig 按 id 删除上游源配置。
 func (s *UpstreamPriceSyncService) DeleteConfig(ctx context.Context, id int64) error {
-	return s.repo.DeleteConfig(ctx, id)
+	err := s.repo.WithSourceSyncLock(ctx, id, func(ctx context.Context) error {
+		return s.repo.DeleteConfig(ctx, id)
+	})
+	if errors.Is(err, ErrSourceSyncBusy) {
+		return infraerrors.Conflict("SOURCE_SYNC_BUSY", err.Error())
+	}
+	return err
 }
 
 // ListItems 列审批批次下的条目(薄封装)。

@@ -210,3 +210,40 @@ func TestSameModelSet(t *testing.T) {
 		}
 	}
 }
+
+func TestBuildGroupRateChanges_ProportionalAndSorted(t *testing.T) {
+	targets := []GroupRateTarget{
+		{ID: 3, Name: "特价", SortOrder: 30, RateMultiplier: 0.3},
+		{ID: 1, Name: "default", SortOrder: 10, RateMultiplier: 1},
+		{ID: 2, Name: "优惠", SortOrder: 20, RateMultiplier: 0.7},
+	}
+	changes, err := BuildGroupRateChanges(targets, "default", "默认", 1, 1.2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(changes) != 3 {
+		t.Fatalf("len = %d, want 3", len(changes))
+	}
+	wantIDs := []int64{1, 2, 3}
+	wantRates := []float64{1.2, 0.84, 0.36}
+	for i := range changes {
+		if changes[i].LocalGroupID != wantIDs[i] || changes[i].SuggestedRate != wantRates[i] {
+			t.Fatalf("change[%d] = %+v", i, changes[i])
+		}
+	}
+}
+
+func TestBuildGroupRateChanges_RoundsAndRejectsInvalid(t *testing.T) {
+	changes, err := BuildGroupRateChanges([]GroupRateTarget{{ID: 1, RateMultiplier: 0.33333}}, "vip", "VIP", 1.1, 1.2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[0].LocalCurrentRate != 0.3333 || changes[0].SuggestedRate != 0.3636 {
+		t.Fatalf("unexpected rounded change: %+v", changes[0])
+	}
+	for _, tc := range []struct{ old, next float64 }{{0, 1.2}, {1, 0}, {-1, 1}, {1, math.NaN()}} {
+		if _, err := BuildGroupRateChanges(nil, "x", "x", tc.old, tc.next); err == nil {
+			t.Fatalf("old=%v next=%v: expected error", tc.old, tc.next)
+		}
+	}
+}

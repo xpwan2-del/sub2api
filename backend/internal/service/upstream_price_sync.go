@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -11,7 +12,15 @@ import (
 )
 
 // ErrRequestNotCloseable 审批批次无法关闭(不存在、或状态非 open/partially_applied、或仍有 pending 条目)。
-var ErrRequestNotCloseable = errors.New("price change request not closeable")
+var (
+	ErrRequestNotCloseable        = errors.New("price change request not closeable")
+	ErrSourceSyncBusy             = errors.New("upstream source sync is already running")
+	ErrPendingGroupApproval       = errors.New("pending group ratio approval exists")
+	ErrGroupRateDrift             = errors.New("group rate multiplier changed after approval was created")
+	ErrGroupRateTargetUnavailable = errors.New("group rate target is no longer eligible")
+	ErrItemNotPending             = errors.New("price change item is not pending")
+	ErrItemRequestMismatch        = errors.New("price change item does not belong to request")
+)
 
 // PricingSource 上游定价数据源选择
 type UpstreamPricingSource string
@@ -98,6 +107,7 @@ const (
 	ItemKindModelAdded     PriceChangeItemKind = "model_added"     // 新增模型
 	ItemKindModelRemoved   PriceChangeItemKind = "model_removed"   // 移除模型
 	ItemKindModelUnchanged PriceChangeItemKind = "model_unchanged" // 与本地一致(无变化,仅展示)
+	ItemKindGroupRatio     PriceChangeItemKind = "group_ratio"     // 上游所选分组倍率变化
 )
 
 // ReviewAction 审批动作
@@ -123,6 +133,75 @@ type PriceChangeRequest struct {
 }
 
 // PriceChangeItem 审批条目
+// RateMultiplierScale 对齐 groups.rate_multiplier 的 DECIMAL(10,4) 精度。
+const RateMultiplierScale = 4
+
+// RoundRateMultiplier 统一审批建议、漂移比较与数据库写入精度。
+func RoundRateMultiplier(value float64) float64 {
+	factor := math.Pow10(RateMultiplierScale)
+	return math.Round(value*factor) / factor
+}
+
+// GroupRateTarget 是生成倍率审批时读取到的本地分组快照。
+type GroupRateTarget struct {
+	ID             int64
+	Name           string
+	SortOrder      int
+	RateMultiplier float64
+}
+
+// GroupRateChange 冻结一次上游倍率变化对单个本地分组的影响。
+type GroupRateChange struct {
+	Strategy            string  `json:"strategy"`
+	UpstreamGroupKey    string  `json:"upstream_group_key"`
+	UpstreamGroupName   string  `json:"upstream_group_name"`
+	UpstreamOldRatio    float64 `json:"upstream_old_ratio"`
+	UpstreamNewRatio    float64 `json:"upstream_new_ratio"`
+	LocalGroupID        int64   `json:"local_group_id"`
+	LocalGroupName      string  `json:"local_group_name"`
+	LocalGroupSortOrder int     `json:"local_group_sort_order"`
+	LocalCurrentRate    float64 `json:"local_current_rate"`
+	SuggestedRate       float64 `json:"suggested_rate"`
+}
+
+// BuildGroupRateChanges 按上游变化比例为每个目标分组生成建议值。
+func BuildGroupRateChanges(targets []GroupRateTarget, upstreamKey, upstreamName string, oldRatio, newRatio float64) ([]GroupRateChange, error) {
+	if !validPositiveFinite(oldRatio) || !validPositiveFinite(newRatio) {
+		return nil, errors.New("upstream group ratio must be finite and > 0")
+	}
+	sorted := append([]GroupRateTarget(nil), targets...)
+	sort.SliceStable(sorted, func(i, j int) bool {
+		if sorted[i].SortOrder == sorted[j].SortOrder {
+			return sorted[i].ID < sorted[j].ID
+		}
+		return sorted[i].SortOrder < sorted[j].SortOrder
+	})
+	changes := make([]GroupRateChange, 0, len(sorted))
+	for _, target := range sorted {
+		if !validPositiveFinite(target.RateMultiplier) {
+			return nil, fmt.Errorf("group %d rate multiplier must be finite and > 0", target.ID)
+		}
+		current := RoundRateMultiplier(target.RateMultiplier)
+		changes = append(changes, GroupRateChange{
+			Strategy:            "proportional_v1",
+			UpstreamGroupKey:    upstreamKey,
+			UpstreamGroupName:   upstreamName,
+			UpstreamOldRatio:    oldRatio,
+			UpstreamNewRatio:    newRatio,
+			LocalGroupID:        target.ID,
+			LocalGroupName:      target.Name,
+			LocalGroupSortOrder: target.SortOrder,
+			LocalCurrentRate:    current,
+			SuggestedRate:       RoundRateMultiplier(current * newRatio / oldRatio),
+		})
+	}
+	return changes, nil
+}
+
+func validPositiveFinite(value float64) bool {
+	return value > 0 && !math.IsNaN(value) && !math.IsInf(value, 0)
+}
+
 type PriceChangeItem struct {
 	ID                int64               `json:"id"`
 	RequestID         int64               `json:"request_id"`
@@ -130,11 +209,14 @@ type PriceChangeItem struct {
 	Platform          string              `json:"platform"`
 	ModelName         string              `json:"model_name"`
 	TargetChannelID   int64               `json:"target_channel_id"`
+	TargetGroupID     *int64              `json:"target_group_id,omitempty"`
 	UpstreamRaw       map[string]any      `json:"upstream_raw"`
 	UpstreamConverted *ConvertedPrice     `json:"upstream_converted"`
 	LocalCurrent      *ConvertedPrice     `json:"local_current"`
 	ApplyValue        *ConvertedPrice     `json:"apply_value"`
-	Status            string              `json:"status"` // pending/approved/rejected/ignored/applied/failed/no_change
+	GroupRateChange   *GroupRateChange    `json:"group_rate_change,omitempty"`
+	ApplyRate         *float64            `json:"apply_rate,omitempty"`
+	Status            string              `json:"status"` // pending/rejected/ignored/applied/failed/no_change
 	ReviewerID        int64               `json:"reviewer_id"`
 	ReviewNote        string              `json:"review_note"`
 	ReviewedAt        *time.Time          `json:"reviewed_at"`
@@ -311,36 +393,43 @@ func floatEq(a, b *float64) bool {
 // UpstreamSourceConfig 上游 new-api 同步源配置。APIKey/DashboardToken 在内存中
 // 为明文,落库时由 repository 层加密存储。
 type UpstreamSourceConfig struct {
-	ID                   int64                 `json:"id"`
-	Name                 string                `json:"name"`
-	BaseURL              string                `json:"base_url"`
-	APIKey               string                `json:"api_key"`         // 内存明文;落库加密
-	DashboardToken       string                `json:"dashboard_token"` // 内存明文;落库加密(余额查询用)
-	DashboardAuthMode    string                `json:"dashboard_auth_mode"`
-	DashboardUserID      *int64                `json:"dashboard_user_id"`
-	ProxyID              *int64                `json:"proxy_id"`
-	TargetChannelID      int64                 `json:"target_channel_id"`
-	Enabled              bool                  `json:"enabled"`
-	BasePricePer1k       float64               `json:"base_price_per_1k"`
-	PricingSource        UpstreamPricingSource `json:"pricing_source"`
-	SyncModelPrice       bool                  `json:"sync_model_price"`
-	SyncGroupRatio       bool                  `json:"sync_group_ratio"`
-	GroupMapping         map[string]int64      `json:"group_mapping"`
-	TargetUpstreamGroup  string                `json:"target_upstream_group"` // 上游 group_ratio key;空=不过滤(全量同步)
-	BalanceThresholdUSD  *float64              `json:"balance_threshold_usd"`
-	LastBalanceQuota     *int64                `json:"last_balance_quota"`
-	LastUsedQuota        *int64                `json:"last_used_quota"`
-	LastBalanceUSD       *float64              `json:"last_balance_usd"`
-	LastBalanceAt        *time.Time            `json:"last_balance_at"`
-	LastBalanceCheckedAt *time.Time            `json:"last_balance_checked_at"`
-	LastBalanceError     string                `json:"last_balance_error"`
-	BalanceStatus        string                `json:"balance_status"`
-	LastSyncAt           *time.Time            `json:"last_sync_at"`
-	LastPricingVersion   string                `json:"last_pricing_version"`
-	LastError            string                `json:"last_error"`
-	CreatedAt            time.Time             `json:"created_at"`
-	UpdatedAt            time.Time             `json:"updated_at"`
-	ResetBalanceSnapshot bool                  `json:"-"`
+	ID                          int64                 `json:"id"`
+	Name                        string                `json:"name"`
+	BaseURL                     string                `json:"base_url"`
+	APIKey                      string                `json:"api_key"`         // 内存明文;落库加密
+	DashboardToken              string                `json:"dashboard_token"` // 内存明文;落库加密(余额查询用)
+	DashboardAuthMode           string                `json:"dashboard_auth_mode"`
+	DashboardUserID             *int64                `json:"dashboard_user_id"`
+	ProxyID                     *int64                `json:"proxy_id"`
+	TargetChannelID             int64                 `json:"target_channel_id"`
+	Enabled                     bool                  `json:"enabled"`
+	BasePricePer1k              float64               `json:"base_price_per_1k"`
+	PricingSource               UpstreamPricingSource `json:"pricing_source"`
+	SyncModelPrice              bool                  `json:"sync_model_price"`
+	SyncGroupRatio              bool                  `json:"sync_group_ratio"`
+	GroupMapping                map[string]int64      `json:"group_mapping"`
+	TargetUpstreamGroup         string                `json:"target_upstream_group"` // 上游 group_ratio key;空=不过滤(全量同步)
+	ExcludedGroupIDs            []int64               `json:"excluded_group_ids"`
+	GroupRatioBaselineKey       string                `json:"group_ratio_baseline_key"`
+	GroupRatioBaselineValue     *float64              `json:"group_ratio_baseline_value"`
+	GroupRatioBaselineObserved  *time.Time            `json:"group_ratio_baseline_observed_at"`
+	BalanceThresholdUSD         *float64              `json:"balance_threshold_usd"`
+	LastBalanceQuota            *int64                `json:"last_balance_quota"`
+	LastUsedQuota               *int64                `json:"last_used_quota"`
+	LastBalanceUSD              *float64              `json:"last_balance_usd"`
+	LastBalanceAt               *time.Time            `json:"last_balance_at"`
+	LastBalanceCheckedAt        *time.Time            `json:"last_balance_checked_at"`
+	LastBalanceError            string                `json:"last_balance_error"`
+	BalanceStatus               string                `json:"balance_status"`
+	LastSyncAt                  *time.Time            `json:"last_sync_at"`
+	LastPricingVersion          string                `json:"last_pricing_version"`
+	LastError                   string                `json:"last_error"`
+	CreatedAt                   time.Time             `json:"created_at"`
+	UpdatedAt                   time.Time             `json:"updated_at"`
+	ResetBalanceSnapshot        bool                  `json:"-"`
+	ResetGroupRatioBaseline     bool                  `json:"-"`
+	ExpirePendingApprovals      bool                  `json:"-"`
+	ExpirePendingGroupApprovals bool                  `json:"-"`
 }
 
 // RequestFilter 审批批次列表过滤 + 分页参数。
@@ -352,6 +441,27 @@ type RequestFilter struct {
 }
 
 // UpstreamPriceSyncRepository 上游定价同步的持久化接口(config + request/items CRUD)。
+// SyncPersistInput 是一次同步的原子持久化结果。
+type SyncPersistInput struct {
+	ConfigID        int64
+	ObservedAt      time.Time
+	PricingVersion  string
+	BaselineKey     string
+	BaselineValue   *float64
+	AdvanceBaseline bool
+	Request         *PriceChangeRequest
+	Items           []PriceChangeItem
+}
+
+// GroupRateApplyInput 是倍率审批事务的输入。
+type GroupRateApplyInput struct {
+	RequestID  int64
+	ItemID     int64
+	ReviewerID int64
+	Note       string
+	ApplyRate  float64
+}
+
 type UpstreamPriceSyncRepository interface {
 	CreateConfig(ctx context.Context, c *UpstreamSourceConfig) error
 	GetConfig(ctx context.Context, id int64) (*UpstreamSourceConfig, error)
@@ -362,6 +472,10 @@ type UpstreamPriceSyncRepository interface {
 	UpdateConfigSyncState(ctx context.Context, id int64, lastSyncAt time.Time, version, lastErr string) error
 	UpdateConfigBalanceSuccess(ctx context.Context, id int64, snapshot BalanceSnapshot) error
 	UpdateConfigBalanceError(ctx context.Context, id int64, checkedAt time.Time, lastErr string) error
+	WithSourceSyncLock(ctx context.Context, configID int64, fn func(context.Context) error) error
+	ListGroupRateTargets(ctx context.Context, configID, channelID int64) ([]GroupRateTarget, error)
+	HasPendingGroupRateItems(ctx context.Context, configID int64) (bool, error)
+	PersistSyncResult(ctx context.Context, input SyncPersistInput) error
 
 	CreateRequest(ctx context.Context, req *PriceChangeRequest, items []PriceChangeItem) error
 	GetRequest(ctx context.Context, id int64) (*PriceChangeRequest, error)
@@ -369,6 +483,8 @@ type UpstreamPriceSyncRepository interface {
 	ListItems(ctx context.Context, requestID int64) ([]PriceChangeItem, error)
 	GetItem(ctx context.Context, id int64) (*PriceChangeItem, error)
 	UpdateItemStatus(ctx context.Context, id int64, status string, reviewerID int64, note string, appliedAt *time.Time) error
+	FinalizeItemCAS(ctx context.Context, requestID, itemID int64, status string, reviewerID int64, note string, applyValue *ConvertedPrice) error
+	ApplyGroupRateItem(ctx context.Context, input GroupRateApplyInput) (int64, float64, error)
 	ExpireOpenRequests(ctx context.Context, configID int64) (int, error)
 	CloseRequest(ctx context.Context, requestID int64) error
 	UpdateRequestStatus(ctx context.Context, requestID int64, status string, summary map[string]int) error
