@@ -196,6 +196,10 @@ export default {
     },
   },
   admin: {
+    priceChangeRequests: {
+      allSources: 'All Sources',
+      batchNoApplyable: 'No applyable items selected',
+    },
     catalogManage: {
       title: 'Model Catalog',
       description: 'Curate model ordering, pinned, NEW/featured/recommended tags and visibility for the public model catalog',

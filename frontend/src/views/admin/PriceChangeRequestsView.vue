@@ -10,7 +10,14 @@
               :options="statusFilterOptions"
               :placeholder="t('admin.priceChangeRequests.allStatuses', 'All Statuses')"
               class="w-44"
-              @change="loadRequests"
+              @change="onFilterChange"
+            />
+            <Select
+              v-model="filters.source_config_id"
+              :options="sourceFilterOptions"
+              :placeholder="t('admin.priceChangeRequests.allSources', 'All Sources')"
+              class="w-48"
+              @change="onFilterChange"
             />
           </div>
 
@@ -115,7 +122,7 @@
                 </span>
                 <button
                   @click="requestBatch('apply')"
-                  :disabled="batchRunning || selectedItemsForRequest(row.id).length === 0"
+                  :disabled="batchRunning || applyableSelectedItems(row.id).length === 0"
                   class="btn btn-primary btn-sm"
                 >
                   <Icon name="check" size="md" class="mr-1" />
@@ -212,7 +219,7 @@
                     >
                       <td class="px-2 py-2 align-top">
                         <input
-                          v-if="!isRemoved(item) && !isItemDone(item)"
+                          v-if="!isItemDone(item)"
                           type="checkbox"
                           :checked="isSelected(item.id)"
                           @change="toggleSelect(item.id, ($event.target as HTMLInputElement).checked)"
@@ -328,6 +335,14 @@
             />
           </template>
         </DataTable>
+        <Pagination
+          v-if="pagination.total > 0"
+          :page="pagination.page"
+          :total="pagination.total"
+          :page-size="pagination.page_size"
+          @update:page="handlePageChange"
+          @update:pageSize="handlePageSizeChange"
+        />
       </template>
     </TablePageLayout>
 
@@ -365,6 +380,7 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import Select from '@/components/common/Select.vue'
+import Pagination from '@/components/common/Pagination.vue'
 import Icon from '@/components/icons/Icon.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
@@ -437,10 +453,19 @@ const statusFilterOptions = computed(() => [
   { value: 'expired', label: t('admin.priceChangeRequests.statusExpired', 'Expired') },
 ])
 
+// 上游源下拉:全部 + 各上游源(id→name),按名排序。复用 sourcesIndex(页面已加载,无新增请求)。
+const sourceFilterOptions = computed(() => [
+  { value: '', label: t('admin.priceChangeRequests.allSources', 'All Sources') },
+  ...Object.entries(sourcesIndex.value)
+    .map(([id, name]) => ({ value: Number(id), label: name }))
+    .sort((a, b) => a.label.localeCompare(b.label)),
+])
+
 // ── State ──
 const requests = ref<PriceChangeRequest[]>([])
 const loading = ref(false)
-const filters = reactive({ status: '' })
+const filters = reactive({ status: '', source_config_id: '' as number | '' })
+const pagination = reactive({ page: 1, page_size: 20, total: 0, pages: 0 })
 const sourcesIndex = ref<Record<number, string>>({})
 const sourceChannelIndex = ref<Record<number, number>>({})
 const channelsIndex = ref<Record<number, string>>({})
@@ -715,11 +740,17 @@ function buildApplyPayload(itemId: number): ConvertedPrice {
 
 // Selection helpers (operate within the currently expanded request)
 function currentRequestItemIds(): number[] {
-  return expandedItems.value.filter((i) => !isRemoved(i) && !isUnchanged(i) && !isItemDone(i)).map((i) => i.id)
+  return expandedItems.value.filter((i) => !isUnchanged(i) && !isItemDone(i)).map((i) => i.id)
 }
 
 function selectedItemsForRequest(_reqId: number): PriceChangeItem[] {
   return expandedItems.value.filter((i) => selected.has(i.id))
+}
+
+// 可应用选中项:排除 model_removed(其后端 apply 路径未实现,会报 NO_APPLY_VALUE)。
+// reject/ignore 对全部选中项可用;唯独 apply 需过滤,避免整批因 removed 项 fail。
+function applyableSelectedItems(reqId: number): PriceChangeItem[] {
+  return selectedItemsForRequest(reqId).filter((i) => !isRemoved(i))
 }
 
 function selectedCount(_reqId: number): number {
@@ -758,10 +789,20 @@ async function loadRequests() {
   try {
     const res: any = await adminAPI.upstreamPriceSync.listRequests({
       status: filters.status || undefined,
+      source_config_id: filters.source_config_id || undefined,
+      page: pagination.page,
+      page_size: pagination.page_size,
     })
     // Defensive: backend may return a paginated {items, total} or a plain array.
     const list = Array.isArray(res) ? res : (res?.items ?? [])
     requests.value = list as PriceChangeRequest[]
+    pagination.total = Array.isArray(res) ? list.length : (res?.total ?? list.length)
+    pagination.pages = Array.isArray(res) ? 0 : (res?.pages ?? 0)
+    // 翻页/筛选后,若展开的批次已不在当前页,收起展开(避免残留 stale 条目 / 翻回时自动展开旧内容)。
+    if (expandedRequestId.value != null && !requests.value.some((r) => ((r as any).id ?? (r as any).ID) === expandedRequestId.value)) {
+      expandedRequestId.value = null
+      expandedItems.value = []
+    }
     // Index source labels (best-effort)
     for (const r of requests.value) {
       const sid = (r as any).source_config_id ?? (r as any).SourceConfigID
@@ -772,6 +813,23 @@ async function loadRequests() {
   } finally {
     loading.value = false
   }
+}
+
+// 筛选条件变化:回到第 1 页再加载(避免停在越界页码看到空列表)。
+function onFilterChange() {
+  pagination.page = 1
+  loadRequests()
+}
+
+function handlePageChange(page: number) {
+  pagination.page = page
+  loadRequests()
+}
+
+function handlePageSizeChange(pageSize: number) {
+  pagination.page_size = pageSize
+  pagination.page = 1
+  loadRequests()
 }
 
 async function toggleExpand(row: PriceChangeRequest) {
@@ -841,11 +899,14 @@ const batchConfirmTitle = computed(() => {
       return t('admin.priceChangeRequests.batchApply', 'Batch Apply')
   }
 })
-const batchConfirmMessage = computed(() =>
-  t('admin.priceChangeRequests.batchConfirmMessage', {
-    count: selectedItemsForRequest(expandedRequestId.value!).length,
-  }),
-)
+const batchConfirmMessage = computed(() => {
+  const reqId = expandedRequestId.value
+  // apply 的确认数只算可应用项(model_removed 会被跳过),与实际处理量一致。
+  const count = reqId != null && pendingBatchAction.value === 'apply'
+    ? applyableSelectedItems(reqId).length
+    : (reqId != null ? selectedItemsForRequest(reqId).length : 0)
+  return t('admin.priceChangeRequests.batchConfirmMessage', { count })
+})
 
 // 批量操作:先弹框确认(action 存入 pendingBatchAction),确认后执行 runBatch。
 function requestBatch(action: 'apply' | 'reject' | 'ignore') {
@@ -867,8 +928,14 @@ async function confirmBatch() {
 async function runBatch(action: 'apply' | 'reject' | 'ignore') {
   const reqId = expandedRequestId.value
   if (reqId == null) return
-  const items = selectedItemsForRequest(reqId)
-  if (items.length === 0) return
+  // apply 只作用于可应用项(model_removed 的 apply 后端未实现,跳过避免整批 fail);
+  // reject/ignore 对全部选中项执行(含 model_removed)。
+  const all = selectedItemsForRequest(reqId)
+  const items = action === 'apply' ? all.filter((i) => !isRemoved(i)) : all
+  if (items.length === 0) {
+    appStore.showWarning(t('admin.priceChangeRequests.batchNoApplyable', 'No applyable items selected'))
+    return
+  }
   batchRunning.value = true
   let ok = 0
   let fail = 0

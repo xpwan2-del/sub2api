@@ -178,6 +178,7 @@ export interface PaginatedPriceChangeRequests {
 
 export interface PriceChangeRequestListParams {
   status?: string
+  source_config_id?: number
   page?: number
   page_size?: number
 }

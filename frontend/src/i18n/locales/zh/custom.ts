@@ -196,6 +196,10 @@ export default {
     },
   },
   admin: {
+    priceChangeRequests: {
+      allSources: '全部上游源',
+      batchNoApplyable: '选中的均为移除模型，没有可应用的条目',
+    },
     catalogManage: {
       title: '模型广场',
       description: '管理公开模型广场的模型排序、置顶、NEW/精选/推荐标签与可见性',
