@@ -396,7 +396,8 @@ func TestSyncNow_BuildsRequest(t *testing.T) {
 	cfgRec := &UpstreamSourceConfig{ID: 1, BaseURL: srv.URL, TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
 	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
 
-	reqID, err := svc.SyncNow(context.Background(), 1, 99)
+	outcome, err := svc.SyncNow(context.Background(), 1, 99)
+	reqID := outcome.RequestID
 	if err != nil {
 		t.Fatalf("SyncNow err: %v", err)
 	}
@@ -651,7 +652,8 @@ func TestSyncNow_AllUnchangedNoRequest(t *testing.T) {
 	cfgRec := &UpstreamSourceConfig{ID: 1, BaseURL: srv.URL, TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
 	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
 
-	reqID, err := svc.SyncNow(context.Background(), 1, 99)
+	outcome, err := svc.SyncNow(context.Background(), 1, 99)
+	reqID := outcome.RequestID
 	if err != nil {
 		t.Fatalf("SyncNow err: %v", err)
 	}
@@ -723,18 +725,26 @@ func TestSyncNow_GroupRatioBaselineThenCreatesPerGroupItems(t *testing.T) {
 	_ = repo.CreateConfig(context.Background(), cfgRec)
 	svc := NewUpstreamPriceSyncService(repo, newTestClient(), newFakeChannelService(), nil, nil, nil, testUpstreamConfig(srv.URL))
 
-	requestID, err := svc.SyncNow(context.Background(), cfgRec.ID, 9)
+	outcome, err := svc.SyncNow(context.Background(), cfgRec.ID, 9)
+	requestID := outcome.RequestID
 	if err != nil || requestID != 0 {
 		t.Fatalf("baseline sync: request=%d err=%v", requestID, err)
+	}
+	if !outcome.GroupRatioEstablished || outcome.GroupRatioCurrent == nil || *outcome.GroupRatioCurrent != 1 {
+		t.Fatalf("baseline outcome: %+v", outcome)
 	}
 	if cfgRec.GroupRatioBaselineValue == nil || *cfgRec.GroupRatioBaselineValue != 1 {
 		t.Fatalf("baseline = %v", cfgRec.GroupRatioBaselineValue)
 	}
 
 	upstreamRatio = 1.2
-	requestID, err = svc.SyncNow(context.Background(), cfgRec.ID, 9)
+	outcome, err = svc.SyncNow(context.Background(), cfgRec.ID, 9)
+	requestID = outcome.RequestID
 	if err != nil || requestID == 0 {
 		t.Fatalf("change sync: request=%d err=%v", requestID, err)
+	}
+	if outcome.GroupRatioItemsCreated != 2 {
+		t.Fatalf("group items created: %d", outcome.GroupRatioItemsCreated)
 	}
 	items, _ := repo.ListItems(context.Background(), requestID)
 	if len(items) != 2 || items[0].Kind != ItemKindGroupRatio || items[1].Kind != ItemKindGroupRatio {

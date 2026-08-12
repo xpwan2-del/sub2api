@@ -52,10 +52,20 @@ func NewUpstreamPriceSyncService(repo UpstreamPriceSyncRepository, client *Upstr
 	}
 }
 
+// SyncOutcome SyncNow 返回的同步结果,供前端区分"建立基线/无变化/检测到变化"三种状态。
+type SyncOutcome struct {
+	RequestID              int64    `json:"request_id"`
+	GroupRatioEnabled      bool     `json:"group_ratio_enabled"`
+	GroupRatioCurrent      *float64 `json:"group_ratio_current"`
+	GroupRatioBaseline     *float64 `json:"group_ratio_baseline"`
+	GroupRatioEstablished  bool     `json:"group_ratio_established"`
+	GroupRatioItemsCreated int      `json:"group_ratio_items_created"`
+}
+
 // SyncNow 立即拉取上游定价、diff 出变更草稿并落成审批单。
-// 无变更时不建空审批单,返回 0;成功返回新建审批单 ID。
-func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, createdBy int64) (int64, error) {
-	var requestID int64
+// 返回 SyncOutcome:RequestID>0 表示生成了审批单;GroupRatio* 字段反映倍率同步状态。
+func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, createdBy int64) (SyncOutcome, error) {
+	var outcome SyncOutcome
 	err := s.repo.WithSourceSyncLock(ctx, configID, func(ctx context.Context) error {
 		cfgRec, err := s.repo.GetConfig(ctx, configID)
 		if err != nil {
@@ -136,7 +146,11 @@ func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, create
 			persist.BaselineKey = key
 			persist.BaselineValue = &newRatio
 			persist.AdvanceBaseline = true
+			outcome.GroupRatioEnabled = true
+			outcome.GroupRatioCurrent = &newRatio
+			outcome.GroupRatioBaseline = &newRatio
 			baselineMissing := cfgRec.GroupRatioBaselineValue == nil || cfgRec.GroupRatioBaselineKey != key || !validPositiveFinite(*cfgRec.GroupRatioBaselineValue)
+			outcome.GroupRatioEstablished = baselineMissing
 			if !baselineMissing && math.Abs(*cfgRec.GroupRatioBaselineValue-newRatio) > 1e-8 {
 				pending, err := s.repo.HasPendingGroupRateItems(ctx, configID)
 				if err != nil {
@@ -157,6 +171,7 @@ func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, create
 				if err != nil {
 					return err
 				}
+				outcome.GroupRatioItemsCreated = len(changes)
 				for i := range changes {
 					change := changes[i]
 					groupID := change.LocalGroupID
@@ -180,14 +195,14 @@ func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, create
 			return fmt.Errorf("persist sync result: %w", err)
 		}
 		if persist.Request != nil {
-			requestID = persist.Request.ID
+			outcome.RequestID = persist.Request.ID
 		}
 		return nil
 	})
 	if errors.Is(err, ErrSourceSyncBusy) {
-		return 0, infraerrors.Conflict("SOURCE_SYNC_BUSY", err.Error())
+		return SyncOutcome{}, infraerrors.Conflict("SOURCE_SYNC_BUSY", err.Error())
 	}
-	return requestID, err
+	return outcome, err
 }
 
 // ReviewItem 对单条审批条目执行 apply / reject / ignore。

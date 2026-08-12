@@ -113,12 +113,12 @@ func (h *ChannelHandler) SyncUpstreamNow(c *gin.Context) {
 		response.BadRequest(c, "invalid id")
 		return
 	}
-	reqID, err := h.upstreamPriceSyncService.SyncNow(c.Request.Context(), id, adminUserID(c))
+	outcome, err := h.upstreamPriceSyncService.SyncNow(c.Request.Context(), id, adminUserID(c))
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Success(c, gin.H{"request_id": reqID})
+	response.Success(c, outcome)
 }
 
 // ListUpstreamGroups 拉取上游可用分组字典({key: 展示名}),供 source 配置下拉。
