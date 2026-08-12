@@ -1,9 +1,5 @@
 /**
  * Upstream new-api Price Sync API.
- *
- * 同步上游 new-api 的模型与价格变动:
- * - UpstreamSourceConfig: 上游源配置(目标 channel、价格来源、开关等)
- * - PriceChangeRequest / PriceChangeItem: 一次同步产生的变更请求与逐项审查条目
  */
 
 import { apiClient } from '../client'
@@ -22,7 +18,12 @@ export interface UpstreamSourceConfig {
   base_price_per_1k: number
   pricing_source: 'auto' | 'ratio_config' | 'pricing'
   sync_model_price: boolean
+  sync_group_ratio: boolean
+  excluded_group_ids: number[]
   target_upstream_group?: string
+  group_ratio_baseline_key?: string | null
+  group_ratio_baseline_value?: number | null
+  group_ratio_baseline_observed_at?: string | null
   balance_threshold_usd?: number | null
   last_balance_quota?: number | null
   last_used_quota?: number | null
@@ -35,24 +36,65 @@ export interface UpstreamSourceConfig {
   last_error?: string | null
 }
 
-export interface PriceChangeItem {
+export interface ConvertedPrice {
+  BillingMode?: string
+  billing_mode?: string
+  InputPrice?: number | null
+  input_price?: number | null
+  OutputPrice?: number | null
+  output_price?: number | null
+  CacheReadPrice?: number | null
+  cache_read_price?: number | null
+  CacheWritePrice?: number | null
+  cache_write_price?: number | null
+  PerRequestPrice?: number | null
+  per_request_price?: number | null
+}
+
+interface PriceChangeItemBase {
   id: number
   request_id: number
-  kind: 'model_price' | 'model_added' | 'model_removed' | 'model_unchanged'
   platform: string
-  model_name: string
   target_channel_id: number
-  upstream_converted: any
-  local_current: any
-  apply_value: any
   status: string
+  note?: string | null
 }
+
+export interface ModelPriceChangeItem extends PriceChangeItemBase {
+  kind: 'model_price' | 'model_added' | 'model_removed' | 'model_unchanged'
+  model_name: string
+  upstream_converted: ConvertedPrice | null
+  local_current: ConvertedPrice | null
+  apply_value?: ConvertedPrice | null
+}
+
+export interface GroupRateChange {
+  strategy: string
+  upstream_group_key: string
+  upstream_group_name: string
+  upstream_old_ratio: number
+  upstream_new_ratio: number
+  local_group_id: number
+  local_group_name: string
+  local_group_sort_order: number
+  local_current_rate: number
+  suggested_rate: number
+}
+
+export interface GroupRatioChangeItem extends PriceChangeItemBase {
+  kind: 'group_ratio'
+  target_group_id: number
+  group_rate_change: GroupRateChange
+  apply_rate?: number | null
+}
+
+export type PriceChangeItem = ModelPriceChangeItem | GroupRatioChangeItem
 
 export interface PriceChangeRequest {
   id: number
   source_config_id: number
   status: string
-  summary: any
+  summary: Record<string, number>
   created_at: string
 }
 
@@ -78,9 +120,7 @@ export async function deleteSource(id: number) {
 }
 
 export async function refreshBalance(id: number) {
-  const { data } = await apiClient.post<UpstreamSourceConfig>(
-    `${base}/upstream-sources/${id}/balance/refresh`,
-  )
+  const { data } = await apiClient.post<UpstreamSourceConfig>(`${base}/upstream-sources/${id}/balance/refresh`)
   return data
 }
 
@@ -106,15 +146,11 @@ export async function syncNow(id: number) {
   return data
 }
 
-/** 拉取上游可用分组字典({key: 展示名}),供 source 配置下拉。 */
 export async function listUpstreamGroups(id: number) {
-  const { data } = await apiClient.get<{ groups: Record<string, string> }>(
-    `${base}/upstream-sources/${id}/groups`,
-  )
+  const { data } = await apiClient.get<{ groups: Record<string, string> }>(`${base}/upstream-sources/${id}/groups`)
   return data
 }
 
-/** 按 base_url 预览可用分组(新建 source 尚未保存时用)。 */
 export async function previewUpstreamGroups(baseURL: string, proxyId?: number | null, dashboardToken?: string, apiKey?: string, authMode?: string, userID?: number | null) {
   const { data } = await apiClient.post<{ groups: Record<string, string> }>(
     `${base}/upstream-sources/groups/preview`,
@@ -123,7 +159,6 @@ export async function previewUpstreamGroups(baseURL: string, proxyId?: number | 
   return data
 }
 
-/** 后端 `response.Paginated` 信封(apiClient 拦截器已剥离外层 `data`)。 */
 export interface PaginatedPriceChangeRequests {
   items: PriceChangeRequest[]
   total: number
@@ -132,30 +167,31 @@ export interface PaginatedPriceChangeRequests {
   pages: number
 }
 
-export async function listRequests(params: { status?: string }) {
-  const { data } = await apiClient.get<PaginatedPriceChangeRequests>(
-    `${base}/price-change-requests`,
-    { params },
-  )
+export interface PriceChangeRequestListParams {
+  status?: string
+  page?: number
+  page_size?: number
+}
+
+export async function listRequests(params: PriceChangeRequestListParams = {}) {
+  const { data } = await apiClient.get<PaginatedPriceChangeRequests>(`${base}/price-change-requests`, { params })
   return data
 }
+
+export type PriceChangeRequestDetail = PriceChangeRequest & { items: PriceChangeItem[] }
 
 export async function getRequest(id: number) {
-  const { data } = await apiClient.get<{ request: PriceChangeRequest; items: PriceChangeItem[] }>(
-    `${base}/price-change-requests/${id}`,
-  )
+  const { data } = await apiClient.get<PriceChangeRequestDetail>(`${base}/price-change-requests/${id}`)
   return data
 }
 
-export async function reviewItem(
-  reqId: number,
-  itemId: number,
-  body: { action: string; apply_value?: any; note?: string },
-) {
-  const { data } = await apiClient.post(
-    `${base}/price-change-requests/${reqId}/items/${itemId}/review`,
-    body,
-  )
+export type ReviewItemBody =
+  | { action: 'apply'; apply_value: ConvertedPrice; note?: string }
+  | { action: 'apply'; apply_rate: number; note?: string }
+  | { action: 'reject' | 'ignore'; note?: string }
+
+export async function reviewItem(reqId: number, itemId: number, body: ReviewItemBody) {
+  const { data } = await apiClient.post(`${base}/price-change-requests/${reqId}/items/${itemId}/review`, body)
   return data
 }
 

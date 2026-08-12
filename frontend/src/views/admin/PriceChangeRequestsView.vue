@@ -157,7 +157,39 @@
               <div v-else-if="expandedItems.length === 0" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                 {{ t('admin.priceChangeRequests.noItems', 'No items') }}
               </div>
-              <div v-else class="overflow-x-auto">
+              <div v-else class="space-y-5 overflow-x-auto">
+                <section v-if="groupExpandedItems.length" data-test="group-ratio-section">
+                  <h3 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">{{ t('admin.priceChangeRequests.groupSection', 'Group rate changes') }}</h3>
+                  <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-700">
+                    <thead><tr class="text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      <th class="w-8 px-2 py-2"></th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.groupItems.group', 'Local group') }}</th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.groupItems.upstreamRatio', 'Upstream ratio') }}</th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.groupItems.currentRate', 'Current rate') }}</th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.groupItems.suggestedRate', 'Suggested rate') }}</th>
+                      <th class="px-2 py-2">{{ t('admin.priceChangeRequests.groupItems.applyRate', 'Apply rate') }}</th>
+                      <th class="px-2 py-2 text-right">{{ t('admin.priceChangeRequests.items.actions', 'Actions') }}</th>
+                    </tr></thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-dark-800">
+                      <tr v-for="item in groupExpandedItems" :key="item.id" class="text-sm" data-test="group-ratio-item">
+                        <td class="px-2 py-2"><input v-if="!isItemDone(item)" type="checkbox" :checked="isSelected(item.id)" @change="toggleSelect(item.id, ($event.target as HTMLInputElement).checked)" class="h-4 w-4 rounded border-gray-300 text-primary-600" /></td>
+                        <td class="px-2 py-2 font-medium text-gray-900 dark:text-white">{{ item.group_rate_change.local_group_name }}</td>
+                        <td class="px-2 py-2 font-mono text-xs">{{ formatRate(item.group_rate_change.upstream_old_ratio) }} → {{ formatRate(item.group_rate_change.upstream_new_ratio) }}</td>
+                        <td class="px-2 py-2 font-mono text-xs">{{ formatRate(item.group_rate_change.local_current_rate) }}</td>
+                        <td class="px-2 py-2 font-mono text-xs text-indigo-600 dark:text-indigo-400">{{ formatRate(item.group_rate_change.suggested_rate) }}</td>
+                        <td class="px-2 py-2"><input v-model.number="groupDrafts[item.id]" type="number" step="0.0001" min="0.0001" :disabled="isItemDone(item)" class="input py-1 text-xs" style="width: 7rem" :aria-label="t('admin.priceChangeRequests.groupItems.applyRate', 'Apply rate')" /></td>
+                        <td class="px-2 py-2 text-right"><div class="flex items-center justify-end gap-1">
+                          <span v-if="item.status && item.status !== 'pending'" :class="['mr-1 inline-flex items-center rounded px-1.5 py-0.5 text-xs', statusBadgeClass(item.status)]">{{ statusLabel(item.status) }}</span>
+                          <button @click="reviewSingle(item, 'apply')" :disabled="isItemDone(item) || reviewingId === item.id" class="btn-icon text-green-600 disabled:opacity-30" :title="t('admin.priceChangeRequests.actions.apply', 'Apply')"><Icon name="check" size="md" /></button>
+                          <button @click="reviewSingle(item, 'reject')" :disabled="isItemDone(item) || reviewingId === item.id" class="btn-icon text-red-600 disabled:opacity-30" :title="t('admin.priceChangeRequests.actions.reject', 'Reject')"><Icon name="x" size="md" /></button>
+                          <button @click="reviewSingle(item, 'ignore')" :disabled="isItemDone(item) || reviewingId === item.id" class="btn-icon text-gray-500 disabled:opacity-30" :title="t('admin.priceChangeRequests.actions.ignore', 'Ignore')"><Icon name="ban" size="md" /></button>
+                        </div></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </section>
+                <section v-if="sortedModelItems.length" data-test="model-price-section">
+                  <h3 v-if="groupExpandedItems.length" class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">{{ t('admin.priceChangeRequests.modelSection', 'Model price changes') }}</h3>
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-700">
                   <thead>
                     <tr class="text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -174,7 +206,7 @@
                   </thead>
                   <tbody class="divide-y divide-gray-100 dark:divide-dark-800">
                     <tr
-                      v-for="item in sortedExpandedItems"
+                      v-for="item in sortedModelItems"
                       :key="item.id"
                       :class="['text-sm', isRemoved(item) ? 'opacity-50' : '']"
                     >
@@ -283,6 +315,7 @@
                     </tr>
                   </tbody>
                 </table>
+                </section>
               </div>
             </div>
           </template>
@@ -317,7 +350,14 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { extractApiErrorMessage } from '@/utils/apiError'
 import { adminAPI } from '@/api/admin'
-import type { PriceChangeRequest, PriceChangeItem } from '@/api/admin/upstreamPriceSync'
+import type {
+  ConvertedPrice,
+  GroupRatioChangeItem,
+  ModelPriceChangeItem,
+  PriceChangeRequest,
+  PriceChangeItem,
+  ReviewItemBody,
+} from '@/api/admin/upstreamPriceSync'
 import type { Column } from '@/components/common/types'
 import { perTokenToMTok, mTokToPerToken } from '@/components/admin/channel/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
@@ -423,6 +463,7 @@ interface Draft {
   perRequest: string
 }
 const drafts = reactive<Record<number, Draft>>({})
+const groupDrafts = reactive<Record<number, number>>({})
 
 // Selected item ids (per request, but stored globally keyed by item id; current request implied)
 const selected = reactive<Set<number>>(new Set())
@@ -431,25 +472,46 @@ const selected = reactive<Set<number>>(new Set())
 // id 升序对齐渠道管理顺序:后端 DiffPricing 按 channel_model_pricing.id 升序
 // (渠道添加顺序)落库本地已有模型,新增模型按模型名稳定排序后追加;
 // ListItems ORDER BY id ASC → 同类内即按渠道顺序(新增类按模型名序)展示。
-const kindRank: Record<string, number> = {
+const kindRank: Record<ModelPriceChangeItem['kind'], number> = {
   model_price: 0,
   model_removed: 1,
   model_added: 2,
   model_unchanged: 3,
 }
-const sortedExpandedItems = computed<PriceChangeItem[]>(() =>
-  [...expandedItems.value].sort((a, b) => {
-    const ra = kindRank[a.kind] ?? 99
-    const rb = kindRank[b.kind] ?? 99
-    if (ra !== rb) return ra - rb
-    return a.id - b.id
-  }),
+
+function isGroupRatioItem(item: PriceChangeItem): item is GroupRatioChangeItem {
+  return item.kind === 'group_ratio'
+}
+
+const groupExpandedItems = computed<GroupRatioChangeItem[]>(() =>
+  expandedItems.value
+    .filter(isGroupRatioItem)
+    .sort((a, b) => {
+      const order = a.group_rate_change.local_group_sort_order - b.group_rate_change.local_group_sort_order
+      return order !== 0 ? order : a.target_group_id - b.target_group_id
+    }),
+)
+
+const sortedModelItems = computed<ModelPriceChangeItem[]>(() =>
+  expandedItems.value
+    .filter((item): item is ModelPriceChangeItem => !isGroupRatioItem(item))
+    .sort((a, b) => {
+      const ra = kindRank[a.kind]
+      const rb = kindRank[b.kind]
+      if (ra !== rb) return ra - rb
+      return a.id - b.id
+    }),
 )
 
 // ── Helpers ──
 function formatDateTime(value: string): string {
   if (!value) return '-'
   return new Date(value).toLocaleString()
+}
+
+function formatRate(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return '-'
+  return String(Number(value.toFixed(4)))
 }
 
 function sourceLabel(id: number): string {
@@ -517,9 +579,8 @@ function kindLabel(kind: string): string {
   return t(`admin.priceChangeRequests.kinds.${kind}`, kind)
 }
 
-function modelField(item: PriceChangeItem, _key: string): string {
-  // Defensive: item.model_name (snake) or ModelName (pascal)
-  return (item as any).model_name ?? (item as any).ModelName ?? '-'
+function modelField(item: ModelPriceChangeItem, _key: string): string {
+  return item.model_name ?? '-'
 }
 
 function statusBadgeClass(status: string): string {
@@ -564,7 +625,7 @@ function kindBadgeClass(kind: string): string {
 }
 
 // Draft helpers
-function buildDraft(item: PriceChangeItem): Draft {
+function buildDraft(item: ModelPriceChangeItem): Draft {
   // 已保存的 apply_value 优先,逐字段缺失则回退上游还原值(满足"同步后默认 = 上游还原值")。
   const a = pickPrice((item as any).apply_value)
   const u = pickPrice((item as any).upstream_converted)
@@ -608,7 +669,7 @@ function setDraftField(d: Draft | undefined, key: DraftFieldKey, v: string) {
 }
 
 // placeholder:提示上游还原值对应的 $/MTok(token 字段)或 $/次(per_request),为空则不提示。
-function upstreamFieldHint(item: PriceChangeItem, key: DraftFieldKey): string {
+function upstreamFieldHint(item: ModelPriceChangeItem, key: DraftFieldKey): string {
   const c = pickPrice((item as any).upstream_converted)
   if (!c) return ''
   if (key === 'perRequest') return c.perRequest === null ? '' : fmtNum(c.perRequest)
@@ -619,7 +680,7 @@ function upstreamFieldHint(item: PriceChangeItem, key: DraftFieldKey): string {
 // Build apply_value payload from a draft. Send BOTH PascalCase and snake_case
 // keys so the value binds regardless of whether the backend service struct has
 // json tags (defensive against the cross-task serialization contract).
-function buildApplyPayload(itemId: number): Record<string, unknown> {
+function buildApplyPayload(itemId: number): ConvertedPrice {
   const d = drafts[itemId]
   if (!d) return {}
   // token 字段:draft 为 $/MTok,提交前 ÷1e6 还原 per-token;per_request 直接透传。
@@ -647,7 +708,7 @@ function buildApplyPayload(itemId: number): Record<string, unknown> {
 
 // Selection helpers (operate within the currently expanded request)
 function currentRequestItemIds(): number[] {
-  return expandedItems.value.filter((i) => !isRemoved(i) && !isItemDone(i)).map((i) => i.id)
+  return expandedItems.value.filter((i) => !isRemoved(i) && !isUnchanged(i) && !isItemDone(i)).map((i) => i.id)
 }
 
 function selectedItemsForRequest(_reqId: number): PriceChangeItem[] {
@@ -724,7 +785,11 @@ async function toggleExpand(row: PriceChangeRequest) {
     expandedItems.value = items
     // Initialize drafts for pending items
     for (const it of items) {
-      if (!(it.id in drafts)) drafts[it.id] = buildDraft(it)
+      if (isGroupRatioItem(it)) {
+        if (!(it.id in groupDrafts)) groupDrafts[it.id] = it.apply_rate ?? it.group_rate_change.suggested_rate
+      } else if (!(it.id in drafts)) {
+        drafts[it.id] = buildDraft(it)
+      }
     }
   } catch (error: unknown) {
     appStore.showError(extractApiErrorMessage(error, t('admin.priceChangeRequests.loadItemsError', 'Failed to load request details')))
@@ -740,8 +805,14 @@ async function reviewSingle(item: PriceChangeItem, action: 'apply' | 'reject' | 
   if (reqId == null) return
   reviewingId.value = item.id
   try {
-    const body: { action: string; apply_value?: Record<string, unknown> } = { action }
-    if (action === 'apply') body.apply_value = buildApplyPayload(item.id)
+    let body: ReviewItemBody
+    if (action === 'apply') {
+      body = isGroupRatioItem(item)
+        ? { action, apply_rate: groupDrafts[item.id] }
+        : { action, apply_value: buildApplyPayload(item.id) }
+    } else {
+      body = { action }
+    }
     await adminAPI.upstreamPriceSync.reviewItem(reqId, item.id, body)
     appStore.showSuccess(t('admin.priceChangeRequests.reviewDone', 'Item reviewed'))
     await refreshExpanded()
@@ -797,8 +868,14 @@ async function runBatch(action: 'apply' | 'reject' | 'ignore') {
   try {
     for (const item of items) {
       try {
-        const body: { action: string; apply_value?: Record<string, unknown> } = { action }
-        if (action === 'apply') body.apply_value = buildApplyPayload(item.id)
+        let body: ReviewItemBody
+        if (action === 'apply') {
+          body = isGroupRatioItem(item)
+            ? { action, apply_rate: groupDrafts[item.id] }
+            : { action, apply_value: buildApplyPayload(item.id) }
+        } else {
+          body = { action }
+        }
         await adminAPI.upstreamPriceSync.reviewItem(reqId, item.id, body)
         ok++
       } catch {
@@ -839,7 +916,11 @@ async function refreshExpanded() {
     expandedItems.value = (res?.items ?? []) as PriceChangeItem[]
     // Refresh drafts for any new pending items
     for (const it of expandedItems.value) {
-      if (!(it.id in drafts)) drafts[it.id] = buildDraft(it)
+      if (isGroupRatioItem(it)) {
+        if (!(it.id in groupDrafts)) groupDrafts[it.id] = it.apply_rate ?? it.group_rate_change.suggested_rate
+      } else if (!(it.id in drafts)) {
+        drafts[it.id] = buildDraft(it)
+      }
     }
   } catch {
     // non-fatal

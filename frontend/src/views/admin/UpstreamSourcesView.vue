@@ -287,6 +287,40 @@
           </p>
         </div>
 
+        <!-- Group Ratio Sync -->
+        <div class="space-y-3 rounded-lg border border-gray-200 p-3 dark:border-dark-700">
+          <label class="flex cursor-pointer items-center gap-2">
+            <Toggle :modelValue="form.sync_group_ratio" @update:modelValue="form.sync_group_ratio = $event" />
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t('admin.upstreamSources.fields.syncGroupRatio', 'Sync selected upstream group ratio') }}
+            </span>
+          </label>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            {{ t('admin.upstreamSources.fields.syncGroupRatioHint', 'The first sync only records a baseline. Later changes proportionally scale each participating local group and create approval items.') }}
+          </p>
+          <div v-if="form.sync_group_ratio" class="space-y-2">
+            <p class="text-xs font-medium text-gray-600 dark:text-gray-300">
+              {{ t('admin.upstreamSources.fields.participatingGroups', 'Participating local groups') }}
+            </p>
+            <label
+              v-for="group in availableChannelGroups"
+              :key="group.id"
+              class="flex cursor-pointer items-center justify-between rounded border border-gray-100 px-3 py-2 dark:border-dark-700"
+            >
+              <span class="text-sm text-gray-700 dark:text-gray-300">{{ group.name }}</span>
+              <input
+                type="checkbox"
+                :checked="!form.excluded_group_ids.includes(group.id)"
+                @change="setGroupParticipation(group.id, ($event.target as HTMLInputElement).checked)"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+            </label>
+            <p v-if="availableChannelGroups.length === 0" class="text-xs text-amber-600 dark:text-amber-400">
+              {{ t('admin.upstreamSources.fields.noChannelGroups', 'The selected channel has no local groups.') }}
+            </p>
+          </div>
+        </div>
+
         <!-- Pricing Source + Balance Threshold -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -351,7 +385,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
@@ -359,7 +393,8 @@ import { extractApiErrorMessage } from '@/utils/apiError'
 import { adminAPI } from '@/api/admin'
 import type { UpstreamSourceConfig } from '@/api/admin/upstreamPriceSync'
 import type { Column } from '@/components/common/types'
-import type { Proxy } from '@/types'
+import type { AdminGroup, Proxy } from '@/types'
+import type { Channel } from '@/api/admin/channels'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -405,7 +440,8 @@ const needsDashboardUserId = computed(() => form.dashboard_auth_mode === 'raw_us
 
 // ── State ──
 const sources = ref<UpstreamSourceConfig[]>([])
-const channels = ref<{ id: number; name: string }[]>([])
+const channels = ref<Channel[]>([])
+const groups = ref<AdminGroup[]>([])
 const proxies = ref<Proxy[]>([])
 const loading = ref(false)
 const submitting = ref(false)
@@ -434,6 +470,8 @@ interface SourceForm {
   pricing_source: 'auto' | 'ratio_config' | 'pricing'
   enabled: boolean
   sync_model_price: boolean
+  sync_group_ratio: boolean
+  excluded_group_ids: number[]
 }
 
 const form = reactive<SourceForm>({
@@ -451,6 +489,8 @@ const form = reactive<SourceForm>({
   pricing_source: 'auto',
   enabled: true,
   sync_model_price: true,
+  sync_group_ratio: false,
+  excluded_group_ids: [],
 })
 
 // ── Derived ──
@@ -466,6 +506,21 @@ const channelOptions = computed(() =>
   channels.value.map((c) => ({ value: c.id, label: c.name })),
 )
 
+const availableChannelGroups = computed(() => {
+  const channel = channels.value.find((item) => item.id === form.target_channel_id)
+  const groupIDs = new Set(channel?.group_ids ?? [])
+  return groups.value
+    .filter((group) => groupIDs.has(group.id))
+    .sort((a, b) => a.sort_order - b.sort_order || a.id - b.id)
+})
+
+function setGroupParticipation(groupID: number, participating: boolean) {
+  const excluded = new Set(form.excluded_group_ids)
+  if (participating) excluded.delete(groupID)
+  else excluded.add(groupID)
+  form.excluded_group_ids = [...excluded]
+}
+
 // 上游可用分组:source 已保存后从 /api/pricing 全局 usable_group 拉取,用于按 group 过滤模型。
 const upstreamGroups = ref<Record<string, string>>({})
 const loadingGroups = ref(false)
@@ -477,6 +532,10 @@ const upstreamGroupOptions = computed(() => {
     opts.push({ value: key, label: name ? `${key} — ${name}` : key })
   }
   return opts
+})
+
+watch(() => form.target_channel_id, (next, previous) => {
+  if (previous != null && next !== previous) form.excluded_group_ids = []
 })
 
 async function loadGroupsFromForm() {
@@ -548,10 +607,14 @@ async function loadSources() {
 
 async function loadChannels() {
   try {
-    const res = await adminAPI.channels.list(1, 1000)
-    channels.value = (res.items || []).map((c) => ({ id: c.id, name: c.name }))
+    const [channelRes, groupList] = await Promise.all([
+      adminAPI.channels.list(1, 1000),
+      adminAPI.groups.getAllIncludingInactive(),
+    ])
+    channels.value = channelRes.items || []
+    groups.value = groupList
   } catch (error) {
-    console.error('Failed to load channels for dropdown:', error)
+    console.error('Failed to load channels or groups for dropdown:', error)
   }
 }
 
@@ -579,6 +642,8 @@ function resetForm() {
   form.pricing_source = 'auto'
   form.enabled = true
   form.sync_model_price = true
+  form.sync_group_ratio = false
+  form.excluded_group_ids = []
 }
 
 async function openCreateDialog() {
@@ -606,6 +671,8 @@ async function openEditDialog(source: UpstreamSourceConfig) {
   form.pricing_source = (source.pricing_source as SourceForm['pricing_source']) || 'auto'
   form.enabled = !!source.enabled
   form.sync_model_price = source.sync_model_price !== false
+  form.sync_group_ratio = source.sync_group_ratio === true
+  form.excluded_group_ids = [...(source.excluded_group_ids ?? [])]
   await loadGroupsFromForm()
   showDialog.value = true
 }
@@ -618,6 +685,10 @@ function closeDialog() {
 async function handleSubmit() {
   if (form.target_channel_id == null) {
     appStore.showError(t('admin.upstreamSources.errors.selectChannel', 'Please select a target channel'))
+    return
+  }
+  if (form.sync_group_ratio && !form.target_upstream_group.trim()) {
+    appStore.showError(t('admin.upstreamSources.errors.selectUpstreamGroup', 'Please select an upstream group before enabling group ratio sync'))
     return
   }
   const payload: UpstreamSourceConfig = {
@@ -635,6 +706,8 @@ async function handleSubmit() {
     pricing_source: form.pricing_source,
     enabled: form.enabled,
     sync_model_price: form.sync_model_price,
+    sync_group_ratio: form.sync_group_ratio,
+    excluded_group_ids: form.excluded_group_ids,
   }
 
   submitting.value = true

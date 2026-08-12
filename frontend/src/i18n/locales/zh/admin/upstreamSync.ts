@@ -73,6 +73,10 @@ export default {
       basePriceHint: '每 1k 输入 token 的 USD 价格,用于还原上游倍率。',
       enabled: '启用',
       syncModelPrice: '同步模型价格',
+      syncGroupRatio: '同步所选上游分组倍率',
+      syncGroupRatioHint: '首次同步只记录基线。之后按上游倍率变化比例调整参与的本地分组，并生成逐组审批项。',
+      participatingGroups: '参与倍率同步的本地分组',
+      noChannelGroups: '所选渠道暂无本地分组。',
       upstreamGroup: '上游分组过滤',
       upstreamGroupHint: '填写 Base URL 后点击「加载分组」。仅同步所选分组启用的模型;留空 = 同步全部模型。',
       loadGroups: '加载分组',
@@ -87,6 +91,7 @@ export default {
     },
     errors: {
       selectChannel: '请选择目标渠道',
+      selectUpstreamGroup: '启用分组倍率同步前，请先选择上游分组',
     },
   },
 
@@ -126,6 +131,15 @@ export default {
       summary: '汇总',
       created: '创建时间',
     },
+    groupSection: '分组倍率变更',
+    modelSection: '模型价格变更',
+    groupItems: {
+      group: '本地分组',
+      upstreamRatio: '上游倍率',
+      currentRate: '当前倍率',
+      suggestedRate: '建议倍率',
+      applyRate: '应用倍率',
+    },
     items: {
       model: '模型',
       platform: '平台',
@@ -159,6 +173,7 @@ export default {
       model_added: '新增模型',
       model_removed: '移除模型',
       model_unchanged: '无变化',
+      group_ratio: '分组倍率变更',
     },
   },
 }

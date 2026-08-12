@@ -73,6 +73,10 @@ export default {
       basePriceHint: 'USD price per 1k input tokens used to reverse-convert upstream ratios.',
       enabled: 'Enabled',
       syncModelPrice: 'Sync Model Price',
+      syncGroupRatio: 'Sync selected upstream group ratio',
+      syncGroupRatioHint: 'The first sync only records a baseline. Later changes proportionally scale participating local groups and create per-group approval items.',
+      participatingGroups: 'Participating local groups',
+      noChannelGroups: 'The selected channel has no local groups.',
       upstreamGroup: 'Upstream Group Filter',
       upstreamGroupHint: 'Fill Base URL then click Load Groups. Only sync models enabled for the selected group; empty = sync all models.',
       loadGroups: 'Load Groups',
@@ -87,6 +91,7 @@ export default {
     },
     errors: {
       selectChannel: 'Please select a target channel',
+      selectUpstreamGroup: 'Select an upstream group before enabling group ratio sync',
     },
   },
 
@@ -126,6 +131,15 @@ export default {
       summary: 'Summary',
       created: 'Created',
     },
+    groupSection: 'Group rate changes',
+    modelSection: 'Model price changes',
+    groupItems: {
+      group: 'Local group',
+      upstreamRatio: 'Upstream ratio',
+      currentRate: 'Current rate',
+      suggestedRate: 'Suggested rate',
+      applyRate: 'Apply rate',
+    },
     items: {
       model: 'Model',
       platform: 'Platform',
@@ -159,6 +173,7 @@ export default {
       model_added: 'Model Added',
       model_removed: 'Model Removed',
       model_unchanged: 'Unchanged',
+      group_ratio: 'Group Ratio',
     },
   },
 }
