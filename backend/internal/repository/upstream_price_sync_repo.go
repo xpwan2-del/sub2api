@@ -778,12 +778,16 @@ func (r *upstreamPriceSyncRepo) FinalizeItemCAS(ctx context.Context, requestID, 
 	if err != nil {
 		return err
 	}
+	// 注意:$3 不能同时裸用于 SET status=$3(varchar) 与 CASE WHEN $3='applied'(text)——
+	// lib/pq 报 "inconsistent types deduced for parameter $3",整条 UPDATE 失败。
+	// 改用独立 bool 参数 $7 表达「是否 applied」,每个占位符仅单一类型上下文,规避推断冲突。
+	isApplied := status == "applied"
 	res, err := tx.ExecContext(ctx, `
 UPDATE upstream_price_change_items
 SET status=$3, reviewer_id=$4, review_note=$5, reviewed_at=now(),
-    applied_at=CASE WHEN $3='applied' THEN now() ELSE NULL END,
+    applied_at=CASE WHEN $7 THEN now() ELSE NULL END,
     apply_value=CASE WHEN $6::jsonb IS NULL THEN apply_value ELSE $6::jsonb END
-WHERE id=$1 AND request_id=$2 AND status='pending'`, itemID, requestID, status, reviewerID, note, nullableJSON(applyJSON))
+WHERE id=$1 AND request_id=$2 AND status='pending'`, itemID, requestID, status, reviewerID, note, nullableJSON(applyJSON), isApplied)
 	if err != nil {
 		return fmt.Errorf("finalize price change item: %w", err)
 	}
