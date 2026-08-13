@@ -149,6 +149,7 @@ export default {
     items: {
       model: '模型',
       platform: '平台',
+      selectPlatform: '选择平台',
       channel: '渠道',
       kind: '类型',
       upstream: '上游还原值',

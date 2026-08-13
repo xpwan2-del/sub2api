@@ -149,6 +149,7 @@ export default {
     items: {
       model: 'Model',
       platform: 'Platform',
+      selectPlatform: 'Select platform',
       channel: 'Channel',
       kind: 'Kind',
       upstream: 'Upstream',

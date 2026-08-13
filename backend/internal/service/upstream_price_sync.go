@@ -264,6 +264,17 @@ func InferPlatform(modelName string) string {
 	return ""
 }
 
+// validSyncPlatform 报告 platform 是否为渠道支持的平台之一。
+// 与 domain/model 两处的平台常量保持一致(anthropic/openai/gemini/antigravity/grok)。
+// 上游模型名推断不出平台时(InferPlatform 返回空串),审批时可人工补充,须限制在此集合内。
+func validSyncPlatform(platform string) bool {
+	switch platform {
+	case PlatformAnthropic, PlatformOpenAI, PlatformGemini, PlatformAntigravity, PlatformGrok:
+		return true
+	}
+	return false
+}
+
 const priceTolerance = 1e-9
 
 // PriceChangeItemDraft diff 产出的待落库草稿
@@ -484,6 +495,7 @@ type UpstreamPriceSyncRepository interface {
 	GetItem(ctx context.Context, id int64) (*PriceChangeItem, error)
 	UpdateItemStatus(ctx context.Context, id int64, status string, reviewerID int64, note string, appliedAt *time.Time) error
 	FinalizeItemCAS(ctx context.Context, requestID, itemID int64, status string, reviewerID int64, note string, applyValue *ConvertedPrice) error
+	UpdateItemPlatform(ctx context.Context, requestID, itemID int64, platform string) error
 	ApplyGroupRateItem(ctx context.Context, input GroupRateApplyInput) (int64, float64, error)
 	ExpireOpenRequests(ctx context.Context, configID int64) (int, error)
 	CloseRequest(ctx context.Context, requestID int64) error

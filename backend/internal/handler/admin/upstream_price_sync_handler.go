@@ -291,6 +291,7 @@ type reviewPriceChangeItemBody struct {
 	Action     string                  `json:"action" binding:"required,oneof=apply reject ignore"`
 	ApplyValue *service.ConvertedPrice `json:"apply_value"`
 	ApplyRate  *float64                `json:"apply_rate"`
+	Platform   string                  `json:"platform"`
 	Note       string                  `json:"note"`
 }
 
@@ -312,7 +313,7 @@ func (h *ChannelHandler) ReviewPriceChangeItem(c *gin.Context) {
 		response.BadRequest(c, "invalid request: "+err.Error())
 		return
 	}
-	if err := h.upstreamPriceSyncService.ReviewItem(c.Request.Context(), requestID, itemID, service.ReviewAction(body.Action), body.ApplyValue, body.ApplyRate, adminUserID(c), body.Note); err != nil {
+	if err := h.upstreamPriceSyncService.ReviewItem(c.Request.Context(), requestID, itemID, service.ReviewAction(body.Action), body.ApplyValue, body.ApplyRate, body.Platform, adminUserID(c), body.Note); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}

@@ -229,7 +229,18 @@
                       <td class="px-2 py-2 align-top font-medium text-gray-900 dark:text-white">
                         {{ modelField(item, 'name') }}
                       </td>
-                      <td class="px-2 py-2 align-top text-gray-600 dark:text-gray-400">{{ item.platform || '-' }}</td>
+                      <td class="px-2 py-2 align-top text-gray-600 dark:text-gray-400">
+                        <select
+                          v-if="item.platform === '' && !isItemDone(item)"
+                          v-model="platformDrafts[item.id]"
+                          class="input py-1 text-xs"
+                          :aria-label="t('admin.priceChangeRequests.items.platform', 'Platform')"
+                        >
+                          <option value="">{{ t('admin.priceChangeRequests.items.selectPlatform', 'Select platform') }}</option>
+                          <option v-for="p in platformOptions" :key="p" :value="p">{{ p }}</option>
+                        </select>
+                        <span v-else>{{ item.platform || '-' }}</span>
+                      </td>
                       <td class="px-2 py-2 align-top text-gray-600 dark:text-gray-400">
                         {{ channelName((item as any).target_channel_id ?? (item as any).TargetChannelID) }}
                       </td>
@@ -425,12 +436,16 @@ function priceDetailStrings(p: any): string[] {
   const c = pickPrice(p)
   const lines: string[] = []
   if (c.mode) lines.push(`[${c.mode}]`)
-  // per_request 为 $/次,直接展示;token 字段(in/out/cache_*)为 per-token 存储,×1e6 显示成 $/MTok。
-  if (c.perRequest !== null) lines.push(`per_req=${fmtNum(c.perRequest)}/req`)
-  if (c.input !== null) lines.push(`in=${fmtNum(perTokenToMTok(c.input))}`)
-  if (c.output !== null) lines.push(`out=${fmtNum(perTokenToMTok(c.output))}`)
-  if (c.cacheRead !== null) lines.push(`cache_r=${fmtNum(perTokenToMTok(c.cacheRead))}`)
-  if (c.cacheWrite !== null) lines.push(`cache_w=${fmtNum(perTokenToMTok(c.cacheWrite))}`)
+  // 缺失字段默认显示 0(而非省略):上游还原值未返回 cache 等字段时,审批单展示更直观。
+  const mTok0 = (v: number | null | undefined) => fmtNum(perTokenToMTok(v ?? 0))
+  if (c.mode === 'per_request') {
+    lines.push(`per_req=${fmtNum(c.perRequest ?? 0)}/req`)
+  } else {
+    lines.push(`in=${mTok0(c.input)}`)
+    lines.push(`out=${mTok0(c.output)}`)
+    lines.push(`cache_r=${mTok0(c.cacheRead)}`)
+    lines.push(`cache_w=${mTok0(c.cacheWrite)}`)
+  }
   return lines.length ? lines : ['-']
 }
 
@@ -489,6 +504,10 @@ interface Draft {
 }
 const drafts = reactive<Record<number, Draft>>({})
 const groupDrafts = reactive<Record<number, number>>({})
+const platformDrafts = reactive<Record<number, string>>({})
+
+// 渠道支持的平台全集(与后端 domain/model 常量一致),用于给推断不出平台的模型补充平台。
+const platformOptions = ['anthropic', 'openai', 'gemini', 'antigravity', 'grok'] as const
 
 // Selected item ids (per request, but stored globally keyed by item id; current request implied)
 const selected = reactive<Set<number>>(new Set())
@@ -852,8 +871,9 @@ async function toggleExpand(row: PriceChangeRequest) {
     for (const it of items) {
       if (isGroupRatioItem(it)) {
         if (!(it.id in groupDrafts)) groupDrafts[it.id] = it.apply_rate ?? it.group_rate_change.suggested_rate
-      } else if (!(it.id in drafts)) {
-        drafts[it.id] = buildDraft(it)
+      } else {
+        if (!(it.id in drafts)) drafts[it.id] = buildDraft(it)
+        if (!(it.id in platformDrafts)) platformDrafts[it.id] = it.platform
       }
     }
   } catch (error: unknown) {
@@ -874,7 +894,7 @@ async function reviewSingle(item: PriceChangeItem, action: 'apply' | 'reject' | 
     if (action === 'apply') {
       body = isGroupRatioItem(item)
         ? { action, apply_rate: groupDrafts[item.id] }
-        : { action, apply_value: buildApplyPayload(item.id) }
+        : { action, apply_value: buildApplyPayload(item.id), platform: platformDrafts[item.id] || undefined }
     } else {
       body = { action }
     }
@@ -946,7 +966,7 @@ async function runBatch(action: 'apply' | 'reject' | 'ignore') {
         if (action === 'apply') {
           body = isGroupRatioItem(item)
             ? { action, apply_rate: groupDrafts[item.id] }
-            : { action, apply_value: buildApplyPayload(item.id) }
+            : { action, apply_value: buildApplyPayload(item.id), platform: platformDrafts[item.id] || undefined }
         } else {
           body = { action }
         }
@@ -992,8 +1012,9 @@ async function refreshExpanded() {
     for (const it of expandedItems.value) {
       if (isGroupRatioItem(it)) {
         if (!(it.id in groupDrafts)) groupDrafts[it.id] = it.apply_rate ?? it.group_rate_change.suggested_rate
-      } else if (!(it.id in drafts)) {
-        drafts[it.id] = buildDraft(it)
+      } else {
+        if (!(it.id in drafts)) drafts[it.id] = buildDraft(it)
+        if (!(it.id in platformDrafts)) platformDrafts[it.id] = it.platform
       }
     }
   } catch {

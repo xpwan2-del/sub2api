@@ -209,7 +209,7 @@ func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, create
 //   - apply: 写入目标渠道定价(Task 8 ApplyUpstreamPricingEntry)+ item.status=applied;
 //     应用失败则 item.status=failed 并返回错误(失败原因记录到 review_note)。
 //   - reject / ignore: 仅更新 item 状态,不触碰渠道。
-func (s *UpstreamPriceSyncService) ReviewItem(ctx context.Context, requestID, itemID int64, action ReviewAction, applyValue *ConvertedPrice, applyRate *float64, reviewerID int64, note string) error {
+func (s *UpstreamPriceSyncService) ReviewItem(ctx context.Context, requestID, itemID int64, action ReviewAction, applyValue *ConvertedPrice, applyRate *float64, platform string, reviewerID int64, note string) error {
 	it, err := s.repo.GetItem(ctx, itemID)
 	if err != nil {
 		return fmt.Errorf("get item: %w", err)
@@ -258,6 +258,19 @@ func (s *UpstreamPriceSyncService) ReviewItem(ctx context.Context, requestID, it
 	}
 	if val == nil {
 		return infraerrors.BadRequest("NO_APPLY_VALUE", "no apply value for item")
+	}
+	// 平台补充/修正:仅当显式传入且与已存值不同时更新。上游模型名推断不出平台
+	// (InferPlatform 返回空串)时,管理员在审批时通过下拉框人工指定,随 apply 一起落库。
+	if platform != "" {
+		if !validSyncPlatform(platform) {
+			return infraerrors.BadRequest("INVALID_PLATFORM", "invalid platform")
+		}
+		if platform != it.Platform {
+			if err := s.repo.UpdateItemPlatform(ctx, requestID, itemID, platform); err != nil {
+				return mapReviewConflict(err)
+			}
+			it.Platform = platform
+		}
 	}
 	if _, err := s.channelService.ApplyUpstreamPricingEntry(ctx, it.TargetChannelID, it.Platform, []string{it.ModelName}, *val); err != nil {
 		if ferr := s.repo.FinalizeItemCAS(ctx, requestID, itemID, "failed", reviewerID, err.Error(), val); ferr != nil {

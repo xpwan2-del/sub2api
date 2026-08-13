@@ -196,7 +196,7 @@ export async function getRequest(id: number) {
 }
 
 export type ReviewItemBody =
-  | { action: 'apply'; apply_value: ConvertedPrice; note?: string }
+  | { action: 'apply'; apply_value: ConvertedPrice; note?: string; platform?: string }
   | { action: 'apply'; apply_rate: number; note?: string }
   | { action: 'reject' | 'ignore'; note?: string }
 
