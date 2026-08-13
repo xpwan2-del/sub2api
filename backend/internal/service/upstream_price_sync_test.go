@@ -112,6 +112,41 @@ func TestDiffPricing_NoChange(t *testing.T) {
 	}
 }
 
+
+// TestDiffPricing_NilFieldEqualsZero 锁死「补0对比」语义:
+// 上游未返回的字段(nil)与本地显式 0 视为等价,不再生成价格变更。
+func TestDiffPricing_NilFieldEqualsZero(t *testing.T) {
+	up := map[string]ConvertedPrice{"m": {BillingMode: BillingModeToken, InputPrice: floatPtr(1e-6)}}
+	plat := map[string]string{"m": PlatformOpenAI}
+	local := []ChannelModelPricing{{ID: 1, ChannelID: 1, Platform: PlatformOpenAI, Models: []string{"m"},
+		BillingMode: BillingModeToken, InputPrice: floatPtr(1e-6), CacheReadPrice: floatPtr(0), CacheWritePrice: floatPtr(0)}}
+	got := DiffPricing(up, plat, local, 1)
+	if len(got) != 1 || got[0].Kind != ItemKindModelUnchanged {
+		t.Fatalf("expected 1 model_unchanged, got %+v", got)
+	}
+}
+
+func TestFloatEq_NilTreatedAsZero(t *testing.T) {
+	cases := []struct {
+		name string
+		a, b *float64
+		want bool
+	}{
+		{"nil vs nil", nil, nil, true},
+		{"nil vs zero", nil, floatPtr(0), true},
+		{"zero vs nil", floatPtr(0), nil, true},
+		{"nil vs nonzero", nil, floatPtr(0.001), false},
+		{"nonzero vs nil", floatPtr(0.001), nil, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := floatEq(tc.a, tc.b); got != tc.want {
+				t.Fatalf("floatEq(%v, %v) = %v, want %v", tc.a, tc.b, got, tc.want)
+			}
+		})
+	}
+}
+
 // TestDiffPricing_MixedUnchanged 同批含一致与变更:一致 → model_unchanged,变更 → model_price。
 func TestDiffPricing_MixedUnchanged(t *testing.T) {
 	up := map[string]ConvertedPrice{

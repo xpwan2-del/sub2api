@@ -394,11 +394,18 @@ func convertedEqual(a, b *ConvertedPrice) bool {
 		floatEq(a.PerRequestPrice, b.PerRequestPrice)
 }
 
+// floatEq 数值容差比较;nil 视为 0 参与对比。
+// 上游未返回的字段(如无 cache_ratio → cache_read=nil)与本地显式 0 视为等价,
+// 避免「上游无缓存价 vs 本地缓存价=0」被误判为价格变更。
 func floatEq(a, b *float64) bool {
-	if a == nil || b == nil {
-		return a == b
+	av, bv := 0.0, 0.0
+	if a != nil {
+		av = *a
 	}
-	return math.Abs(*a-*b) <= priceTolerance
+	if b != nil {
+		bv = *b
+	}
+	return math.Abs(av-bv) <= priceTolerance
 }
 
 // UpstreamSourceConfig 上游 new-api 同步源配置。APIKey/DashboardToken 在内存中
