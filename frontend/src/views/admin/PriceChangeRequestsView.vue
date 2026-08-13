@@ -215,7 +215,7 @@
                     <tr
                       v-for="item in sortedModelItems"
                       :key="item.id"
-                      :class="['text-sm', isRemoved(item) ? 'opacity-50' : '']"
+                      class="text-sm"
                     >
                       <td class="px-2 py-2 align-top">
                         <input
@@ -306,7 +306,7 @@
                           </span>
                           <button
                             @click="reviewSingle(item, 'apply')"
-                            :disabled="isRemoved(item) || isItemDone(item) || reviewingId === item.id"
+                            :disabled="isItemDone(item) || reviewingId === item.id"
                             class="btn-icon text-green-600 hover:text-green-700 disabled:opacity-30 dark:text-green-400"
                             :title="t('admin.priceChangeRequests.actions.apply', 'Apply')"
                           >
@@ -766,10 +766,9 @@ function selectedItemsForRequest(_reqId: number): PriceChangeItem[] {
   return expandedItems.value.filter((i) => selected.has(i.id))
 }
 
-// 可应用选中项:排除 model_removed(其后端 apply 路径未实现,会报 NO_APPLY_VALUE)。
-// reject/ignore 对全部选中项可用;唯独 apply 需过滤,避免整批因 removed 项 fail。
+// 可应用选中项:全部选中项均可 apply(model_removed 应用后会删除渠道内对应模型)。
 function applyableSelectedItems(reqId: number): PriceChangeItem[] {
-  return selectedItemsForRequest(reqId).filter((i) => !isRemoved(i))
+  return selectedItemsForRequest(reqId)
 }
 
 function selectedCount(_reqId: number): number {
@@ -921,10 +920,8 @@ const batchConfirmTitle = computed(() => {
 })
 const batchConfirmMessage = computed(() => {
   const reqId = expandedRequestId.value
-  // apply 的确认数只算可应用项(model_removed 会被跳过),与实际处理量一致。
-  const count = reqId != null && pendingBatchAction.value === 'apply'
-    ? applyableSelectedItems(reqId).length
-    : (reqId != null ? selectedItemsForRequest(reqId).length : 0)
+  // apply/reject/ignore 的确认数均为当前选中项数量。
+  const count = reqId != null ? selectedItemsForRequest(reqId).length : 0
   return t('admin.priceChangeRequests.batchConfirmMessage', { count })
 })
 
@@ -948,10 +945,8 @@ async function confirmBatch() {
 async function runBatch(action: 'apply' | 'reject' | 'ignore') {
   const reqId = expandedRequestId.value
   if (reqId == null) return
-  // apply 只作用于可应用项(model_removed 的 apply 后端未实现,跳过避免整批 fail);
-  // reject/ignore 对全部选中项执行(含 model_removed)。
-  const all = selectedItemsForRequest(reqId)
-  const items = action === 'apply' ? all.filter((i) => !isRemoved(i)) : all
+  // apply/reject/ignore 均对全部选中项执行(model_removed 的 apply 会删除渠道内对应模型)。
+  const items = selectedItemsForRequest(reqId)
   if (items.length === 0) {
     appStore.showWarning(t('admin.priceChangeRequests.batchNoApplyable', 'No applyable items selected'))
     return

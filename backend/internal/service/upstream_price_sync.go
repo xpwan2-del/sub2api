@@ -512,7 +512,10 @@ type UpstreamPriceSyncRepository interface {
 // MarshalConverted / UnmarshalConverted — JSONB 落库辅助。
 func MarshalConverted(c *ConvertedPrice) ([]byte, error) { return json.Marshal(c) }
 func UnmarshalConverted(b []byte) (*ConvertedPrice, error) {
-	if len(b) == 0 {
+	// nil 指针经 MarshalConverted 落库为 JSON "null";读回时须还原为 nil,
+	// 否则 local_current/upstream_converted/apply_value 会变成空对象(字段全 nil),
+	// 前端 priceDetailStrings 会把空对象渲染成 "0" 而非 "-"。
+	if len(b) == 0 || string(b) == "null" {
 		return nil, nil
 	}
 	var c ConvertedPrice

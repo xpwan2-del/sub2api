@@ -1063,6 +1063,51 @@ func (s *ChannelService) ApplyUpstreamPricingEntry(ctx context.Context, channelI
 	return np, nil
 }
 
+// RemoveUpstreamPricingEntry 从目标渠道删除单个模型定价,不影响该渠道其他定价。
+// 命中 (platform, model) 所在定价行后从 Models 中移除该模型;移除后该行若无剩余模型则整行删除。
+// 用于上游价格同步审批「移除模型」应用。未命中时幂等返回 nil(模型已不在渠道)。
+func (s *ChannelService) RemoveUpstreamPricingEntry(ctx context.Context, channelID int64, platform string, model string) error {
+	if channelID <= 0 {
+		return infraerrors.BadRequest("invalid_channel", "channel id required")
+	}
+	existing, err := s.repo.ListModelPricing(ctx, channelID)
+	if err != nil {
+		return fmt.Errorf("list model pricing: %w", err)
+	}
+	modelLower := strings.ToLower(strings.TrimSpace(model))
+	for i := range existing {
+		p := &existing[i]
+		if platform != "" && !strings.EqualFold(p.Platform, platform) {
+			continue
+		}
+		kept := make([]string, 0, len(p.Models))
+		removed := false
+		for _, m := range p.Models {
+			if strings.ToLower(m) == modelLower {
+				removed = true
+				continue
+			}
+			kept = append(kept, m)
+		}
+		if !removed {
+			continue
+		}
+		if len(kept) == 0 {
+			if err := s.repo.DeleteModelPricing(ctx, p.ID); err != nil {
+				return fmt.Errorf("delete model pricing: %w", err)
+			}
+		} else {
+			p.Models = kept
+			if err := s.repo.UpdateModelPricing(ctx, p); err != nil {
+				return fmt.Errorf("update model pricing: %w", err)
+			}
+		}
+		s.invalidateCache()
+		return nil
+	}
+	return nil
+}
+
 // applyConvertedToPricing 把 ConvertedPrice 的价格字段写入 ChannelModelPricing。
 func applyConvertedToPricing(p *ChannelModelPricing, c ConvertedPrice) {
 	p.BillingMode = c.BillingMode

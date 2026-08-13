@@ -282,3 +282,29 @@ func TestBuildGroupRateChanges_RoundsAndRejectsInvalid(t *testing.T) {
 		}
 	}
 }
+
+// TestConvertedPriceNullRoundtrip 锁死「nil 指针落库为 JSON null,读回仍为 nil」的往返语义。
+// 否则 model_added 的 local_current 会被读回成空对象,前端 priceDetailStrings 渲染成 "0" 而非 "-"。
+func TestConvertedPriceNullRoundtrip(t *testing.T) {
+	raw, err := MarshalConverted(nil)
+	if err != nil {
+		t.Fatalf("MarshalConverted(nil): %v", err)
+	}
+	if string(raw) != "null" {
+		t.Fatalf("MarshalConverted(nil) = %q, want \"null\"", raw)
+	}
+	got, err := UnmarshalConverted(raw)
+	if err != nil {
+		t.Fatalf("UnmarshalConverted: %v", err)
+	}
+	if got != nil {
+		t.Fatalf("UnmarshalConverted(\"null\") = %+v, want nil", got)
+	}
+	// 非空对象仍应正常往返。
+	price := &ConvertedPrice{BillingMode: BillingModeToken, InputPrice: floatPtr(1e-6)}
+	raw2, _ := MarshalConverted(price)
+	got2, err := UnmarshalConverted(raw2)
+	if err != nil || got2 == nil || got2.InputPrice == nil || *got2.InputPrice != 1e-6 {
+		t.Fatalf("roundtrip non-null failed: got=%+v err=%v", got2, err)
+	}
+}

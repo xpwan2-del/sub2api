@@ -356,11 +356,19 @@ type fakeApplyCall struct {
 	Price     ConvertedPrice
 }
 
+type fakeRemoveCall struct {
+	ChannelID int64
+	Platform  string
+	Model     string
+}
+
 type fakeChannelService struct {
 	channel  *Channel       // GetByID 返回值(nil → 空 Channel,ModelPricing 为空)
 	applied  *fakeApplyCall // 记录最近一次 ApplyUpstreamPricingEntry 调用(nil = 未调用)
 	applyErr error          // 注入 ApplyUpstreamPricingEntry 错误
 	applyRet *ChannelModelPricing
+	removed  *fakeRemoveCall // 记录最近一次 RemoveUpstreamPricingEntry 调用(nil = 未调用)
+	removeErr error          // 注入 RemoveUpstreamPricingEntry 错误
 }
 
 func newFakeChannelService() *fakeChannelService {
@@ -392,6 +400,11 @@ func (f *fakeChannelService) ApplyUpstreamPricingEntry(_ context.Context, channe
 		return f.applyRet, nil
 	}
 	return &ChannelModelPricing{ChannelID: channelID, Platform: platform, Models: models}, nil
+}
+
+func (f *fakeChannelService) RemoveUpstreamPricingEntry(_ context.Context, channelID int64, platform string, model string) error {
+	f.removed = &fakeRemoveCall{ChannelID: channelID, Platform: platform, Model: model}
+	return f.removeErr
 }
 
 // ---------- tests ----------
@@ -542,6 +555,65 @@ func TestReviewItem_ApplyErrorMarksFailed(t *testing.T) {
 
 	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewApply, nil, nil, "", 9, ""); err == nil {
 		t.Fatal("expected ReviewItem to return error when apply fails")
+	}
+	got, _ := fakeRepo.GetItem(context.Background(), itemID)
+	if got.Status != "failed" {
+		t.Fatalf("item status = %s, want failed", got.Status)
+	}
+}
+
+func TestReviewItem_ApplyRemovedDeletesModel(t *testing.T) {
+	fakeRepo := newFakeRepo()
+	chSvc := newFakeChannelService()
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, nil, testUpstreamConfig(""))
+
+	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
+	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
+	// model_removed:本地有、上游无 → 无 UpstreamConverted / ApplyValue,apply 即删除渠道内该模型。
+	items := []PriceChangeItem{{
+		Kind: ItemKindModelRemoved, Platform: PlatformAnthropic, ModelName: "claude-old",
+		TargetChannelID: 7, Status: "pending",
+	}}
+	req := &PriceChangeRequest{SourceConfigID: cfgRec.ID, TriggerType: "manual"}
+	_ = fakeRepo.CreateRequest(context.Background(), req, items)
+	itemID := items[0].ID
+
+	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewApply, nil, nil, "", 42, "cleanup"); err != nil {
+		t.Fatalf("ReviewItem err: %v", err)
+	}
+	if chSvc.removed == nil {
+		t.Fatal("expected RemoveUpstreamPricingEntry to be called")
+	}
+	if chSvc.removed.ChannelID != 7 || chSvc.removed.Platform != PlatformAnthropic || chSvc.removed.Model != "claude-old" {
+		t.Fatalf("remove call = %+v, want {7 anthropic claude-old}", chSvc.removed)
+	}
+	if chSvc.applied != nil {
+		t.Fatal("ApplyUpstreamPricingEntry should NOT be called for removed model")
+	}
+	got, _ := fakeRepo.GetItem(context.Background(), itemID)
+	if got.Status != "applied" {
+		t.Fatalf("item status = %s, want applied", got.Status)
+	}
+}
+
+func TestReviewItem_ApplyRemovedErrorMarksFailed(t *testing.T) {
+	fakeRepo := newFakeRepo()
+	chSvc := newFakeChannelService()
+	chSvc.removeErr = errFakeNotFound
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, nil, testUpstreamConfig(""))
+
+	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
+	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
+	items := []PriceChangeItem{{
+		Kind: ItemKindModelRemoved, Platform: PlatformAnthropic, ModelName: "claude-old",
+		TargetChannelID: 7, Status: "pending",
+	}}
+	req := &PriceChangeRequest{SourceConfigID: cfgRec.ID, TriggerType: "manual"}
+	_ = fakeRepo.CreateRequest(context.Background(), req, items)
+	itemID := items[0].ID
+
+	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewApply, nil, nil, "", 9, ""); err == nil {
+		t.Fatal("expected ReviewItem to return error when removal fails")
 	}
 	got, _ := fakeRepo.GetItem(context.Background(), itemID)
 	if got.Status != "failed" {

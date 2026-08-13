@@ -15,10 +15,11 @@ import (
 )
 
 // channelApplier 解耦对 ChannelService 的依赖(便于测试)。
-// *ChannelService 通过 ApplyUpstreamPricingEntry + GetByID 隐式实现该接口;
+// *ChannelService 通过 ApplyUpstreamPricingEntry + RemoveUpstreamPricingEntry + GetByID 隐式实现该接口;
 // 测试可用最小 fake 替换,无需构造完整 ChannelService。
 type channelApplier interface {
 	ApplyUpstreamPricingEntry(ctx context.Context, channelID int64, platform string, models []string, price ConvertedPrice) (*ChannelModelPricing, error)
+	RemoveUpstreamPricingEntry(ctx context.Context, channelID int64, platform string, model string) error
 	GetByID(ctx context.Context, id int64) (*Channel, error)
 }
 
@@ -247,6 +248,19 @@ func (s *UpstreamPriceSyncService) ReviewItem(ctx context.Context, requestID, it
 			s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, groupID)
 		}
 		it.ApplyRate = &actualRate
+		return nil
+	}
+	if it.Kind == ItemKindModelRemoved {
+		// 移除模型:把该模型从目标渠道定价中删除,不涉及 apply_value。
+		if err := s.channelService.RemoveUpstreamPricingEntry(ctx, it.TargetChannelID, it.Platform, it.ModelName); err != nil {
+			if ferr := s.repo.FinalizeItemCAS(ctx, requestID, itemID, "failed", reviewerID, err.Error(), nil); ferr != nil {
+				slog.WarnContext(ctx, "finalize failed item after remove error", "item_id", itemID, "err", ferr)
+			}
+			return fmt.Errorf("remove: %w", err)
+		}
+		if err := s.repo.FinalizeItemCAS(ctx, requestID, itemID, "applied", reviewerID, note, nil); err != nil {
+			return mapReviewConflict(err)
+		}
 		return nil
 	}
 	val := applyValue
