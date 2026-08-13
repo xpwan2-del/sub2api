@@ -261,10 +261,10 @@
                       </td>
                       <td class="px-2 py-2 align-top">
                         <span v-if="isRemoved(item) || isUnchanged(item)" class="text-xs text-gray-400">—</span>
-                        <!-- per_request 计费:单一按次价格 -->
-                        <div v-else-if="draftMode(drafts[item.id]) === 'per_request'" class="flex flex-col gap-1">
+                        <!-- 按次/按秒计费(per_request/image/video/per_second):单一单价字段 -->
+                        <div v-else-if="isPerUnitMode(draftMode(drafts[item.id]))" class="flex flex-col gap-1">
                           <label class="flex items-center gap-1 text-xs">
-                            <span class="inline-block w-14 shrink-0 text-right text-gray-500 dark:text-gray-400">per_req</span>
+                            <span class="inline-block w-14 shrink-0 text-right text-gray-500 dark:text-gray-400">{{ perUnitDraftLabel(drafts[item.id]) }}</span>
                             <input
                               :value="drafts[item.id]?.perRequest"
                               type="number"
@@ -442,6 +442,15 @@ function fmtNum(v: number | null | undefined): string {
   return String(Number(v.toFixed(6)))
 }
 
+// 按次/按秒计费模式:与 token 不同,它们复用 per_request_price 单一单价字段
+// (per_request/image/video 为「每次」单价,per_second 为「每秒」单价 USD/s)。
+// 这些模式不应落入 token 分支,否则会显示 in/out/cache 全 0 的假字段。
+const PER_UNIT_MODES: ReadonlySet<string> = new Set(['per_request', 'image', 'video', 'per_second'])
+
+function isPerUnitMode(mode: string): boolean {
+  return PER_UNIT_MODES.has(mode)
+}
+
 function priceDetailStrings(p: any): string[] {
   if (!p || typeof p !== 'object') return ['-']
   const c = pickPrice(p)
@@ -449,8 +458,9 @@ function priceDetailStrings(p: any): string[] {
   if (c.mode) lines.push(`[${c.mode}]`)
   // 缺失字段默认显示 0(而非省略):上游还原值未返回 cache 等字段时,审批单展示更直观。
   const mTok0 = (v: number | null | undefined) => fmtNum(perTokenToMTok(v ?? 0))
-  if (c.mode === 'per_request') {
-    lines.push(`per_req=${fmtNum(c.perRequest ?? 0)}/req`)
+  if (isPerUnitMode(c.mode)) {
+    const perSec = c.mode === 'per_second'
+    lines.push(`${perSec ? 'per_sec' : 'per_req'}=${fmtNum(c.perRequest ?? 0)}${perSec ? '/s' : '/req'}`)
   } else {
     lines.push(`in=${mTok0(c.input)}`)
     lines.push(`out=${mTok0(c.output)}`)
@@ -726,6 +736,11 @@ type DraftFieldKey = 'input' | 'output' | 'cacheRead' | 'cacheWrite' | 'perReque
 
 function draftMode(d: Draft | undefined): string {
   return d?.mode || 'token'
+}
+
+// per-unit 模式(按次/按秒)应用值编辑框的字段名:per_second 用 per_sec,其余用 per_req。
+function perUnitDraftLabel(d: Draft | undefined): string {
+  return draftMode(d) === 'per_second' ? 'per_sec' : 'per_req'
 }
 
 function setDraftField(d: Draft | undefined, key: DraftFieldKey, v: string) {
