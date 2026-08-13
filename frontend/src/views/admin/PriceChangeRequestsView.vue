@@ -146,7 +146,7 @@
                 </button>
                 <button
                   v-if="row.status === 'open' || row.status === 'partially_applied'"
-                  @click="closeRequest(row)"
+                  @click="requestClose(row)"
                   :disabled="batchRunning"
                   class="btn btn-secondary btn-sm"
                 >
@@ -367,6 +367,17 @@
       @confirm="confirmBatch"
       @cancel="showBatchConfirm = false"
     />
+
+    <ConfirmDialog
+      :show="showCloseConfirm"
+      :title="t('admin.priceChangeRequests.closeRequest', 'Close Request')"
+      :message="closeConfirmMessage"
+      :confirm-text="t('common.confirm', 'Confirm')"
+      :cancel-text="t('common.cancel', 'Cancel')"
+      :danger="true"
+      @confirm="confirmCloseRequest"
+      @cancel="showCloseConfirm = false"
+    />
   </AppLayout>
 </template>
 
@@ -492,6 +503,8 @@ const reviewingId = ref<number | null>(null)
 const batchRunning = ref(false)
 const showBatchConfirm = ref(false)
 const pendingBatchAction = ref<'apply' | 'reject' | 'ignore' | null>(null)
+const showCloseConfirm = ref(false)
+const pendingCloseRequest = ref<PriceChangeRequest | null>(null)
 
 // Per-item editable apply_value drafts: itemId → { mode, input, output, cacheRead, cacheWrite, perRequest }
 interface Draft {
@@ -980,6 +993,66 @@ async function runBatch(action: 'apply' | 'reject' | 'ignore') {
     }
     selected.clear()
     await refreshExpanded()
+  } finally {
+    batchRunning.value = false
+  }
+}
+
+// 待处理条目(状态为 pending,含 group_ratio / model_* 全部 kind)。
+// 关闭审批单时这些条目统一按「忽略」处理(不应用、不拒绝),与批量忽略语义一致。
+function pendingItems(): PriceChangeItem[] {
+  return expandedItems.value.filter((i) => !isItemDone(i))
+}
+
+// 关闭审批单确认框文案:提示将把全部待处理条目按「忽略」处理并关闭审批单。
+const closeConfirmMessage = computed(() => {
+  const count = pendingItems().length
+  return t('admin.priceChangeRequests.closeConfirmMessage', { count })
+})
+
+// 点击「关闭审批单」:先弹框确认,不直接关闭。
+function requestClose(row: PriceChangeRequest) {
+  if (batchRunning.value) return
+  pendingCloseRequest.value = row
+  showCloseConfirm.value = true
+}
+
+// 确认关闭:对全部待处理条目逐条执行 ignore。
+// 后端 FinalizeItemCAS 每条都会在事务内重算审批单状态,最后一条 pending 被忽略后
+// pending=0 → 审批单自动置 closed,无需再调用 close 接口(此时再 close 会因状态已 closed 报错)。
+async function confirmCloseRequest() {
+  showCloseConfirm.value = false
+  const row = pendingCloseRequest.value
+  pendingCloseRequest.value = null
+  if (!row) return
+  const reqId = (row as any).id ?? (row as any).ID
+  const items = pendingItems()
+  // 防御:open / partially_applied 理论上必有 pending 条目;若为空则退回原关闭接口。
+  if (items.length === 0) {
+    await closeRequest(row)
+    return
+  }
+  batchRunning.value = true
+  let ok = 0
+  let fail = 0
+  try {
+    for (const item of items) {
+      try {
+        await adminAPI.upstreamPriceSync.reviewItem(reqId, item.id, { action: 'ignore' })
+        ok++
+      } catch {
+        fail++
+      }
+    }
+    if (fail === 0) {
+      appStore.showSuccess(t('admin.priceChangeRequests.closed', 'Request closed'))
+    } else {
+      appStore.showWarning(t('admin.priceChangeRequests.batchPartial', { ok, fail }))
+    }
+    await loadRequests()
+    expandedRequestId.value = null
+    expandedItems.value = []
+    selected.clear()
   } finally {
     batchRunning.value = false
   }

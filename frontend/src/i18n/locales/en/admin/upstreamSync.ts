@@ -119,6 +119,7 @@ export default {
     batchIgnore: 'Batch Ignore',
     batchConfirmMessage: 'This will apply the action to {count} selected item(s). Continue?',
     closeRequest: 'Close Request',
+    closeConfirmMessage: 'Closing this request will ignore {count} pending item(s) and close it. Continue?',
     batchDone: 'Applied {count} items',
     batchRejectDone: 'Rejected {count} items',
     batchIgnoreDone: 'Ignored {count} items',

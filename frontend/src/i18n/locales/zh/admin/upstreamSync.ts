@@ -119,6 +119,7 @@ export default {
     batchIgnore: '批量忽略',
     batchConfirmMessage: '将对已选 {count} 条执行该批量操作,是否继续?',
     closeRequest: '关闭审批单',
+    closeConfirmMessage: '关闭审批单将把 {count} 条待处理条目按「忽略」处理并关闭，是否继续？',
     batchDone: '已应用 {count} 条',
     batchRejectDone: '已拒绝 {count} 条',
     batchIgnoreDone: '已忽略 {count} 条',
