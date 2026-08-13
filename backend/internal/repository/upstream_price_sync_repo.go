@@ -929,6 +929,26 @@ WHERE id=$1`,
 	return nil
 }
 
+// UpdateItemPlatform 补充/修正审批条目的 platform(仅 pending 条目可改)。
+// 用于上游模型名推断不出平台(InferPlatform 返回空串)时,管理员在审批时人工指定。
+func (r *upstreamPriceSyncRepo) UpdateItemPlatform(ctx context.Context, requestID, itemID int64, platform string) error {
+	res, err := r.db.ExecContext(ctx, `
+UPDATE upstream_price_change_items
+SET platform=$3
+WHERE id=$1 AND request_id=$2 AND status='pending'`, itemID, requestID, platform)
+	if err != nil {
+		return fmt.Errorf("update upstream price change item platform: %w", err)
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return service.ErrItemNotPending
+	}
+	return nil
+}
+
 // ExpireOpenRequests 把某个 config 下所有 open 批次置为 expired,返回受影响行数。
 func (r *upstreamPriceSyncRepo) ExpireOpenRequests(ctx context.Context, configID int64) (int, error) {
 	res, err := r.db.ExecContext(ctx, `

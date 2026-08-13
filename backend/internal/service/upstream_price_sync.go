@@ -247,6 +247,37 @@ func ConvertPricing(m UpstreamModelPricing, basePer1k float64) ConvertedPrice {
 	return out
 }
 
+// defaultMissingPriceFields 生成审批单「应用值」的默认值:把上游还原值中缺失(nil)
+// 的价格字段补为 0。上游未返回的字段(如无 cache_ratio → cache_read=nil)在应用值里
+// 显式写 0,与本地定价的 0 语义一致,避免 apply 落库后该字段悬空为 nil。
+func defaultMissingPriceFields(up *ConvertedPrice) *ConvertedPrice {
+	if up == nil {
+		return nil
+	}
+	out := *up
+	if out.InputPrice == nil {
+		z := 0.0
+		out.InputPrice = &z
+	}
+	if out.OutputPrice == nil {
+		z := 0.0
+		out.OutputPrice = &z
+	}
+	if out.CacheReadPrice == nil {
+		z := 0.0
+		out.CacheReadPrice = &z
+	}
+	if out.CacheWritePrice == nil {
+		z := 0.0
+		out.CacheWritePrice = &z
+	}
+	if out.PerRequestPrice == nil {
+		z := 0.0
+		out.PerRequestPrice = &z
+	}
+	return &out
+}
+
 // InferPlatform 按模型名前缀推断平台;未识别返回空串。
 func InferPlatform(modelName string) string {
 	name := strings.ToLower(modelName)
@@ -262,6 +293,17 @@ func InferPlatform(modelName string) string {
 		return PlatformGrok
 	}
 	return ""
+}
+
+// validSyncPlatform 报告 platform 是否为渠道支持的平台之一。
+// 与 domain/model 两处的平台常量保持一致(anthropic/openai/gemini/antigravity/grok)。
+// 上游模型名推断不出平台时(InferPlatform 返回空串),审批时可人工补充,须限制在此集合内。
+func validSyncPlatform(platform string) bool {
+	switch platform {
+	case PlatformAnthropic, PlatformOpenAI, PlatformGemini, PlatformAntigravity, PlatformGrok:
+		return true
+	}
+	return false
 }
 
 const priceTolerance = 1e-9
@@ -306,14 +348,19 @@ func DiffPricing(upstream map[string]ConvertedPrice, upstreamPlatforms map[strin
 	}
 
 	var drafts []PriceChangeItemDraft
-	// 第一遍:按渠道添加顺序遍历本地已有模型 → 价格变更 / 无变化 / 移除。
-	matched := map[key]bool{} // 上游 key 中已被本地认领的(平台,模型)
+	// matchedNames: 已被本地认领的上游模型名。上游模型名唯一,按名记认领即可覆盖
+	// 平台缺失兜底(上游推断不出平台时按模型名匹配),无需再按 (platform, model) 记。
+	matchedNames := map[string]bool{}
 	for _, k := range localOrder {
 		lp := localIdx[k]
 		localPrice := channelPricingToConverted(lp)
 		uk, hasUp := upstreamKey[k.model]
-		if hasUp && uk == k {
-			matched[uk] = true
+		// 平台一致才按 (platform, model) 精确匹配;上游推断不出平台(渠道字段缺失,
+		// InferPlatform 返回空串)时,退化为按模型名匹配。场景:模型名无法推断平台,
+		// 由管理员手动指定平台加入渠道;再次同步时上游仍无平台信息,仅凭模型名 + 价格
+		// 判等即可认定为同一模型,避免误判为「移除 + 新增」。
+		if hasUp && (uk.platform == k.platform || uk.platform == "") {
+			matchedNames[k.model] = true
 			upCopy := upstream[k.model]
 			if convertedEqual(&upCopy, localPrice) {
 				// 与本地完全一致:仍生成条目(kind=model_unchanged)供审批单完整展示,
@@ -329,8 +376,8 @@ func DiffPricing(upstream map[string]ConvertedPrice, upstreamPlatforms map[strin
 	}
 	// 第二遍:上游有、本地无 → 新增。按模型名稳定排序追加。
 	var addedNames []string
-	for name, uk := range upstreamKey {
-		if !matched[uk] {
+	for name := range upstreamKey {
+		if !matchedNames[name] {
 			addedNames = append(addedNames, name)
 		}
 	}
@@ -383,11 +430,18 @@ func convertedEqual(a, b *ConvertedPrice) bool {
 		floatEq(a.PerRequestPrice, b.PerRequestPrice)
 }
 
+// floatEq 数值容差比较;nil 视为 0 参与对比。
+// 上游未返回的字段(如无 cache_ratio → cache_read=nil)与本地显式 0 视为等价,
+// 避免「上游无缓存价 vs 本地缓存价=0」被误判为价格变更。
 func floatEq(a, b *float64) bool {
-	if a == nil || b == nil {
-		return a == b
+	av, bv := 0.0, 0.0
+	if a != nil {
+		av = *a
 	}
-	return math.Abs(*a-*b) <= priceTolerance
+	if b != nil {
+		bv = *b
+	}
+	return math.Abs(av-bv) <= priceTolerance
 }
 
 // UpstreamSourceConfig 上游 new-api 同步源配置。APIKey/DashboardToken 在内存中
@@ -484,6 +538,7 @@ type UpstreamPriceSyncRepository interface {
 	GetItem(ctx context.Context, id int64) (*PriceChangeItem, error)
 	UpdateItemStatus(ctx context.Context, id int64, status string, reviewerID int64, note string, appliedAt *time.Time) error
 	FinalizeItemCAS(ctx context.Context, requestID, itemID int64, status string, reviewerID int64, note string, applyValue *ConvertedPrice) error
+	UpdateItemPlatform(ctx context.Context, requestID, itemID int64, platform string) error
 	ApplyGroupRateItem(ctx context.Context, input GroupRateApplyInput) (int64, float64, error)
 	ExpireOpenRequests(ctx context.Context, configID int64) (int, error)
 	CloseRequest(ctx context.Context, requestID int64) error
@@ -493,7 +548,10 @@ type UpstreamPriceSyncRepository interface {
 // MarshalConverted / UnmarshalConverted — JSONB 落库辅助。
 func MarshalConverted(c *ConvertedPrice) ([]byte, error) { return json.Marshal(c) }
 func UnmarshalConverted(b []byte) (*ConvertedPrice, error) {
-	if len(b) == 0 {
+	// nil 指针经 MarshalConverted 落库为 JSON "null";读回时须还原为 nil,
+	// 否则 local_current/upstream_converted/apply_value 会变成空对象(字段全 nil),
+	// 前端 priceDetailStrings 会把空对象渲染成 "0" 而非 "-"。
+	if len(b) == 0 || string(b) == "null" {
 		return nil, nil
 	}
 	var c ConvertedPrice

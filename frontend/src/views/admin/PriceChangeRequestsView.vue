@@ -215,7 +215,7 @@
                     <tr
                       v-for="item in sortedModelItems"
                       :key="item.id"
-                      :class="['text-sm', isRemoved(item) ? 'opacity-50' : '']"
+                      class="text-sm"
                     >
                       <td class="px-2 py-2 align-top">
                         <input
@@ -229,7 +229,18 @@
                       <td class="px-2 py-2 align-top font-medium text-gray-900 dark:text-white">
                         {{ modelField(item, 'name') }}
                       </td>
-                      <td class="px-2 py-2 align-top text-gray-600 dark:text-gray-400">{{ item.platform || '-' }}</td>
+                      <td class="px-2 py-2 align-top text-gray-600 dark:text-gray-400">
+                        <select
+                          v-if="item.platform === '' && !isItemDone(item)"
+                          v-model="platformDrafts[item.id]"
+                          class="input py-1 text-xs"
+                          :aria-label="t('admin.priceChangeRequests.items.platform', 'Platform')"
+                        >
+                          <option value="">{{ t('admin.priceChangeRequests.items.selectPlatform', 'Select platform') }}</option>
+                          <option v-for="p in platformOptions" :key="p" :value="p">{{ p }}</option>
+                        </select>
+                        <span v-else>{{ item.platform || '-' }}</span>
+                      </td>
                       <td class="px-2 py-2 align-top text-gray-600 dark:text-gray-400">
                         {{ channelName((item as any).target_channel_id ?? (item as any).TargetChannelID) }}
                       </td>
@@ -295,7 +306,7 @@
                           </span>
                           <button
                             @click="reviewSingle(item, 'apply')"
-                            :disabled="isRemoved(item) || isItemDone(item) || reviewingId === item.id"
+                            :disabled="isItemDone(item) || reviewingId === item.id"
                             class="btn-icon text-green-600 hover:text-green-700 disabled:opacity-30 dark:text-green-400"
                             :title="t('admin.priceChangeRequests.actions.apply', 'Apply')"
                           >
@@ -425,12 +436,16 @@ function priceDetailStrings(p: any): string[] {
   const c = pickPrice(p)
   const lines: string[] = []
   if (c.mode) lines.push(`[${c.mode}]`)
-  // per_request 为 $/次,直接展示;token 字段(in/out/cache_*)为 per-token 存储,×1e6 显示成 $/MTok。
-  if (c.perRequest !== null) lines.push(`per_req=${fmtNum(c.perRequest)}/req`)
-  if (c.input !== null) lines.push(`in=${fmtNum(perTokenToMTok(c.input))}`)
-  if (c.output !== null) lines.push(`out=${fmtNum(perTokenToMTok(c.output))}`)
-  if (c.cacheRead !== null) lines.push(`cache_r=${fmtNum(perTokenToMTok(c.cacheRead))}`)
-  if (c.cacheWrite !== null) lines.push(`cache_w=${fmtNum(perTokenToMTok(c.cacheWrite))}`)
+  // 缺失字段默认显示 0(而非省略):上游还原值未返回 cache 等字段时,审批单展示更直观。
+  const mTok0 = (v: number | null | undefined) => fmtNum(perTokenToMTok(v ?? 0))
+  if (c.mode === 'per_request') {
+    lines.push(`per_req=${fmtNum(c.perRequest ?? 0)}/req`)
+  } else {
+    lines.push(`in=${mTok0(c.input)}`)
+    lines.push(`out=${mTok0(c.output)}`)
+    lines.push(`cache_r=${mTok0(c.cacheRead)}`)
+    lines.push(`cache_w=${mTok0(c.cacheWrite)}`)
+  }
   return lines.length ? lines : ['-']
 }
 
@@ -489,6 +504,10 @@ interface Draft {
 }
 const drafts = reactive<Record<number, Draft>>({})
 const groupDrafts = reactive<Record<number, number>>({})
+const platformDrafts = reactive<Record<number, string>>({})
+
+// 渠道支持的平台全集(与后端 domain/model 常量一致),用于给推断不出平台的模型补充平台。
+const platformOptions = ['anthropic', 'openai', 'gemini', 'antigravity', 'grok'] as const
 
 // Selected item ids (per request, but stored globally keyed by item id; current request implied)
 const selected = reactive<Set<number>>(new Set())
@@ -659,17 +678,18 @@ function kindBadgeClass(kind: string): string {
 // Draft helpers
 function buildDraft(item: ModelPriceChangeItem): Draft {
   // 已保存的 apply_value 优先,逐字段缺失则回退上游还原值(满足"同步后默认 = 上游还原值")。
+  // 两者都缺失(字段不存在)时表单补 0,与后端 apply_value 补 0 的默认语义保持一致。
   const a = pickPrice((item as any).apply_value)
   const u = pickPrice((item as any).upstream_converted)
   const mode = (a?.mode || u?.mode) || 'token'
   // draft 以 $/MTok(token 字段)/ $/次(per_request)展示与编辑;token 字段从 per-token ×1e6。
   const mTok = (av: number | null | undefined, uv: number | null | undefined): string => {
     const v = av !== null && av !== undefined ? av : uv
-    return v === null || v === undefined ? '' : String(perTokenToMTok(v))
+    return v === null || v === undefined ? '0' : String(perTokenToMTok(v))
   }
   const num = (av: number | null | undefined, uv: number | null | undefined): string => {
     const v = av !== null && av !== undefined ? av : uv
-    return v === null || v === undefined ? '' : String(v)
+    return v === null || v === undefined ? '0' : String(v)
   }
   return {
     mode,
@@ -747,10 +767,9 @@ function selectedItemsForRequest(_reqId: number): PriceChangeItem[] {
   return expandedItems.value.filter((i) => selected.has(i.id))
 }
 
-// 可应用选中项:排除 model_removed(其后端 apply 路径未实现,会报 NO_APPLY_VALUE)。
-// reject/ignore 对全部选中项可用;唯独 apply 需过滤,避免整批因 removed 项 fail。
+// 可应用选中项:全部选中项均可 apply(model_removed 应用后会删除渠道内对应模型)。
 function applyableSelectedItems(reqId: number): PriceChangeItem[] {
-  return selectedItemsForRequest(reqId).filter((i) => !isRemoved(i))
+  return selectedItemsForRequest(reqId)
 }
 
 function selectedCount(_reqId: number): number {
@@ -852,8 +871,9 @@ async function toggleExpand(row: PriceChangeRequest) {
     for (const it of items) {
       if (isGroupRatioItem(it)) {
         if (!(it.id in groupDrafts)) groupDrafts[it.id] = it.apply_rate ?? it.group_rate_change.suggested_rate
-      } else if (!(it.id in drafts)) {
-        drafts[it.id] = buildDraft(it)
+      } else {
+        if (!(it.id in drafts)) drafts[it.id] = buildDraft(it)
+        if (!(it.id in platformDrafts)) platformDrafts[it.id] = it.platform
       }
     }
   } catch (error: unknown) {
@@ -874,7 +894,7 @@ async function reviewSingle(item: PriceChangeItem, action: 'apply' | 'reject' | 
     if (action === 'apply') {
       body = isGroupRatioItem(item)
         ? { action, apply_rate: groupDrafts[item.id] }
-        : { action, apply_value: buildApplyPayload(item.id) }
+        : { action, apply_value: buildApplyPayload(item.id), platform: platformDrafts[item.id] || undefined }
     } else {
       body = { action }
     }
@@ -901,10 +921,8 @@ const batchConfirmTitle = computed(() => {
 })
 const batchConfirmMessage = computed(() => {
   const reqId = expandedRequestId.value
-  // apply 的确认数只算可应用项(model_removed 会被跳过),与实际处理量一致。
-  const count = reqId != null && pendingBatchAction.value === 'apply'
-    ? applyableSelectedItems(reqId).length
-    : (reqId != null ? selectedItemsForRequest(reqId).length : 0)
+  // apply/reject/ignore 的确认数均为当前选中项数量。
+  const count = reqId != null ? selectedItemsForRequest(reqId).length : 0
   return t('admin.priceChangeRequests.batchConfirmMessage', { count })
 })
 
@@ -928,10 +946,8 @@ async function confirmBatch() {
 async function runBatch(action: 'apply' | 'reject' | 'ignore') {
   const reqId = expandedRequestId.value
   if (reqId == null) return
-  // apply 只作用于可应用项(model_removed 的 apply 后端未实现,跳过避免整批 fail);
-  // reject/ignore 对全部选中项执行(含 model_removed)。
-  const all = selectedItemsForRequest(reqId)
-  const items = action === 'apply' ? all.filter((i) => !isRemoved(i)) : all
+  // apply/reject/ignore 均对全部选中项执行(model_removed 的 apply 会删除渠道内对应模型)。
+  const items = selectedItemsForRequest(reqId)
   if (items.length === 0) {
     appStore.showWarning(t('admin.priceChangeRequests.batchNoApplyable', 'No applyable items selected'))
     return
@@ -946,7 +962,7 @@ async function runBatch(action: 'apply' | 'reject' | 'ignore') {
         if (action === 'apply') {
           body = isGroupRatioItem(item)
             ? { action, apply_rate: groupDrafts[item.id] }
-            : { action, apply_value: buildApplyPayload(item.id) }
+            : { action, apply_value: buildApplyPayload(item.id), platform: platformDrafts[item.id] || undefined }
         } else {
           body = { action }
         }
@@ -992,8 +1008,9 @@ async function refreshExpanded() {
     for (const it of expandedItems.value) {
       if (isGroupRatioItem(it)) {
         if (!(it.id in groupDrafts)) groupDrafts[it.id] = it.apply_rate ?? it.group_rate_change.suggested_rate
-      } else if (!(it.id in drafts)) {
-        drafts[it.id] = buildDraft(it)
+      } else {
+        if (!(it.id in drafts)) drafts[it.id] = buildDraft(it)
+        if (!(it.id in platformDrafts)) platformDrafts[it.id] = it.platform
       }
     }
   } catch {

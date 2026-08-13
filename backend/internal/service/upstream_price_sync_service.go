@@ -15,10 +15,11 @@ import (
 )
 
 // channelApplier 解耦对 ChannelService 的依赖(便于测试)。
-// *ChannelService 通过 ApplyUpstreamPricingEntry + GetByID 隐式实现该接口;
+// *ChannelService 通过 ApplyUpstreamPricingEntry + RemoveUpstreamPricingEntry + GetByID 隐式实现该接口;
 // 测试可用最小 fake 替换,无需构造完整 ChannelService。
 type channelApplier interface {
 	ApplyUpstreamPricingEntry(ctx context.Context, channelID int64, platform string, models []string, price ConvertedPrice) (*ChannelModelPricing, error)
+	RemoveUpstreamPricingEntry(ctx context.Context, channelID int64, platform string, model string) error
 	GetByID(ctx context.Context, id int64) (*Channel, error)
 }
 
@@ -126,7 +127,7 @@ func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, create
 					items = append(items, PriceChangeItem{
 						Kind: draft.Kind, Platform: draft.Platform, ModelName: draft.ModelName,
 						TargetChannelID: cfgRec.TargetChannelID, UpstreamRaw: rawByName[draft.ModelName],
-						UpstreamConverted: draft.Upstream, LocalCurrent: draft.Local, ApplyValue: draft.Upstream, Status: status,
+						UpstreamConverted: draft.Upstream, LocalCurrent: draft.Local, ApplyValue: defaultMissingPriceFields(draft.Upstream), Status: status,
 					})
 				}
 			}
@@ -209,7 +210,7 @@ func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, create
 //   - apply: 写入目标渠道定价(Task 8 ApplyUpstreamPricingEntry)+ item.status=applied;
 //     应用失败则 item.status=failed 并返回错误(失败原因记录到 review_note)。
 //   - reject / ignore: 仅更新 item 状态,不触碰渠道。
-func (s *UpstreamPriceSyncService) ReviewItem(ctx context.Context, requestID, itemID int64, action ReviewAction, applyValue *ConvertedPrice, applyRate *float64, reviewerID int64, note string) error {
+func (s *UpstreamPriceSyncService) ReviewItem(ctx context.Context, requestID, itemID int64, action ReviewAction, applyValue *ConvertedPrice, applyRate *float64, platform string, reviewerID int64, note string) error {
 	it, err := s.repo.GetItem(ctx, itemID)
 	if err != nil {
 		return fmt.Errorf("get item: %w", err)
@@ -249,6 +250,19 @@ func (s *UpstreamPriceSyncService) ReviewItem(ctx context.Context, requestID, it
 		it.ApplyRate = &actualRate
 		return nil
 	}
+	if it.Kind == ItemKindModelRemoved {
+		// 移除模型:把该模型从目标渠道定价中删除,不涉及 apply_value。
+		if err := s.channelService.RemoveUpstreamPricingEntry(ctx, it.TargetChannelID, it.Platform, it.ModelName); err != nil {
+			if ferr := s.repo.FinalizeItemCAS(ctx, requestID, itemID, "failed", reviewerID, err.Error(), nil); ferr != nil {
+				slog.WarnContext(ctx, "finalize failed item after remove error", "item_id", itemID, "err", ferr)
+			}
+			return fmt.Errorf("remove: %w", err)
+		}
+		if err := s.repo.FinalizeItemCAS(ctx, requestID, itemID, "applied", reviewerID, note, nil); err != nil {
+			return mapReviewConflict(err)
+		}
+		return nil
+	}
 	val := applyValue
 	if val == nil {
 		val = it.ApplyValue
@@ -258,6 +272,19 @@ func (s *UpstreamPriceSyncService) ReviewItem(ctx context.Context, requestID, it
 	}
 	if val == nil {
 		return infraerrors.BadRequest("NO_APPLY_VALUE", "no apply value for item")
+	}
+	// 平台补充/修正:仅当显式传入且与已存值不同时更新。上游模型名推断不出平台
+	// (InferPlatform 返回空串)时,管理员在审批时通过下拉框人工指定,随 apply 一起落库。
+	if platform != "" {
+		if !validSyncPlatform(platform) {
+			return infraerrors.BadRequest("INVALID_PLATFORM", "invalid platform")
+		}
+		if platform != it.Platform {
+			if err := s.repo.UpdateItemPlatform(ctx, requestID, itemID, platform); err != nil {
+				return mapReviewConflict(err)
+			}
+			it.Platform = platform
+		}
 	}
 	if _, err := s.channelService.ApplyUpstreamPricingEntry(ctx, it.TargetChannelID, it.Platform, []string{it.ModelName}, *val); err != nil {
 		if ferr := s.repo.FinalizeItemCAS(ctx, requestID, itemID, "failed", reviewerID, err.Error(), val); ferr != nil {

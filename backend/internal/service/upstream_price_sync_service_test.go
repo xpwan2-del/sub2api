@@ -322,6 +322,21 @@ func (f *fakeRepo) FinalizeItemCAS(ctx context.Context, requestID, itemID int64,
 	return f.recomputeRequestStatus(requestID)
 }
 
+func (f *fakeRepo) UpdateItemPlatform(_ context.Context, requestID, itemID int64, platform string) error {
+	item, err := f.GetItem(context.Background(), itemID)
+	if err != nil {
+		return err
+	}
+	if item.RequestID != requestID {
+		return ErrItemRequestMismatch
+	}
+	if item.Status != "pending" {
+		return ErrItemNotPending
+	}
+	item.Platform = platform
+	return nil
+}
+
 func (f *fakeRepo) ApplyGroupRateItem(context.Context, GroupRateApplyInput) (int64, float64, error) {
 	return 0, 0, errors.New("not implemented by fake")
 }
@@ -341,11 +356,19 @@ type fakeApplyCall struct {
 	Price     ConvertedPrice
 }
 
+type fakeRemoveCall struct {
+	ChannelID int64
+	Platform  string
+	Model     string
+}
+
 type fakeChannelService struct {
 	channel  *Channel       // GetByID 返回值(nil → 空 Channel,ModelPricing 为空)
 	applied  *fakeApplyCall // 记录最近一次 ApplyUpstreamPricingEntry 调用(nil = 未调用)
 	applyErr error          // 注入 ApplyUpstreamPricingEntry 错误
 	applyRet *ChannelModelPricing
+	removed  *fakeRemoveCall // 记录最近一次 RemoveUpstreamPricingEntry 调用(nil = 未调用)
+	removeErr error          // 注入 RemoveUpstreamPricingEntry 错误
 }
 
 func newFakeChannelService() *fakeChannelService {
@@ -377,6 +400,11 @@ func (f *fakeChannelService) ApplyUpstreamPricingEntry(_ context.Context, channe
 		return f.applyRet, nil
 	}
 	return &ChannelModelPricing{ChannelID: channelID, Platform: platform, Models: models}, nil
+}
+
+func (f *fakeChannelService) RemoveUpstreamPricingEntry(_ context.Context, channelID int64, platform string, model string) error {
+	f.removed = &fakeRemoveCall{ChannelID: channelID, Platform: platform, Model: model}
+	return f.removeErr
 }
 
 // ---------- tests ----------
@@ -451,7 +479,7 @@ func TestReviewItem_ApplyWrites(t *testing.T) {
 	itemID := items[0].ID
 
 	// ReviewItem(apply) → 应写入渠道定价 + item.status=applied
-	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewApply, nil, nil, 42, "lgtm"); err != nil {
+	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewApply, nil, nil, "", 42, "lgtm"); err != nil {
 		t.Fatalf("ReviewItem err: %v", err)
 	}
 	if chSvc.applied == nil {
@@ -496,7 +524,7 @@ func TestReviewItem_RejectMarksRejected(t *testing.T) {
 	_ = fakeRepo.CreateRequest(context.Background(), req, items)
 	itemID := items[0].ID
 
-	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewReject, nil, nil, 5, "nope"); err != nil {
+	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewReject, nil, nil, "", 5, "nope"); err != nil {
 		t.Fatalf("ReviewItem err: %v", err)
 	}
 	if chSvc.applied != nil {
@@ -525,12 +553,135 @@ func TestReviewItem_ApplyErrorMarksFailed(t *testing.T) {
 	_ = fakeRepo.CreateRequest(context.Background(), req, items)
 	itemID := items[0].ID
 
-	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewApply, nil, nil, 9, ""); err == nil {
+	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewApply, nil, nil, "", 9, ""); err == nil {
 		t.Fatal("expected ReviewItem to return error when apply fails")
 	}
 	got, _ := fakeRepo.GetItem(context.Background(), itemID)
 	if got.Status != "failed" {
 		t.Fatalf("item status = %s, want failed", got.Status)
+	}
+}
+
+func TestReviewItem_ApplyRemovedDeletesModel(t *testing.T) {
+	fakeRepo := newFakeRepo()
+	chSvc := newFakeChannelService()
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, nil, testUpstreamConfig(""))
+
+	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
+	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
+	// model_removed:本地有、上游无 → 无 UpstreamConverted / ApplyValue,apply 即删除渠道内该模型。
+	items := []PriceChangeItem{{
+		Kind: ItemKindModelRemoved, Platform: PlatformAnthropic, ModelName: "claude-old",
+		TargetChannelID: 7, Status: "pending",
+	}}
+	req := &PriceChangeRequest{SourceConfigID: cfgRec.ID, TriggerType: "manual"}
+	_ = fakeRepo.CreateRequest(context.Background(), req, items)
+	itemID := items[0].ID
+
+	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewApply, nil, nil, "", 42, "cleanup"); err != nil {
+		t.Fatalf("ReviewItem err: %v", err)
+	}
+	if chSvc.removed == nil {
+		t.Fatal("expected RemoveUpstreamPricingEntry to be called")
+	}
+	if chSvc.removed.ChannelID != 7 || chSvc.removed.Platform != PlatformAnthropic || chSvc.removed.Model != "claude-old" {
+		t.Fatalf("remove call = %+v, want {7 anthropic claude-old}", chSvc.removed)
+	}
+	if chSvc.applied != nil {
+		t.Fatal("ApplyUpstreamPricingEntry should NOT be called for removed model")
+	}
+	got, _ := fakeRepo.GetItem(context.Background(), itemID)
+	if got.Status != "applied" {
+		t.Fatalf("item status = %s, want applied", got.Status)
+	}
+}
+
+func TestReviewItem_ApplyRemovedErrorMarksFailed(t *testing.T) {
+	fakeRepo := newFakeRepo()
+	chSvc := newFakeChannelService()
+	chSvc.removeErr = errFakeNotFound
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, nil, testUpstreamConfig(""))
+
+	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
+	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
+	items := []PriceChangeItem{{
+		Kind: ItemKindModelRemoved, Platform: PlatformAnthropic, ModelName: "claude-old",
+		TargetChannelID: 7, Status: "pending",
+	}}
+	req := &PriceChangeRequest{SourceConfigID: cfgRec.ID, TriggerType: "manual"}
+	_ = fakeRepo.CreateRequest(context.Background(), req, items)
+	itemID := items[0].ID
+
+	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewApply, nil, nil, "", 9, ""); err == nil {
+		t.Fatal("expected ReviewItem to return error when removal fails")
+	}
+	got, _ := fakeRepo.GetItem(context.Background(), itemID)
+	if got.Status != "failed" {
+		t.Fatalf("item status = %s, want failed", got.Status)
+	}
+}
+
+
+func TestReviewItem_ApplyWithPlatformOverride(t *testing.T) {
+	fakeRepo := newFakeRepo()
+	chSvc := newFakeChannelService()
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, nil, testUpstreamConfig(""))
+
+	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
+	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
+	price := ConvertedPrice{BillingMode: BillingModeToken, InputPrice: floatPtr(3e-6)}
+	items := []PriceChangeItem{{
+		Kind: ItemKindModelAdded, Platform: "", ModelName: "deepseek-chat",
+		TargetChannelID: 7, UpstreamConverted: &price, ApplyValue: &price, Status: "pending",
+	}}
+	req := &PriceChangeRequest{SourceConfigID: cfgRec.ID, TriggerType: "manual"}
+	_ = fakeRepo.CreateRequest(context.Background(), req, items)
+	itemID := items[0].ID
+
+	// 空平台模型 apply 时带 platform=openai → 应用并落库到该平台。
+	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewApply, nil, nil, PlatformOpenAI, 42, ""); err != nil {
+		t.Fatalf("ReviewItem err: %v", err)
+	}
+	if chSvc.applied == nil {
+		t.Fatal("expected ApplyUpstreamPricingEntry to be called")
+	}
+	if chSvc.applied.Platform != PlatformOpenAI {
+		t.Fatalf("apply platform = %s, want openai", chSvc.applied.Platform)
+	}
+	got, _ := fakeRepo.GetItem(context.Background(), itemID)
+	if got.Platform != PlatformOpenAI {
+		t.Fatalf("persisted platform = %s, want openai", got.Platform)
+	}
+	if got.Status != "applied" {
+		t.Fatalf("item status = %s, want applied", got.Status)
+	}
+}
+
+func TestReviewItem_ApplyWithInvalidPlatform(t *testing.T) {
+	fakeRepo := newFakeRepo()
+	chSvc := newFakeChannelService()
+	svc := NewUpstreamPriceSyncService(fakeRepo, &UpstreamPricingClient{httpOpts: testHTTPOpts()}, chSvc, nil, nil, nil, testUpstreamConfig(""))
+
+	cfgRec := &UpstreamSourceConfig{BaseURL: "https://example.com", TargetChannelID: 7, BasePricePer1k: 0.002, Enabled: true, PricingSource: PricingSourceAuto}
+	_ = fakeRepo.CreateConfig(context.Background(), cfgRec)
+	price := ConvertedPrice{BillingMode: BillingModeToken, InputPrice: floatPtr(3e-6)}
+	items := []PriceChangeItem{{
+		Kind: ItemKindModelAdded, Platform: "", ModelName: "deepseek-chat",
+		TargetChannelID: 7, UpstreamConverted: &price, ApplyValue: &price, Status: "pending",
+	}}
+	req := &PriceChangeRequest{SourceConfigID: cfgRec.ID, TriggerType: "manual"}
+	_ = fakeRepo.CreateRequest(context.Background(), req, items)
+	itemID := items[0].ID
+
+	if err := svc.ReviewItem(context.Background(), req.ID, itemID, ReviewApply, nil, nil, "garbage", 42, ""); err == nil {
+		t.Fatal("expected invalid platform to be rejected")
+	}
+	if chSvc.applied != nil {
+		t.Fatal("ApplyUpstreamPricingEntry should NOT be called on invalid platform")
+	}
+	got, _ := fakeRepo.GetItem(context.Background(), itemID)
+	if got.Status != "pending" {
+		t.Fatalf("item status = %s, want pending", got.Status)
 	}
 }
 
@@ -681,7 +832,7 @@ func TestReviewItem_RecomputeRequestStatus(t *testing.T) {
 	_ = fakeRepo.CreateRequest(context.Background(), req, items)
 
 	// ignore 第 1 条 → 仍有 pending → partially_applied;summary 反映 ignored=1、pending=1。
-	if err := svc.ReviewItem(context.Background(), req.ID, items[0].ID, ReviewIgnore, nil, nil, 1, ""); err != nil {
+	if err := svc.ReviewItem(context.Background(), req.ID, items[0].ID, ReviewIgnore, nil, nil, "", 1, ""); err != nil {
 		t.Fatalf("ReviewItem ignore #1 err: %v", err)
 	}
 	r1, _ := fakeRepo.GetRequest(context.Background(), req.ID)
@@ -693,7 +844,7 @@ func TestReviewItem_RecomputeRequestStatus(t *testing.T) {
 	}
 
 	// ignore 第 2 条 → 全部终态 → closed;summary 反映 ignored=2。
-	if err := svc.ReviewItem(context.Background(), req.ID, items[1].ID, ReviewIgnore, nil, nil, 1, ""); err != nil {
+	if err := svc.ReviewItem(context.Background(), req.ID, items[1].ID, ReviewIgnore, nil, nil, "", 1, ""); err != nil {
 		t.Fatalf("ReviewItem ignore #2 err: %v", err)
 	}
 	r2, _ := fakeRepo.GetRequest(context.Background(), req.ID)

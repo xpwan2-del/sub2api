@@ -13,6 +13,7 @@ type pricingEntryRepo struct {
 	existing []ChannelModelPricing
 	created  []*ChannelModelPricing
 	updated  []*ChannelModelPricing
+	deleted  []int64
 }
 
 func (r *pricingEntryRepo) ListModelPricing(_ context.Context, _ int64) ([]ChannelModelPricing, error) {
@@ -58,7 +59,10 @@ func (r *pricingEntryRepo) GetGroupsInOtherChannels(context.Context, int64, []in
 func (r *pricingEntryRepo) GetGroupPlatforms(context.Context, []int64) (map[int64]string, error) {
 	return nil, nil
 }
-func (r *pricingEntryRepo) DeleteModelPricing(context.Context, int64) error { return nil }
+func (r *pricingEntryRepo) DeleteModelPricing(_ context.Context, id int64) error {
+	r.deleted = append(r.deleted, id)
+	return nil
+}
 func (r *pricingEntryRepo) ReplaceModelPricing(context.Context, int64, []ChannelModelPricing) error {
 	return nil
 }
@@ -165,5 +169,70 @@ func TestApplyUpstreamPricingEntry_ExactSetCaseInsensitive(t *testing.T) {
 	}
 	if len(repo.created) != 0 {
 		t.Fatalf("expected no create on case-insensitive exact-set match, got %d", len(repo.created))
+	}
+}
+
+// TestRemoveUpstreamPricingEntry_RemovesModelFromRow 验证从多模型行中移除单个模型:
+// 应就地更新该行(Models 去掉目标模型),不删除整行。
+func TestRemoveUpstreamPricingEntry_RemovesModelFromRow(t *testing.T) {
+	repo := &pricingEntryRepo{
+		existing: []ChannelModelPricing{{
+			ID: 20, ChannelID: 1, Platform: PlatformAnthropic,
+			Models: []string{"claude-opus", "claude-sonnet"},
+		}},
+	}
+	svc := NewChannelService(repo, nil, nil, nil)
+
+	if err := svc.RemoveUpstreamPricingEntry(context.Background(), 1, PlatformAnthropic, "claude-opus"); err != nil {
+		t.Fatalf("RemoveUpstreamPricingEntry err: %v", err)
+	}
+	if len(repo.updated) != 1 || repo.updated[0].ID != 20 {
+		t.Fatalf("expected update of row 20, got updated=%v", repo.updated)
+	}
+	if len(repo.updated[0].Models) != 1 || repo.updated[0].Models[0] != "claude-sonnet" {
+		t.Fatalf("remaining models = %v, want [claude-sonnet]", repo.updated[0].Models)
+	}
+	if len(repo.deleted) != 0 {
+		t.Fatalf("expected no delete for multi-model row, got deleted=%v", repo.deleted)
+	}
+}
+
+// TestRemoveUpstreamPricingEntry_DeletesEmptyRow 验证移除单模型行中最后一个模型:
+// 应删除整行,而非更新为空。
+func TestRemoveUpstreamPricingEntry_DeletesEmptyRow(t *testing.T) {
+	repo := &pricingEntryRepo{
+		existing: []ChannelModelPricing{{
+			ID: 21, ChannelID: 1, Platform: PlatformAnthropic,
+			Models: []string{"claude-opus"},
+		}},
+	}
+	svc := NewChannelService(repo, nil, nil, nil)
+
+	if err := svc.RemoveUpstreamPricingEntry(context.Background(), 1, PlatformAnthropic, "claude-opus"); err != nil {
+		t.Fatalf("RemoveUpstreamPricingEntry err: %v", err)
+	}
+	if len(repo.updated) != 0 {
+		t.Fatalf("expected no update, got updated=%v", repo.updated)
+	}
+	if len(repo.deleted) != 1 || repo.deleted[0] != 21 {
+		t.Fatalf("expected delete of row 21, got deleted=%v", repo.deleted)
+	}
+}
+
+// TestRemoveUpstreamPricingEntry_NoMatchIsIdempotent 验证模型不存在时幂等返回 nil。
+func TestRemoveUpstreamPricingEntry_NoMatchIsIdempotent(t *testing.T) {
+	repo := &pricingEntryRepo{
+		existing: []ChannelModelPricing{{
+			ID: 22, ChannelID: 1, Platform: PlatformAnthropic,
+			Models: []string{"claude-opus"},
+		}},
+	}
+	svc := NewChannelService(repo, nil, nil, nil)
+
+	if err := svc.RemoveUpstreamPricingEntry(context.Background(), 1, PlatformAnthropic, "missing-model"); err != nil {
+		t.Fatalf("RemoveUpstreamPricingEntry err: %v", err)
+	}
+	if len(repo.updated) != 0 || len(repo.deleted) != 0 {
+		t.Fatalf("expected no-op on missing model, got updated=%v deleted=%v", repo.updated, repo.deleted)
 	}
 }
