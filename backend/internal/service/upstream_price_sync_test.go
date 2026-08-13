@@ -112,7 +112,6 @@ func TestDiffPricing_NoChange(t *testing.T) {
 	}
 }
 
-
 // TestDiffPricing_NilFieldEqualsZero 锁死「补0对比」语义:
 // 上游未返回的字段(nil)与本地显式 0 视为等价,不再生成价格变更。
 func TestDiffPricing_NilFieldEqualsZero(t *testing.T) {
@@ -123,6 +122,62 @@ func TestDiffPricing_NilFieldEqualsZero(t *testing.T) {
 	got := DiffPricing(up, plat, local, 1)
 	if len(got) != 1 || got[0].Kind != ItemKindModelUnchanged {
 		t.Fatalf("expected 1 model_unchanged, got %+v", got)
+	}
+}
+
+// TestDiffPricing_PlatformEmptyMatchesByName 锁死「平台缺失兜底」语义:
+// 上游推断不出平台(渠道字段缺失,InferPlatform 返回空串)时,仅按模型名匹配本地,
+// 价格一致判为 model_unchanged、不一致判为 model_price,不再误判为「移除 + 新增」。
+// 场景:模型名无法推断平台,由管理员手动指定平台加入渠道;再次同步上游仍无平台信息。
+func TestDiffPricing_PlatformEmptyMatchesByName(t *testing.T) {
+	plat := map[string]string{"deepseek-chat": ""}
+	local := []ChannelModelPricing{{ID: 1, ChannelID: 1, Platform: PlatformAnthropic, Models: []string{"deepseek-chat"},
+		BillingMode: BillingModeToken, InputPrice: floatPtr(1e-6), OutputPrice: floatPtr(2e-6)}}
+
+	// 价格一致 → model_unchanged(仅 1 条,无移除/新增)。
+	up := map[string]ConvertedPrice{"deepseek-chat": {BillingMode: BillingModeToken, InputPrice: floatPtr(1e-6), OutputPrice: floatPtr(2e-6)}}
+	got := DiffPricing(up, plat, local, 1)
+	if len(got) != 1 || got[0].Kind != ItemKindModelUnchanged {
+		t.Fatalf("expected 1 model_unchanged, got %+v", got)
+	}
+	if got[0].Platform != PlatformAnthropic {
+		t.Fatalf("platform = %q, want %q", got[0].Platform, PlatformAnthropic)
+	}
+
+	// 价格不一致 → model_price(仍按本地平台落库)。
+	up2 := map[string]ConvertedPrice{"deepseek-chat": {BillingMode: BillingModeToken, InputPrice: floatPtr(3e-6)}}
+	got2 := DiffPricing(up2, plat, local, 1)
+	if len(got2) != 1 || got2[0].Kind != ItemKindModelPrice {
+		t.Fatalf("expected 1 model_price, got %+v", got2)
+	}
+	if got2[0].Platform != PlatformAnthropic {
+		t.Fatalf("platform = %q, want %q", got2[0].Platform, PlatformAnthropic)
+	}
+}
+
+// TestDefaultMissingPriceFields 锁死「应用值补 0」语义:
+// 上游还原值缺失(nil)的价格字段在应用值中补为 0,已存在字段保持原值。
+func TestDefaultMissingPriceFields(t *testing.T) {
+	got := defaultMissingPriceFields(&ConvertedPrice{
+		BillingMode: BillingModeToken,
+		InputPrice:  floatPtr(1e-6),
+	})
+	if got.InputPrice == nil || *got.InputPrice != 1e-6 {
+		t.Fatalf("InputPrice = %v, want 1e-6", got.InputPrice)
+	}
+	for name, v := range map[string]*float64{
+		"OutputPrice":     got.OutputPrice,
+		"CacheReadPrice":  got.CacheReadPrice,
+		"CacheWritePrice": got.CacheWritePrice,
+		"PerRequestPrice": got.PerRequestPrice,
+	} {
+		if v == nil || *v != 0 {
+			t.Fatalf("%s = %v, want 0", name, v)
+		}
+	}
+	// nil 输入 → nil 输出(移除模型无 apply_value)。
+	if got := defaultMissingPriceFields(nil); got != nil {
+		t.Fatalf("nil input should yield nil, got %+v", got)
 	}
 }
 

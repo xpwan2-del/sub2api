@@ -247,6 +247,37 @@ func ConvertPricing(m UpstreamModelPricing, basePer1k float64) ConvertedPrice {
 	return out
 }
 
+// defaultMissingPriceFields 生成审批单「应用值」的默认值:把上游还原值中缺失(nil)
+// 的价格字段补为 0。上游未返回的字段(如无 cache_ratio → cache_read=nil)在应用值里
+// 显式写 0,与本地定价的 0 语义一致,避免 apply 落库后该字段悬空为 nil。
+func defaultMissingPriceFields(up *ConvertedPrice) *ConvertedPrice {
+	if up == nil {
+		return nil
+	}
+	out := *up
+	if out.InputPrice == nil {
+		z := 0.0
+		out.InputPrice = &z
+	}
+	if out.OutputPrice == nil {
+		z := 0.0
+		out.OutputPrice = &z
+	}
+	if out.CacheReadPrice == nil {
+		z := 0.0
+		out.CacheReadPrice = &z
+	}
+	if out.CacheWritePrice == nil {
+		z := 0.0
+		out.CacheWritePrice = &z
+	}
+	if out.PerRequestPrice == nil {
+		z := 0.0
+		out.PerRequestPrice = &z
+	}
+	return &out
+}
+
 // InferPlatform 按模型名前缀推断平台;未识别返回空串。
 func InferPlatform(modelName string) string {
 	name := strings.ToLower(modelName)
@@ -317,14 +348,19 @@ func DiffPricing(upstream map[string]ConvertedPrice, upstreamPlatforms map[strin
 	}
 
 	var drafts []PriceChangeItemDraft
-	// 第一遍:按渠道添加顺序遍历本地已有模型 → 价格变更 / 无变化 / 移除。
-	matched := map[key]bool{} // 上游 key 中已被本地认领的(平台,模型)
+	// matchedNames: 已被本地认领的上游模型名。上游模型名唯一,按名记认领即可覆盖
+	// 平台缺失兜底(上游推断不出平台时按模型名匹配),无需再按 (platform, model) 记。
+	matchedNames := map[string]bool{}
 	for _, k := range localOrder {
 		lp := localIdx[k]
 		localPrice := channelPricingToConverted(lp)
 		uk, hasUp := upstreamKey[k.model]
-		if hasUp && uk == k {
-			matched[uk] = true
+		// 平台一致才按 (platform, model) 精确匹配;上游推断不出平台(渠道字段缺失,
+		// InferPlatform 返回空串)时,退化为按模型名匹配。场景:模型名无法推断平台,
+		// 由管理员手动指定平台加入渠道;再次同步时上游仍无平台信息,仅凭模型名 + 价格
+		// 判等即可认定为同一模型,避免误判为「移除 + 新增」。
+		if hasUp && (uk.platform == k.platform || uk.platform == "") {
+			matchedNames[k.model] = true
 			upCopy := upstream[k.model]
 			if convertedEqual(&upCopy, localPrice) {
 				// 与本地完全一致:仍生成条目(kind=model_unchanged)供审批单完整展示,
@@ -340,8 +376,8 @@ func DiffPricing(upstream map[string]ConvertedPrice, upstreamPlatforms map[strin
 	}
 	// 第二遍:上游有、本地无 → 新增。按模型名稳定排序追加。
 	var addedNames []string
-	for name, uk := range upstreamKey {
-		if !matched[uk] {
+	for name := range upstreamKey {
+		if !matchedNames[name] {
 			addedNames = append(addedNames, name)
 		}
 	}

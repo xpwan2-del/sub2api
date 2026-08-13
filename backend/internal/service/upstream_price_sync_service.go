@@ -127,7 +127,7 @@ func (s *UpstreamPriceSyncService) SyncNow(ctx context.Context, configID, create
 					items = append(items, PriceChangeItem{
 						Kind: draft.Kind, Platform: draft.Platform, ModelName: draft.ModelName,
 						TargetChannelID: cfgRec.TargetChannelID, UpstreamRaw: rawByName[draft.ModelName],
-						UpstreamConverted: draft.Upstream, LocalCurrent: draft.Local, ApplyValue: draft.Upstream, Status: status,
+						UpstreamConverted: draft.Upstream, LocalCurrent: draft.Local, ApplyValue: defaultMissingPriceFields(draft.Upstream), Status: status,
 					})
 				}
 			}

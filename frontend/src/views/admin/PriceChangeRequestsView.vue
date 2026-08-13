@@ -678,17 +678,18 @@ function kindBadgeClass(kind: string): string {
 // Draft helpers
 function buildDraft(item: ModelPriceChangeItem): Draft {
   // 已保存的 apply_value 优先,逐字段缺失则回退上游还原值(满足"同步后默认 = 上游还原值")。
+  // 两者都缺失(字段不存在)时表单补 0,与后端 apply_value 补 0 的默认语义保持一致。
   const a = pickPrice((item as any).apply_value)
   const u = pickPrice((item as any).upstream_converted)
   const mode = (a?.mode || u?.mode) || 'token'
   // draft 以 $/MTok(token 字段)/ $/次(per_request)展示与编辑;token 字段从 per-token ×1e6。
   const mTok = (av: number | null | undefined, uv: number | null | undefined): string => {
     const v = av !== null && av !== undefined ? av : uv
-    return v === null || v === undefined ? '' : String(perTokenToMTok(v))
+    return v === null || v === undefined ? '0' : String(perTokenToMTok(v))
   }
   const num = (av: number | null | undefined, uv: number | null | undefined): string => {
     const v = av !== null && av !== undefined ? av : uv
-    return v === null || v === undefined ? '' : String(v)
+    return v === null || v === undefined ? '0' : String(v)
   }
   return {
     mode,
