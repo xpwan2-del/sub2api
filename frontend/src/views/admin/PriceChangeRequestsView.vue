@@ -146,7 +146,7 @@
                 </button>
                 <button
                   v-if="row.status === 'open' || row.status === 'partially_applied'"
-                  @click="closeRequest(row)"
+                  @click="requestClose(row)"
                   :disabled="batchRunning"
                   class="btn btn-secondary btn-sm"
                 >
@@ -261,10 +261,10 @@
                       </td>
                       <td class="px-2 py-2 align-top">
                         <span v-if="isRemoved(item) || isUnchanged(item)" class="text-xs text-gray-400">—</span>
-                        <!-- per_request 计费:单一按次价格 -->
-                        <div v-else-if="draftMode(drafts[item.id]) === 'per_request'" class="flex flex-col gap-1">
+                        <!-- 按次/按秒计费(per_request/image/video/per_second):单一单价字段 -->
+                        <div v-else-if="isPerUnitMode(draftMode(drafts[item.id]))" class="flex flex-col gap-1">
                           <label class="flex items-center gap-1 text-xs">
-                            <span class="inline-block w-14 shrink-0 text-right text-gray-500 dark:text-gray-400">per_req</span>
+                            <span class="inline-block w-14 shrink-0 text-right text-gray-500 dark:text-gray-400">{{ perUnitDraftLabel(drafts[item.id]) }}</span>
                             <input
                               :value="drafts[item.id]?.perRequest"
                               type="number"
@@ -367,6 +367,17 @@
       @confirm="confirmBatch"
       @cancel="showBatchConfirm = false"
     />
+
+    <ConfirmDialog
+      :show="showCloseConfirm"
+      :title="t('admin.priceChangeRequests.closeRequest', 'Close Request')"
+      :message="closeConfirmMessage"
+      :confirm-text="t('common.confirm', 'Confirm')"
+      :cancel-text="t('common.cancel', 'Cancel')"
+      :danger="true"
+      @confirm="confirmCloseRequest"
+      @cancel="showCloseConfirm = false"
+    />
   </AppLayout>
 </template>
 
@@ -431,6 +442,15 @@ function fmtNum(v: number | null | undefined): string {
   return String(Number(v.toFixed(6)))
 }
 
+// 按次/按秒计费模式:与 token 不同,它们复用 per_request_price 单一单价字段
+// (per_request/image/video 为「每次」单价,per_second 为「每秒」单价 USD/s)。
+// 这些模式不应落入 token 分支,否则会显示 in/out/cache 全 0 的假字段。
+const PER_UNIT_MODES: ReadonlySet<string> = new Set(['per_request', 'image', 'video', 'per_second'])
+
+function isPerUnitMode(mode: string): boolean {
+  return PER_UNIT_MODES.has(mode)
+}
+
 function priceDetailStrings(p: any): string[] {
   if (!p || typeof p !== 'object') return ['-']
   const c = pickPrice(p)
@@ -438,8 +458,9 @@ function priceDetailStrings(p: any): string[] {
   if (c.mode) lines.push(`[${c.mode}]`)
   // 缺失字段默认显示 0(而非省略):上游还原值未返回 cache 等字段时,审批单展示更直观。
   const mTok0 = (v: number | null | undefined) => fmtNum(perTokenToMTok(v ?? 0))
-  if (c.mode === 'per_request') {
-    lines.push(`per_req=${fmtNum(c.perRequest ?? 0)}/req`)
+  if (isPerUnitMode(c.mode)) {
+    const perSec = c.mode === 'per_second'
+    lines.push(`${perSec ? 'per_sec' : 'per_req'}=${fmtNum(c.perRequest ?? 0)}${perSec ? '/s' : '/req'}`)
   } else {
     lines.push(`in=${mTok0(c.input)}`)
     lines.push(`out=${mTok0(c.output)}`)
@@ -492,6 +513,8 @@ const reviewingId = ref<number | null>(null)
 const batchRunning = ref(false)
 const showBatchConfirm = ref(false)
 const pendingBatchAction = ref<'apply' | 'reject' | 'ignore' | null>(null)
+const showCloseConfirm = ref(false)
+const pendingCloseRequest = ref<PriceChangeRequest | null>(null)
 
 // Per-item editable apply_value drafts: itemId → { mode, input, output, cacheRead, cacheWrite, perRequest }
 interface Draft {
@@ -713,6 +736,11 @@ type DraftFieldKey = 'input' | 'output' | 'cacheRead' | 'cacheWrite' | 'perReque
 
 function draftMode(d: Draft | undefined): string {
   return d?.mode || 'token'
+}
+
+// per-unit 模式(按次/按秒)应用值编辑框的字段名:per_second 用 per_sec,其余用 per_req。
+function perUnitDraftLabel(d: Draft | undefined): string {
+  return draftMode(d) === 'per_second' ? 'per_sec' : 'per_req'
 }
 
 function setDraftField(d: Draft | undefined, key: DraftFieldKey, v: string) {
@@ -980,6 +1008,66 @@ async function runBatch(action: 'apply' | 'reject' | 'ignore') {
     }
     selected.clear()
     await refreshExpanded()
+  } finally {
+    batchRunning.value = false
+  }
+}
+
+// 待处理条目(状态为 pending,含 group_ratio / model_* 全部 kind)。
+// 关闭审批单时这些条目统一按「忽略」处理(不应用、不拒绝),与批量忽略语义一致。
+function pendingItems(): PriceChangeItem[] {
+  return expandedItems.value.filter((i) => !isItemDone(i))
+}
+
+// 关闭审批单确认框文案:提示将把全部待处理条目按「忽略」处理并关闭审批单。
+const closeConfirmMessage = computed(() => {
+  const count = pendingItems().length
+  return t('admin.priceChangeRequests.closeConfirmMessage', { count })
+})
+
+// 点击「关闭审批单」:先弹框确认,不直接关闭。
+function requestClose(row: PriceChangeRequest) {
+  if (batchRunning.value) return
+  pendingCloseRequest.value = row
+  showCloseConfirm.value = true
+}
+
+// 确认关闭:对全部待处理条目逐条执行 ignore。
+// 后端 FinalizeItemCAS 每条都会在事务内重算审批单状态,最后一条 pending 被忽略后
+// pending=0 → 审批单自动置 closed,无需再调用 close 接口(此时再 close 会因状态已 closed 报错)。
+async function confirmCloseRequest() {
+  showCloseConfirm.value = false
+  const row = pendingCloseRequest.value
+  pendingCloseRequest.value = null
+  if (!row) return
+  const reqId = (row as any).id ?? (row as any).ID
+  const items = pendingItems()
+  // 防御:open / partially_applied 理论上必有 pending 条目;若为空则退回原关闭接口。
+  if (items.length === 0) {
+    await closeRequest(row)
+    return
+  }
+  batchRunning.value = true
+  let ok = 0
+  let fail = 0
+  try {
+    for (const item of items) {
+      try {
+        await adminAPI.upstreamPriceSync.reviewItem(reqId, item.id, { action: 'ignore' })
+        ok++
+      } catch {
+        fail++
+      }
+    }
+    if (fail === 0) {
+      appStore.showSuccess(t('admin.priceChangeRequests.closed', 'Request closed'))
+    } else {
+      appStore.showWarning(t('admin.priceChangeRequests.batchPartial', { ok, fail }))
+    }
+    await loadRequests()
+    expandedRequestId.value = null
+    expandedItems.value = []
+    selected.clear()
   } finally {
     batchRunning.value = false
   }
