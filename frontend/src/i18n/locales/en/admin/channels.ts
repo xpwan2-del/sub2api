@@ -80,6 +80,13 @@ export default {
           perRequestPrice: 'per-request price'
         }
       },
+      timePricingValidation: {
+        timezone: 'Select a valid IANA time zone',
+        format: 'Start and end times must use HH:mm:ss format',
+        range: 'Start time must be earlier than end time; split ranges across midnight',
+        overlap: 'Time periods must not overlap',
+        multiplier: 'Multiplier must be greater than 0 with at most two decimal places'
+      },
       deleteConfirm: 'Are you sure you want to delete channel "{name}"? This cannot be undone.',
       columns: {
         name: 'Name',
@@ -93,7 +100,8 @@ export default {
       billingMode: {
         token: 'Token',
         perRequest: 'Per Request',
-        image: 'Image (Per Request)'
+        image: 'Image (Per Request)',
+        video: 'Video (Per Second)'
       },
       form: {
         name: 'Name',
@@ -121,11 +129,19 @@ export default {
         imageOutputPrice: 'Image Output Price',
         pricePlaceholder: 'Default',
         intervals: 'Context Intervals (optional)',
+        timePricing: 'Time-based pricing (optional)',
+        timezone: 'Time zone',
+        addTimePeriod: 'Add period',
+        startTime: 'Start time',
+        endTime: 'End time',
+        multiplier: 'Multiplier',
+        removeTimePeriod: 'Remove period',
         minTokens: 'Min',
         maxTokens: 'Max',
         inclusive: '(inclusive)',
         addInterval: 'Add Interval',
         imageTiers: 'Image Tiers (Per Request)',
+        videoTiers: 'Video Resolution Tiers (Per Second)',
         addTier: 'Add Tier',
         noPricingRules: 'No pricing rules yet. Click "Add" to create one.',
         perRequestPrice: 'Price per Request',
@@ -156,6 +172,7 @@ export default {
         perSecondPricePlaceholder: 'Per-second price',
         perSecondPrice: 'Per-second price',
         perSecondTiers: 'Per-second tiers (video)',
+        defaultVideoPrice: 'Default video price per second (fallback when no tier matches)',
         platformConfig: 'Platform Configuration',
         webSearchEmulation: 'Web Search Emulation',
         webSearchEmulationHint: '⚠️ When enabled, all accounts in this channel\'s Anthropic groups will intercept web_search requests. Use with caution.',
@@ -499,6 +516,7 @@ export default {
       deleteConfirm: 'Are you sure you want to delete monitor "{name}"? This action cannot be undone.',
       nameRequired: 'Please enter a monitor name',
       primaryModelRequired: 'Please enter a primary model',
+      linkedAccountRequired: 'Please select a linked account',
       columns: {
         name: 'Name',
         provider: 'Provider',
@@ -512,6 +530,19 @@ export default {
         name: 'Name',
         namePlaceholder: 'Enter monitor name',
         provider: 'Platform',
+        checkMode: 'Check Mode',
+        checkModeProbe: 'Probe',
+        checkModeProbeHint: 'Sends a lightweight LLM request to measure availability and latency',
+        checkModeQuota: 'Quota',
+        checkModeQuotaHint: 'Only queries the linked account usage windows / balance without probe requests',
+        checkModeQuotaProbe: 'Probe + Quota',
+        checkModeQuotaProbeHint: 'Probes the channel and attaches the quota snapshot to the primary model result',
+        linkedAccount: 'Linked Account',
+        linkedAccountPlaceholder: 'Select an account',
+        linkedAccountHint: 'Quota data comes from the selected account (reuses the account-side usage/balance queries)',
+        linkedAccountEmpty: 'No accounts on this platform yet. Add one in Account Management first',
+        linkedAccountMissing: 'The linked account no longer exists or is not accessible. Please re-select an account',
+        openAIQuotaProbeHint: 'Note: on the OpenAI platform the usage query may trigger a Codex probe request that consumes the account\'s own quota (at most once every 10 minutes)',
         apiMode: 'OpenAI protocol',
         apiModeChatCompletions: 'OpenAI Compatible',
         apiModeChatCompletionsHint: 'Use /v1/chat/completions with messages; works for most compatible providers.',
