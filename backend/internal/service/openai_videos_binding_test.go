@@ -36,6 +36,12 @@ func stickySessionKey(taskID string) string {
 	return "openai:" + VideoTaskSessionHash(taskID)
 }
 
+func (c *fakeVideoCache) GetReasoningContent(_ context.Context, _ string) (string, error) {
+	return "", ErrReasoningContentNotFound
+}
+func (c *fakeVideoCache) SetReasoningContent(_ context.Context, _ string, _ string, _ time.Duration) error {
+	return nil
+}
 func (c *fakeVideoCache) SetVideoTaskBinding(_ context.Context, groupID int64, taskID string, b VideoTaskBinding, _ time.Duration) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()

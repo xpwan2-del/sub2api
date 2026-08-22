@@ -279,6 +279,12 @@ type mwFakeVideoCache struct {
 func (c mwFakeVideoCache) GetSessionAccountID(_ context.Context, _ int64, _ string) (int64, error) {
 	return 0, nil
 }
+func (c mwFakeVideoCache) GetReasoningContent(_ context.Context, _ string) (string, error) {
+	return "", service.ErrReasoningContentNotFound
+}
+func (c mwFakeVideoCache) SetReasoningContent(_ context.Context, _ string, _ string, _ time.Duration) error {
+	return nil
+}
 func (c mwFakeVideoCache) SetSessionAccountID(_ context.Context, _ int64, _ string, _ int64, _ time.Duration) error {
 	return nil
 }

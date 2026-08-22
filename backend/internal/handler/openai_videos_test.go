@@ -39,6 +39,12 @@ func newOpenAIVideosFakeCache() *openAIVideosFakeCache {
 	return &openAIVideosFakeCache{bindings: map[string]service.VideoTaskBinding{}}
 }
 
+func (c *openAIVideosFakeCache) GetReasoningContent(_ context.Context, _ string) (string, error) {
+	return "", service.ErrReasoningContentNotFound
+}
+func (c *openAIVideosFakeCache) SetReasoningContent(_ context.Context, _ string, _ string, _ time.Duration) error {
+	return nil
+}
 func (c *openAIVideosFakeCache) SetVideoTaskBinding(_ context.Context, _ int64, key string, b service.VideoTaskBinding, _ time.Duration) error {
 	c.bindings[key] = b
 	return nil

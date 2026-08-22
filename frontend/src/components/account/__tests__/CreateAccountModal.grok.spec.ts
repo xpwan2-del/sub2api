@@ -15,6 +15,7 @@ describe('CreateAccountModal Grok account types', () => {
     expect(source).toContain("? 'https://api.x.ai/v1'")
     expect(source).toContain("form.platform === 'grok'")
     // 占位符已重构为 apiKeyValuePlaceholder computed（switch 形式），grok 仍回退 xAI 官方占位符
+    expect(source).toContain(':placeholder="apiKeyValuePlaceholder"')
     expect(source).toContain("case 'grok':")
     expect(source).toContain("return 'xai-...'")
   })
