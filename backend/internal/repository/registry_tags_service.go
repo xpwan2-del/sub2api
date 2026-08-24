@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -58,12 +59,108 @@ type registryTagList struct {
 	Tags []string `json:"tags"`
 }
 
-// LatestBuildTag 返回字典序最大的 CalVer Build tag（Build 日期零填充，字典序即
-// 时间序）。无任何 CalVer tag 时返回空串（如仓库只有 latest 别名）。
+// LatestBuildTag 返回最新的 CalVer Build tag。无任何 CalVer tag 时返回空串
+// （如仓库只有 latest 别名）。
+//
+// 优先走 Harbor v2.0 artifacts API：按 manifest 的 push_time 取最新 artifact 上的
+// CalVer tag。CalVer 后缀是 short SHA，同日多版本时字典序与发布时间无关（如
+// 2026.08.24-90587ecd 字典序大于更晚构建的 2026.08.24-2a9222fd），必须以推送
+// 时间为准。artifacts API 不可用（非 Harbor / 旧版本 / 网络错误）时降级到
+// tags/list 字典序：日期零填充，跨天时字典序仍即时间序，仅同日多版本可能失真。
+func (c *registryTagsClient) LatestBuildTag(ctx context.Context) (string, error) {
+	tag, artifactsErr := c.latestBuildTagByPushTime(ctx)
+	if artifactsErr == nil && tag != "" {
+		return tag, nil
+	}
+	tag, listErr := c.latestBuildTagLexicographic(ctx)
+	if listErr != nil {
+		return "", errors.Join(artifactsErr, listErr)
+	}
+	return tag, nil
+}
+
+// harborArtifact 是 Harbor v2.0 artifacts API 响应项的最小子集。with_tag=true 时
+// 才带 tags；push_time 为 manifest 推送时间（RFC3339，可含毫秒）。
+type harborArtifact struct {
+	PushTime string `json:"push_time"`
+	Tags     []struct {
+		Name string `json:"name"`
+	} `json:"tags"`
+}
+
+// latestBuildTagByPushTime 经 Harbor v2.0 artifacts API 按 push_time 找最新
+// CalVer tag。查询成功但无 CalVer 候选时返回空串（触发调用方降级）。
+func (c *registryTagsClient) latestBuildTagByPushTime(ctx context.Context) (string, error) {
+	artifactsURL, err := c.artifactsURL()
+	if err != nil {
+		return "", err
+	}
+	resp, err := c.fetchWithAuth(ctx, artifactsURL)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("harbor artifacts: unexpected status %s", resp.Status)
+	}
+	var artifacts []harborArtifact
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 4<<20)).Decode(&artifacts); err != nil {
+		return "", fmt.Errorf("harbor artifacts: decode response: %w", err)
+	}
+
+	var latestTag string
+	var latestPush time.Time
+	for _, artifact := range artifacts {
+		pushedAt, err := time.Parse(time.RFC3339, artifact.PushTime)
+		if err != nil || pushedAt.IsZero() {
+			continue // 缺时间的记录不可比，跳过
+		}
+		for _, tag := range artifact.Tags {
+			if service.IsCalVerBuild(tag.Name) {
+				// 双 tag（CalVer + latest）指向同一 digest；同 push_time 只保留
+				// 先遇到的一个，同日多次构建的区分来自不同 artifact。
+				if latestTag == "" || pushedAt.After(latestPush) {
+					latestTag, latestPush = tag.Name, pushedAt
+				}
+				break
+			}
+		}
+	}
+	return latestTag, nil
+}
+
+// splitImage 按 Harbor 项目边界拆镜像名：第一个 / 前是 project，其余是仓库路径。
+// "topai/sub2api" → ("topai", "sub2api")；"topai/team/sub2api" → ("topai", "team/sub2api")。
+func splitImage(image string) (project, repo string, err error) {
+	project, repo, found := strings.Cut(image, "/")
+	if !found || project == "" || repo == "" {
+		return "", "", fmt.Errorf("invalid image name %q for Harbor API", image)
+	}
+	return project, repo, nil
+}
+
+// artifactsURL 构造 Harbor v2.0 artifacts 查询地址。服务端按 push_time 降序排
+// （不支持 sort 参数的实现会忽略之，客户端本地比较兜底）；page_size=100 覆盖
+// 自研构建频率下的全部 artifact。
+func (c *registryTagsClient) artifactsURL() (string, error) {
+	project, repo, err := splitImage(c.image)
+	if err != nil {
+		return "", err
+	}
+	// Harbor 要求 repository 路径中的 / 编码为 %2F（url.PathEscape 已覆盖）。
+	return fmt.Sprintf(
+		"%s/api/v2.0/projects/%s/repositories/%s/artifacts?with_tag=true&page_size=100&sort=-push_time",
+		c.baseURL, url.PathEscape(project), url.PathEscape(repo),
+	), nil
+}
+
+// latestBuildTagLexicographic 返回字典序最大的 CalVer Build tag：Build 日期零
+// 填充，跨天时字典序即时间序；同日多版本因 short SHA 不可比仅作降级路径。
 //
 // tags/list 不带 n 参数时 registry 返回全量 tag（Harbor 行为），自研构建频率下
 // 数量有限，不处理 Link 分页。
-func (c *registryTagsClient) LatestBuildTag(ctx context.Context) (string, error) {
+func (c *registryTagsClient) latestBuildTagLexicographic(ctx context.Context) (string, error) {
 	tags, err := c.listTags(ctx)
 	if err != nil {
 		return "", err
