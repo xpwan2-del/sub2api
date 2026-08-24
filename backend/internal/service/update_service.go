@@ -84,11 +84,17 @@ type UpdateService struct {
 	currentVersion string // 上游基线版本号
 	currentBuild   string // 自研发布版本号（CalVer）
 	buildType      string // "source" for manual builds, "release" for CI builds
-	rollbackGuide  *RollbackGuide
+	rollbackGuide  *OpsGuide
+	upgradeGuide   *OpsGuide
 }
 
 // NewUpdateService creates a new UpdateService
-func NewUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, version, build, buildType string, rollbackGuide *RollbackGuide) *UpdateService {
+func NewUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, version, build, buildType string, guides *UpdateGuides) *UpdateService {
+	var rollbackGuide, upgradeGuide *OpsGuide
+	if guides != nil {
+		rollbackGuide = guides.Rollback
+		upgradeGuide = guides.Upgrade
+	}
 	return &UpdateService{
 		cache:          cache,
 		githubClient:   githubClient,
@@ -96,13 +102,21 @@ func NewUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, versi
 		currentBuild:   build,
 		buildType:      buildType,
 		rollbackGuide:  rollbackGuide,
+		upgradeGuide:   upgradeGuide,
 	}
 }
 
-// RollbackGuide 描述外部部署体系（如部署仓库的 ops 命令）管理回退时的操作
-// 指引，由部署方经 ROLLBACK_GUIDE_* 环境变量注入，展示在管理面板的版本回退
-// 入口处。未配置时为 nil。
-type RollbackGuide struct {
+// UpdateGuides 聚合部署方注入的升级/回退运维指引，经 ProvideUpdateService
+// 从环境变量组装。
+type UpdateGuides struct {
+	Rollback *OpsGuide
+	Upgrade  *OpsGuide
+}
+
+// OpsGuide 描述外部部署体系（如部署仓库的 ops 命令）管理升级/回退时的操作
+// 指引，由部署方经 {UPGRADE,ROLLBACK}_GUIDE_* 环境变量注入，展示在管理面板
+// 的版本徽章入口处。未配置时为 nil。
+type OpsGuide struct {
 	Title    string   `json:"title,omitempty"`
 	Note     string   `json:"note,omitempty"`
 	Commands []string `json:"commands,omitempty"`
@@ -114,22 +128,22 @@ type RollbackGuide struct {
 type RollbackVersionsResult struct {
 	Versions          []RollbackVersion `json:"versions"`
 	ManagedExternally bool              `json:"managed_externally"`
-	Guide             *RollbackGuide    `json:"guide,omitempty"`
+	Guide             *OpsGuide         `json:"guide,omitempty"`
 }
 
-// rollbackGuideFromEnv 从环境变量组装回退指引：
+// opsGuideFromEnv 按 prefix（"ROLLBACK" 或 "UPGRADE"）从环境变量组装运维指引：
 //
-//	ROLLBACK_GUIDE_TITLE     指引标题
-//	ROLLBACK_GUIDE_NOTE      附加说明（如"降级只回退镜像, 不回滚数据库"）
-//	ROLLBACK_GUIDE_COMMANDS  命令列表，按换行拆分（YAML literal block 注入）
+//	<PREFIX>_GUIDE_TITLE     指引标题
+//	<PREFIX>_GUIDE_NOTE      附加说明（如"降级只回退镜像, 不回滚数据库"）
+//	<PREFIX>_GUIDE_COMMANDS  命令列表，按换行拆分（YAML 双引号 \n 注入）
 //
 // 三者均为空时返回 nil（未配置指引）。
-func rollbackGuideFromEnv() *RollbackGuide {
-	guide := &RollbackGuide{
-		Title: strings.TrimSpace(os.Getenv("ROLLBACK_GUIDE_TITLE")),
-		Note:  strings.TrimSpace(os.Getenv("ROLLBACK_GUIDE_NOTE")),
+func opsGuideFromEnv(prefix string) *OpsGuide {
+	guide := &OpsGuide{
+		Title: strings.TrimSpace(os.Getenv(prefix + "_GUIDE_TITLE")),
+		Note:  strings.TrimSpace(os.Getenv(prefix + "_GUIDE_NOTE")),
 	}
-	for _, cmd := range strings.Split(os.Getenv("ROLLBACK_GUIDE_COMMANDS"), "\n") {
+	for _, cmd := range strings.Split(os.Getenv(prefix+"_GUIDE_COMMANDS"), "\n") {
 		if cmd = strings.TrimSpace(cmd); cmd != "" {
 			guide.Commands = append(guide.Commands, cmd)
 		}
@@ -159,6 +173,10 @@ type UpdateInfo struct {
 	Cached         bool         `json:"cached"`
 	Warning        string       `json:"warning,omitempty"`
 	BuildType      string       `json:"build_type"` // "source" or "release"
+	// ManagedExternally=true 表示升级由外部部署工具管理（updatesEnabled=false
+	// 的 fork 止血态），前端应展示 Guide 指引而非在线更新按钮。
+	ManagedExternally bool      `json:"managed_externally"`
+	Guide             *OpsGuide `json:"guide,omitempty"`
 }
 
 // ReleaseInfo contains GitHub release details
@@ -204,14 +222,17 @@ type GitHubAsset struct {
 
 // CheckUpdate checks for available updates
 func (s *UpdateService) CheckUpdate(ctx context.Context, force bool) (*UpdateInfo, error) {
-	// Fork 止血：updatesEnabled=false 时禁用上游更新检查，恒返回「已是最新」。
-	// 详见 updatesEnabled 注释。
+	// Fork 止血：updatesEnabled=false 时禁用上游更新检查，恒返回「已是最新」，
+	// 并标记 managed_externally + 附部署方注入的升级指引（如有），前端据此
+	// 展示部署工具操作指引。详见 updatesEnabled 注释。
 	if !updatesEnabled {
 		return &UpdateInfo{
-			CurrentVersion: s.currentVersion,
-			LatestVersion:  s.currentVersion,
-			HasUpdate:      false,
-			BuildType:      s.buildType,
+			CurrentVersion:    s.currentVersion,
+			LatestVersion:     s.currentVersion,
+			HasUpdate:         false,
+			BuildType:         s.buildType,
+			ManagedExternally: true,
+			Guide:             s.upgradeGuide,
 		}, nil
 	}
 
@@ -247,6 +268,13 @@ func (s *UpdateService) CheckUpdate(ctx context.Context, force bool) (*UpdateInf
 // PerformUpdate downloads and applies the update
 // Uses atomic file replacement pattern for safe in-place updates
 func (s *UpdateService) PerformUpdate(ctx context.Context) error {
+	// Fork 止血：updatesEnabled=false 时在线更新（上游二进制替换）不可用，
+	// 显式拒绝而非借道 CheckUpdate 返回 ALREADY_UP_TO_DATE——语义应为
+	// UPDATES_DISABLED，防止自研二进制被上游官方二进制覆盖。
+	if !updatesEnabled {
+		return ErrUpdatesDisabled
+	}
+
 	info, err := s.CheckUpdate(ctx, true)
 	if err != nil {
 		return err

@@ -19,6 +19,10 @@ export interface VersionInfo {
   cached: boolean
   warning?: string
   build_type: string // "source" for manual builds, "release" for CI builds
+  /** true = 升级由外部部署工具管理（fork 止血），前端展示 guide 指引而非在线更新按钮 */
+  managed_externally?: boolean
+  /** 部署体系注入的升级指引（UPGRADE_GUIDE_* 环境变量 → 后端透传） */
+  guide?: OpsGuide | null
 }
 
 /**
@@ -51,8 +55,8 @@ export interface RollbackVersionInfo {
   html_url: string
 }
 
-/** 部署体系注入的回退操作指引（ROLLBACK_GUIDE_* 环境变量 → 后端透传） */
-export interface RollbackGuide {
+/** 部署体系注入的运维指引（{UPGRADE,ROLLBACK}_GUIDE_* 环境变量 → 后端透传） */
+export interface OpsGuide {
   title?: string
   note?: string
   commands?: string[]
@@ -66,7 +70,7 @@ export interface RollbackGuide {
 export interface RollbackVersionsResult {
   versions: RollbackVersionInfo[]
   managed_externally: boolean
-  guide?: RollbackGuide | null
+  guide?: OpsGuide | null
 }
 
 /**

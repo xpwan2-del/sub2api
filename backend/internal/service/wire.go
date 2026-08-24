@@ -44,10 +44,15 @@ func ProvidePricingService(cfg *config.Config, remoteClient PricingRemoteClient)
 }
 
 // ProvideUpdateService creates UpdateService with BuildInfo.
-// 回退指引（ROLLBACK_GUIDE_* 环境变量）在 provider 层读取——部署期静态配置，
-// 与 ProvideChannelMonitorV2Aggregator 读行为开关 env 的先例一致。
+// 升级/回退运维指引（UPGRADE_GUIDE_* / ROLLBACK_GUIDE_* 环境变量）在 provider
+// 层读取——部署期静态配置，与 ProvideChannelMonitorV2Aggregator 读行为开关
+// env 的先例一致。
 func ProvideUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, buildInfo BuildInfo) *UpdateService {
-	return NewUpdateService(cache, githubClient, buildInfo.Version, buildInfo.Build, buildInfo.BuildType, rollbackGuideFromEnv())
+	guides := &UpdateGuides{
+		Rollback: opsGuideFromEnv("ROLLBACK"),
+		Upgrade:  opsGuideFromEnv("UPGRADE"),
+	}
+	return NewUpdateService(cache, githubClient, buildInfo.Version, buildInfo.Build, buildInfo.BuildType, guides)
 }
 
 // ProvideEmailQueueService creates EmailQueueService with default worker count

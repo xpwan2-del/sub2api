@@ -10,7 +10,8 @@ import { i18n } from '@/i18n'
 import {
   checkUpdates as checkUpdatesAPI,
   type VersionInfo,
-  type ReleaseInfo
+  type ReleaseInfo,
+  type OpsGuide
 } from '@/api/admin/system'
 import { getPublicSettings as fetchPublicSettingsAPI } from '@/api/auth'
 
@@ -44,6 +45,9 @@ export const useAppStore = defineStore('app', () => {
   const hasUpdate = ref<boolean>(false)
   const buildType = ref<string>('source')
   const releaseInfo = ref<ReleaseInfo | null>(null)
+  // 升级是否由外部部署工具管理（fork 止血态）+ 部署方注入的升级指引
+  const updateManagedExternally = ref<boolean>(false)
+  const updateGuide = ref<OpsGuide | null>(null)
 
   // Auto-incrementing ID for toasts
   let toastIdCounter = 0
@@ -250,6 +254,8 @@ export const useAppStore = defineStore('app', () => {
         has_update: hasUpdate.value,
         build_type: buildType.value,
         release_info: releaseInfo.value || undefined,
+        managed_externally: updateManagedExternally.value,
+        guide: updateGuide.value || undefined,
         cached: true
       }
     }
@@ -267,6 +273,8 @@ export const useAppStore = defineStore('app', () => {
       hasUpdate.value = data.has_update
       buildType.value = data.build_type || 'source'
       releaseInfo.value = data.release_info || null
+      updateManagedExternally.value = data.managed_externally || false
+      updateGuide.value = data.guide || null
       versionLoaded.value = true
       return data
     } catch (error) {
@@ -459,6 +467,8 @@ export const useAppStore = defineStore('app', () => {
     versionLoaded,
     versionLoading,
     currentVersion,
+    updateManagedExternally,
+    updateGuide,
     latestVersion,
     hasUpdate,
     buildType,

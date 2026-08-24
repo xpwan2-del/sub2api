@@ -85,10 +85,15 @@ func TestUpdateServicePerformUpdateNoUpdateReturnsSentinel(t *testing.T) {
 
 // TestUpdateServiceCheckUpdateForkDisabled 验证自研 fork 止血：updatesEnabled=false 时，
 // 即便上游 GitHub 存在更高版本（v9.9.9），CheckUpdate 也必须返回 HasUpdate=false，
-// 且不查询上游 GitHub（避免 fork 信息泄露，以及 PerformUpdate 覆盖自研二进制的风险）。
+// 且不查询上游 GitHub（避免 fork 信息泄露，以及 PerformUpdate 覆盖自研二进制的风险）；
+// 同时标记 managed_externally=true 并透传部署方注入的升级指引。
 func TestUpdateServiceCheckUpdateForkDisabled(t *testing.T) {
 	client := &updateServiceGitHubClientStub{
 		release: &GitHubRelease{TagName: "v9.9.9"}, // 模拟上游版本远高于当前基线
+	}
+	upgradeGuide := &OpsGuide{
+		Title:    "升级由部署仓库管理",
+		Commands: []string{"./ops upgrade"},
 	}
 	svc := NewUpdateService(
 		&updateServiceCacheStub{},
@@ -96,7 +101,7 @@ func TestUpdateServiceCheckUpdateForkDisabled(t *testing.T) {
 		"0.1.138",        // 上游基线
 		"2026.06.30-abc", // 自研 CalVer
 		"release",
-		nil,
+		&UpdateGuides{Upgrade: upgradeGuide},
 	)
 
 	info, err := svc.CheckUpdate(context.Background(), true)
@@ -104,19 +109,43 @@ func TestUpdateServiceCheckUpdateForkDisabled(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, info)
 	require.False(t, info.HasUpdate, "fork 止血：即便上游版本更高，hasUpdate 也必须为 false")
+	require.True(t, info.ManagedExternally, "禁用态必须标记 managed_externally")
+	require.Equal(t, upgradeGuide, info.Guide, "禁用态应透传升级指引")
 	require.False(t, client.fetchCalled, "fork 止血：不应查询上游 GitHub")
 }
 
+// TestUpdateServicePerformUpdateForkDisabled 验证禁用态 PerformUpdate 直接拒绝
+// （ErrUpdatesDisabled），而非借道 CheckUpdate 伪装成「已是最新」——防止在线
+// 二进制替换路径被任何调用方式触达。
+func TestUpdateServicePerformUpdateForkDisabled(t *testing.T) {
+	client := &updateServiceGitHubClientStub{
+		release: &GitHubRelease{TagName: "v9.9.9"},
+	}
+	svc := NewUpdateService(
+		&updateServiceCacheStub{},
+		client,
+		"0.1.138",
+		"2026.06.30-abc",
+		"release",
+		nil,
+	)
+
+	err := svc.PerformUpdate(context.Background())
+
+	require.ErrorIs(t, err, ErrUpdatesDisabled)
+	require.False(t, client.fetchCalled, "禁用态不应查询上游 GitHub")
+}
+
 // newRollbackTestService 构造 rollback 测试用 UpdateService：把给定 releases 注入为
-// FetchRecentReleases 的返回，current 作为当前版本基线。guide 为可选的部署指引。
-func newRollbackTestService(current string, releases []*GitHubRelease, guide *RollbackGuide) *UpdateService {
+// FetchRecentReleases 的返回，current 作为当前版本基线。guides 为可选的运维指引。
+func newRollbackTestService(current string, releases []*GitHubRelease, guides *UpdateGuides) *UpdateService {
 	return NewUpdateService(
 		&updateServiceCacheStub{},
 		&updateServiceGitHubClientStub{recentReleases: releases},
 		current,
 		"2026.06.30-test",
 		"release",
-		guide,
+		guides,
 	)
 }
 
@@ -244,7 +273,7 @@ func TestUpdateServiceRollbackToVersionAcceptsVPrefix(t *testing.T) {
 //     官方二进制覆盖自研二进制。
 func TestUpdateServiceRollbackForkDisabled(t *testing.T) {
 	withUpdatesEnabled(t, false)
-	guide := &RollbackGuide{
+	rollbackGuide := &OpsGuide{
 		Title:    "版本回退由部署仓库管理",
 		Note:     "降级只回退镜像, 不回滚数据库",
 		Commands: []string{"./ops rollback sub2api", "./ops rollback sub2api --confirm"},
@@ -252,13 +281,14 @@ func TestUpdateServiceRollbackForkDisabled(t *testing.T) {
 	client := &updateServiceGitHubClientStub{
 		recentReleases: []*GitHubRelease{{TagName: "v0.1.146"}},
 	}
-	svc := NewUpdateService(&updateServiceCacheStub{}, client, "0.1.147", "2026.06.30-test", "release", guide)
+	svc := NewUpdateService(&updateServiceCacheStub{}, client, "0.1.147", "2026.06.30-test", "release",
+		&UpdateGuides{Rollback: rollbackGuide})
 
 	result, err := svc.ListRollbackVersions(context.Background())
 	require.NoError(t, err)
 	require.True(t, result.ManagedExternally, "禁用态必须标记 managed_externally")
 	require.Empty(t, result.Versions, "禁用态不得返回在线回退列表")
-	require.Equal(t, guide, result.Guide, "禁用态应透传部署指引")
+	require.Equal(t, rollbackGuide, result.Guide, "禁用态应透传部署指引")
 
 	err = svc.RollbackToVersion(context.Background(), "0.1.146")
 	require.ErrorIs(t, err, ErrUpdatesDisabled)
@@ -269,19 +299,20 @@ func TestUpdateServiceRollbackForkDisabled(t *testing.T) {
 	require.False(t, client.fetchCalled, "禁用态不应查询上游 GitHub")
 }
 
-// TestRollbackGuideFromEnv 验证 ROLLBACK_GUIDE_* 环境变量的解析：多行命令按行
-// 拆分并 trim、去空行；全部未配置时返回 nil。
-func TestRollbackGuideFromEnv(t *testing.T) {
+// TestOpsGuideFromEnv 验证 {ROLLBACK,UPGRADE}_GUIDE_* 环境变量的解析：多行命令
+// 按行拆分并 trim、去空行；全部未配置时返回 nil；两个 prefix 互不串扰。
+func TestOpsGuideFromEnv(t *testing.T) {
 	t.Run("all unset returns nil", func(t *testing.T) {
-		require.Nil(t, rollbackGuideFromEnv())
+		require.Nil(t, opsGuideFromEnv("ROLLBACK"))
+		require.Nil(t, opsGuideFromEnv("UPGRADE"))
 	})
 
-	t.Run("parses title note and commands", func(t *testing.T) {
+	t.Run("parses rollback guide", func(t *testing.T) {
 		t.Setenv("ROLLBACK_GUIDE_TITLE", "  版本回退由部署仓库管理  ")
 		t.Setenv("ROLLBACK_GUIDE_NOTE", "降级只回退镜像, 不回滚数据库")
 		t.Setenv("ROLLBACK_GUIDE_COMMANDS", "./ops rollback sub2api\n\n  ./ops rollback sub2api --confirm  \n")
 
-		guide := rollbackGuideFromEnv()
+		guide := opsGuideFromEnv("ROLLBACK")
 		require.NotNil(t, guide)
 		require.Equal(t, "版本回退由部署仓库管理", guide.Title, "title 应被 trim")
 		require.Equal(t, "降级只回退镜像, 不回滚数据库", guide.Note)
@@ -289,10 +320,23 @@ func TestRollbackGuideFromEnv(t *testing.T) {
 			"命令按行拆分并 trim，空行剔除")
 	})
 
+	t.Run("parses upgrade guide independently", func(t *testing.T) {
+		t.Setenv("UPGRADE_GUIDE_TITLE", "升级由部署仓库管理")
+		t.Setenv("UPGRADE_GUIDE_COMMANDS", "cd <deployment repo>\n./ops upgrade")
+
+		guide := opsGuideFromEnv("UPGRADE")
+		require.NotNil(t, guide)
+		require.Equal(t, "升级由部署仓库管理", guide.Title)
+		require.Empty(t, guide.Note)
+		require.Equal(t, []string{"cd <deployment repo>", "./ops upgrade"}, guide.Commands)
+
+		require.Nil(t, opsGuideFromEnv("ROLLBACK"), "ROLLBACK 未配置应为 nil，不受 UPGRADE 影响")
+	})
+
 	t.Run("commands only still returns guide", func(t *testing.T) {
 		t.Setenv("ROLLBACK_GUIDE_COMMANDS", "./ops rollback sub2api")
 
-		guide := rollbackGuideFromEnv()
+		guide := opsGuideFromEnv("ROLLBACK")
 		require.NotNil(t, guide)
 		require.Empty(t, guide.Title)
 		require.Equal(t, []string{"./ops rollback sub2api"}, guide.Commands)

@@ -327,7 +327,7 @@ func TestSystemHandlerGetRollbackVersionsManagedExternally(t *testing.T) {
 		rollbackVersions: &service.RollbackVersionsResult{
 			Versions:          []service.RollbackVersion{},
 			ManagedExternally: true,
-			Guide: &service.RollbackGuide{
+			Guide: &service.OpsGuide{
 				Title:    "版本回退由部署仓库管理",
 				Note:     "降级只回退镜像, 不回滚数据库",
 				Commands: []string{"./ops rollback sub2api", "./ops rollback sub2api --confirm"},
@@ -349,7 +349,7 @@ func TestSystemHandlerGetRollbackVersionsManagedExternally(t *testing.T) {
 		Data struct {
 			Versions          []service.RollbackVersion `json:"versions"`
 			ManagedExternally bool                      `json:"managed_externally"`
-			Guide             *service.RollbackGuide    `json:"guide"`
+			Guide             *service.OpsGuide         `json:"guide"`
 		} `json:"data"`
 	}
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
