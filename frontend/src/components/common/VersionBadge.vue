@@ -31,7 +31,7 @@
         <div
           v-if="dropdownOpen"
           ref="dropdownRef"
-          class="absolute left-0 z-50 mt-2 w-96 overflow-hidden whitespace-normal rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200 dark:border-dark-700 dark:bg-dark-800"
+          class="absolute left-0 z-50 mt-2 w-80 overflow-hidden whitespace-normal rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200 dark:border-dark-700 dark:bg-dark-800"
         >
           <!-- Header with refresh button -->
           <div
@@ -368,20 +368,12 @@
                 </template>
               </div>
 
-              <!-- Priority 5: Up to date - upgrade guide (or GitHub link) + version rollback -->
+              <!-- Priority 5: Up to date - GitHub link (upstream mode) + version rollback -->
+              <!-- 已是最新时不展示升级指引：有新版本时（Priority 4）才渲染升级流程 -->
               <div v-else class="space-y-2">
-                <!-- Deployment-managed upgrade: show ops guide, not the upstream link -->
-                <OpsGuideSection
-                  v-if="upgradeManaged"
-                  :title="upgradeGuideTitle"
-                  :commands="upgradeGuideCommands"
-                  :note="upgradeGuideNote"
-                  :fallback-hint="t('version.upgradeExternalHint')"
-                />
-
                 <!-- Upstream GitHub link (only when not deployment-managed) -->
                 <a
-                  v-else-if="releaseInfo?.html_url && releaseInfo.html_url !== '#'"
+                  v-if="releaseInfo?.html_url && releaseInfo.html_url !== '#'"
                   :href="releaseInfo.html_url"
                   target="_blank"
                   rel="noopener noreferrer"
