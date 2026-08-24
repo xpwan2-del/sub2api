@@ -28,15 +28,20 @@ build-frontend:
 
 # 自研发布版本号（CalVer: YYYY.MM.DD-shortsha），与 backend/Makefile 推导逻辑一致，
 # 同一 commit 在任何机器构建结果一致（可复现）。
-GIT_DATE  := $(shell git log -1 --format=%cd --date=format:'%Y.%m.%d')
-GIT_SHORT := $(shell git rev-parse --short=8 HEAD)
-BUILD     ?= $(GIT_DATE)-$(GIT_SHORT)
+GIT_DATE   := $(shell git log -1 --format=%cd --date=format:'%Y.%m.%d')
+GIT_SHORT  := $(shell git rev-parse --short=8 HEAD)
+GIT_COMMIT := $(shell git rev-parse HEAD)
+BUILD      ?= $(GIT_DATE)-$(GIT_SHORT)
 
-# 构建本地 Docker 镜像。自动把自研版本号 BUILD 通过 --build-arg 注入根目录 Dockerfile，
-# 镜像内 main.Build 即为 CalVer（不再为空/dev）。
-# 注意：.git 被 .dockerignore 排除，Dockerfile 无法容器内推导，必须在此算好后传入。
+# 构建本地 Docker 镜像。双 tag：sub2api:$(BUILD) 为不可变版本 tag（与面板主版本号、
+# 镜像 label org.opencontainers.image.version 一致），sub2api:local 为开发别名。
+# 自动把 BUILD/COMMIT/DATE 通过 --build-arg 注入根目录 Dockerfile（版本进 main.Build
+# 与 OCI label）；.git 被 .dockerignore 排除，无法容器内推导，必须在此算好传入。
 docker-build:
-	docker build --build-arg BUILD=$(BUILD) -t sub2api:local .
+	docker build --build-arg BUILD=$(BUILD) \
+	  --build-arg COMMIT=$(GIT_COMMIT) \
+	  --build-arg DATE=$(shell date -u +%Y-%m-%dT%H:%M:%SZ) \
+	  -t sub2api:$(BUILD) -t sub2api:local .
 
 # 编译 datamanagementd（宿主机数据管理进程）
 build-datamanagementd:
