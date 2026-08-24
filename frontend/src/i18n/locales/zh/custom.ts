@@ -434,7 +434,7 @@ export default {
       '本部署不支持在线回退，请在部署服务器上使用部署管理工具（如 ./ops rollback）操作',
     upgradeExternalTitle: '版本升级由部署体系管理',
     upgradeExternalHint:
-      '本部署不支持在线升级，请在部署服务器上使用部署管理工具（如 ./ops upgrade）操作',
+      '本部署不支持在线升级，请在部署服务器上使用部署管理工具（如 ./ops upgrade -i sub2api）操作',
   },
   userSubscriptions: {
     bundleBadge: '套餐订阅',

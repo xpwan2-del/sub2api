@@ -93,7 +93,7 @@ func TestUpdateServiceCheckUpdateForkDisabled(t *testing.T) {
 	}
 	upgradeGuide := &OpsGuide{
 		Title:    "升级由部署仓库管理",
-		Commands: []string{"./ops upgrade"},
+		Commands: []string{"./ops upgrade -i sub2api"},
 	}
 	svc := NewUpdateService(
 		&updateServiceCacheStub{},
@@ -322,13 +322,13 @@ func TestOpsGuideFromEnv(t *testing.T) {
 
 	t.Run("parses upgrade guide independently", func(t *testing.T) {
 		t.Setenv("UPGRADE_GUIDE_TITLE", "升级由部署仓库管理")
-		t.Setenv("UPGRADE_GUIDE_COMMANDS", "cd <deployment repo>\n./ops upgrade")
+		t.Setenv("UPGRADE_GUIDE_COMMANDS", "cd <deployment repo>\n./ops upgrade -i sub2api")
 
 		guide := opsGuideFromEnv("UPGRADE")
 		require.NotNil(t, guide)
 		require.Equal(t, "升级由部署仓库管理", guide.Title)
 		require.Empty(t, guide.Note)
-		require.Equal(t, []string{"cd <deployment repo>", "./ops upgrade"}, guide.Commands)
+		require.Equal(t, []string{"cd <deployment repo>", "./ops upgrade -i sub2api"}, guide.Commands)
 
 		require.Nil(t, opsGuideFromEnv("ROLLBACK"), "ROLLBACK 未配置应为 nil，不受 UPGRADE 影响")
 	})

@@ -438,7 +438,7 @@ export default {
       'Online rollback is unavailable on this deployment; run your deployment tooling (e.g. ./ops rollback) on the deployment server',
     upgradeExternalTitle: 'Version upgrades are managed by your deployment tooling',
     upgradeExternalHint:
-      'Online upgrade is unavailable on this deployment; run your deployment tooling (e.g. ./ops upgrade) on the deployment server',
+      'Online upgrade is unavailable on this deployment; run your deployment tooling (e.g. ./ops upgrade -i sub2api) on the deployment server',
   },
   payment: {
     bundleAmount: 'Bundle Price',
