@@ -51,13 +51,30 @@ export interface RollbackVersionInfo {
   html_url: string
 }
 
+/** 部署体系注入的回退操作指引（ROLLBACK_GUIDE_* 环境变量 → 后端透传） */
+export interface RollbackGuide {
+  title?: string
+  note?: string
+  commands?: string[]
+}
+
 /**
- * Get versions available for rollback (up to 3 versions older than current)
+ * Rollback-versions endpoint payload.
+ * managed_externally=true 表示在线二进制回退不可用（fork 止血 / Docker 部署），
+ * 回退由外部部署工具管理：versions 为空，前端应渲染 guide 指引。
  */
-export async function getRollbackVersions(): Promise<{ versions: RollbackVersionInfo[] }> {
-  const { data } = await apiClient.get<{ versions: RollbackVersionInfo[] }>(
-    '/admin/system/rollback-versions'
-  )
+export interface RollbackVersionsResult {
+  versions: RollbackVersionInfo[]
+  managed_externally: boolean
+  guide?: RollbackGuide | null
+}
+
+/**
+ * Get versions available for rollback (up to 3 versions older than current),
+ * or the deployment-managed rollback guide when online rollback is disabled.
+ */
+export async function getRollbackVersions(): Promise<RollbackVersionsResult> {
+  const { data } = await apiClient.get<RollbackVersionsResult>('/admin/system/rollback-versions')
   return data
 }
 

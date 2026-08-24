@@ -429,6 +429,9 @@ export default {
   },
   version: {
     basedOn: '基于 sub2api {version}',
+    rollbackExternalTitle: '版本回退由部署体系管理',
+    rollbackExternalHint:
+      '本部署不支持在线回退，请在部署服务器上使用部署管理工具（如 ./ops rollback）操作',
   },
   userSubscriptions: {
     bundleBadge: '套餐订阅',

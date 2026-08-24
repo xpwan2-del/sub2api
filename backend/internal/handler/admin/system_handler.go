@@ -49,7 +49,7 @@ type systemUpdateService interface {
 	Rollback() error
 	CurrentVersion() string
 	CurrentBuild() string
-	ListRollbackVersions(ctx context.Context) ([]service.RollbackVersion, error)
+	ListRollbackVersions(ctx context.Context) (*service.RollbackVersionsResult, error)
 	RollbackToVersion(ctx context.Context, version string) error
 }
 
@@ -135,14 +135,13 @@ func (h *SystemHandler) PerformUpdate(c *gin.Context) {
 // GetRollbackVersions lists versions available for rollback
 // GET /api/v1/admin/system/rollback-versions
 func (h *SystemHandler) GetRollbackVersions(c *gin.Context) {
-	versions, err := h.updateSvc.ListRollbackVersions(c.Request.Context())
+	result, err := h.updateSvc.ListRollbackVersions(c.Request.Context())
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.Success(c, gin.H{
-		"versions": versions,
-	})
+	// 透传完整结果：versions + managed_externally + guide（部署工具指引）。
+	response.Success(c, result)
 }
 
 // Rollback restores a previous version.

@@ -433,6 +433,9 @@ export default {
   },
   version: {
     basedOn: 'Based on sub2api {version}',
+    rollbackExternalTitle: 'Version rollback is managed by your deployment tooling',
+    rollbackExternalHint:
+      'Online rollback is unavailable on this deployment; run your deployment tooling (e.g. ./ops rollback) on the deployment server',
   },
   payment: {
     bundleAmount: 'Bundle Price',

@@ -28,12 +28,34 @@ describe('admin system rollback API', () => {
         html_url: 'https://github.com/Wei-Shaw/sub2api/releases/tag/v0.1.146'
       }
     ]
-    get.mockResolvedValue({ data: { versions } })
+    get.mockResolvedValue({ data: { versions, managed_externally: false } })
 
     const result = await getRollbackVersions()
 
     expect(get).toHaveBeenCalledWith('/admin/system/rollback-versions')
     expect(result.versions).toEqual(versions)
+    expect(result.managed_externally).toBe(false)
+  })
+
+  it('getRollbackVersions returns the deployment-managed guide', async () => {
+    get.mockResolvedValue({
+      data: {
+        versions: [],
+        managed_externally: true,
+        guide: {
+          title: '版本回退由部署仓库管理',
+          note: '降级只回退镜像, 不回滚数据库',
+          commands: ['./ops rollback sub2api', './ops rollback sub2api --confirm']
+        }
+      }
+    })
+
+    const result = await getRollbackVersions()
+
+    expect(get).toHaveBeenCalledWith('/admin/system/rollback-versions')
+    expect(result.managed_externally).toBe(true)
+    expect(result.versions).toEqual([])
+    expect(result.guide?.commands).toEqual(['./ops rollback sub2api', './ops rollback sub2api --confirm'])
   })
 
   it('rollback posts the target version in the request body', async () => {

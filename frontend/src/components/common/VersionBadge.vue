@@ -462,6 +462,90 @@
                         </button>
                       </div>
 
+                      <!-- Deployment-managed rollback: show ops guide, no online rollback -->
+                      <div v-else-if="isManagedRollback" class="space-y-2">
+                        <p
+                          class="px-0.5 text-[11px] font-medium text-gray-500 dark:text-dark-400"
+                        >
+                          {{ rollbackGuideTitle }}
+                        </p>
+
+                        <!-- Guide not configured: generic hint -->
+                        <div
+                          v-if="rollbackGuideCommands.length === 0"
+                          class="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2 dark:border-blue-800/50 dark:bg-blue-900/20"
+                        >
+                          <svg
+                            class="h-3.5 w-3.5 flex-shrink-0 text-blue-500 dark:text-blue-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <p
+                            class="min-w-0 flex-1 text-xs leading-4 text-blue-600 dark:text-blue-400"
+                          >
+                            {{ t('version.rollbackExternalHint') }}
+                          </p>
+                        </div>
+
+                        <!-- Ops commands, one terminal-style block each -->
+                        <div
+                          v-for="(cmd, i) in rollbackGuideCommands"
+                          :key="i"
+                          class="overflow-hidden rounded-lg border border-gray-200 dark:border-dark-600"
+                        >
+                          <div
+                            class="flex items-center justify-between border-b border-gray-200 bg-gray-100 px-2 py-1 dark:border-dark-600 dark:bg-dark-700"
+                          >
+                            <span
+                              class="select-none font-mono text-[10px] font-semibold text-gray-400 dark:text-dark-400"
+                              >$</span
+                            >
+                            <button
+                              @click="copyGuideCommand(cmd)"
+                              class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 dark:text-dark-400 dark:hover:bg-dark-600 dark:hover:text-dark-200"
+                            >
+                              <Icon
+                                :name="copiedCommand === cmd ? 'check' : 'copy'"
+                                size="xs"
+                                :stroke-width="2"
+                                :class="copiedCommand === cmd ? 'text-green-500' : ''"
+                              />
+                              {{
+                                copiedCommand === cmd
+                                  ? t('version.copied')
+                                  : t('version.copyCommand')
+                              }}
+                            </button>
+                          </div>
+                          <code
+                            class="block select-all whitespace-pre-wrap break-all bg-gray-50 p-2.5 font-mono text-[10px] leading-relaxed text-gray-600 dark:bg-dark-900 dark:text-dark-300"
+                            >{{ cmd }}</code
+                          >
+                        </div>
+
+                        <!-- Deployment note (e.g. "rollback only reverts the image, not the database") -->
+                        <p
+                          v-if="rollbackGuideNote"
+                          class="flex items-start gap-1.5 px-0.5 text-[11px] leading-4 text-amber-600 dark:text-amber-400"
+                        >
+                          <Icon
+                            name="exclamationTriangle"
+                            size="xs"
+                            :stroke-width="2"
+                            class="mt-px flex-shrink-0"
+                          />
+                          {{ rollbackGuideNote }}
+                        </p>
+                      </div>
+
                       <!-- No versions available -->
                       <p
                         v-else-if="rollbackVersions.length === 0"
@@ -649,7 +733,8 @@ import {
   restartService,
   getRollbackVersions,
   rollback as rollbackAPI,
-  type RollbackVersionInfo
+  type RollbackVersionInfo,
+  type RollbackVersionsResult
 } from '@/api/admin/system'
 import { useClipboard } from '@/composables/useClipboard'
 import Icon from '@/components/icons/Icon.vue'
@@ -694,12 +779,32 @@ const successKind = ref<'update' | 'rollback'>('update')
 
 // Rollback states
 const rollbackPanelOpen = ref(false)
+const rollbackResult = ref<RollbackVersionsResult | null>(null)
 const rollbackVersions = ref<RollbackVersionInfo[]>([])
 const rollbackVersionsLoading = ref(false)
 const rollbackVersionsError = ref('')
 const selectedRollbackVersion = ref('')
 const rollingBack = ref(false)
 const rollbackError = ref('')
+
+// 指引模式（managed_externally=true）：回退由部署工具管理，仅展示运维命令，
+// 在线回退列表/按钮均不可用。
+const isManagedRollback = computed(() => rollbackResult.value?.managed_externally === true)
+const rollbackGuideCommands = computed(() => rollbackResult.value?.guide?.commands || [])
+const rollbackGuideNote = computed(() => rollbackResult.value?.guide?.note || '')
+const rollbackGuideTitle = computed(
+  () => rollbackResult.value?.guide?.title || t('version.rollbackExternalTitle')
+)
+// 指引命令逐条独立的复制状态（区分于手动命令 tab 的 copied）
+const copiedCommand = ref('')
+
+async function copyGuideCommand(cmd: string) {
+  await copyToClipboard(cmd)
+  copiedCommand.value = cmd
+  setTimeout(() => {
+    if (copiedCommand.value === cmd) copiedCommand.value = ''
+  }, 2000)
+}
 
 const { copied, copyToClipboard } = useClipboard()
 
@@ -780,21 +885,25 @@ async function handleUpdate() {
 
 function resetRollbackState() {
   rollbackPanelOpen.value = false
+  rollbackResult.value = null
   rollbackVersions.value = []
   rollbackVersionsError.value = ''
   selectedRollbackVersion.value = ''
   rollbackError.value = ''
+  copiedCommand.value = ''
   manualTab.value = 'script'
 }
 
 async function toggleRollbackPanel() {
   if (!isAdmin.value) return
   rollbackPanelOpen.value = !rollbackPanelOpen.value
-  // Source builds only show a hint, no version list to fetch
+  // Source builds only show a hint, no version list to fetch.
+  // rollbackResult covers both modes (managed guide / GitHub list): once
+  // loaded, don't refetch on every panel toggle (refresh button still can).
   if (
     rollbackPanelOpen.value &&
     isReleaseBuild.value &&
-    rollbackVersions.value.length === 0 &&
+    rollbackResult.value === null &&
     !rollbackVersionsLoading.value
   ) {
     await loadRollbackVersions()
@@ -807,6 +916,7 @@ async function loadRollbackVersions() {
   rollbackVersionsError.value = ''
   try {
     const data = await getRollbackVersions()
+    rollbackResult.value = data
     rollbackVersions.value = data.versions || []
   } catch (error: unknown) {
     const err = error as { response?: { data?: { message?: string } }; message?: string }

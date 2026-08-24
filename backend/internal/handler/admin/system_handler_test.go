@@ -31,7 +31,7 @@ type systemHandlerUpdateServiceStub struct {
 	rollbackToHasDeadline bool
 	rollbackToVersions    []string
 	rollbackToErr         error
-	rollbackVersions      []service.RollbackVersion
+	rollbackVersions      *service.RollbackVersionsResult
 	rollbackVersionsErr   error
 	rollbackVersionsCall  int
 }
@@ -61,7 +61,7 @@ func (s *systemHandlerUpdateServiceStub) CurrentBuild() string {
 	return ""
 }
 
-func (s *systemHandlerUpdateServiceStub) ListRollbackVersions(context.Context) ([]service.RollbackVersion, error) {
+func (s *systemHandlerUpdateServiceStub) ListRollbackVersions(context.Context) (*service.RollbackVersionsResult, error) {
 	s.rollbackVersionsCall++
 	return s.rollbackVersions, s.rollbackVersionsErr
 }
@@ -290,9 +290,11 @@ func TestSystemHandlerRollbackWithDisallowedVersionReturnsBadRequest(t *testing.
 
 func TestSystemHandlerGetRollbackVersions(t *testing.T) {
 	updateSvc := &systemHandlerUpdateServiceStub{
-		rollbackVersions: []service.RollbackVersion{
-			{Version: "0.1.146", PublishedAt: "2026-07-07T00:00:00Z", HTMLURL: "https://example.com/v0.1.146"},
-			{Version: "0.1.145", PublishedAt: "2026-07-06T00:00:00Z", HTMLURL: "https://example.com/v0.1.145"},
+		rollbackVersions: &service.RollbackVersionsResult{
+			Versions: []service.RollbackVersion{
+				{Version: "0.1.146", PublishedAt: "2026-07-07T00:00:00Z", HTMLURL: "https://example.com/v0.1.146"},
+				{Version: "0.1.145", PublishedAt: "2026-07-06T00:00:00Z", HTMLURL: "https://example.com/v0.1.145"},
+			},
 		},
 	}
 	repo := newMemoryIdempotencyRepoStub()
@@ -315,6 +317,48 @@ func TestSystemHandlerGetRollbackVersions(t *testing.T) {
 	require.Equal(t, 0, body.Code)
 	require.Len(t, body.Data.Versions, 2)
 	require.Equal(t, "0.1.146", body.Data.Versions[0].Version)
+}
+
+// TestSystemHandlerGetRollbackVersionsManagedExternally 验证禁用态响应透传：
+// managed_externally=true + 空 versions + 部署方注入的 guide（前端据此渲染部署
+// 工具操作指引而非在线回退列表）。
+func TestSystemHandlerGetRollbackVersionsManagedExternally(t *testing.T) {
+	updateSvc := &systemHandlerUpdateServiceStub{
+		rollbackVersions: &service.RollbackVersionsResult{
+			Versions:          []service.RollbackVersion{},
+			ManagedExternally: true,
+			Guide: &service.RollbackGuide{
+				Title:    "版本回退由部署仓库管理",
+				Note:     "降级只回退镜像, 不回滚数据库",
+				Commands: []string{"./ops rollback sub2api", "./ops rollback sub2api --confirm"},
+			},
+		},
+	}
+	repo := newMemoryIdempotencyRepoStub()
+	router := newSystemHandlerTestRouter(t, updateSvc, repo)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/system/rollback-versions", nil)
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, 1, updateSvc.rollbackVersionsCall)
+
+	var body struct {
+		Code int `json:"code"`
+		Data struct {
+			Versions          []service.RollbackVersion `json:"versions"`
+			ManagedExternally bool                      `json:"managed_externally"`
+			Guide             *service.RollbackGuide    `json:"guide"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	require.Equal(t, 0, body.Code)
+	require.True(t, body.Data.ManagedExternally)
+	require.Empty(t, body.Data.Versions)
+	require.NotNil(t, body.Data.Guide)
+	require.Equal(t, "版本回退由部署仓库管理", body.Data.Guide.Title)
+	require.Equal(t, []string{"./ops rollback sub2api", "./ops rollback sub2api --confirm"}, body.Data.Guide.Commands)
 }
 
 func TestSystemHandlerGetRollbackVersionsError(t *testing.T) {

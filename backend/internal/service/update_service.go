@@ -25,6 +25,7 @@ import (
 var (
 	ErrNoUpdateAvailable         = infraerrors.Conflict("ALREADY_UP_TO_DATE", "no update available; current version is latest")
 	ErrRollbackVersionNotAllowed = infraerrors.BadRequest("ROLLBACK_VERSION_NOT_ALLOWED", "version is not in the allowed rollback list")
+	ErrUpdatesDisabled           = infraerrors.Conflict("UPDATES_DISABLED", "online update/rollback is disabled on this deployment; use your deployment tooling")
 )
 
 const (
@@ -83,17 +84,60 @@ type UpdateService struct {
 	currentVersion string // 上游基线版本号
 	currentBuild   string // 自研发布版本号（CalVer）
 	buildType      string // "source" for manual builds, "release" for CI builds
+	rollbackGuide  *RollbackGuide
 }
 
 // NewUpdateService creates a new UpdateService
-func NewUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, version, build, buildType string) *UpdateService {
+func NewUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, version, build, buildType string, rollbackGuide *RollbackGuide) *UpdateService {
 	return &UpdateService{
 		cache:          cache,
 		githubClient:   githubClient,
 		currentVersion: version,
 		currentBuild:   build,
 		buildType:      buildType,
+		rollbackGuide:  rollbackGuide,
 	}
+}
+
+// RollbackGuide 描述外部部署体系（如部署仓库的 ops 命令）管理回退时的操作
+// 指引，由部署方经 ROLLBACK_GUIDE_* 环境变量注入，展示在管理面板的版本回退
+// 入口处。未配置时为 nil。
+type RollbackGuide struct {
+	Title    string   `json:"title,omitempty"`
+	Note     string   `json:"note,omitempty"`
+	Commands []string `json:"commands,omitempty"`
+}
+
+// RollbackVersionsResult is the payload of the rollback-versions endpoint.
+// ManagedExternally=true 表示本部署的回退由外部部署工具管理，在线二进制回退
+// 不可用，前端应展示 Guide 指引而非在线回退列表。
+type RollbackVersionsResult struct {
+	Versions          []RollbackVersion `json:"versions"`
+	ManagedExternally bool              `json:"managed_externally"`
+	Guide             *RollbackGuide    `json:"guide,omitempty"`
+}
+
+// rollbackGuideFromEnv 从环境变量组装回退指引：
+//
+//	ROLLBACK_GUIDE_TITLE     指引标题
+//	ROLLBACK_GUIDE_NOTE      附加说明（如"降级只回退镜像, 不回滚数据库"）
+//	ROLLBACK_GUIDE_COMMANDS  命令列表，按换行拆分（YAML literal block 注入）
+//
+// 三者均为空时返回 nil（未配置指引）。
+func rollbackGuideFromEnv() *RollbackGuide {
+	guide := &RollbackGuide{
+		Title: strings.TrimSpace(os.Getenv("ROLLBACK_GUIDE_TITLE")),
+		Note:  strings.TrimSpace(os.Getenv("ROLLBACK_GUIDE_NOTE")),
+	}
+	for _, cmd := range strings.Split(os.Getenv("ROLLBACK_GUIDE_COMMANDS"), "\n") {
+		if cmd = strings.TrimSpace(cmd); cmd != "" {
+			guide.Commands = append(guide.Commands, cmd)
+		}
+	}
+	if guide.Title == "" && guide.Note == "" && len(guide.Commands) == 0 {
+		return nil
+	}
+	return guide
 }
 
 // CurrentVersion 返回当前上游基线版本号（base）。
@@ -321,6 +365,9 @@ func (s *UpdateService) applyReleaseAssets(ctx context.Context, releaseAssets []
 
 // Rollback restores the previous version
 func (s *UpdateService) Rollback() error {
+	if !updatesEnabled {
+		return ErrUpdatesDisabled
+	}
 	exePath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("failed to get executable path: %w", err)
@@ -346,7 +393,19 @@ func (s *UpdateService) Rollback() error {
 // ListRollbackVersions returns up to maxRollbackVersions release versions that are
 // strictly older than the current version (the current version itself is excluded),
 // newest first. Draft and prerelease entries are skipped.
-func (s *UpdateService) ListRollbackVersions(ctx context.Context) ([]RollbackVersion, error) {
+//
+// Fork 止血：updatesEnabled=false 时在线二进制回退不可用（详见 updatesEnabled
+// 注释），返回空列表 + ManagedExternally=true（附部署方注入的指引，如有），
+// 前端据此渲染部署工具操作指引而非在线回退列表。
+func (s *UpdateService) ListRollbackVersions(ctx context.Context) (*RollbackVersionsResult, error) {
+	if !updatesEnabled {
+		return &RollbackVersionsResult{
+			Versions:          []RollbackVersion{},
+			ManagedExternally: true,
+			Guide:             s.rollbackGuide,
+		}, nil
+	}
+
 	releases, err := s.fetchRollbackCandidates(ctx)
 	if err != nil {
 		return nil, err
@@ -360,13 +419,16 @@ func (s *UpdateService) ListRollbackVersions(ctx context.Context) ([]RollbackVer
 			HTMLURL:     r.HTMLURL,
 		})
 	}
-	return versions, nil
+	return &RollbackVersionsResult{Versions: versions}, nil
 }
 
 // RollbackToVersion downloads and installs a specific older version.
 // The target must be one of the versions returned by ListRollbackVersions;
 // anything else (including the current version) is rejected.
 func (s *UpdateService) RollbackToVersion(ctx context.Context, version string) error {
+	if !updatesEnabled {
+		return ErrUpdatesDisabled
+	}
 	target := strings.TrimPrefix(strings.TrimSpace(version), "v")
 	if target == "" {
 		return ErrRollbackVersionNotAllowed
