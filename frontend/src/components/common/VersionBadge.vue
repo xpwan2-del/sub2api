@@ -368,7 +368,7 @@
                 </template>
               </div>
 
-              <!-- Priority 5: Up to date - GitHub link (upstream mode) + version rollback -->
+              <!-- Priority 5: Up to date - GitHub link (upstream mode) -->
               <!-- 已是最新时不展示升级指引：有新版本时（Priority 4）才渲染升级流程 -->
               <div v-else class="space-y-2">
                 <!-- Upstream GitHub link (only when not deployment-managed) -->
@@ -389,8 +389,14 @@
                   {{ t('version.viewRelease') }}
                 </a>
 
-                <!-- Version rollback entry -->
-                <div class="border-t border-gray-100 pt-2 dark:border-dark-700">
+              </div>
+
+              <!-- Version rollback entry：独立于更新检查状态（与 Priority 1-5 平级），
+                   仅「成功待重启」终态面板排除——发现新版本或升级失败时回退同样可用 -->
+              <div
+                v-if="!(updateSuccess && needRestart)"
+                class="mt-2 border-t border-gray-100 pt-2 dark:border-dark-700"
+              >
                   <button
                     @click="toggleRollbackPanel"
                     class="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 dark:text-dark-500 dark:hover:bg-dark-700/50 dark:hover:text-dark-300"
@@ -646,7 +652,6 @@
                       </template>
                     </div>
                   </transition>
-                </div>
               </div>
             </template>
           </div>
