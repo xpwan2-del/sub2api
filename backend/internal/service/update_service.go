@@ -13,10 +13,12 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
@@ -77,6 +79,14 @@ type GitHubReleaseClient interface {
 	FetchChecksumFile(ctx context.Context, url string) ([]byte, error)
 }
 
+// BuildRegistryClient 查询自有镜像仓库（如 Harbor）的最新 Build tag（CalVer）。
+// 部署方配置 UPDATE_REGISTRY / UPDATE_REGISTRY_IMAGE（/ UPDATE_REGISTRY_AUTH）时由
+// provider 组装注入，managed 更新检查据此感知自研版本体系的新版本；未配置时为
+// nil，CheckUpdate 回退到「已是最新」静态应答。
+type BuildRegistryClient interface {
+	LatestBuildTag(ctx context.Context) (string, error)
+}
+
 // UpdateService handles software updates
 type UpdateService struct {
 	cache          UpdateCache
@@ -86,6 +96,13 @@ type UpdateService struct {
 	buildType      string // "source" for manual builds, "release" for CI builds
 	rollbackGuide  *OpsGuide
 	upgradeGuide   *OpsGuide
+	buildRegistry  BuildRegistryClient
+
+	// managed+registry 检查的实例内存缓存（GitHub 路径的 Redis 缓存格式与其
+	// 不兼容：重建时用 semver 比较，且不保留 managed 字段）。
+	registryMu      sync.Mutex
+	registryCached  *UpdateInfo
+	registryCacheAt int64
 }
 
 // NewUpdateService creates a new UpdateService
@@ -111,6 +128,24 @@ func NewUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, versi
 type UpdateGuides struct {
 	Rollback *OpsGuide
 	Upgrade  *OpsGuide
+}
+
+// WithBuildRegistry 注入自有镜像仓库客户端（部署方配置 UPDATE_REGISTRY 时由
+// provider 组装）。链式 setter 而非构造参数：保持 NewUpdateService 对既有
+// 调用方/测试兼容（先例：GrokOAuthService.WithSessionStore）。
+func (s *UpdateService) WithBuildRegistry(client BuildRegistryClient) *UpdateService {
+	s.buildRegistry = client
+	return s
+}
+
+// calVerBuildPattern 匹配自研发布版本号 Build（CalVer: YYYY.MM.DD-shortsha，
+// 见 deploy/build_image.sh 的推导逻辑）。日期零填充，字典序即时间序。
+var calVerBuildPattern = regexp.MustCompile(`^\d{4}\.\d{2}\.\d{2}-[0-9a-f]{4,}$`)
+
+// IsCalVerBuild 判断版本串是否为自研 CalVer Build 格式。registry tag 过滤
+// （repository 层）与此处的 currentBuild 防御性校验共用，避免两份规则漂移。
+func IsCalVerBuild(build string) bool {
+	return calVerBuildPattern.MatchString(build)
 }
 
 // OpsGuide 描述外部部署体系（如部署仓库的 ops 命令）管理升级/回退时的操作
@@ -222,13 +257,20 @@ type GitHubAsset struct {
 
 // CheckUpdate checks for available updates
 func (s *UpdateService) CheckUpdate(ctx context.Context, force bool) (*UpdateInfo, error) {
-	// Fork 止血：updatesEnabled=false 时禁用上游更新检查，恒返回「已是最新」，
-	// 并标记 managed_externally + 附部署方注入的升级指引（如有），前端据此
-	// 展示部署工具操作指引。详见 updatesEnabled 注释。
+	// Fork 止血：updatesEnabled=false 时禁用上游更新检查，并标记
+	// managed_externally + 附部署方注入的升级指引（如有），前端据此展示部署
+	// 工具操作指引。详见 updatesEnabled 注释。
 	if !updatesEnabled {
+		// 配置了自有镜像仓库（UPDATE_REGISTRY_*）时仍可感知真实新版本：查询
+		// 最新 CalVer Build tag 与当前 Build 比较，让「有可用更新」提示恢复
+		// 语义（更新动作依旧由部署工具执行）。查询失败降级为「已是最新」+
+		// Warning，不阻塞管理面板。
+		if s.buildRegistry != nil {
+			return s.checkUpdateViaRegistry(ctx, force)
+		}
 		return &UpdateInfo{
-			CurrentVersion:    s.currentVersion,
-			LatestVersion:     s.currentVersion,
+			CurrentVersion:    s.currentBuild,
+			LatestVersion:     s.currentBuild,
 			HasUpdate:         false,
 			BuildType:         s.buildType,
 			ManagedExternally: true,
@@ -263,6 +305,45 @@ func (s *UpdateService) CheckUpdate(ctx context.Context, force bool) (*UpdateInf
 	// Cache result
 	s.saveToCache(ctx, info)
 	return info, nil
+}
+
+// checkUpdateViaRegistry 是 managed 模式下经自有镜像仓库的更新检查：比较最新
+// CalVer Build tag 与 currentBuild。结果缓存在实例内存（TTL 同 updateCacheTTL），
+// GitHub 路径的 Redis 缓存格式不保留 managed 字段且用 semver 重建比较，不可复用。
+func (s *UpdateService) checkUpdateViaRegistry(ctx context.Context, force bool) (*UpdateInfo, error) {
+	s.registryMu.Lock()
+	defer s.registryMu.Unlock()
+
+	if !force && s.registryCached != nil &&
+		time.Now().Unix()-s.registryCacheAt < updateCacheTTL {
+		cached := *s.registryCached
+		cached.Cached = true
+		return &cached, nil
+	}
+
+	// managed 模式下主显示体系是自研 Build：CurrentVersion/LatestVersion 均为
+	// CalVer 语义（前端徽章主显示 props.version = siteVersion = Build）。
+	info := &UpdateInfo{
+		CurrentVersion:    s.currentBuild,
+		LatestVersion:     s.currentBuild,
+		HasUpdate:         false,
+		BuildType:         s.buildType,
+		ManagedExternally: true,
+		Guide:             s.upgradeGuide,
+	}
+	if latest, err := s.buildRegistry.LatestBuildTag(ctx); err != nil {
+		info.Warning = "registry check unavailable: " + err.Error()
+	} else if latest != "" {
+		info.LatestVersion = latest
+		// currentBuild 非 CalVer（如 source build 的 "dev"）时无法比较，仅展示
+		// 最新 Build 而不报更新。
+		info.HasUpdate = IsCalVerBuild(s.currentBuild) && latest != s.currentBuild
+	}
+
+	s.registryCached = info
+	s.registryCacheAt = time.Now().Unix()
+	result := *info
+	return &result, nil
 }
 
 // PerformUpdate downloads and applies the update

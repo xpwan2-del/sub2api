@@ -114,6 +114,121 @@ func TestUpdateServiceCheckUpdateForkDisabled(t *testing.T) {
 	require.False(t, client.fetchCalled, "fork 止血：不应查询上游 GitHub")
 }
 
+// updateServiceRegistryClientStub 模拟自有镜像仓库的 Build tag 查询。
+type updateServiceRegistryClientStub struct {
+	latest string
+	err    error
+	calls  int
+}
+
+func (s *updateServiceRegistryClientStub) LatestBuildTag(context.Context) (string, error) {
+	s.calls++
+	return s.latest, s.err
+}
+
+// newManagedRegistryService 构造 managed 模式 + registry 客户端的测试服务。
+func newManagedRegistryService(currentBuild string, registry BuildRegistryClient) *UpdateService {
+	return NewUpdateService(
+		&updateServiceCacheStub{},
+		&updateServiceGitHubClientStub{},
+		"0.1.138",
+		currentBuild,
+		"release",
+		&UpdateGuides{Upgrade: &OpsGuide{Title: "升级由部署仓库管理", Commands: []string{"./ops upgrade -i sub2api"}}},
+	).WithBuildRegistry(registry)
+}
+
+// TestUpdateServiceCheckUpdateViaRegistryHasUpdate 验证 managed 模式经 registry
+// 查询到更新的 CalVer Build 时恢复「有可用更新」语义（managed 标记与指引不变）。
+func TestUpdateServiceCheckUpdateViaRegistryHasUpdate(t *testing.T) {
+	registry := &updateServiceRegistryClientStub{latest: "2026.08.25-deadbeef"}
+	svc := newManagedRegistryService("2026.08.24-abc12345", registry)
+
+	info, err := svc.CheckUpdate(context.Background(), true)
+
+	require.NoError(t, err)
+	require.True(t, info.ManagedExternally)
+	require.True(t, info.HasUpdate, "registry 上有更新的 CalVer Build 时应提示更新")
+	require.Equal(t, "2026.08.25-deadbeef", info.LatestVersion)
+	require.Equal(t, "2026.08.24-abc12345", info.CurrentVersion, "managed 模式主版本号语义为自研 Build")
+	require.NotNil(t, info.Guide)
+	require.Empty(t, info.Warning)
+}
+
+// TestUpdateServiceCheckUpdateViaRegistryUpToDate 验证 registry 最新 Build 与
+// 当前一致时 HasUpdate=false 且 LatestVersion 展示最新 Build。
+func TestUpdateServiceCheckUpdateViaRegistryUpToDate(t *testing.T) {
+	registry := &updateServiceRegistryClientStub{latest: "2026.08.24-abc12345"}
+	svc := newManagedRegistryService("2026.08.24-abc12345", registry)
+
+	info, err := svc.CheckUpdate(context.Background(), true)
+
+	require.NoError(t, err)
+	require.False(t, info.HasUpdate)
+	require.Equal(t, "2026.08.24-abc12345", info.LatestVersion)
+}
+
+// TestUpdateServiceCheckUpdateViaRegistryError 验证 registry 查询失败时降级为
+// 「已是最新」+ Warning（不阻塞管理面板），managed 标记与指引保留。
+func TestUpdateServiceCheckUpdateViaRegistryError(t *testing.T) {
+	registry := &updateServiceRegistryClientStub{err: errors.New("connection refused")}
+	svc := newManagedRegistryService("2026.08.24-abc12345", registry)
+
+	info, err := svc.CheckUpdate(context.Background(), true)
+
+	require.NoError(t, err)
+	require.False(t, info.HasUpdate)
+	require.NotEmpty(t, info.Warning)
+	require.True(t, info.ManagedExternally)
+	require.NotNil(t, info.Guide)
+}
+
+// TestUpdateServiceCheckUpdateViaRegistryCaches 验证结果走实例内存缓存：
+// 非 force 二次调用不再打 registry，force 跳过缓存。
+func TestUpdateServiceCheckUpdateViaRegistryCaches(t *testing.T) {
+	registry := &updateServiceRegistryClientStub{latest: "2026.08.25-deadbeef"}
+	svc := newManagedRegistryService("2026.08.24-abc12345", registry)
+
+	_, err := svc.CheckUpdate(context.Background(), true)
+	require.NoError(t, err)
+	require.Equal(t, 1, registry.calls)
+
+	cached, err := svc.CheckUpdate(context.Background(), false)
+	require.NoError(t, err)
+	require.Equal(t, 1, registry.calls, "缓存命中时不应重复查询 registry")
+	require.True(t, cached.Cached)
+
+	_, err = svc.CheckUpdate(context.Background(), true)
+	require.NoError(t, err)
+	require.Equal(t, 2, registry.calls, "force 应跳过缓存")
+}
+
+// TestUpdateServiceCheckUpdateViaRegistryNonCalVerCurrent 验证 currentBuild 非
+// CalVer（source build 的 dev 兜底）时即便 registry 有更新也只展示不提示，
+// 防止 dev 与 CalVer 的恒不等比较造成误报。
+func TestUpdateServiceCheckUpdateViaRegistryNonCalVerCurrent(t *testing.T) {
+	registry := &updateServiceRegistryClientStub{latest: "2026.08.25-deadbeef"}
+	svc := newManagedRegistryService("dev", registry)
+
+	info, err := svc.CheckUpdate(context.Background(), true)
+
+	require.NoError(t, err)
+	require.False(t, info.HasUpdate, "currentBuild 非 CalVer 时不应误报更新")
+	require.Equal(t, "2026.08.25-deadbeef", info.LatestVersion)
+}
+
+// TestIsCalVerBuild 验证自研 Build 号格式判定（与 deploy/build_image.sh 推导
+// 逻辑对齐：YYYY.MM.DD-shortsha8）。
+func TestIsCalVerBuild(t *testing.T) {
+	require.True(t, IsCalVerBuild("2026.08.24-84152dc8"))
+	require.True(t, IsCalVerBuild("2026.01.01-abc1"))
+	require.False(t, IsCalVerBuild("latest"))
+	require.False(t, IsCalVerBuild("0.1.146"))
+	require.False(t, IsCalVerBuild("dev"))
+	require.False(t, IsCalVerBuild("2026.8.4-abc12345"), "非零填充日期不是合法 Build tag")
+	require.False(t, IsCalVerBuild(""))
+}
+
 // TestUpdateServicePerformUpdateForkDisabled 验证禁用态 PerformUpdate 直接拒绝
 // （ErrUpdatesDisabled），而非借道 CheckUpdate 伪装成「已是最新」——防止在线
 // 二进制替换路径被任何调用方式触达。

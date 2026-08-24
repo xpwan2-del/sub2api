@@ -13,6 +13,7 @@ export interface ReleaseInfo {
 
 export interface VersionInfo {
   current_version: string
+  /** 上游模式 = 最新 GitHub release；managed 模式（UPDATE_REGISTRY_* 已配置）= 最新 CalVer Build */
   latest_version: string
   has_update: boolean
   release_info?: ReleaseInfo

@@ -47,12 +47,18 @@ func ProvidePricingService(cfg *config.Config, remoteClient PricingRemoteClient)
 // 升级/回退运维指引（UPGRADE_GUIDE_* / ROLLBACK_GUIDE_* 环境变量）在 provider
 // 层读取——部署期静态配置，与 ProvideChannelMonitorV2Aggregator 读行为开关
 // env 的先例一致。
-func ProvideUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, buildInfo BuildInfo) *UpdateService {
+// buildRegistry 为自有镜像仓库客户端（UPDATE_REGISTRY_* 已配置时非 nil），让
+// managed 模式仍能感知最新 CalVer Build。
+func ProvideUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, buildInfo BuildInfo, buildRegistry BuildRegistryClient) *UpdateService {
 	guides := &UpdateGuides{
 		Rollback: opsGuideFromEnv("ROLLBACK"),
 		Upgrade:  opsGuideFromEnv("UPGRADE"),
 	}
-	return NewUpdateService(cache, githubClient, buildInfo.Version, buildInfo.Build, buildInfo.BuildType, guides)
+	svc := NewUpdateService(cache, githubClient, buildInfo.Version, buildInfo.Build, buildInfo.BuildType, guides)
+	if buildRegistry != nil {
+		svc.WithBuildRegistry(buildRegistry)
+	}
+	return svc
 }
 
 // ProvideEmailQueueService creates EmailQueueService with default worker count

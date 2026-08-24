@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"os"
 
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/Wei-Shaw/sub2api/ent"
@@ -30,6 +31,22 @@ func ProvideConcurrencyCache(rdb *redis.Client, cfg *config.Config) service.Conc
 // 从配置中读取代理设置，支持国内服务器通过代理访问 GitHub
 func ProvideGitHubReleaseClient(cfg *config.Config) service.GitHubReleaseClient {
 	return NewGitHubReleaseClient(cfg.Update.ProxyURL, cfg.Security.ProxyFallback.AllowDirectOnError)
+}
+
+// ProvideBuildRegistryClient 创建自有镜像仓库（Harbor）tag 查询客户端，供
+// managed 模式更新检查感知最新 CalVer Build。部署方经 UPDATE_REGISTRY /
+// UPDATE_REGISTRY_IMAGE（/ UPDATE_REGISTRY_AUTH）注入；未配置时返回 nil，
+// UpdateService 回退到「已是最新」静态应答。
+func ProvideBuildRegistryClient() service.BuildRegistryClient {
+	client := NewRegistryTagsClient(
+		os.Getenv("UPDATE_REGISTRY"),
+		os.Getenv("UPDATE_REGISTRY_IMAGE"),
+		os.Getenv("UPDATE_REGISTRY_AUTH"),
+	)
+	if client == nil {
+		return nil
+	}
+	return client
 }
 
 // ProvidePricingRemoteClient 创建定价数据远程客户端
@@ -163,6 +180,7 @@ var ProviderSet = wire.NewSet(
 	NewAliyunCaptchaVerifier,
 	ProvidePricingRemoteClient,
 	ProvideGitHubReleaseClient,
+	ProvideBuildRegistryClient,
 	NewProxyExitInfoProber,
 	NewClaudeUsageFetcher,
 	NewClaudeOAuthClient,

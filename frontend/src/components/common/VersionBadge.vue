@@ -31,8 +31,7 @@
         <div
           v-if="dropdownOpen"
           ref="dropdownRef"
-          class="absolute left-0 z-50 mt-2 overflow-hidden whitespace-normal rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200 dark:border-dark-700 dark:bg-dark-800"
-          :class="rollbackPanelOpen && isReleaseBuild ? 'w-80' : 'w-64'"
+          class="absolute left-0 z-50 mt-2 w-96 overflow-hidden whitespace-normal rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200 dark:border-dark-700 dark:bg-dark-800"
         >
           <!-- Header with refresh button -->
           <div
@@ -320,85 +319,65 @@
                   </div>
                 </div>
 
-                <!-- Update button -->
-                <button
-                  @click="handleUpdate"
-                  :disabled="updating"
-                  class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-primary-500 hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <svg v-if="updating" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  <Icon v-else name="download" size="sm" :stroke-width="2" />
-                  {{ updating ? t('version.updating') : t('version.updateNow') }}
-                </button>
+                <!-- Deployment-managed: update runs via ops commands, not in-app -->
+                <OpsGuideSection
+                  v-if="upgradeManaged"
+                  :title="upgradeGuideTitle"
+                  :commands="upgradeGuideCommands"
+                  :note="upgradeGuideNote"
+                  :fallback-hint="t('version.upgradeExternalHint')"
+                />
 
-                <!-- View release link -->
-                <a
-                  v-if="releaseInfo?.html_url && releaseInfo.html_url !== '#'"
-                  :href="releaseInfo.html_url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="flex items-center justify-center gap-1 text-xs text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-dark-200"
-                >
-                  {{ t('version.viewChangelog') }}
-                  <Icon name="externalLink" size="xs" :stroke-width="2" />
-                </a>
+                <template v-else>
+                  <!-- Update button -->
+                  <button
+                    @click="handleUpdate"
+                    :disabled="updating"
+                    class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-primary-500 hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <svg v-if="updating" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    <Icon v-else name="download" size="sm" :stroke-width="2" />
+                    {{ updating ? t('version.updating') : t('version.updateNow') }}
+                  </button>
+
+                  <!-- View release link -->
+                  <a
+                    v-if="releaseInfo?.html_url && releaseInfo.html_url !== '#'"
+                    :href="releaseInfo.html_url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center justify-center gap-1 text-xs text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-dark-200"
+                  >
+                    {{ t('version.viewChangelog') }}
+                    <Icon name="externalLink" size="xs" :stroke-width="2" />
+                  </a>
+                </template>
               </div>
 
               <!-- Priority 5: Up to date - upgrade guide (or GitHub link) + version rollback -->
               <div v-else class="space-y-2">
                 <!-- Deployment-managed upgrade: show ops guide, not the upstream link -->
-                <div v-if="upgradeManaged" class="space-y-2">
-                  <p
-                    class="px-0.5 text-[11px] font-medium text-gray-500 dark:text-dark-400"
-                  >
-                    {{ upgradeGuideTitle }}
-                  </p>
-
-                  <!-- Guide not configured: generic hint -->
-                  <div
-                    v-if="upgradeGuideCommands.length === 0"
-                    class="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2 dark:border-blue-800/50 dark:bg-blue-900/20"
-                  >
-                    <svg
-                      class="h-3.5 w-3.5 flex-shrink-0 text-blue-500 dark:text-blue-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <p
-                      class="min-w-0 flex-1 text-xs leading-4 text-blue-600 dark:text-blue-400"
-                    >
-                      {{ t('version.upgradeExternalHint') }}
-                    </p>
-                  </div>
-
-                  <OpsCommandBlock
-                    v-else
-                    :commands="upgradeGuideCommands"
-                    :note="upgradeGuideNote"
-                  />
-                </div>
+                <OpsGuideSection
+                  v-if="upgradeManaged"
+                  :title="upgradeGuideTitle"
+                  :commands="upgradeGuideCommands"
+                  :note="upgradeGuideNote"
+                  :fallback-hint="t('version.upgradeExternalHint')"
+                />
 
                 <!-- Upstream GitHub link (only when not deployment-managed) -->
                 <a
@@ -504,44 +483,13 @@
                       </div>
 
                       <!-- Deployment-managed rollback: show ops guide, no online rollback -->
-                      <div v-else-if="isManagedRollback" class="space-y-2">
-                        <p
-                          class="px-0.5 text-[11px] font-medium text-gray-500 dark:text-dark-400"
-                        >
-                          {{ rollbackGuideTitle }}
-                        </p>
-
-                        <!-- Guide not configured: generic hint -->
-                        <div
-                          v-if="rollbackGuideCommands.length === 0"
-                          class="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2 dark:border-blue-800/50 dark:bg-blue-900/20"
-                        >
-                          <svg
-                            class="h-3.5 w-3.5 flex-shrink-0 text-blue-500 dark:text-blue-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          <p
-                            class="min-w-0 flex-1 text-xs leading-4 text-blue-600 dark:text-blue-400"
-                          >
-                            {{ t('version.rollbackExternalHint') }}
-                          </p>
-                        </div>
-
-                        <OpsCommandBlock
-                          v-else
-                          :commands="rollbackGuideCommands"
-                          :note="rollbackGuideNote"
-                        />
-                      </div>
+                      <OpsGuideSection
+                        v-else-if="isManagedRollback"
+                        :title="rollbackGuideTitle"
+                        :commands="rollbackGuideCommands"
+                        :note="rollbackGuideNote"
+                        :fallback-hint="t('version.rollbackExternalHint')"
+                      />
 
                       <!-- No versions available -->
                       <p
@@ -735,7 +683,7 @@ import {
 } from '@/api/admin/system'
 import { useClipboard } from '@/composables/useClipboard'
 import Icon from '@/components/icons/Icon.vue'
-import OpsCommandBlock from '@/components/common/OpsCommandBlock.vue'
+import OpsGuideSection from '@/components/common/OpsGuideSection.vue'
 
 const GITHUB_REPO = 'Wei-Shaw/sub2api'
 // Docker Hub image published by CI (tags carry no "v" prefix, e.g. weishaw/sub2api:0.1.146)
