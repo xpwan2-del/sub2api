@@ -32,6 +32,6 @@ func TestAPIKeyAuthSnapshotGroupForceOpenAIFastRoundtrip(t *testing.T) {
 	require.True(t, materialized.Group.Hydrated)
 	require.True(t, materialized.Group.ForceOpenAIFast)
 	require.True(t, materialized.Group.FreeOpenAIFast)
-	// v23 = 上游 v22（free Fast）与 2nd-dev v21（bundle/video4k）合并后再 bump。
-	require.Equal(t, 23, cached.Snapshot.Version)
+	// v24 = 上游 v23（codex manifest）与 2nd-dev v23（bundle/video4k）合并后再 bump。
+	require.Equal(t, apiKeyAuthSnapshotVersion, cached.Snapshot.Version)
 }
