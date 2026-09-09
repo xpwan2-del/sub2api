@@ -75,7 +75,7 @@ func TestApplyUpstreamPricingEntry_PartialOverlapCreatesNewRow(t *testing.T) {
 			BillingMode: BillingModeToken, InputPrice: floatPtr(originalInput),
 		}},
 	}
-	svc := NewChannelService(repo, nil, nil, nil)
+	svc := NewChannelService(repo, nil, nil, nil, nil)
 
 	newPrice := ConvertedPrice{BillingMode: BillingModeToken, InputPrice: floatPtr(9e-9)}
 	got, err := svc.ApplyUpstreamPricingEntry(context.Background(), 1, PlatformAnthropic, []string{"claude-opus"}, newPrice)
@@ -122,7 +122,7 @@ func TestApplyUpstreamPricingEntry_ExactSetUpdates(t *testing.T) {
 			BillingMode: BillingModeToken, InputPrice: floatPtr(5e-6),
 		}},
 	}
-	svc := NewChannelService(repo, nil, nil, nil)
+	svc := NewChannelService(repo, nil, nil, nil, nil)
 
 	newPrice := ConvertedPrice{BillingMode: BillingModeToken, InputPrice: floatPtr(7e-9), OutputPrice: floatPtr(14e-9)}
 	got, err := svc.ApplyUpstreamPricingEntry(context.Background(), 1, PlatformAnthropic, []string{"claude-opus"}, newPrice)
@@ -154,7 +154,7 @@ func TestApplyUpstreamPricingEntry_ExactSetCaseInsensitive(t *testing.T) {
 			Models: []string{"Claude-Opus", "Claude-Sonnet"},
 		}},
 	}
-	svc := NewChannelService(repo, nil, nil, nil)
+	svc := NewChannelService(repo, nil, nil, nil, nil)
 
 	newPrice := ConvertedPrice{BillingMode: BillingModeToken, InputPrice: floatPtr(3e-9)}
 	if _, err := svc.ApplyUpstreamPricingEntry(context.Background(), 1, PlatformAnthropic, []string{"claude-opus", "claude-sonnet"}, newPrice); err != nil {

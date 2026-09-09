@@ -97,7 +97,7 @@ export default {
     navLabel: 'Models',
     kicker: 'Public Model Catalog',
     title: 'Model Catalog',
-    subtitle: '',
+    subtitle: 'Browse available models and pricing across platforms',
     available: 'Available',
     loading: 'Syncing model catalog...',
     loadFailed: 'Failed to load model catalog',
