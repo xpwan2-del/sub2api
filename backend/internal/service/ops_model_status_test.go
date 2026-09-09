@@ -103,7 +103,7 @@ func TestOpsServiceGetModelStatusSnapshotMergesConfigAndTraffic(t *testing.T) {
 				ID:       10,
 				Name:     "OpenAI",
 				Platform: "openai",
-				ModelsListConfig: GroupModelsListConfig{
+				ModelAllowlist: GroupModelAllowlist{
 					Enabled: true,
 					Models:  []string{"gpt-4o", "gpt-4.1"},
 				},

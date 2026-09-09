@@ -97,7 +97,7 @@ export default {
     navLabel: '模型广场',
     kicker: 'Public Model Catalog',
     title: '模型广场',
-    subtitle: '',
+    subtitle: '浏览各平台接入的可用模型与价格信息',
     available: '可用',
     loading: '正在同步模型列表...',
     loadFailed: '模型列表加载失败',
