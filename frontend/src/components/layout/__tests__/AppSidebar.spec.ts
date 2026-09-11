@@ -74,3 +74,21 @@ describe('AppSidebar canvas entry', () => {
     )
   })
 })
+
+describe('AppSidebar subscription feature flag', () => {
+  it('keeps the subscription nav entries commented out (bundle system replaces them)', () => {
+    // 2nd-dev: /subscriptions and /admin/subscriptions are superseded by the bundle
+    // nav entries; a future upstream merge must not silently resurrect them as live
+    // code. The negative pattern requires no `//` before `path:` on the line, so the
+    // deliberately kept commented entries do not trip this guard.
+    expect(componentSource).not.toMatch(/^[^/\n]*path: '\/subscriptions'/m)
+    expect(componentSource).not.toMatch(/^[^/\n]*path: '\/admin\/subscriptions'/m)
+  })
+
+  it('derives the purchase entry label from the site billing mode', () => {
+    expect(componentSource).toContain("import { resolveSiteBillingMode } from '@/utils/siteBillingMode'")
+    expect(componentSource).toMatch(/case 'recharge_only':\s*return t\('nav\.recharge'\)/)
+    expect(componentSource).toMatch(/case 'subscription_only':\s*return t\('nav\.subscribe'\)/)
+    expect(componentSource).toMatch(/path: '\/purchase'[^\n]*label: purchaseNavLabel\.value/)
+  })
+})
