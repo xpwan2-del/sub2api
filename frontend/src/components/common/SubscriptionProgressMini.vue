@@ -1,4 +1,6 @@
 <template>
+  <!-- 2nd-dev: bundle progress indicator (upstream subscription variant superseded).
+       The subscription_enabled gate lives on the AppHeader mount site, so no in-component flag. -->
   <div v-if="hasActiveBundle" class="relative" ref="containerRef">
     <!-- Mini Indicator -->
     <button
