@@ -18,18 +18,22 @@ import (
 )
 
 type systemHandlerUpdateServiceStub struct {
-	performErr           error
-	updateInfo           *service.UpdateInfo
-	checkErr             error
-	checkForces          []bool
-	performCall          int
-	rollbackCall         int
-	rollbackToCall       int
-	rollbackToVersions   []string
-	rollbackToErr        error
-	rollbackVersions     []service.RollbackVersion
-	rollbackVersionsErr  error
-	rollbackVersionsCall int
+	performErr            error
+	updateInfo            *service.UpdateInfo
+	checkErr              error
+	checkForces           []bool
+	performCall           int
+	performCtxErr         error
+	performHasDeadline    bool
+	rollbackCall          int
+	rollbackToCall        int
+	rollbackToCtxErr      error
+	rollbackToHasDeadline bool
+	rollbackToVersions    []string
+	rollbackToErr         error
+	rollbackVersions      *service.RollbackVersionsResult
+	rollbackVersionsErr   error
+	rollbackVersionsCall  int
 }
 
 func (s *systemHandlerUpdateServiceStub) CheckUpdate(_ context.Context, force bool) (*service.UpdateInfo, error) {
@@ -37,8 +41,10 @@ func (s *systemHandlerUpdateServiceStub) CheckUpdate(_ context.Context, force bo
 	return s.updateInfo, s.checkErr
 }
 
-func (s *systemHandlerUpdateServiceStub) PerformUpdate(context.Context) error {
+func (s *systemHandlerUpdateServiceStub) PerformUpdate(ctx context.Context) error {
 	s.performCall++
+	s.performCtxErr = ctx.Err()
+	_, s.performHasDeadline = ctx.Deadline()
 	return s.performErr
 }
 
@@ -55,13 +61,15 @@ func (s *systemHandlerUpdateServiceStub) CurrentBuild() string {
 	return ""
 }
 
-func (s *systemHandlerUpdateServiceStub) ListRollbackVersions(context.Context) ([]service.RollbackVersion, error) {
+func (s *systemHandlerUpdateServiceStub) ListRollbackVersions(context.Context) (*service.RollbackVersionsResult, error) {
 	s.rollbackVersionsCall++
 	return s.rollbackVersions, s.rollbackVersionsErr
 }
 
-func (s *systemHandlerUpdateServiceStub) RollbackToVersion(_ context.Context, version string) error {
+func (s *systemHandlerUpdateServiceStub) RollbackToVersion(ctx context.Context, version string) error {
 	s.rollbackToCall++
+	s.rollbackToCtxErr = ctx.Err()
+	_, s.rollbackToHasDeadline = ctx.Deadline()
 	s.rollbackToVersions = append(s.rollbackToVersions, version)
 	return s.rollbackToErr
 }
@@ -173,6 +181,55 @@ func TestSystemHandlerPerformUpdateFailureStillReturnsInternalError(t *testing.T
 	require.Equal(t, "internal error", body.Message)
 }
 
+// TestSystemHandlerPerformUpdateSurvivesClientDisconnect reproduces #4504:
+// the browser or a reverse proxy (axios 30s default, nginx proxy_read_timeout
+// 60s) aborts the long-running update request and cancels the request
+// context. The download must keep running on a detached, bounded context
+// instead of dying with "download failed: context canceled".
+func TestSystemHandlerPerformUpdateSurvivesClientDisconnect(t *testing.T) {
+	updateSvc := &systemHandlerUpdateServiceStub{}
+	repo := newMemoryIdempotencyRepoStub()
+	router := newSystemHandlerTestRouter(t, updateSvc, repo)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/system/update", nil)
+	canceledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	req = req.WithContext(canceledCtx)
+	req.Header.Set("Idempotency-Key", "disconnected-update")
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, 1, updateSvc.performCall)
+	require.NoError(t, updateSvc.performCtxErr,
+		"update must not observe the canceled request context")
+	require.True(t, updateSvc.performHasDeadline,
+		"detached update context must still be bounded by a deadline")
+	requireSystemLockStatus(t, repo, service.IdempotencyStatusSucceeded)
+}
+
+func TestSystemHandlerRollbackToVersionSurvivesClientDisconnect(t *testing.T) {
+	updateSvc := &systemHandlerUpdateServiceStub{}
+	repo := newMemoryIdempotencyRepoStub()
+	router := newSystemHandlerTestRouter(t, updateSvc, repo)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/system/rollback",
+		strings.NewReader(`{"version":"0.1.146"}`))
+	req.Header.Set("Content-Type", "application/json")
+	canceledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	req = req.WithContext(canceledCtx)
+	req.Header.Set("Idempotency-Key", "disconnected-rollback")
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, 1, updateSvc.rollbackToCall)
+	require.NoError(t, updateSvc.rollbackToCtxErr,
+		"versioned rollback must not observe the canceled request context")
+	require.True(t, updateSvc.rollbackToHasDeadline,
+		"detached rollback context must still be bounded by a deadline")
+	requireSystemLockStatus(t, repo, service.IdempotencyStatusSucceeded)
+}
+
 func TestSystemHandlerRollbackWithoutBodyUsesLegacyBackup(t *testing.T) {
 	updateSvc := &systemHandlerUpdateServiceStub{}
 	repo := newMemoryIdempotencyRepoStub()
@@ -233,9 +290,11 @@ func TestSystemHandlerRollbackWithDisallowedVersionReturnsBadRequest(t *testing.
 
 func TestSystemHandlerGetRollbackVersions(t *testing.T) {
 	updateSvc := &systemHandlerUpdateServiceStub{
-		rollbackVersions: []service.RollbackVersion{
-			{Version: "0.1.146", PublishedAt: "2026-07-07T00:00:00Z", HTMLURL: "https://example.com/v0.1.146"},
-			{Version: "0.1.145", PublishedAt: "2026-07-06T00:00:00Z", HTMLURL: "https://example.com/v0.1.145"},
+		rollbackVersions: &service.RollbackVersionsResult{
+			Versions: []service.RollbackVersion{
+				{Version: "0.1.146", PublishedAt: "2026-07-07T00:00:00Z", HTMLURL: "https://example.com/v0.1.146"},
+				{Version: "0.1.145", PublishedAt: "2026-07-06T00:00:00Z", HTMLURL: "https://example.com/v0.1.145"},
+			},
 		},
 	}
 	repo := newMemoryIdempotencyRepoStub()
@@ -258,6 +317,48 @@ func TestSystemHandlerGetRollbackVersions(t *testing.T) {
 	require.Equal(t, 0, body.Code)
 	require.Len(t, body.Data.Versions, 2)
 	require.Equal(t, "0.1.146", body.Data.Versions[0].Version)
+}
+
+// TestSystemHandlerGetRollbackVersionsManagedExternally 验证禁用态响应透传：
+// managed_externally=true + 空 versions + 部署方注入的 guide（前端据此渲染部署
+// 工具操作指引而非在线回退列表）。
+func TestSystemHandlerGetRollbackVersionsManagedExternally(t *testing.T) {
+	updateSvc := &systemHandlerUpdateServiceStub{
+		rollbackVersions: &service.RollbackVersionsResult{
+			Versions:          []service.RollbackVersion{},
+			ManagedExternally: true,
+			Guide: &service.OpsGuide{
+				Title:    "版本回退由部署仓库管理",
+				Note:     "降级只回退镜像, 不回滚数据库",
+				Commands: []string{"./ops rollback sub2api", "./ops rollback sub2api --confirm"},
+			},
+		},
+	}
+	repo := newMemoryIdempotencyRepoStub()
+	router := newSystemHandlerTestRouter(t, updateSvc, repo)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/system/rollback-versions", nil)
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, 1, updateSvc.rollbackVersionsCall)
+
+	var body struct {
+		Code int `json:"code"`
+		Data struct {
+			Versions          []service.RollbackVersion `json:"versions"`
+			ManagedExternally bool                      `json:"managed_externally"`
+			Guide             *service.OpsGuide         `json:"guide"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	require.Equal(t, 0, body.Code)
+	require.True(t, body.Data.ManagedExternally)
+	require.Empty(t, body.Data.Versions)
+	require.NotNil(t, body.Data.Guide)
+	require.Equal(t, "版本回退由部署仓库管理", body.Data.Guide.Title)
+	require.Equal(t, []string{"./ops rollback sub2api", "./ops rollback sub2api --confirm"}, body.Data.Guide.Commands)
 }
 
 func TestSystemHandlerGetRollbackVersionsError(t *testing.T) {

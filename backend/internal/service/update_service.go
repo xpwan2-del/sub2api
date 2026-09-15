@@ -13,10 +13,12 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
@@ -25,6 +27,7 @@ import (
 var (
 	ErrNoUpdateAvailable         = infraerrors.Conflict("ALREADY_UP_TO_DATE", "no update available; current version is latest")
 	ErrRollbackVersionNotAllowed = infraerrors.BadRequest("ROLLBACK_VERSION_NOT_ALLOWED", "version is not in the allowed rollback list")
+	ErrUpdatesDisabled           = infraerrors.Conflict("UPDATES_DISABLED", "online update/rollback is disabled on this deployment; use your deployment tooling")
 )
 
 const (
@@ -76,6 +79,14 @@ type GitHubReleaseClient interface {
 	FetchChecksumFile(ctx context.Context, url string) ([]byte, error)
 }
 
+// BuildRegistryClient 查询自有镜像仓库（如 Harbor）的最新 Build tag（CalVer）。
+// 部署方配置 UPDATE_REGISTRY / UPDATE_REGISTRY_IMAGE（/ UPDATE_REGISTRY_AUTH）时由
+// provider 组装注入，managed 更新检查据此感知自研版本体系的新版本；未配置时为
+// nil，CheckUpdate 回退到「已是最新」静态应答。
+type BuildRegistryClient interface {
+	LatestBuildTag(ctx context.Context) (string, error)
+}
+
 // UpdateService handles software updates
 type UpdateService struct {
 	cache          UpdateCache
@@ -83,17 +94,99 @@ type UpdateService struct {
 	currentVersion string // 上游基线版本号
 	currentBuild   string // 自研发布版本号（CalVer）
 	buildType      string // "source" for manual builds, "release" for CI builds
+	rollbackGuide  *OpsGuide
+	upgradeGuide   *OpsGuide
+	buildRegistry  BuildRegistryClient
+
+	// managed+registry 检查的实例内存缓存（GitHub 路径的 Redis 缓存格式与其
+	// 不兼容：重建时用 semver 比较，且不保留 managed 字段）。
+	registryMu      sync.Mutex
+	registryCached  *UpdateInfo
+	registryCacheAt int64
 }
 
 // NewUpdateService creates a new UpdateService
-func NewUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, version, build, buildType string) *UpdateService {
+func NewUpdateService(cache UpdateCache, githubClient GitHubReleaseClient, version, build, buildType string, guides *UpdateGuides) *UpdateService {
+	var rollbackGuide, upgradeGuide *OpsGuide
+	if guides != nil {
+		rollbackGuide = guides.Rollback
+		upgradeGuide = guides.Upgrade
+	}
 	return &UpdateService{
 		cache:          cache,
 		githubClient:   githubClient,
 		currentVersion: version,
 		currentBuild:   build,
 		buildType:      buildType,
+		rollbackGuide:  rollbackGuide,
+		upgradeGuide:   upgradeGuide,
 	}
+}
+
+// UpdateGuides 聚合部署方注入的升级/回退运维指引，经 ProvideUpdateService
+// 从环境变量组装。
+type UpdateGuides struct {
+	Rollback *OpsGuide
+	Upgrade  *OpsGuide
+}
+
+// WithBuildRegistry 注入自有镜像仓库客户端（部署方配置 UPDATE_REGISTRY 时由
+// provider 组装）。链式 setter 而非构造参数：保持 NewUpdateService 对既有
+// 调用方/测试兼容（先例：GrokOAuthService.WithSessionStore）。
+func (s *UpdateService) WithBuildRegistry(client BuildRegistryClient) *UpdateService {
+	s.buildRegistry = client
+	return s
+}
+
+// calVerBuildPattern 匹配自研发布版本号 Build（CalVer: YYYY.MM.DD-shortsha，
+// 见 deploy/build_image.sh 的推导逻辑）。日期零填充，字典序即时间序。
+var calVerBuildPattern = regexp.MustCompile(`^\d{4}\.\d{2}\.\d{2}-[0-9a-f]{4,}$`)
+
+// IsCalVerBuild 判断版本串是否为自研 CalVer Build 格式。registry tag 过滤
+// （repository 层）与此处的 currentBuild 防御性校验共用，避免两份规则漂移。
+func IsCalVerBuild(build string) bool {
+	return calVerBuildPattern.MatchString(build)
+}
+
+// OpsGuide 描述外部部署体系（如部署仓库的 ops 命令）管理升级/回退时的操作
+// 指引，由部署方经 {UPGRADE,ROLLBACK}_GUIDE_* 环境变量注入，展示在管理面板
+// 的版本徽章入口处。未配置时为 nil。
+type OpsGuide struct {
+	Title    string   `json:"title,omitempty"`
+	Note     string   `json:"note,omitempty"`
+	Commands []string `json:"commands,omitempty"`
+}
+
+// RollbackVersionsResult is the payload of the rollback-versions endpoint.
+// ManagedExternally=true 表示本部署的回退由外部部署工具管理，在线二进制回退
+// 不可用，前端应展示 Guide 指引而非在线回退列表。
+type RollbackVersionsResult struct {
+	Versions          []RollbackVersion `json:"versions"`
+	ManagedExternally bool              `json:"managed_externally"`
+	Guide             *OpsGuide         `json:"guide,omitempty"`
+}
+
+// opsGuideFromEnv 按 prefix（"ROLLBACK" 或 "UPGRADE"）从环境变量组装运维指引：
+//
+//	<PREFIX>_GUIDE_TITLE     指引标题
+//	<PREFIX>_GUIDE_NOTE      附加说明（如"降级只回退镜像, 不回滚数据库"）
+//	<PREFIX>_GUIDE_COMMANDS  命令列表，按换行拆分（YAML 双引号 \n 注入）
+//
+// 三者均为空时返回 nil（未配置指引）。
+func opsGuideFromEnv(prefix string) *OpsGuide {
+	guide := &OpsGuide{
+		Title: strings.TrimSpace(os.Getenv(prefix + "_GUIDE_TITLE")),
+		Note:  strings.TrimSpace(os.Getenv(prefix + "_GUIDE_NOTE")),
+	}
+	for _, cmd := range strings.Split(os.Getenv(prefix+"_GUIDE_COMMANDS"), "\n") {
+		if cmd = strings.TrimSpace(cmd); cmd != "" {
+			guide.Commands = append(guide.Commands, cmd)
+		}
+	}
+	if guide.Title == "" && guide.Note == "" && len(guide.Commands) == 0 {
+		return nil
+	}
+	return guide
 }
 
 // CurrentVersion 返回当前上游基线版本号（base）。
@@ -115,6 +208,10 @@ type UpdateInfo struct {
 	Cached         bool         `json:"cached"`
 	Warning        string       `json:"warning,omitempty"`
 	BuildType      string       `json:"build_type"` // "source" or "release"
+	// ManagedExternally=true 表示升级由外部部署工具管理（updatesEnabled=false
+	// 的 fork 止血态），前端应展示 Guide 指引而非在线更新按钮。
+	ManagedExternally bool      `json:"managed_externally"`
+	Guide             *OpsGuide `json:"guide,omitempty"`
 }
 
 // ReleaseInfo contains GitHub release details
@@ -160,14 +257,24 @@ type GitHubAsset struct {
 
 // CheckUpdate checks for available updates
 func (s *UpdateService) CheckUpdate(ctx context.Context, force bool) (*UpdateInfo, error) {
-	// Fork 止血：updatesEnabled=false 时禁用上游更新检查，恒返回「已是最新」。
-	// 详见 updatesEnabled 注释。
+	// Fork 止血：updatesEnabled=false 时禁用上游更新检查，并标记
+	// managed_externally + 附部署方注入的升级指引（如有），前端据此展示部署
+	// 工具操作指引。详见 updatesEnabled 注释。
 	if !updatesEnabled {
+		// 配置了自有镜像仓库（UPDATE_REGISTRY_*）时仍可感知真实新版本：查询
+		// 最新 CalVer Build tag 与当前 Build 比较，让「有可用更新」提示恢复
+		// 语义（更新动作依旧由部署工具执行）。查询失败降级为「已是最新」+
+		// Warning，不阻塞管理面板。
+		if s.buildRegistry != nil {
+			return s.checkUpdateViaRegistry(ctx, force)
+		}
 		return &UpdateInfo{
-			CurrentVersion: s.currentVersion,
-			LatestVersion:  s.currentVersion,
-			HasUpdate:      false,
-			BuildType:      s.buildType,
+			CurrentVersion:    s.currentBuild,
+			LatestVersion:     s.currentBuild,
+			HasUpdate:         false,
+			BuildType:         s.buildType,
+			ManagedExternally: true,
+			Guide:             s.upgradeGuide,
 		}, nil
 	}
 
@@ -200,9 +307,55 @@ func (s *UpdateService) CheckUpdate(ctx context.Context, force bool) (*UpdateInf
 	return info, nil
 }
 
+// checkUpdateViaRegistry 是 managed 模式下经自有镜像仓库的更新检查：比较最新
+// CalVer Build tag 与 currentBuild。结果缓存在实例内存（TTL 同 updateCacheTTL），
+// GitHub 路径的 Redis 缓存格式不保留 managed 字段且用 semver 重建比较，不可复用。
+func (s *UpdateService) checkUpdateViaRegistry(ctx context.Context, force bool) (*UpdateInfo, error) {
+	s.registryMu.Lock()
+	defer s.registryMu.Unlock()
+
+	if !force && s.registryCached != nil &&
+		time.Now().Unix()-s.registryCacheAt < updateCacheTTL {
+		cached := *s.registryCached
+		cached.Cached = true
+		return &cached, nil
+	}
+
+	// managed 模式下主显示体系是自研 Build：CurrentVersion/LatestVersion 均为
+	// CalVer 语义（前端徽章主显示 props.version = siteVersion = Build）。
+	info := &UpdateInfo{
+		CurrentVersion:    s.currentBuild,
+		LatestVersion:     s.currentBuild,
+		HasUpdate:         false,
+		BuildType:         s.buildType,
+		ManagedExternally: true,
+		Guide:             s.upgradeGuide,
+	}
+	if latest, err := s.buildRegistry.LatestBuildTag(ctx); err != nil {
+		info.Warning = "registry check unavailable: " + err.Error()
+	} else if latest != "" {
+		info.LatestVersion = latest
+		// currentBuild 非 CalVer（如 source build 的 "dev"）时无法比较，仅展示
+		// 最新 Build 而不报更新。
+		info.HasUpdate = IsCalVerBuild(s.currentBuild) && latest != s.currentBuild
+	}
+
+	s.registryCached = info
+	s.registryCacheAt = time.Now().Unix()
+	result := *info
+	return &result, nil
+}
+
 // PerformUpdate downloads and applies the update
 // Uses atomic file replacement pattern for safe in-place updates
 func (s *UpdateService) PerformUpdate(ctx context.Context) error {
+	// Fork 止血：updatesEnabled=false 时在线更新（上游二进制替换）不可用，
+	// 显式拒绝而非借道 CheckUpdate 返回 ALREADY_UP_TO_DATE——语义应为
+	// UPDATES_DISABLED，防止自研二进制被上游官方二进制覆盖。
+	if !updatesEnabled {
+		return ErrUpdatesDisabled
+	}
+
 	info, err := s.CheckUpdate(ctx, true)
 	if err != nil {
 		return err
@@ -321,6 +474,9 @@ func (s *UpdateService) applyReleaseAssets(ctx context.Context, releaseAssets []
 
 // Rollback restores the previous version
 func (s *UpdateService) Rollback() error {
+	if !updatesEnabled {
+		return ErrUpdatesDisabled
+	}
 	exePath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("failed to get executable path: %w", err)
@@ -346,7 +502,19 @@ func (s *UpdateService) Rollback() error {
 // ListRollbackVersions returns up to maxRollbackVersions release versions that are
 // strictly older than the current version (the current version itself is excluded),
 // newest first. Draft and prerelease entries are skipped.
-func (s *UpdateService) ListRollbackVersions(ctx context.Context) ([]RollbackVersion, error) {
+//
+// Fork 止血：updatesEnabled=false 时在线二进制回退不可用（详见 updatesEnabled
+// 注释），返回空列表 + ManagedExternally=true（附部署方注入的指引，如有），
+// 前端据此渲染部署工具操作指引而非在线回退列表。
+func (s *UpdateService) ListRollbackVersions(ctx context.Context) (*RollbackVersionsResult, error) {
+	if !updatesEnabled {
+		return &RollbackVersionsResult{
+			Versions:          []RollbackVersion{},
+			ManagedExternally: true,
+			Guide:             s.rollbackGuide,
+		}, nil
+	}
+
 	releases, err := s.fetchRollbackCandidates(ctx)
 	if err != nil {
 		return nil, err
@@ -360,13 +528,16 @@ func (s *UpdateService) ListRollbackVersions(ctx context.Context) ([]RollbackVer
 			HTMLURL:     r.HTMLURL,
 		})
 	}
-	return versions, nil
+	return &RollbackVersionsResult{Versions: versions}, nil
 }
 
 // RollbackToVersion downloads and installs a specific older version.
 // The target must be one of the versions returned by ListRollbackVersions;
 // anything else (including the current version) is rejected.
 func (s *UpdateService) RollbackToVersion(ctx context.Context, version string) error {
+	if !updatesEnabled {
+		return ErrUpdatesDisabled
+	}
 	target := strings.TrimPrefix(strings.TrimSpace(version), "v")
 	if target == "" {
 		return ErrRollbackVersionNotAllowed
@@ -695,6 +866,9 @@ func compareVersions(current, latest string) int {
 
 func parseVersion(v string) [3]int {
 	v = strings.TrimPrefix(v, "v")
+	if idx := strings.IndexByte(v, '-'); idx != -1 {
+		v = v[:idx]
+	}
 	parts := strings.Split(v, ".")
 	result := [3]int{0, 0, 0}
 	for i := 0; i < len(parts) && i < 3; i++ {

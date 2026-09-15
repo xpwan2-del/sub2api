@@ -39,6 +39,12 @@ func newOpenAIVideosFakeCache() *openAIVideosFakeCache {
 	return &openAIVideosFakeCache{bindings: map[string]service.VideoTaskBinding{}}
 }
 
+func (c *openAIVideosFakeCache) GetReasoningContent(_ context.Context, _ string) (string, error) {
+	return "", service.ErrReasoningContentNotFound
+}
+func (c *openAIVideosFakeCache) SetReasoningContent(_ context.Context, _ string, _ string, _ time.Duration) error {
+	return nil
+}
 func (c *openAIVideosFakeCache) SetVideoTaskBinding(_ context.Context, _ int64, key string, b service.VideoTaskBinding, _ time.Duration) error {
 	c.bindings[key] = b
 	return nil
@@ -65,6 +71,18 @@ func (c *openAIVideosFakeCache) RefreshSessionTTL(_ context.Context, _ int64, _ 
 func (c *openAIVideosFakeCache) DeleteSessionAccountID(_ context.Context, _ int64, _ string) error {
 	return nil
 }
+func (c *openAIVideosFakeCache) SetGrokVideoPendingBilling(_ context.Context, _ string, _ []byte, _ time.Duration) error {
+	return nil
+}
+func (c *openAIVideosFakeCache) GetGrokVideoPendingBilling(_ context.Context, _ string) ([]byte, error) {
+	return nil, nil
+}
+func (c *openAIVideosFakeCache) ClaimGrokVideoBilled(_ context.Context, _ string, _ time.Duration) (bool, error) {
+	return false, nil
+}
+func (c *openAIVideosFakeCache) ReleaseGrokVideoBilled(_ context.Context, _ string) error {
+	return nil
+}
 
 func TestOpenAIVideosHandler_GetPollMissingBinding_Returns404(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -78,7 +96,7 @@ func TestOpenAIVideosHandler_GetPollMissingBinding_Returns404(t *testing.T) {
 		nil, nil, nil, nil, nil, nil, nil, nil, // 9-16: schedulerSnapshot, concurrency, billing, rateLimit, billingCache, httpUpstream, deferred, openAITokenProvider
 		nil,                     // 17: grokTokenProvider (上游 main 新增)
 		nil, nil, nil, nil, nil, // 18-22: resolver, channelService, balanceNotifyService, settingService, userPlatformQuotaRepo
-		nil,                   // 23: bundleUsageService
+		nil, // 23: bundleUsageService
 	)
 	billingService := service.NewBillingCacheService(nil, nil, nil, nil, nil, nil, cfg, nil)
 	t.Cleanup(billingService.Stop)

@@ -10,7 +10,8 @@ import { i18n } from '@/i18n'
 import {
   checkUpdates as checkUpdatesAPI,
   type VersionInfo,
-  type ReleaseInfo
+  type ReleaseInfo,
+  type OpsGuide
 } from '@/api/admin/system'
 import { getPublicSettings as fetchPublicSettingsAPI } from '@/api/auth'
 
@@ -44,6 +45,9 @@ export const useAppStore = defineStore('app', () => {
   const hasUpdate = ref<boolean>(false)
   const buildType = ref<string>('source')
   const releaseInfo = ref<ReleaseInfo | null>(null)
+  // 升级是否由外部部署工具管理（fork 止血态）+ 部署方注入的升级指引
+  const updateManagedExternally = ref<boolean>(false)
+  const updateGuide = ref<OpsGuide | null>(null)
 
   // Auto-incrementing ID for toasts
   let toastIdCounter = 0
@@ -250,6 +254,8 @@ export const useAppStore = defineStore('app', () => {
         has_update: hasUpdate.value,
         build_type: buildType.value,
         release_info: releaseInfo.value || undefined,
+        managed_externally: updateManagedExternally.value,
+        guide: updateGuide.value || undefined,
         cached: true
       }
     }
@@ -267,6 +273,8 @@ export const useAppStore = defineStore('app', () => {
       hasUpdate.value = data.has_update
       buildType.value = data.build_type || 'source'
       releaseInfo.value = data.release_info || null
+      updateManagedExternally.value = data.managed_externally || false
+      updateGuide.value = data.guide || null
       versionLoaded.value = true
       return data
     } catch (error) {
@@ -337,6 +345,10 @@ export const useAppStore = defineStore('app', () => {
         invitation_code_enabled: false,
         turnstile_enabled: false,
         turnstile_site_key: '',
+        aliyun_captcha_enabled: false,
+        aliyun_captcha_scene_id: '',
+        aliyun_captcha_prefix: '',
+        aliyun_captcha_region: 'cn',
         site_name: siteName.value,
         site_logo: siteLogo.value,
         site_subtitle: '',
@@ -344,6 +356,7 @@ export const useAppStore = defineStore('app', () => {
         contact_info: contactInfo.value,
         doc_url: docUrl.value,
         home_content: '',
+        compact_home_enabled: false,
         hide_ccs_import_button: false,
         payment_enabled: false,
         table_default_page_size: 20,
@@ -360,6 +373,7 @@ export const useAppStore = defineStore('app', () => {
         github_oauth_enabled: false,
         google_oauth_enabled: false,
         backend_mode_enabled: false,
+        passkey_enabled: false,
         version: siteVersion.value,
         base_version: siteBaseVersion.value,
         balance_low_notify_enabled: false,
@@ -368,6 +382,11 @@ export const useAppStore = defineStore('app', () => {
         channel_monitor_enabled: true,
         channel_monitor_default_interval_seconds: 60,
         available_channels_enabled: false,
+        subscription_enabled: true,
+        payment_balance_disabled: false,
+        model_plaza_enabled: false,
+        model_plaza_require_auth: false,
+        plugin_management_enabled: false,
         risk_control_enabled: false,
         service_quota_enabled: false,
         affiliate_enabled: false,
@@ -451,6 +470,8 @@ export const useAppStore = defineStore('app', () => {
     versionLoaded,
     versionLoading,
     currentVersion,
+    updateManagedExternally,
+    updateGuide,
     latestVersion,
     hasUpdate,
     buildType,

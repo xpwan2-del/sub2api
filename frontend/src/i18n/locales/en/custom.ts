@@ -97,7 +97,7 @@ export default {
     navLabel: 'Models',
     kicker: 'Public Model Catalog',
     title: 'Model Catalog',
-    subtitle: '',
+    subtitle: 'Browse available models and pricing across platforms',
     available: 'Available',
     loading: 'Syncing model catalog...',
     loadFailed: 'Failed to load model catalog',
@@ -433,6 +433,12 @@ export default {
   },
   version: {
     basedOn: 'Based on sub2api {version}',
+    rollbackExternalTitle: 'Version rollback is managed by your deployment tooling',
+    rollbackExternalHint:
+      'Online rollback is unavailable on this deployment; run your deployment tooling (e.g. ./ops rollback) on the deployment server',
+    upgradeExternalTitle: 'Version upgrades are managed by your deployment tooling',
+    upgradeExternalHint:
+      'Online upgrade is unavailable on this deployment; run your deployment tooling (e.g. ./ops upgrade -i sub2api) on the deployment server',
   },
   payment: {
     bundleAmount: 'Bundle Price',

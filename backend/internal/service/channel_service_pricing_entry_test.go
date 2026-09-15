@@ -36,8 +36,8 @@ func (r *pricingEntryRepo) Create(context.Context, *Channel) error { return nil 
 func (r *pricingEntryRepo) GetByID(context.Context, int64) (*Channel, error) {
 	return nil, nil
 }
-func (r *pricingEntryRepo) Update(context.Context, *Channel) error  { return nil }
-func (r *pricingEntryRepo) Delete(context.Context, int64) error     { return nil }
+func (r *pricingEntryRepo) Update(context.Context, *Channel) error { return nil }
+func (r *pricingEntryRepo) Delete(context.Context, int64) error    { return nil }
 func (r *pricingEntryRepo) List(context.Context, pagination.PaginationParams, string, string) ([]Channel, *pagination.PaginationResult, error) {
 	return nil, nil, nil
 }
@@ -49,7 +49,7 @@ func (r *pricingEntryRepo) ExistsByNameExcluding(context.Context, string, int64)
 	return false, nil
 }
 func (r *pricingEntryRepo) GetGroupIDs(context.Context, int64) ([]int64, error) { return nil, nil }
-func (r *pricingEntryRepo) SetGroupIDs(context.Context, int64, []int64) error    { return nil }
+func (r *pricingEntryRepo) SetGroupIDs(context.Context, int64, []int64) error   { return nil }
 func (r *pricingEntryRepo) GetChannelIDByGroupID(context.Context, int64) (int64, error) {
 	return 0, nil
 }
@@ -79,7 +79,7 @@ func TestApplyUpstreamPricingEntry_PartialOverlapCreatesNewRow(t *testing.T) {
 			BillingMode: BillingModeToken, InputPrice: floatPtr(originalInput),
 		}},
 	}
-	svc := NewChannelService(repo, nil, nil, nil)
+	svc := NewChannelService(repo, nil, nil, nil, nil)
 
 	newPrice := ConvertedPrice{BillingMode: BillingModeToken, InputPrice: floatPtr(9e-9)}
 	got, err := svc.ApplyUpstreamPricingEntry(context.Background(), 1, PlatformAnthropic, []string{"claude-opus"}, newPrice)
@@ -126,7 +126,7 @@ func TestApplyUpstreamPricingEntry_ExactSetUpdates(t *testing.T) {
 			BillingMode: BillingModeToken, InputPrice: floatPtr(5e-6),
 		}},
 	}
-	svc := NewChannelService(repo, nil, nil, nil)
+	svc := NewChannelService(repo, nil, nil, nil, nil)
 
 	newPrice := ConvertedPrice{BillingMode: BillingModeToken, InputPrice: floatPtr(7e-9), OutputPrice: floatPtr(14e-9)}
 	got, err := svc.ApplyUpstreamPricingEntry(context.Background(), 1, PlatformAnthropic, []string{"claude-opus"}, newPrice)
@@ -158,7 +158,7 @@ func TestApplyUpstreamPricingEntry_ExactSetCaseInsensitive(t *testing.T) {
 			Models: []string{"Claude-Opus", "Claude-Sonnet"},
 		}},
 	}
-	svc := NewChannelService(repo, nil, nil, nil)
+	svc := NewChannelService(repo, nil, nil, nil, nil)
 
 	newPrice := ConvertedPrice{BillingMode: BillingModeToken, InputPrice: floatPtr(3e-9)}
 	if _, err := svc.ApplyUpstreamPricingEntry(context.Background(), 1, PlatformAnthropic, []string{"claude-opus", "claude-sonnet"}, newPrice); err != nil {

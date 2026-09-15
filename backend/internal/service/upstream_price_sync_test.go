@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-func floatPtr(v float64) *float64 { return &v }
-
 func TestConvertPricing_RatioMode(t *testing.T) {
 	// model_ratio=1.5, completion_ratio=2, cache_ratio=0.5, base=0.002
 	m := UpstreamModelPricing{

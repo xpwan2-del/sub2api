@@ -145,6 +145,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 			"",
 			false,
 			false,
+			false,
 		)
 		if err != nil {
 			reqLog.Warn("openai.videos.account_select_failed", zap.Error(err), zap.Int("excluded_account_count", len(failedAccountIDs)))
@@ -169,7 +170,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 		setOpsSelectedAccount(c, account.ID, account.Platform)
 
 		accountReleaseFunc, accountAcquired := h.acquireResponsesAccountSlot(c, apiKey.GroupID, "", selection, false, &streamStarted, reqLog)
-		if !accountAcquired {
+		if accountAcquired != openAISlotAcquireOK {
 			return
 		}
 		service.SetOpsLatencyMs(c, service.OpsRoutingLatencyMsKey, time.Since(routingStart).Milliseconds())
@@ -198,7 +199,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 					h.handleFailoverExhausted(c, failoverErr, true)
 					return
 				}
-				h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)
+				h.gatewayService.ReportOpenAIAccountScheduleResult(account, openAIAccountScheduleModel(c, account, reqModel, false, nil), false, nil, err)
 				h.gatewayService.RecordOpenAIAccountSwitch()
 				failedAccountIDs[account.ID] = struct{}{}
 				lastFailoverErr = failoverErr
@@ -209,7 +210,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 				switchCount++
 				continue
 			}
-			h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)
+			h.gatewayService.ReportOpenAIAccountScheduleResult(account, openAIAccountScheduleModel(c, account, reqModel, false, nil), false, nil, err)
 			if c.Writer.Size() == writerSizeBeforeForward {
 				h.errorResponse(c, http.StatusBadGateway, "upstream_error", "Upstream request failed")
 			}
@@ -217,7 +218,7 @@ func (h *OpenAIGatewayHandler) Videos(c *gin.Context) {
 			return
 		}
 
-		h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, true, nil)
+		h.gatewayService.ReportOpenAIAccountScheduleResult(account, openAIAccountScheduleModel(c, account, reqModel, false, result), true, nil)
 
 		if err == nil && result != nil {
 			if isGET {
@@ -349,7 +350,6 @@ func extractVideoTaskID(endpoint string) string {
 	}
 	return idSegment
 }
-
 
 // resolvedVideoGroupID 返回 bundle resolver 为本次请求解析出的实际 groupID，用作 video task
 // binding 的 group 维度。openai_videos.go 的 Videos handler 仅在 bundleRouteResolved=true 时

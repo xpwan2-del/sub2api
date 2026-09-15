@@ -36,6 +36,12 @@ func stickySessionKey(taskID string) string {
 	return "openai:" + VideoTaskSessionHash(taskID)
 }
 
+func (c *fakeVideoCache) GetReasoningContent(_ context.Context, _ string) (string, error) {
+	return "", ErrReasoningContentNotFound
+}
+func (c *fakeVideoCache) SetReasoningContent(_ context.Context, _ string, _ string, _ time.Duration) error {
+	return nil
+}
 func (c *fakeVideoCache) SetVideoTaskBinding(_ context.Context, groupID int64, taskID string, b VideoTaskBinding, _ time.Duration) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -81,6 +87,25 @@ func (c *fakeVideoCache) DeleteSessionAccountID(_ context.Context, _ int64, key 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.sticky, key)
+	return nil
+}
+
+// 以下四个方法补全 GatewayCache 接口的 Grok 异步视频计费快照部分
+// （生产实现走 Redis）；binding 测试不覆盖该链路，给出直通语义即可。
+func (c *fakeVideoCache) SetGrokVideoPendingBilling(_ context.Context, _ string, _ []byte, _ time.Duration) error {
+	return nil
+}
+
+func (c *fakeVideoCache) GetGrokVideoPendingBilling(_ context.Context, _ string) ([]byte, error) {
+	return nil, nil
+}
+
+// ClaimGrokVideoBilled 首次声明即视为成功（SetNX 语义）。
+func (c *fakeVideoCache) ClaimGrokVideoBilled(_ context.Context, _ string, _ time.Duration) (bool, error) {
+	return true, nil
+}
+
+func (c *fakeVideoCache) ReleaseGrokVideoBilled(_ context.Context, _ string) error {
 	return nil
 }
 

@@ -194,7 +194,7 @@ func buildOpsModelInventory(accounts []Account, traffic map[string]*OpsModelTraf
 			if groupPlatform == "unknown" {
 				groupPlatform = platform
 			}
-			for _, model := range group.ModelsListConfig.Models {
+			for _, model := range group.ModelAllowlist.Models {
 				add(groupPlatform, model, "group_models_list")
 			}
 			for pattern := range group.ModelRouting {

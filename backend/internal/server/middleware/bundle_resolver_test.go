@@ -279,6 +279,12 @@ type mwFakeVideoCache struct {
 func (c mwFakeVideoCache) GetSessionAccountID(_ context.Context, _ int64, _ string) (int64, error) {
 	return 0, nil
 }
+func (c mwFakeVideoCache) GetReasoningContent(_ context.Context, _ string) (string, error) {
+	return "", service.ErrReasoningContentNotFound
+}
+func (c mwFakeVideoCache) SetReasoningContent(_ context.Context, _ string, _ string, _ time.Duration) error {
+	return nil
+}
 func (c mwFakeVideoCache) SetSessionAccountID(_ context.Context, _ int64, _ string, _ int64, _ time.Duration) error {
 	return nil
 }
@@ -300,6 +306,18 @@ func (c mwFakeVideoCache) GetVideoTaskBinding(_ context.Context, groupID int64, 
 	return service.VideoTaskBinding{}, nil
 }
 func (c mwFakeVideoCache) DeleteVideoTaskBinding(_ context.Context, _ int64, _ string) error {
+	return nil
+}
+func (c mwFakeVideoCache) SetGrokVideoPendingBilling(_ context.Context, _ string, _ []byte, _ time.Duration) error {
+	return nil
+}
+func (c mwFakeVideoCache) GetGrokVideoPendingBilling(_ context.Context, _ string) ([]byte, error) {
+	return nil, nil
+}
+func (c mwFakeVideoCache) ClaimGrokVideoBilled(_ context.Context, _ string, _ time.Duration) (bool, error) {
+	return false, nil
+}
+func (c mwFakeVideoCache) ReleaseGrokVideoBilled(_ context.Context, _ string) error {
 	return nil
 }
 

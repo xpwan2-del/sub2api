@@ -97,7 +97,7 @@ export default {
     navLabel: '模型广场',
     kicker: 'Public Model Catalog',
     title: '模型广场',
-    subtitle: '',
+    subtitle: '浏览各平台接入的可用模型与价格信息',
     available: '可用',
     loading: '正在同步模型列表...',
     loadFailed: '模型列表加载失败',
@@ -429,6 +429,12 @@ export default {
   },
   version: {
     basedOn: '基于 sub2api {version}',
+    rollbackExternalTitle: '版本回退由部署体系管理',
+    rollbackExternalHint:
+      '本部署不支持在线回退，请在部署服务器上使用部署管理工具（如 ./ops rollback）操作',
+    upgradeExternalTitle: '版本升级由部署体系管理',
+    upgradeExternalHint:
+      '本部署不支持在线升级，请在部署服务器上使用部署管理工具（如 ./ops upgrade -i sub2api）操作',
   },
   userSubscriptions: {
     bundleBadge: '套餐订阅',

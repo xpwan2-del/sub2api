@@ -1,8 +1,10 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"os"
 
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/Wei-Shaw/sub2api/ent"
@@ -29,6 +31,22 @@ func ProvideConcurrencyCache(rdb *redis.Client, cfg *config.Config) service.Conc
 // 从配置中读取代理设置，支持国内服务器通过代理访问 GitHub
 func ProvideGitHubReleaseClient(cfg *config.Config) service.GitHubReleaseClient {
 	return NewGitHubReleaseClient(cfg.Update.ProxyURL, cfg.Security.ProxyFallback.AllowDirectOnError)
+}
+
+// ProvideBuildRegistryClient 创建自有镜像仓库（Harbor）tag 查询客户端，供
+// managed 模式更新检查感知最新 CalVer Build。部署方经 UPDATE_REGISTRY /
+// UPDATE_REGISTRY_IMAGE（/ UPDATE_REGISTRY_AUTH）注入；未配置时返回 nil，
+// UpdateService 回退到「已是最新」静态应答。
+func ProvideBuildRegistryClient() service.BuildRegistryClient {
+	client := NewRegistryTagsClient(
+		os.Getenv("UPDATE_REGISTRY"),
+		os.Getenv("UPDATE_REGISTRY_IMAGE"),
+		os.Getenv("UPDATE_REGISTRY_AUTH"),
+	)
+	if client == nil {
+		return nil
+	}
+	return client
 }
 
 // ProvidePricingRemoteClient 创建定价数据远程客户端
@@ -67,7 +85,10 @@ var ProviderSet = wire.NewSet(
 	NewUserRepository,
 	NewAPIKeyRepository,
 	NewGroupRepository,
+	NewAdminGroupRepository,
+	NewCompositeModelRouteRepository,
 	NewAccountRepository,
+	NewAdminAccountRepository,
 	NewScheduledTestPlanRepository,   // 定时测试计划仓储
 	NewScheduledTestResultRepository, // 定时测试结果仓储
 	NewProxyRepository,
@@ -83,14 +104,19 @@ var ProviderSet = wire.NewSet(
 	NewDashboardAggregationRepository,
 	NewSettingRepository,
 	NewOpsRepository,
+	NewAuditLogRepository,
+	NewPasskeyRepository,
+	NewPasskeySessionStore,
 	NewUserSubscriptionRepository,
 	NewUserAttributeDefinitionRepository,
 	NewUserAttributeValueRepository,
 	NewUserGroupRateRepository,
 	NewErrorPassthroughRepository,
 	NewTLSFingerprintProfileRepository,
+	NewPluginRepository,
 	NewChannelRepository,
 	NewChannelMonitorRepository,
+	NewChannelMonitorV2Repository,
 	NewChannelMonitorRequestTemplateRepository,
 	NewContentModerationRepository,
 	NewAffiliateRepository,
@@ -125,16 +151,19 @@ var ProviderSet = wire.NewSet(
 	NewRedeemCache,
 	NewUpdateCache,
 	NewGeminiTokenCache,
+	NewImageTaskStore,
 	NewBatchImageQueue,
 	NewBatchImageDownloadLimiter,
 	NewLeaderLockCache,
 	ProvideSchedulerCache,
 	NewSchedulerOutboxRepository,
+	NewAuthCacheInvalidationOutboxRepository,
 	NewProxyLatencyCache,
 	NewTotpCache,
 	NewRefreshTokenCache,
 	NewErrorPassthroughCache,
 	NewTLSFingerprintProfileCache,
+	NewChannelCache,
 	NewContentModerationHashCache,
 
 	// Encryptors
@@ -144,10 +173,16 @@ var ProviderSet = wire.NewSet(
 	NewPgDumper,
 	NewS3BackupStoreFactory,
 
+	// Image storage (async image task result offload)
+	ProvideImageStorageFactory,
+
 	// HTTP service ports (DI Strategy A: return interface directly)
 	NewTurnstileVerifier,
+	NewTencentCaptchaVerifier,
+	NewAliyunCaptchaVerifier,
 	ProvidePricingRemoteClient,
 	ProvideGitHubReleaseClient,
+	ProvideBuildRegistryClient,
 	NewProxyExitInfoProber,
 	NewClaudeUsageFetcher,
 	NewClaudeOAuthClient,
@@ -173,6 +208,16 @@ var ProviderSet = wire.NewSet(
 func ProvideEnt(cfg *config.Config) (*ent.Client, error) {
 	client, _, err := InitEnt(cfg)
 	return client, err
+}
+
+// ProvideImageStorageFactory 提供按需构造对象存储客户端的工厂。
+//
+// 这里返回工厂而不是实例：异步生图的开关与凭证可以在后台随时改动，客户端必须能在
+// 设置保存后重建，而不是在启动时定死一份。
+func ProvideImageStorageFactory() service.ImageStorageFactory {
+	return func(ctx context.Context, cfg *config.ImageStorageConfig) (service.ImageStorage, error) {
+		return NewS3ImageStorage(ctx, cfg)
+	}
 }
 
 // ProvideSQLDB 从 Ent 客户端提取底层的 *sql.DB 连接。

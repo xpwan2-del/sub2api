@@ -31,8 +31,7 @@
         <div
           v-if="dropdownOpen"
           ref="dropdownRef"
-          class="absolute left-0 z-50 mt-2 overflow-hidden whitespace-normal rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200 dark:border-dark-700 dark:bg-dark-800"
-          :class="rollbackPanelOpen && isReleaseBuild ? 'w-80' : 'w-64'"
+          class="absolute left-0 z-50 mt-2 w-80 overflow-hidden whitespace-normal rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200 dark:border-dark-700 dark:bg-dark-800"
         >
           <!-- Header with refresh button -->
           <div
@@ -320,46 +319,59 @@
                   </div>
                 </div>
 
-                <!-- Update button -->
-                <button
-                  @click="handleUpdate"
-                  :disabled="updating"
-                  class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-primary-500 hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <svg v-if="updating" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  <Icon v-else name="download" size="sm" :stroke-width="2" />
-                  {{ updating ? t('version.updating') : t('version.updateNow') }}
-                </button>
+                <!-- Deployment-managed: update runs via ops commands, not in-app -->
+                <OpsGuideSection
+                  v-if="upgradeManaged"
+                  :title="upgradeGuideTitle"
+                  :commands="upgradeGuideCommands"
+                  :note="upgradeGuideNote"
+                  :fallback-hint="t('version.upgradeExternalHint')"
+                />
 
-                <!-- View release link -->
-                <a
-                  v-if="releaseInfo?.html_url && releaseInfo.html_url !== '#'"
-                  :href="releaseInfo.html_url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="flex items-center justify-center gap-1 text-xs text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-dark-200"
-                >
-                  {{ t('version.viewChangelog') }}
-                  <Icon name="externalLink" size="xs" :stroke-width="2" />
-                </a>
+                <template v-else>
+                  <!-- Update button -->
+                  <button
+                    @click="handleUpdate"
+                    :disabled="updating"
+                    class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-primary-500 hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <svg v-if="updating" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    <Icon v-else name="download" size="sm" :stroke-width="2" />
+                    {{ updating ? t('version.updating') : t('version.updateNow') }}
+                  </button>
+
+                  <!-- View release link -->
+                  <a
+                    v-if="releaseInfo?.html_url && releaseInfo.html_url !== '#'"
+                    :href="releaseInfo.html_url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center justify-center gap-1 text-xs text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-dark-200"
+                  >
+                    {{ t('version.viewChangelog') }}
+                    <Icon name="externalLink" size="xs" :stroke-width="2" />
+                  </a>
+                </template>
               </div>
 
-              <!-- Priority 5: Up to date - GitHub link + version rollback -->
+              <!-- Priority 5: Up to date - GitHub link (upstream mode) -->
+              <!-- 已是最新时不展示升级指引：有新版本时（Priority 4）才渲染升级流程 -->
               <div v-else class="space-y-2">
+                <!-- Upstream GitHub link (only when not deployment-managed) -->
                 <a
                   v-if="releaseInfo?.html_url && releaseInfo.html_url !== '#'"
                   :href="releaseInfo.html_url"
@@ -377,8 +389,14 @@
                   {{ t('version.viewRelease') }}
                 </a>
 
-                <!-- Version rollback entry -->
-                <div class="border-t border-gray-100 pt-2 dark:border-dark-700">
+              </div>
+
+              <!-- Version rollback entry：独立于更新检查状态（与 Priority 1-5 平级），
+                   仅「成功待重启」终态面板排除——发现新版本或升级失败时回退同样可用 -->
+              <div
+                v-if="!(updateSuccess && needRestart)"
+                class="mt-2 border-t border-gray-100 pt-2 dark:border-dark-700"
+              >
                   <button
                     @click="toggleRollbackPanel"
                     class="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 dark:text-dark-500 dark:hover:bg-dark-700/50 dark:hover:text-dark-300"
@@ -461,6 +479,15 @@
                           {{ t('version.retry') }}
                         </button>
                       </div>
+
+                      <!-- Deployment-managed rollback: show ops guide, no online rollback -->
+                      <OpsGuideSection
+                        v-else-if="isManagedRollback"
+                        :title="rollbackGuideTitle"
+                        :commands="rollbackGuideCommands"
+                        :note="rollbackGuideNote"
+                        :fallback-hint="t('version.rollbackExternalHint')"
+                      />
 
                       <!-- No versions available -->
                       <p
@@ -625,7 +652,6 @@
                       </template>
                     </div>
                   </transition>
-                </div>
               </div>
             </template>
           </div>
@@ -649,10 +675,12 @@ import {
   restartService,
   getRollbackVersions,
   rollback as rollbackAPI,
-  type RollbackVersionInfo
+  type RollbackVersionInfo,
+  type RollbackVersionsResult
 } from '@/api/admin/system'
 import { useClipboard } from '@/composables/useClipboard'
 import Icon from '@/components/icons/Icon.vue'
+import OpsGuideSection from '@/components/common/OpsGuideSection.vue'
 
 const GITHUB_REPO = 'Wei-Shaw/sub2api'
 // Docker Hub image published by CI (tags carry no "v" prefix, e.g. weishaw/sub2api:0.1.146)
@@ -694,12 +722,30 @@ const successKind = ref<'update' | 'rollback'>('update')
 
 // Rollback states
 const rollbackPanelOpen = ref(false)
+const rollbackResult = ref<RollbackVersionsResult | null>(null)
 const rollbackVersions = ref<RollbackVersionInfo[]>([])
 const rollbackVersionsLoading = ref(false)
 const rollbackVersionsError = ref('')
 const selectedRollbackVersion = ref('')
 const rollingBack = ref(false)
 const rollbackError = ref('')
+
+// 指引模式（managed_externally=true）：回退由部署工具管理，仅展示运维命令，
+// 在线回退列表/按钮均不可用。
+const isManagedRollback = computed(() => rollbackResult.value?.managed_externally === true)
+const rollbackGuideCommands = computed(() => rollbackResult.value?.guide?.commands || [])
+const rollbackGuideNote = computed(() => rollbackResult.value?.guide?.note || '')
+const rollbackGuideTitle = computed(
+  () => rollbackResult.value?.guide?.title || t('version.rollbackExternalTitle')
+)
+
+// 升级指引（check-updates 的 managed_externally + guide，部署体系注入）
+const upgradeManaged = computed(() => appStore.updateManagedExternally)
+const upgradeGuideCommands = computed(() => appStore.updateGuide?.commands || [])
+const upgradeGuideNote = computed(() => appStore.updateGuide?.note || '')
+const upgradeGuideTitle = computed(
+  () => appStore.updateGuide?.title || t('version.upgradeExternalTitle')
+)
 
 const { copied, copyToClipboard } = useClipboard()
 
@@ -780,6 +826,7 @@ async function handleUpdate() {
 
 function resetRollbackState() {
   rollbackPanelOpen.value = false
+  rollbackResult.value = null
   rollbackVersions.value = []
   rollbackVersionsError.value = ''
   selectedRollbackVersion.value = ''
@@ -790,11 +837,13 @@ function resetRollbackState() {
 async function toggleRollbackPanel() {
   if (!isAdmin.value) return
   rollbackPanelOpen.value = !rollbackPanelOpen.value
-  // Source builds only show a hint, no version list to fetch
+  // Source builds only show a hint, no version list to fetch.
+  // rollbackResult covers both modes (managed guide / GitHub list): once
+  // loaded, don't refetch on every panel toggle (refresh button still can).
   if (
     rollbackPanelOpen.value &&
     isReleaseBuild.value &&
-    rollbackVersions.value.length === 0 &&
+    rollbackResult.value === null &&
     !rollbackVersionsLoading.value
   ) {
     await loadRollbackVersions()
@@ -807,6 +856,7 @@ async function loadRollbackVersions() {
   rollbackVersionsError.value = ''
   try {
     const data = await getRollbackVersions()
+    rollbackResult.value = data
     rollbackVersions.value = data.versions || []
   } catch (error: unknown) {
     const err = error as { response?: { data?: { message?: string } }; message?: string }

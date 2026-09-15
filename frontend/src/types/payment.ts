@@ -76,6 +76,8 @@ export interface CheckoutInfoResponse {
   stripe_publishable_key: string
   /** When true, Alipay payments on mobile always show the QR code instead of redirecting */
   alipay_force_qrcode?: boolean
+  /** When true, official Alipay mobile orders use precreate plus an Alipay app deep link */
+  alipay_mobile_precreate_deep_link?: boolean
 }
 
 // ==================== Orders ====================
@@ -127,6 +129,8 @@ export interface SubscriptionPlan {
   description: string
   price: number
   original_price?: number
+  /** Display-only ISO 4217 currency label (e.g. "NZD"); empty means no label */
+  currency?: string
   validity_days: number
   validity_unit: string
   /** Stored as JSON string in backend; API layer should parse before use */
@@ -217,18 +221,41 @@ export interface CreateOrderResult {
   resume_token?: string
   direct_success?: boolean // 纯余额支付立即成功
   balance_deduct_amount?: number // 余额抵扣金额
+  alipay_mobile_precreate_deep_link?: boolean
   oauth?: WechatOAuthInfo
   jsapi?: WechatJSAPIPayload
   jsapi_payload?: WechatJSAPIPayload
 }
 
+export type CurrencyAmounts = Record<string, number>
+
+export interface DailyPaymentStats {
+  date: string
+  amount: CurrencyAmounts
+  count: number
+}
+
+export interface PaymentMethodStats {
+  type: string
+  amount: CurrencyAmounts
+  balance_amount: CurrencyAmounts
+  count: number
+}
+
+export interface TopUserPaymentStats {
+  user_id: number
+  email: string
+  amount: number
+  balance_amount: number
+}
+
 export interface DashboardStats {
-  today_amount: number
-  total_amount: number
+  today_amount: CurrencyAmounts
+  total_amount: CurrencyAmounts
   today_count: number
   total_count: number
-  avg_amount: number
-  daily_series: { date: string; amount: number; count: number }[]
-  payment_methods: { type: string; amount: number; balance_amount: number; count: number }[]
-  top_users: { user_id: number; email: string; amount: number; balance_amount: number }[]
+  avg_amount: CurrencyAmounts
+  daily_series: DailyPaymentStats[]
+  payment_methods: PaymentMethodStats[]
+  top_users: Record<string, TopUserPaymentStats[]>
 }
